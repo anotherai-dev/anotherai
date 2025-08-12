@@ -1,3 +1,19 @@
+## Running AnotherAI Locally
+
+Ensure `.env` file exists with required API keys (OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.)
+
+```bash
+# Start all services
+docker-compose up -d
+
+# Stop all services
+docker-compose down
+```
+
+Services will be available at:
+- API: http://localhost:8000
+- Web App: http://localhost:3000
+
 ## Code Quality
 
 Before making any git commits, ensure code quality by running the linter:
@@ -5,19 +21,6 @@ Before making any git commits, ensure code quality by running the linter:
 ```bash
 uv run ruff check --fix backend
 ```
-
-This command will automatically fix any linting issues in the backend code. Always run this before committing to maintain code quality standards.
-
-## Front-End Development
-
-To start the front-end development server:
-
-```bash
-cd web
-npm run dev
-```
-
-This starts the Next.js development server with Turbopack on http://localhost:3000.
 
 ## GitHub Operations
 
