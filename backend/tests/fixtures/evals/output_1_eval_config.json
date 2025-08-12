@@ -1,0 +1,225 @@
+{
+    "options": {
+        "ignore": false,
+        "type": "object",
+        "property_evaluations": {
+            "issuer": {
+                "ignore": false,
+                "type": "object",
+                "property_evaluations": {
+                    "identifier": {
+                        "ignore": false,
+                        "type": "number"
+                    },
+                    "name": {
+                        "ignore": false,
+                        "type": "string",
+                        "semantics": false,
+                        "case_sensitive": false,
+                        "strict_equality": false
+                    },
+                    "identifier_type": {
+                        "ignore": false,
+                        "type": "string",
+                        "semantics": false,
+                        "case_sensitive": true,
+                        "strict_equality": true
+                    }
+                }
+            },
+            "recipient": {
+                "ignore": false,
+                "type": "object",
+                "property_evaluations": {
+                    "identifier": {
+                        "ignore": false,
+                        "type": "string",
+                        "semantics": false,
+                        "case_sensitive": false,
+                        "strict_equality": false
+                    },
+                    "name": {
+                        "ignore": false,
+                        "type": "string",
+                        "semantics": false,
+                        "case_sensitive": false,
+                        "strict_equality": false
+                    }
+                }
+            },
+            "creation_date": {
+                "ignore": false,
+                "type": "string",
+                "semantics": false,
+                "case_sensitive": true,
+                "strict_equality": true
+            },
+            "status": {
+                "ignore": false,
+                "type": "string",
+                "semantics": false,
+                "case_sensitive": true,
+                "strict_equality": true
+            },
+            "isPaid": {
+                "ignore": false,
+                "type": "boolean"
+            },
+            "subject": {
+                "ignore": false,
+                "type": "object",
+                "property_evaluations": {
+                    "invoice_summary": {
+                        "ignore": false,
+                        "type": "string",
+                        "semantics": false,
+                        "case_sensitive": false,
+                        "strict_equality": false
+                    },
+                    "invoice_title": {
+                        "ignore": false,
+                        "type": "string",
+                        "semantics": false,
+                        "case_sensitive": false,
+                        "strict_equality": false
+                    }
+                }
+            },
+            "billing_period": {
+                "ignore": false,
+                "type": "object",
+                "property_evaluations": {
+                    "start_date": {
+                        "ignore": false,
+                        "type": "string",
+                        "semantics": false,
+                        "case_sensitive": true,
+                        "strict_equality": true
+                    },
+                    "end_date": {
+                        "ignore": false,
+                        "type": "string",
+                        "semantics": false,
+                        "case_sensitive": true,
+                        "strict_equality": true
+                    }
+                }
+            },
+            "invoice_identifier": {
+                "ignore": false,
+                "type": "string",
+                "semantics": false,
+                "case_sensitive": false,
+                "strict_equality": false
+            },
+            "line_items": {
+                "ignore": false,
+                "type": "array",
+                "strict_equality": false,
+                "element_evaluation": {
+                    "ignore": false,
+                    "type": "object",
+                    "property_evaluations": {
+                        "line_item_sequence": {
+                            "ignore": false,
+                            "type": "number"
+                        },
+                        "line_item_system": {
+                            "ignore": false,
+                            "type": "string",
+                            "semantics": false,
+                            "case_sensitive": true,
+                            "strict_equality": true
+                        },
+                        "line_item_code": {
+                            "ignore": false,
+                            "type": "string",
+                            "semantics": false,
+                            "case_sensitive": false,
+                            "strict_equality": false
+                        },
+                        "line_item_service_description": {
+                            "ignore": false,
+                            "type": "string",
+                            "semantics": false,
+                            "case_sensitive": false,
+                            "strict_equality": false
+                        },
+                        "line_item_occurrence_date": {
+                            "ignore": false,
+                            "type": "string",
+                            "semantics": false,
+                            "case_sensitive": true,
+                            "strict_equality": true
+                        },
+                        "line_item_type": {
+                            "ignore": false,
+                            "type": "string",
+                            "semantics": false,
+                            "case_sensitive": true,
+                            "strict_equality": true
+                        },
+                        "line_item_amount": {
+                            "ignore": false,
+                            "type": "number"
+                        }
+                    }
+                },
+                "ignore_order": true
+            },
+            "total_net_amount": {
+                "ignore": false,
+                "type": "number"
+            },
+            "total_gross_amount": {
+                "ignore": false,
+                "type": "number"
+            },
+            "payment_notes": {
+                "ignore": false,
+                "type": "string",
+                "semantics": false,
+                "case_sensitive": false,
+                "strict_equality": false
+            },
+            "payment_terms": {
+                "ignore": false,
+                "type": "string",
+                "semantics": false,
+                "case_sensitive": false,
+                "strict_equality": false
+            },
+            "practitioner": {
+                "ignore": false,
+                "type": "object",
+                "property_evaluations": {
+                    "name": {
+                        "ignore": false,
+                        "type": "string",
+                        "semantics": false,
+                        "case_sensitive": false,
+                        "strict_equality": false
+                    },
+                    "identifier": {
+                        "ignore": false,
+                        "type": "number"
+                    },
+                    "identifier_type": {
+                        "ignore": false,
+                        "type": "string",
+                        "semantics": false,
+                        "case_sensitive": true,
+                        "strict_equality": true
+                    }
+                }
+            },
+            "service_date": {
+                "ignore": false,
+                "type": "string",
+                "semantics": false,
+                "case_sensitive": true,
+                "strict_equality": true
+            }
+        }
+    }
+}

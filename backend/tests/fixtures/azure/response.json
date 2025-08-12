@@ -1,0 +1,49 @@
+{
+    "choices": [
+        {
+            "content_filter_results": {
+                "hate": { "filtered": false, "severity": "safe" },
+                "protected_material_code": {
+                    "filtered": false,
+                    "detected": false
+                },
+                "protected_material_text": {
+                    "filtered": false,
+                    "detected": false
+                },
+                "self_harm": { "filtered": false, "severity": "safe" },
+                "sexual": { "filtered": false, "severity": "safe" },
+                "violence": { "filtered": false, "severity": "safe" }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+                "content": "{\n  \"Paris\": {\n    \"attractions\": [\n      {\n        \"name\": \"Eiffel Tower\",\n        \"description\": \"A wrought-iron lattice tower that is a global cultural icon of France and one of the most recognizable structures in the world.\",\n        \"location\": \"Champ de Mars, 5 Avenue Anatole France, 75007 Paris\"\n      },\n      {\n        \"name\": \"Louvre Museum\",\n        \"description\": \"The world's largest art museum and a historic monument in Paris, home to thousands of works including the Mona Lisa.\",\n        \"location\": \"Rue de Rivoli, 75001 Paris\"\n      },\n      {\n        \"name\": \"Notre-Dame Cathedral\",\n        \"description\": \"A medieval Catholic cathedral, known for its French Gothic architecture, famous sculptures, and stained glass.\",\n        \"location\": \"6 Parvis Notre-Dame - Pl. Jean-Paul II, 75004 Paris\"\n      },\n      {\n        \"name\": \"Montmartre\",\n        \"description\": \"A historic district known for its artistic history, it is famous for the Basilica of the Sacré-Cœur and its bohemian atmosphere.\",\n        \"location\": \"Montmartre, 75018 Paris\"\n      },\n      {\n        \"name\": \"Seine River Cruise\",\n        \"description\": \"Enjoy scenic views of Paris while cruising along the Seine River, passing famous landmarks.\",\n        \"location\": \"Seine River\"\n      },\n      {\n        \"name\": \"Champs-Élysées and Arc de Triomphe\",\n        \"description\": \"Famous avenue known for shopping and cafés, leading to the iconic arch honoring those who fought for France.\",\n        \"location\": \"Place Charles de Gaulle, 75008 Paris\"\n      },\n      {\n        \"name\": \"Palace of Versailles\",\n        \"description\": \"A stunning royal residence located just outside Paris, known for its opulent architecture and beautiful gardens.\",\n        \"location\": \"Place d'Armes, 78000 Versailles\"\n      },\n      {\n        \"name\": \"Musée d'Orsay\",\n        \"description\": \"An art museum housed in a Beaux-Arts railway station, featuring an extensive collection of Impressionist and Post-Impressionist masterpieces.\",\n        \"location\": \"1 Rue de la Légion d'Honneur, 75007 Paris\"\n      }\n    ],\n    \"tips\": [\n      \"Buy tickets in advance for major attractions to avoid long lines.\",\n      \"Try to learn a few basic French phrases; locals appreciate the effort.\",\n      \"Explore different neighborhoods to experience the local culture and cuisine.\"\n    ]\n  }\n}",
+                "role": "assistant"
+            }
+        }
+    ],
+    "created": 1734996226,
+    "id": "chatcmpl-Ahm42oOSF4hlt3u4jxKHF3dPn3HU8",
+    "model": "gpt-4o-mini-2024-07-18",
+    "object": "chat.completion",
+    "prompt_filter_results": [
+        {
+            "prompt_index": 0,
+            "content_filter_results": {
+                "hate": { "filtered": false, "severity": "safe" },
+                "jailbreak": { "filtered": false, "detected": false },
+                "self_harm": { "filtered": false, "severity": "safe" },
+                "sexual": { "filtered": false, "severity": "safe" },
+                "violence": { "filtered": false, "severity": "safe" }
+            }
+        }
+    ],
+    "system_fingerprint": "fp_04751d0b65",
+    "usage": {
+        "completion_tokens": 532,
+        "prompt_tokens": 21,
+        "total_tokens": 553
+    }
+}

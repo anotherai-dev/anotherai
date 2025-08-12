@@ -1,0 +1,87 @@
+{
+    "description": "The output schema for the extracted calendar event.",
+    "type": "object",
+    "properties": {
+        "title": {
+            "description": "The title of the calendar event.",
+            "type": "string",
+            "examples": [
+                "Team Meeting"
+            ]
+        },
+        "description": {
+            "description": "The description of the calendar event.",
+            "type": "string",
+            "examples": [
+                "Discuss project updates and next steps."
+            ]
+        },
+        "start_time": {
+            "description": "The start time of the calendar event.",
+            "type": "object",
+            "properties": {
+                "date": {
+                    "description": "The date of the event.",
+                    "type": "string",
+                    "format": "date",
+                    "examples": [
+                        "2023-10-01"
+                    ]
+                },
+                "time": {
+                    "description": "The time of the event.",
+                    "type": "string",
+                    "format": "time",
+                    "examples": [
+                        "10:00:00"
+                    ]
+                },
+                "timezone": {
+                    "description": "The timezone of the event.",
+                    "type": "string",
+                    "format": "timezone",
+                    "examples": [
+                        "America/Chicago"
+                    ]
+                }
+            }
+        },
+        "end_time": {
+            "description": "The explicitly mentioned end time of the calendar event.",
+            "type": "object",
+            "properties": {
+                "date": {
+                    "description": "The end date of the event.",
+                    "type": "string",
+                    "format": "date",
+                    "examples": [
+                        "2023-10-01"
+                    ]
+                },
+                "time": {
+                    "description": "The end time of the event.",
+                    "type": "string",
+                    "format": "time",
+                    "examples": [
+                        "11:00:00"
+                    ]
+                },
+                "timezone": {
+                    "description": "The timezone of the end time.",
+                    "type": "string",
+                    "format": "timezone",
+                    "examples": [
+                        "America/Chicago"
+                    ]
+                }
+            }
+        },
+        "location": {
+            "description": "The location of the calendar event.",
+            "type": "string",
+            "examples": [
+                "Conference Room"
+            ]
+        }
+    }
+}

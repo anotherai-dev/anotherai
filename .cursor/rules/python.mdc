@@ -1,0 +1,40 @@
+---
+description: 
+globs:
+  - '**/*.py'
+alwaysApply: true
+---
+# Python
+
+Rules apply to all python files. Whenever editing a file, check that the 
+file meets both ruff (`poetry run ruff check --fix <file>`) and pyright (`poetry run pyright <file>`).
+
+# Code style
+
+Use ruff to validate `poetry run ruff check <file>` or fix `poetry run ruff format <file>`
+
+## Comments and docstring
+- Avoid comments or docstrings that are too trivial and just describe what is written in the code. Only add docstrings and comments in cases when there is really something to explain or something to warn the reader about.
+
+# Typing
+
+- Use the latest typing fetures of Python ('dict' instead of 'Dict', 'list' instead of 'List', ' | None' instead of 'Optional', etc.)
+- Use pyright to check for typing `poetry run pyright <file>`
+
+# Tests
+
+Make sure there is a unit test that covers your change.
+A unit test should be in the same directory as the file that is tested (e-g `my_file_test.py` should have unit test `my_file.py`)
+
+Pytest is used for testing. You can run a test using `poetry run pytest <my_file>::<my_function>`
+
+- do not create subclasses of `TestCase` from the unittest package. You can use mocks from unittest though.
+- do notadd @pytest.mark.asyncio since asyncio is in auto mode
+- Always use @pytest.mark.parametrize when possible instead of duplicating tests.
+- Avoid having logic in tests, ex: "if should_raise then pytest.raises", write separate test for separate cases
+- add `# pyright: reportPrivateUsage=False` at the top of the file if needed. We do not care about private usage in tests.
+- do not add `-> None` to test functions
+
+
+# Logging
+- G004: you should not use f-strings for logging. Since the event may not be captured, based on log level. Always use "extra" to pass variables.

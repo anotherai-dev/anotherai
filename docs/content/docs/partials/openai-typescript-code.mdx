@@ -1,0 +1,18 @@
+---
+title: OpenAI TypeScript Code
+summary: How to use the OpenAI TypeScript SDK with AnotherAI. AnotherAI exposes a compatible OpenAI API endpoint. The only changes you need to make are updating the `baseURL` and `apiKey`.
+---
+
+```typescript
+import OpenAI from 'openai';
+
+// setup AnotherAI client
+const client: OpenAI = new OpenAI({
+  baseURL: '{{API_URL}}/v1', // [!code highlight]
+  apiKey: 'aai-***', // use create_api_key MCP tool // [!code highlight]
+});
+
+const response = await client.chat.completions.create({
+  // your existing code
+});
+``` 

@@ -1,0 +1,16 @@
+{
+  "environments": {
+    "local": {
+      "API_URL": "http://localhost:8000",
+      "WEB_APP_URL": "http://localhost:3000"
+    },
+    "production": {
+      "API_URL": "https://api.anotherai.dev",
+      "WEB_APP_URL": "https://anotherai.dev"
+    }
+  },
+  "default": {
+    "API_URL": "http://localhost:8000",
+    "WEB_APP_URL": "http://localhost:3000"
+  }
+}

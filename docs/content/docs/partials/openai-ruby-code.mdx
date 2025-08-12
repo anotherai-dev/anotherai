@@ -1,0 +1,18 @@
+---
+title: OpenAI Ruby Code
+summary: How to use the official OpenAI Ruby SDK with AnotherAI. AnotherAI exposes a compatible OpenAI API endpoint. The only changes you need to make are updating the `api_base` and `access_token`.
+---
+
+```ruby
+require "openai"
+
+# setup AnotherAI client
+client = OpenAI::Client.new(
+  api_base: "{{API_URL}}/v1", # [!code highlight]
+  access_token: "aai-***", # use create_api_key MCP tool # [!code highlight]
+)
+
+response = client.chat.completions.create(
+  # your existing code
+)
+``` 

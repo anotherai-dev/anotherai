@@ -1,0 +1,26 @@
+---
+title: Observability FAQ
+summary: Frequently asked questions about observability features
+---
+
+## Frequently Asked Questions
+
+### Why can't I select a completion from a dashboard view?
+
+If you're unable to select a completion from a view in your dashboard, it's likely because the `SELECT` statement in your query is missing the `id` field. 
+
+The `id` field is required for the UI to create clickable links to individual completions. Make sure your query includes the completion ID:
+
+```sql
+-- ❌ Bad: Missing id field
+SELECT agent_id, cost_usd, duration_seconds 
+FROM completions 
+WHERE created_at >= now() - INTERVAL 30 DAY
+
+--  Good: Includes id field
+SELECT id, agent_id, cost_usd, duration_seconds 
+FROM completions 
+WHERE created_at >= now() - INTERVAL 30 DAY
+```
+
+When the `id` field is included, each row in your view will be clickable, allowing you to navigate to the detailed completion view.

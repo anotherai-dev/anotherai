@@ -1,0 +1,26 @@
+{
+    "choices": [
+        {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+                "content": null,
+                "refusal": "I'm sorry, I can't assist with that.",
+                "role": "assistant"
+            }
+        }
+    ],
+    "created": 1729704481,
+    "id": "chatcmpl-ALZRJXgYL6XEQibh6GM6PfnOh867A",
+    "model": "gpt-4o-2024-08-06",
+    "object": "chat.completion",
+    "system_fingerprint": "fp_45c6de4934",
+    "usage": {
+        "completion_tokens": 10,
+        "completion_tokens_details": null,
+        "prompt_tokens": 11,
+        "prompt_tokens_details": null,
+        "total_tokens": 21
+    }
+}

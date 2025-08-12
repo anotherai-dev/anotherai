@@ -1,0 +1,21 @@
+name: Main
+
+on:
+  push:
+    branches:
+      - main
+      # TODO: remove
+      - guillaume/deploy
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  backend-quality:
+    uses: ./.github/workflows/.backend-quality.yml
+    secrets: inherit
+
+  web-quality:
+    uses: ./.github/workflows/.web-quality.yml
+    secrets: inherit

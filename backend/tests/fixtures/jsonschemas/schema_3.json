@@ -1,0 +1,20 @@
+{
+    "properties": {
+        "sorted_cities": {
+            "items": {
+                "type": "string",
+                "description": "A city name",
+                "examples": [
+                    "Chicago",
+                    "Los Angeles",
+                    "New York"
+                ]
+            },
+            "description": "An array of city names sorted in alphabetical order"
+        }
+    },
+    "required": [
+        "sorted_cities"
+    ],
+    "description": "Schema for outputting an array of cities sorted alphabetically"
+}

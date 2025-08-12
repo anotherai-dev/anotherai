@@ -1,0 +1,6 @@
+from typing import BinaryIO, Self
+
+class AudioSegment:
+    @classmethod
+    def from_file(cls, data: BinaryIO, format: str | None = ...) -> Self: ...
+    def __len__(self) -> int: ...

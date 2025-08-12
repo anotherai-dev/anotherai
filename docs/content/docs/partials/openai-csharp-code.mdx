@@ -1,0 +1,22 @@
+---
+title: OpenAI C# Code
+summary: How to use the official OpenAI .NET SDK with AnotherAI. AnotherAI exposes a compatible OpenAI API endpoint. The only changes you need to make are updating the endpoint and API key.
+---
+
+```csharp
+using OpenAI;
+
+// setup AnotherAI client
+OpenAIClient client = new OpenAIClient(
+    apiKey: "aai-***", // use create_api_key MCP tool // [!code highlight]
+    new OpenAIClientOptions
+    {
+        Endpoint = new Uri("{{API_URL}}/v1") // [!code highlight]
+    }
+);
+
+ChatClient chatClient = client.GetChatClient("model-name");
+ChatCompletion completion = chatClient.CompleteChat(
+    // your existing code
+);
+``` 

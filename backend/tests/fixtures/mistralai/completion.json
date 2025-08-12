@@ -1,0 +1,21 @@
+{
+    "id": "chatcmpl-91gL0PXUwQajck2pIp284pR9o7yVo",
+    "object": "chat.completion",
+    "created": 1710188102,
+    "model": "pixtral-12b-2409",
+    "choices": [
+        {
+            "finish_reason": "stop",
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": "{\n  \"content\": \"The meaning of life is 42.\"\n}"
+            }
+        }
+    ],
+    "usage": {
+        "prompt_tokens": 35,
+        "completion_tokens": 109,
+        "total_tokens": 144
+    }
+}

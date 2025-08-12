@@ -1,0 +1,18 @@
+{
+  "id": "msg_011FfbzF4F72Gc1rzSvvDCnR",
+  "type": "message",
+  "role": "assistant",
+  "model": "claude-3-5-sonnet-20241022",
+  "content": [
+    {
+      "type": "text",
+      "text": "The meaning of life is 42"
+    }
+  ],
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "usage": {
+    "input_tokens": 1596,
+    "output_tokens": 79
+  }
+}

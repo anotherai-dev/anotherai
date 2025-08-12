@@ -1,0 +1,191 @@
+{
+    "$defs": {
+        "AccountSummary": {
+            "properties": {
+                "total_accounts": {
+                    "title": "Total Accounts",
+                    "type": "number"
+                },
+                "credit_accounts": {
+                    "title": "Credit Accounts",
+                    "type": "number"
+                },
+                "cash_accounts": {
+                    "title": "Cash Accounts",
+                    "type": "number"
+                },
+                "total_current_balance": {
+                    "anyOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "title": "Total Current Balance"
+                },
+                "total_available_balance": {
+                    "anyOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "title": "Total Available Balance"
+                },
+                "total_credit_limit": {
+                    "anyOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "title": "Total Credit Limit"
+                }
+            },
+            "required": [
+                "total_accounts",
+                "credit_accounts",
+                "cash_accounts",
+                "total_current_balance",
+                "total_available_balance",
+                "total_credit_limit"
+            ],
+            "title": "AccountSummary",
+            "type": "object"
+        },
+        "ChatMessage": {
+            "properties": {
+                "role": {
+                    "description": "The role of the message sender",
+                    "enum": [
+                        "USER",
+                        "ASSISTANT"
+                    ],
+                    "examples": [
+                        "USER",
+                        "ASSISTANT"
+                    ],
+                    "title": "Role",
+                    "type": "string"
+                },
+                "content_text": {
+                    "description": "The content of the message",
+                    "examples": [
+                        "Thank you for your help!",
+                        "What is the weather forecast for tomorrow?"
+                    ],
+                    "title": "Content Text",
+                    "type": "string"
+                },
+                "sent_at": {
+                    "anyOf": [
+                        {
+                            "format": "date-time",
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "The date and time the message was sent",
+                    "title": "Sent At"
+                }
+            },
+            "required": [
+                "role",
+                "content_text"
+            ],
+            "title": "ChatMessage",
+            "type": "object"
+        },
+        "FinancialInformation": {
+            "properties": {
+                "accounts_summary": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/AccountSummary"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null
+                }
+            },
+            "title": "FinancialInformation",
+            "type": "object"
+        }
+    },
+    "properties": {
+        "long_term_memory": {
+            "anyOf": [
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "title": "Long Term Memory"
+        },
+        "conversation": {
+            "items": {
+                "$ref": "#/$defs/ChatMessage"
+            },
+            "title": "Conversation",
+            "type": "array"
+        },
+        "communication_preferences": {
+            "anyOf": [
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "title": "Communication Preferences"
+        },
+        "linked_financal_informations": {
+            "anyOf": [
+                {
+                    "items": {
+                        "$ref": "#/$defs/FinancialInformation"
+                    },
+                    "type": "array"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "title": "Linked Financal Informations"
+        },
+        "count_of_detected_subscriptions": {
+            "anyOf": [
+                {
+                    "type": "integer"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "title": "Count Of Detected Subscriptions"
+        }
+    },
+    "required": [
+        "conversation"
+    ],
+    "title": "ResponsePolicyTaskInput",
+    "type": "object"
+}

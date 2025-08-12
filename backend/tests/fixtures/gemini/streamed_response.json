@@ -1,0 +1,318 @@
+[
+    {
+      "candidates": [
+        {
+          "content": {
+            "parts": [
+              {
+                "text": "Artificial"
+              }
+            ],
+            "role": "model"
+          }
+        }
+      ],
+      "usageMetadata": {
+        "promptTokenCount": 4,
+        "totalTokenCount": 4
+      },
+      "modelVersion": "gemini-1.5-flash"
+    },
+    {
+      "candidates": [
+        {
+          "content": {
+            "parts": [
+              {
+                "text": " intelligence (AI) is a broad field encompassing many techniques, but at its core"
+              }
+            ],
+            "role": "model"
+          }
+        }
+      ],
+      "usageMetadata": {
+        "promptTokenCount": 4,
+        "totalTokenCount": 4
+      },
+      "modelVersion": "gemini-1.5-flash"
+    },
+    {
+      "candidates": [
+        {
+          "content": {
+            "parts": [
+              {
+                "text": ", it aims to create systems that can perform tasks that typically require human intelligence."
+              }
+            ],
+            "role": "model"
+          }
+        }
+      ],
+      "usageMetadata": {
+        "promptTokenCount": 4,
+        "totalTokenCount": 4
+      },
+      "modelVersion": "gemini-1.5-flash"
+    },
+    {
+      "candidates": [
+        {
+          "content": {
+            "parts": [
+              {
+                "text": "  These tasks include things like learning, reasoning, problem-solving, perception, and natural language understanding.  There's no single \"how it works\""
+              }
+            ],
+            "role": "model"
+          },
+          "citationMetadata": {
+            "citationSources": [
+              {
+                "startIndex": 136,
+                "endIndex": 268,
+                "uri": "https://marine-charts.com/voyage-optimisation/bringing-cutting-edge-ai-artificial-intelligence-to-the-maritime-shipping-industry/"
+              }
+            ]
+          }
+        }
+      ],
+      "usageMetadata": {
+        "promptTokenCount": 4,
+        "totalTokenCount": 4
+      },
+      "modelVersion": "gemini-1.5-flash"
+    },
+    {
+      "candidates": [
+        {
+          "content": {
+            "parts": [
+              {
+                "text": " answer, as different AI approaches use different methods. However, here's a breakdown of some key concepts:\n\n**1. Data is King:**  Most"
+              }
+            ],
+            "role": "model"
+          }
+        }
+      ],
+      "usageMetadata": {
+        "promptTokenCount": 4,
+        "totalTokenCount": 4
+      },
+      "modelVersion": "gemini-1.5-flash"
+    },
+    {
+      "candidates": [
+        {
+          "content": {
+            "parts": [
+              {
+                "text": " AI systems rely heavily on data.  The more data you feed an AI system, the better it generally performs. This data is used to train the AI model.\n\n**2. Algorithms are the Recipe:**  Algorithms are sets of rules"
+              }
+            ],
+            "role": "model"
+          }
+        }
+      ],
+      "usageMetadata": {
+        "promptTokenCount": 4,
+        "totalTokenCount": 4
+      },
+      "modelVersion": "gemini-1.5-flash"
+    },
+    {
+      "candidates": [
+        {
+          "content": {
+            "parts": [
+              {
+                "text": " and instructions that tell the computer how to process the data and learn from it.  Different algorithms are suited for different tasks.  Some common algorithm types include:\n\n* **Machine Learning (ML):**  This is a subset of AI"
+              }
+            ],
+            "role": "model"
+          }
+        }
+      ],
+      "usageMetadata": {
+        "promptTokenCount": 4,
+        "totalTokenCount": 4
+      },
+      "modelVersion": "gemini-1.5-flash"
+    },
+    {
+      "candidates": [
+        {
+          "content": {
+            "parts": [
+              {
+                "text": " where systems learn from data without being explicitly programmed.  Instead of relying on hard-coded rules, ML algorithms identify patterns and relationships in the data to make predictions or decisions.  There are several types of ML:\n    * **Supervised Learning:**  The algorithm is trained on a labeled dataset (data with known"
+              }
+            ],
+            "role": "model"
+          }
+        }
+      ],
+      "usageMetadata": {
+        "promptTokenCount": 4,
+        "totalTokenCount": 4
+      },
+      "modelVersion": "gemini-1.5-flash"
+    },
+    {
+      "candidates": [
+        {
+          "content": {
+            "parts": [
+              {
+                "text": " inputs and outputs).  For example, showing an AI thousands of images of cats and dogs labeled as such, so it can learn to identify them.\n    * **Unsupervised Learning:** The algorithm is trained on an unlabeled dataset and tries to find structure or patterns in the data on its own.  For"
+              }
+            ],
+            "role": "model"
+          }
+        }
+      ],
+      "usageMetadata": {
+        "promptTokenCount": 4,
+        "totalTokenCount": 4
+      },
+      "modelVersion": "gemini-1.5-flash"
+    },
+    {
+      "candidates": [
+        {
+          "content": {
+            "parts": [
+              {
+                "text": " example, grouping similar customers based on their purchase history.\n    * **Reinforcement Learning:** The algorithm learns through trial and error by interacting with an environment.  It receives rewards for good actions and penalties for bad ones, learning to optimize its behavior over time.  This is often used in robotics and game playing."
+              }
+            ],
+            "role": "model"
+          }
+        }
+      ],
+      "usageMetadata": {
+        "promptTokenCount": 4,
+        "totalTokenCount": 4
+      },
+      "modelVersion": "gemini-1.5-flash"
+    },
+    {
+      "candidates": [
+        {
+          "content": {
+            "parts": [
+              {
+                "text": "\n\n* **Deep Learning (DL):** A subfield of ML that uses artificial neural networks with multiple layers (hence \"deep\") to analyze data.  These networks are inspired by the structure and function of the human brain.  Deep learning excels at tasks like image recognition, natural language processing, and speech recognition."
+              }
+            ],
+            "role": "model"
+          }
+        }
+      ],
+      "usageMetadata": {
+        "promptTokenCount": 4,
+        "totalTokenCount": 4
+      },
+      "modelVersion": "gemini-1.5-flash"
+    },
+    {
+      "candidates": [
+        {
+          "content": {
+            "parts": [
+              {
+                "text": "\n\n**3. Models are the Representation:**  During training, the algorithm creates a model, which is a mathematical representation of the patterns and relationships learned from the data.  This model is then used to make predictions or decisions on new, unseen data.\n\n**4. Training and Evaluation:**  Training involves feeding the"
+              }
+            ],
+            "role": "model"
+          }
+        }
+      ],
+      "usageMetadata": {
+        "promptTokenCount": 4,
+        "totalTokenCount": 4
+      },
+      "modelVersion": "gemini-1.5-flash"
+    },
+    {
+      "candidates": [
+        {
+          "content": {
+            "parts": [
+              {
+                "text": " algorithm large amounts of data and adjusting the model's parameters to minimize errors.  Evaluation involves testing the model on a separate dataset to assess its performance and identify areas for improvement.  This iterative process of training and evaluation is crucial for building accurate and reliable AI systems.\n\n**5. Inference (Prediction):** Once"
+              }
+            ],
+            "role": "model"
+          }
+        }
+      ],
+      "usageMetadata": {
+        "promptTokenCount": 4,
+        "totalTokenCount": 4
+      },
+      "modelVersion": "gemini-1.5-flash"
+    },
+    {
+      "candidates": [
+        {
+          "content": {
+            "parts": [
+              {
+                "text": " the model is trained, it can be used to make predictions or decisions on new data. This is called inference. For example, a trained image recognition model can classify a new image as a cat or a dog.\n\n**In simple terms:** Imagine teaching a child to identify cats. You show them many pictures of cats"
+              }
+            ],
+            "role": "model"
+          }
+        }
+      ],
+      "usageMetadata": {
+        "promptTokenCount": 4,
+        "totalTokenCount": 4
+      },
+      "modelVersion": "gemini-1.5-flash"
+    },
+    {
+      "candidates": [
+        {
+          "content": {
+            "parts": [
+              {
+                "text": ", pointing out their features (whiskers, pointy ears, etc.).  The child learns to recognize these features and eventually can identify a cat in a new picture.  An AI system works similarly, but instead of a child, it's an algorithm learning from data, and instead of features, it's"
+              }
+            ],
+            "role": "model"
+          }
+        }
+      ],
+      "usageMetadata": {
+        "promptTokenCount": 4,
+        "totalTokenCount": 4
+      },
+      "modelVersion": "gemini-1.5-flash"
+    },
+    {
+      "candidates": [
+        {
+          "content": {
+            "parts": [
+              {
+                "text": " complex mathematical relationships.\n\n\nIt's important to note that AI is constantly evolving, and new techniques and approaches are continually being developed. The explanations above provide a general overview of some of the core concepts.  The specific implementation can be incredibly complex and vary significantly depending on the task and the chosen techniques.\n"
+              }
+            ],
+            "role": "model"
+          },
+          "finishReason": "STOP"
+        }
+      ],
+      "usageMetadata": {
+        "promptTokenCount": 4,
+        "candidatesTokenCount": 767,
+        "totalTokenCount": 771
+      },
+      "modelVersion": "gemini-1.5-flash"
+    }
+  ]
+  

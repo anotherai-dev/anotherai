@@ -1,0 +1,18 @@
+---
+title: OpenAI JavaScript Code
+summary: How to use the OpenAI JavaScript SDK with AnotherAI. AnotherAI exposes a compatible OpenAI API endpoint. The only changes you need to make are updating the `baseURL` and `apiKey`.
+---
+
+```javascript
+import OpenAI from 'openai';
+
+// setup AnotherAI client
+const client = new OpenAI({
+  baseURL: '{{API_URL}}/v1', // [!code highlight]
+  apiKey: 'aai-***', // use create_api_key MCP tool // [!code highlight]
+});
+
+client.chat.completions.create({
+  // your existing code
+})
+``` 

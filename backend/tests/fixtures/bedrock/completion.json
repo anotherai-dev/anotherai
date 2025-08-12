@@ -1,0 +1,21 @@
+{
+  "metrics": {
+    "latencyMs": 1594
+  },
+  "output": {
+    "message": {
+      "content": [
+        {
+          "text": "{\"greeting\":\"Hello, world!\"}"
+        }
+      ],
+      "role": "assistant"
+    }
+  },
+  "stopReason": "end_turn",
+  "usage": {
+    "inputTokens": 267,
+    "outputTokens": 31,
+    "totalTokens": 298
+  }
+}

@@ -1,0 +1,5 @@
+data: {"id":"6049a2c718be44ca84bdf2653ae9f124","object":"chat.completion.chunk","created":1740146430,"model":"mistral-large-2411","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
+
+data: {"id":"6049a2c718be44ca84bdf2653ae9f124","object":"chat.completion.chunk","created":1740146430,"model":"mistral-large-2411","choices":[{"index":0,"delta":{"tool_calls":[{"id":"qWvpC7maA","function":{"name":"perplexity-sonar-pro","arguments":"{\"query\": \"What is the score of the latest Jazz - Lakers game of Feb 12th, 2025\"}"},"index":0}]},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":420,"total_tokens":469,"completion_tokens":49}}
+
+data: [DONE]

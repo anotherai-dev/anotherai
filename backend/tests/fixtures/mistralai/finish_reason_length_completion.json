@@ -1,0 +1,18 @@
+{
+    "id": "0d6117ce216f497087eb951eb46d4dbb",
+    "object": "chat.completion",
+    "created": 1734933291,
+    "model": "mistral-small-latest",
+    "choices": [
+        {
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "tool_calls": null,
+                "content": "\"Best\" is often subjective and"
+            },
+            "finish_reason": "length"
+        }
+    ],
+    "usage": { "prompt_tokens": 11, "total_tokens": 19, "completion_tokens": 8 }
+}

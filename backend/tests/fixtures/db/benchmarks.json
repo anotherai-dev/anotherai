@@ -1,0 +1,186 @@
+[
+    {
+        "_id": {
+            "$oid": "66568f3c40d79b0d69ece4a8"
+        },
+        "task_id": "say-hello",
+        "task_schema_id": 1,
+        "tenant": "test_tenant",
+        "dataset_id": "inputs:all",
+        "status": "complete",
+        "by_input": [
+            {
+                "task_input_hash": "fc247167eb918778f0ee5ed1994e988e",
+                "task_input_preview": "language: \"Italian\"",
+                "by_group": [
+                    {
+                        "task_group_iteration": 4,
+                        "task_output_preview": "greeting: \"Ciao\"",
+                        "status": "complete",
+                        "cost_usd": 0.00546,
+                        "duration_seconds": 1.809853,
+                        "task_output_hash": "e0f9a0d31238225e9a53967b91a05f9c",
+                        "task_run_id": "68e8c2f4-187b-4909-b4d4-7a84f699d58c",
+                        "scores": [
+                            {
+                                "score": 1,
+                                "evaluator_name": "user"
+                            }
+                        ]
+                    },
+                    {
+                        "task_group_iteration": 10,
+                        "task_output_preview": "greeting: \"Ciao\"",
+                        "status": "complete",
+                        "cost_usd": 0.003864,
+                        "duration_seconds": 5.189238,
+                        "task_output_hash": "e0f9a0d31238225e9a53967b91a05f9c",
+                        "task_run_id": "41d03b06-f019-4a31-a226-2c72a0999dcb",
+                        "scores": [
+                            {
+                                "score": 1,
+                                "evaluator_name": "user"
+                            }
+                        ]
+                    }
+                ],
+                "example_id": "6639a2d4b1057aa2c44de73f"
+            },
+            {
+                "task_input_hash": "e06f353f441c661315dc55e0639d02d6",
+                "task_input_preview": "language: \"Français\"",
+                "by_group": [
+                    {
+                        "task_group_iteration": 4,
+                        "task_output_preview": "greeting: \"Bonjour\"",
+                        "status": "complete",
+                        "cost_usd": 0.005549999999999999,
+                        "duration_seconds": 2.36528,
+                        "task_output_hash": "18d335ae038903e3dfffa6708dc170d0",
+                        "task_run_id": "e205c6c9-d543-44a4-bf15-1f28b0cf7b37",
+                        "scores": [
+                            {
+                                "score": 1,
+                                "evaluator_name": "TaskEvaluator",
+                                "example_id": "6639a2d4b1057aa2c44de73f"
+                            }
+                        ]
+                    },
+                    {
+                        "task_group_iteration": 10,
+                        "task_output_preview": "greeting: \"Bonjour\"",
+                        "status": "complete",
+                        "cost_usd": 0.0012150000000000002,
+                        "duration_seconds": 2.131651,
+                        "task_output_hash": "18d335ae038903e3dfffa6708dc170d0",
+                        "task_run_id": "f995aa01-d64b-4768-9da8-428426106afb",
+                        "evaluating": [],
+                        "scores": [
+                            {
+                                "score": 1,
+                                "evaluator_name": "TaskEvaluator"
+                            }
+                        ]
+                    }
+                ],
+                "example_id": "6639a2d4b1057aa2c44de73f"
+            },
+            {
+                "task_input_hash": "ee26422708744c1091ce0b4c135e2c6f",
+                "task_input_preview": "language: \"German\"",
+                "by_group": [
+                    {
+                        "task_group_iteration": 4,
+                        "task_output_preview": "greeting: \"Hallo\"",
+                        "status": "complete",
+                        "cost_usd": 0.00546,
+                        "duration_seconds": 2.188423,
+                        "task_output_hash": "61253e84c34d94817e740923102cdbc3",
+                        "task_run_id": "48bb5d42-bfb1-4efe-9295-53c09f5bb606",
+                        "scores": [
+                            {
+                                "score": 1,
+                                "evaluator_name": "user",
+                                "example_id": "6639a2d4b1057aa2c44de73f"
+                            },
+                            {
+                                "score": 0,
+                                "evaluator_name": "TaskEvaluator"
+                            }
+                        ],
+                        "evaluating": []
+                    },
+                    {
+                        "task_group_iteration": 10,
+                        "task_output_preview": "greeting: \"Hello\"",
+                        "status": "complete",
+                        "cost_usd": 0.004659,
+                        "duration_seconds": 5.43615,
+                        "task_output_hash": "b27252d00e2ff65c249e6c3b8b79d528",
+                        "task_run_id": "9de0a379-7a36-4393-894f-82b3895c33d1",
+                        "scores": [
+                            {
+                                "score": 0,
+                                "evaluator_name": "TaskEvaluator"
+                            },
+                            {
+                                "score": 1,
+                                "evaluator_name": "user"
+                            }
+                        ]
+                    }
+                ],
+                "example_id": "6639a2d4b1057aa2c44de73f"
+            },
+            {
+                "task_input_hash": "398031505ad5dafcc771d6866dc3cdcf",
+                "task_input_preview": "language: \"French\"",
+                "by_group": [
+                    {
+                        "task_group_iteration": 4,
+                        "task_output_preview": "greeting: \"Bonjour\"",
+                        "status": "complete",
+                        "cost_usd": 0.00546,
+                        "duration_seconds": 3.735058,
+                        "task_output_hash": "18d335ae038903e3dfffa6708dc170d0",
+                        "task_run_id": "c383f249-b513-4827-8637-df7ba8227060"
+                    },
+                    {
+                        "task_group_iteration": 10,
+                        "task_output_preview": "greeting: \"Bonjour\"",
+                        "status": "complete",
+                        "cost_usd": 0.0011970000000000001,
+                        "duration_seconds": 1.907715,
+                        "task_output_hash": "18d335ae038903e3dfffa6708dc170d0",
+                        "task_run_id": "7a41e006-475c-4cc6-bc30-1d6e4a982fa9"
+                    }
+                ]
+            },
+            {
+                "task_input_hash": "9cddc3b29f036eb4a436a3fa732ba774",
+                "task_input_preview": "language: \"Pollish\"",
+                "example_id": "6657cfc36da403d58b765f08",
+                "by_group": [
+                    {
+                        "task_group_iteration": 4,
+                        "task_output_preview": "greeting: \"Cześć\"",
+                        "status": "complete",
+                        "cost_usd": 0.0063,
+                        "duration_seconds": 4.166914,
+                        "task_output_hash": "6ee70ccaba5d0f8d172ad1467ab94b8a",
+                        "task_run_id": "6c9c7507-1be1-43d2-93fa-5301c609ba5d"
+                    },
+                    {
+                        "task_group_iteration": 10,
+                        "task_output_preview": "greeting: \"I'm sorry, the language 'Pollish' is no",
+                        "status": "complete",
+                        "cost_usd": 0.004605,
+                        "duration_seconds": 5.888879,
+                        "task_output_hash": "abb9ea4cd7973e958ef5ebe24b663983",
+                        "task_run_id": "7fe6e4bc-8a1b-4bfe-a696-d383f3841227"
+                    }
+                ]
+            }
+        ]
+    }
+]

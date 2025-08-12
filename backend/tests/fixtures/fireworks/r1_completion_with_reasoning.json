@@ -1,0 +1,21 @@
+{
+    "id": "baebf613-78d3-4244-a1fd-57d3406da1d5",
+    "object": "chat.completion",
+    "created": 1738080396,
+    "model": "accounts/fireworks/models/deepseek-r1",
+    "choices": [
+        {
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": "<think>Okay, let's see. The user asked for a short story based on the fact that the sky is blue. \n</think>\n\n```json\n{\n  \"greeting\": \"The Azure Whisper\",\n  \"content\": \"On a cloudless morning, young Mira gazed upward, mesmerized by the endless blue canvas above. 'Why is the sky blue?' she asked her grandmother, who tended sunflowers nearby. Her grandmother smiled, recalling an old tale. 'Long ago, the sky was colorless. A lonely star wept tears of sapphire, staining the heavens to remind us of its sorrow. But over time, the stars found joy again—scattering laughter as sunlight through the blue. Now, the sky sings their story.' Mira squinted, imagining starry tears and shimmering light. From that day, the sky felt less like emptiness and more like a secret kept between the stars and her.\",\n  \"moral\": \"Even the simplest wonders hold stories waiting to be imagined.\"\n}\n```"
+            },
+            "finish_reason": "stop"
+        }
+    ],
+    "usage": {
+        "prompt_tokens": 19,
+        "total_tokens": 557,
+        "completion_tokens": 538
+    }
+}

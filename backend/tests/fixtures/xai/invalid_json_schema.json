@@ -1,0 +1,8 @@
+{
+    "error": {
+        "message": "Invalid schema for response_format 'extract_datetime_5c975cd6496463b327e1b11492c13029': In context=('properties', 'datetime'), 'format' is not permitted.",
+        "type": "invalid_request_error",
+        "param": "response_format",
+        "code": null
+    }
+}

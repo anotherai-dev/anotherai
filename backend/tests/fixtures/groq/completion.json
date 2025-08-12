@@ -1,0 +1,21 @@
+{
+  "id": "9f803991-fc1d-4e74-b3ca-deea5c3db972",
+  "object": "chat.completion",
+  "created": 1734335568,
+  "model": "accounts/fireworks/models/llama-v3p2-90b-vision-instruct",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "The meaning of life is 42"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 7001,
+    "total_tokens": 702,
+    "completion_tokens": 105
+  }
+}

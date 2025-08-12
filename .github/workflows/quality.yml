@@ -1,0 +1,44 @@
+name: Quality
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: read
+  issues: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      web: ${{ steps.filter.outputs.web }}
+    steps:
+      - uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            web:
+              - 'web/**'
+  backend:
+    needs: changes
+    uses: ./.github/workflows/.backend-quality.yml
+    secrets: inherit
+    with:
+      skip: ${{ needs.changes.outputs.backend == 'false' }}
+
+  web:
+    needs: changes
+    uses: ./.github/workflows/.web-quality.yml
+    with:
+      skip: ${{ needs.changes.outputs.web == 'false' }}
+
+  claude:
+    needs: backend
+    uses: ./.github/workflows/.claude-code-review.yml
+    secrets: inherit

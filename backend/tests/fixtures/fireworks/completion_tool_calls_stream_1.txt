@@ -1,0 +1,19 @@
+data: {"id":"b33463ff-c267-4d19-a72b-f724363511a4","object":"chat.completion.chunk","created":1740135925,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"role":"assistant"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b33463ff-c267-4d19-a72b-f724363511a4","object":"chat.completion.chunk","created":1740135925,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"call_CHdOqFrAgN1YpsG7UsYtSFHv","type":"function","function":{"name":"perplexity-sonar-pro"}}]},"finish_reason":null}],"usage":null}
+
+data: {"id":"b33463ff-c267-4d19-a72b-f724363511a4","object":"chat.completion.chunk","created":1740135925,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":null,"type":"function","function":{"arguments":" {\""}}]},"finish_reason":null}],"usage":null}
+
+data: {"id":"b33463ff-c267-4d19-a72b-f724363511a4","object":"chat.completion.chunk","created":1740135925,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":null,"type":"function","function":{"arguments":"query\":"}}]},"finish_reason":null}],"usage":null}
+
+data: {"id":"b33463ff-c267-4d19-a72b-f724363511a4","object":"chat.completion.chunk","created":1740135925,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":null,"type":"function","function":{"arguments":" \"Jazz vs Lakers score"}}]},"finish_reason":null}],"usage":null}
+
+data: {"id":"b33463ff-c267-4d19-a72b-f724363511a4","object":"chat.completion.chunk","created":1740135925,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":null,"type":"function","function":{"arguments":" Feb "}}]},"finish_reason":null}],"usage":null}
+
+data: {"id":"b33463ff-c267-4d19-a72b-f724363511a4","object":"chat.completion.chunk","created":1740135925,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":null,"type":"function","function":{"arguments":"12th 202"}}]},"finish_reason":null}],"usage":null}
+
+data: {"id":"b33463ff-c267-4d19-a72b-f724363511a4","object":"chat.completion.chunk","created":1740135925,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":null,"type":"function","function":{"arguments":"5\"}"}}]},"finish_reason":null}],"usage":null}
+
+data: {"id":"b33463ff-c267-4d19-a72b-f724363511a4","object":"chat.completion.chunk","created":1740135925,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":437,"total_tokens":466,"completion_tokens":29}}
+
+data: [DONE]

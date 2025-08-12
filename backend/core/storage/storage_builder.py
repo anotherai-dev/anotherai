@@ -1,0 +1,29 @@
+from typing import Protocol
+
+from core.storage.agent_storage import AgentStorage
+from core.storage.annotation_storage import AnnotationStorage
+from core.storage.completion_storage import CompletionStorage
+from core.storage.experiment_storage import ExperimentStorage
+from core.storage.file_storage import FileStorage
+from core.storage.tenant_storage import TenantStorage
+from core.storage.view_storage import ViewStorage
+
+
+class StorageBuilder(Protocol):
+    def tenants(self, tenant_uid: int) -> TenantStorage: ...
+
+    def completions(self, tenant_uid: int) -> CompletionStorage: ...
+
+    def agents(self, tenant_uid: int) -> AgentStorage: ...
+
+    def files(self, tenant_uid: int) -> FileStorage: ...
+
+    def experiments(self, tenant_uid: int) -> ExperimentStorage: ...
+
+    def annotations(self, tenant_uid: int) -> AnnotationStorage: ...
+
+    def views(self, tenant_uid: int) -> ViewStorage: ...
+
+    async def close(self): ...
+
+    async def migrate(self): ...

@@ -1,0 +1,13 @@
+from typing import Protocol
+
+from core.domain.agent import Agent
+
+
+class AgentStorage(Protocol):
+    async def store_agent(self, agent: Agent) -> None: ...
+
+    async def get_agent(self, agent_id: str) -> Agent: ...
+
+    async def agent_by_uid(self, agent_uid: int) -> Agent: ...
+
+    async def list_agents(self) -> list[Agent]: ...

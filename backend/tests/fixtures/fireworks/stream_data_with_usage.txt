@@ -1,0 +1,10 @@
+data: {"id":"39c134cd-a781-4843-bdd6-e3db43259273","object":"chat.completion.chunk","created":1734400681,"model":"accounts/fireworks/models/llama-v3p1-8b-instruct","choices":[{"index":0,"delta":{"role":"assistant"},"finish_reason":null}],"usage":null}
+
+data: {"id":"39c134cd-a781-4843-bdd6-e3db43259273","object":"chat.completion.chunk","created":1734400681,"model":"accounts/fireworks/models/llama-v3p1-8b-instruct","choices":[{"index":0,"delta":{"content":"{\"foo"},"finish_reason":null}],"usage":null}
+
+data: {"id":"39c134cd-a781-4843-bdd6-e3db43259273","object":"chat.completion.chunk","created":1734400681,"model":"accounts/fireworks/models/llama-v3p1-8b-instruct","choices":[{"index":0,"delta":{"content":"\" : \"bar\"}"},"finish_reason":null}],"usage":null}
+
+data: {"id":"39c134cd-a781-4843-bdd6-e3db43259273","object":"chat.completion.chunk","created":1734400681,"model":"accounts/fireworks/models/llama-v3p1-8b-instruct","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":24,"total_tokens":32,"completion_tokens":8}}
+
+data: [DONE]
+

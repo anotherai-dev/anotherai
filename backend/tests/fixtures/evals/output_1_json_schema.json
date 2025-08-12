@@ -1,0 +1,261 @@
+{
+    "$defs": {
+        "BillingPeriod": {
+            "properties": {
+                "start_date": {
+                    "title": "Start Date",
+                    "type": "string"
+                },
+                "end_date": {
+                    "title": "End Date",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "start_date",
+                "end_date"
+            ],
+            "title": "BillingPeriod",
+            "type": "object"
+        },
+        "Issuer": {
+            "properties": {
+                "identifier": {
+                    "title": "Identifier",
+                    "type": "integer"
+                },
+                "name": {
+                    "title": "Name",
+                    "type": "string"
+                },
+                "identifier_type": {
+                    "title": "Identifier Type",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "identifier",
+                "name",
+                "identifier_type"
+            ],
+            "title": "Issuer",
+            "type": "object"
+        },
+        "LineItem": {
+            "properties": {
+                "line_item_sequence": {
+                    "title": "Line Item Sequence",
+                    "type": "integer"
+                },
+                "line_item_system": {
+                    "title": "Line Item System",
+                    "type": "string"
+                },
+                "line_item_code": {
+                    "title": "Line Item Code",
+                    "type": "string"
+                },
+                "line_item_service_description": {
+                    "title": "Line Item Service Description",
+                    "type": "string"
+                },
+                "line_item_occurrence_date": {
+                    "title": "Line Item Occurrence Date",
+                    "type": "string"
+                },
+                "line_item_type": {
+                    "title": "Line Item Type",
+                    "type": "string"
+                },
+                "line_item_amount": {
+                    "title": "Line Item Amount",
+                    "type": "number"
+                }
+            },
+            "required": [
+                "line_item_sequence",
+                "line_item_system",
+                "line_item_code",
+                "line_item_service_description",
+                "line_item_occurrence_date",
+                "line_item_type",
+                "line_item_amount"
+            ],
+            "title": "LineItem",
+            "type": "object"
+        },
+        "Practitioner": {
+            "properties": {
+                "name": {
+                    "title": "Name",
+                    "type": "string"
+                },
+                "identifier": {
+                    "title": "Identifier",
+                    "type": "integer"
+                },
+                "identifier_type": {
+                    "title": "Identifier Type",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "name",
+                "identifier",
+                "identifier_type"
+            ],
+            "title": "Practitioner",
+            "type": "object"
+        },
+        "Recipient": {
+            "properties": {
+                "identifier": {
+                    "title": "Identifier",
+                    "type": "integer"
+                },
+                "name": {
+                    "title": "Name",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "identifier",
+                "name"
+            ],
+            "title": "Recipient",
+            "type": "object"
+        },
+        "Subject": {
+            "properties": {
+                "invoice_summary": {
+                    "title": "Invoice Summary",
+                    "type": "string"
+                },
+                "invoice_title": {
+                    "title": "Invoice Title",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "invoice_summary",
+                "invoice_title"
+            ],
+            "title": "Subject",
+            "type": "object"
+        }
+    },
+    "properties": {
+        "issuer": {
+            "allOf": [
+                {
+                    "$ref": "#/$defs/Issuer"
+                }
+            ],
+            "description": "Issuer details"
+        },
+        "recipient": {
+            "allOf": [
+                {
+                    "$ref": "#/$defs/Recipient"
+                }
+            ],
+            "description": "Recipient details"
+        },
+        "creation_date": {
+            "description": "Creation date",
+            "title": "Creation Date",
+            "type": "string"
+        },
+        "status": {
+            "description": "Status",
+            "title": "Status",
+            "type": "string"
+        },
+        "isPaid": {
+            "description": "Is paid",
+            "title": "Ispaid",
+            "type": "boolean"
+        },
+        "subject": {
+            "allOf": [
+                {
+                    "$ref": "#/$defs/Subject"
+                }
+            ],
+            "description": "Subject details"
+        },
+        "billing_period": {
+            "allOf": [
+                {
+                    "$ref": "#/$defs/BillingPeriod"
+                }
+            ],
+            "description": "Billing period details"
+        },
+        "invoice_identifier": {
+            "description": "Invoice identifier",
+            "title": "Invoice Identifier",
+            "type": "string"
+        },
+        "line_items": {
+            "description": "List of line items",
+            "items": {
+                "$ref": "#/$defs/LineItem"
+            },
+            "title": "Line Items",
+            "type": "array"
+        },
+        "total_net_amount": {
+            "description": "Total net amount",
+            "title": "Total Net Amount",
+            "type": "number"
+        },
+        "total_gross_amount": {
+            "description": "Total gross amount",
+            "title": "Total Gross Amount",
+            "type": "number"
+        },
+        "payment_notes": {
+            "description": "Payment notes",
+            "title": "Payment Notes",
+            "type": "string"
+        },
+        "payment_terms": {
+            "description": "Payment terms",
+            "title": "Payment Terms",
+            "type": "string"
+        },
+        "practitioner": {
+            "allOf": [
+                {
+                    "$ref": "#/$defs/Practitioner"
+                }
+            ],
+            "description": "Practitioner details"
+        },
+        "service_date": {
+            "description": "Service date",
+            "title": "Service Date",
+            "type": "string"
+        }
+    },
+    "required": [
+        "issuer",
+        "recipient",
+        "creation_date",
+        "status",
+        "isPaid",
+        "subject",
+        "billing_period",
+        "invoice_identifier",
+        "line_items",
+        "total_net_amount",
+        "total_gross_amount",
+        "payment_notes",
+        "payment_terms",
+        "practitioner",
+        "service_date"
+    ],
+    "title": "TestTaskOutput",
+    "type": "object"
+}

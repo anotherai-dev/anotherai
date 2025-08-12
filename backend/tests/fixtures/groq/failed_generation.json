@@ -1,0 +1,8 @@
+{
+  "error": {
+    "message": "Failed to generate JSON. Please adjust your prompt. See 'failed_generation' for more details.",
+    "type": "invalid_request_error",
+    "code": "json_validate_failed",
+    "failed_generation": "{\n  somejapanese char here分類します。\n\n\"category\": \"REQUEST_FOR_INFORMATION\",\n\"provider_names\": [],\n\"enrollment_ids\": [],\n\"enrollment_states\": [],\n\"reply_by_date\": null,\n\"requested_information\": [\"OTHER\"],\n\"final_update_type\": null,\n\"effective_date\": null,\n\"explanation\": \"名は 'Encrypt: Response to LOI' で LOI（Letter of Intent）へのイルが含まれており、LOI への返リは REQUEST_FOR_INFORMATION です。\",\n\"insurance_company\": \"Whatever Health\"\n}"
+  }
+}

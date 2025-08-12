@@ -1,0 +1,21 @@
+{
+  "env": {},
+  "permissions": {
+    "allow": [
+      "mcp__anotherai"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/git-commit-ruff-check.py"
+          }
+        ]
+      }
+    ]
+  }
+}

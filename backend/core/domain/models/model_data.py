@@ -1,0 +1,416 @@
+from datetime import date
+from typing import Any, Literal, Self
+
+from pydantic import BaseModel, Field
+
+from core.domain.exceptions import ProviderDoesNotSupportModelError
+from core.domain.models import Model, Provider
+from core.domain.reasoning_effort import ReasoningEffort
+from core.domain.typology import IOTypology
+
+from ._sourced_base_model import SourcedBaseModel
+from .model_data_supports import ModelDataSupports
+from .model_provider_data import ModelProviderData
+
+# Weights were computed by o3 by comparing the median scores of models
+# on the different score datasets
+# https://chatgpt.com/share/681cb51b-6aa4-800e-b966-b6b8a4e58021
+_quality_index_weights = {
+    "mmlu": 0.15,
+    "gpqa": 0.25,
+    "mmlu_pro": 0.25,
+    "gpqa_diamond": 0.35,
+}
+
+# TODO: add pricing tier to the model data ?
+type PricingTier = Literal["cheapest", "cheap", "medium", "expensive"]
+
+
+class QualityData(SourcedBaseModel):
+    mmlu: float | None = None
+    gpqa: float | None = None
+    mmlu_pro: float | None = None
+    gpqa_diamond: float | None = None
+    index: int | None = Field(
+        default=None,
+        description="A forced value for the quality index",
+    )
+
+    equivalent_to: tuple[Model, int] | None = Field(
+        default=None,
+        description="When data is not available for a model, we can use the quality index of an equivalent model",
+    )
+
+    # TODO: remove the default value
+    source: str = ""
+
+    def _quality_index_from_equivalent_model(self, mapping: dict[Model, Any]) -> int:
+        if not self.equivalent_to:
+            raise ValueError("Equivalent model is none")
+
+        model, offset = self.equivalent_to
+
+        raw_data = mapping[model]
+        if not isinstance(raw_data, ModelData):
+            raise ValueError(f"Equivalent model {model} is not a ModelData")
+        if raw_data.quality_data.equivalent_to is not None:
+            raise ValueError(
+                f"Equivalent model {model} has an equivalent model of its own {raw_data.quality_data.equivalent_to}",
+            )
+        return raw_data.quality_data.quality_index(mapping) + offset
+
+    def quality_index(self, mapping: dict[Model, Any]) -> int:
+        if self.index is not None:
+            return self.index
+        if self.equivalent_to:
+            return self._quality_index_from_equivalent_model(mapping)
+
+        # We do a weighed sum of the different scores
+        dumped = self.model_dump(exclude_none=True, exclude={"source"})
+
+        total_score: float = 0
+        for k, v in dumped.items():
+            total_score += v * _quality_index_weights[k]
+        return int((total_score / len(dumped)) * 40)
+
+
+class SpeedIndex(BaseModel):
+    value: float
+
+    @classmethod
+    def from_experiment(cls, output_tokens: int, duration_seconds: float) -> Self:
+        """
+        Calculate the speed index based on an experiment run,
+        Run: typically translating a long text and checking the output token size and the duration of the run.
+        """
+
+        if duration_seconds == 0:
+            raise ValueError("duration_seconds is 0")
+        return cls(value=output_tokens / duration_seconds)
+
+
+class SpeedData(BaseModel):
+    index: SpeedIndex | None = Field(
+        default=None,
+        description="Speed index where higher values indicate better performance",
+    )
+
+    equivalent_to: tuple[Model, int] | None = Field(
+        default=None,
+        description="When data is not available for a model, we can use the speed index of an equivalent model",
+    )
+
+    def _speed_index_from_equivalent_model(self, mapping: dict[Model, Any]) -> int:
+        if not self.equivalent_to:
+            raise ValueError("Equivalent model is none")
+
+        model, offset = self.equivalent_to
+
+        raw_data = mapping[model]
+        if not isinstance(raw_data, ModelData):
+            raise ValueError(f"Equivalent model {model} is not a ModelData")
+        if raw_data.speed_data.equivalent_to is not None:
+            raise ValueError(
+                f"Equivalent model {model} has an equivalent model of its own {raw_data.speed_data.equivalent_to}",
+            )
+        return raw_data.speed_data.speed_index(mapping) + offset
+
+    def speed_index(self, mapping: dict[Model, Any]) -> int:
+        if self.index is not None:
+            return int(self.index.value)
+        if self.equivalent_to:
+            return self._speed_index_from_equivalent_model(mapping)
+
+        # Default speed index if no data is available
+        # TODO: we should not have a default value here
+        return 500
+
+
+class MaxTokensData(SourcedBaseModel):
+    max_tokens: int = Field(
+        description="The maximum number of tokens (input + output) that can be handled by the model.",
+        gt=0,
+    )
+    max_output_tokens: int | None = Field(
+        default=None,
+        description="The maximum number of tokens that can be generated by the model.",
+        gt=0,
+    )
+
+
+class ModelFallback(BaseModel):
+    pricing_tier: PricingTier | None = Field(
+        default=None,
+        description="A pricing tier for the fallback, if provided",
+    )
+    content_moderation: Model = Field(
+        description="The model to use when the requested model raises a content moderation error",
+    )
+    structured_output: Model = Field(
+        description="The model to use when the requested model raises a structured output error",
+    )
+    rate_limit: Model = Field(
+        description="The model to use when the requested model raises a rate limit error",
+    )
+    context_exceeded: Model | None = Field(
+        description="The model to use when the requested model raises a context exceeded error",
+    )
+    unkwown_error: Model | None = Field(
+        default=None,
+        description="The model to use when the requested model raises an unknown error. By default, "
+        "it is the same as the model used for rate limit fallback",
+    )
+
+    @classmethod
+    def default(
+        cls,
+        pricing_tier: PricingTier,
+        content_moderation: Model | None = None,
+        structured_output: Model | None = None,
+        rate_limit: Model | None = None,
+        context_exceeded: Model | Literal["no"] | None = None,
+    ):
+        """The default fallback for models at the cheapest price point. OpenAI is a prime candidate for fallback
+        since it has large quotas, supports structured output and has reasonable content moderation"""
+        match pricing_tier:
+            case "cheapest":
+                content_moderation = content_moderation or Model.GEMINI_2_0_FLASH_LATEST
+                structured_output = structured_output or Model.GPT_41_NANO_LATEST
+                rate_limit = rate_limit or Model.GPT_41_NANO_LATEST
+                context_exceeded = context_exceeded or Model.GPT_41_NANO_LATEST
+            case "cheap":
+                content_moderation = content_moderation or Model.GEMINI_2_0_FLASH_LATEST
+                structured_output = structured_output or Model.GPT_41_MINI_LATEST
+                rate_limit = rate_limit or Model.GPT_41_MINI_LATEST
+                context_exceeded = context_exceeded or Model.GPT_41_MINI_LATEST
+            case "medium":
+                content_moderation = content_moderation or Model.GEMINI_1_5_PRO_002
+                structured_output = structured_output or Model.GPT_41_LATEST
+                rate_limit = rate_limit or Model.GPT_41_LATEST
+                context_exceeded = context_exceeded or Model.GPT_41_LATEST
+            case "expensive":
+                # TODO: Switch to 2_5 pro when it's out of preview ?
+                content_moderation = content_moderation or Model.O3_LATEST
+                structured_output = structured_output or Model.O3_LATEST
+                rate_limit = rate_limit or Model.O3_LATEST
+                context_exceeded = context_exceeded or Model.GEMINI_2_5_PRO
+
+        return cls(
+            pricing_tier=pricing_tier,
+            content_moderation=content_moderation,
+            structured_output=structured_output,
+            rate_limit=rate_limit,
+            context_exceeded=context_exceeded if context_exceeded != "no" else None,
+        )
+
+    @classmethod
+    def only_model(cls, model: Model, pricing_tier: PricingTier, context_exceeded: Model | Literal["no"] | None = None):
+        context_exceeded = context_exceeded or model
+        return cls(
+            pricing_tier=pricing_tier,
+            content_moderation=model,
+            structured_output=model,
+            rate_limit=model,
+            context_exceeded=context_exceeded if context_exceeded != "no" else None,
+        )
+
+
+class ModelReasoningBudget(BaseModel):
+    """
+    A reasoning effort to reasoning budget mapping
+    If the reasoning budget in the final model data is None, it means that the corresponding reasoning
+    effort is not supported.
+    For example, reasoning openai models do not support "none" reasoning effort or grok reasoning does not support
+    "medium" reasoning effort.
+
+    If a non supported reasoning effort is requested, the provider makes the decision to throw or fallback.
+    - If a reasoning effort is provided in the version but the provider requires a reasoning budget, the corresponding
+    value is used
+    - if a reasoning budget is provided but the provider requires a reasoning effort, the highest supported
+    reasoning effort that has a budget lower or equal to the provided budget is used. For example,
+    if low = 100 and medium = 200 and the provided budget is 150, the "low" reasoning effort is used.
+
+    For example, if the model data has a "low" reasoning budget, but the provider requires a reasoning effort,
+    the "low" reasoning effort is used.
+
+    If the model data has a "medium" reasoning budget, but the provider requires a reasoning effort, the "medium"
+    reasoning effort is used.
+    """
+
+    # There is some magic happening at build time here to fill missing unset values
+    # explicitly if needed.
+    disabled: Literal[0] | None = Field(
+        description="If 0, the model supports reasoning effort 'none'",
+        default=None,
+    )
+    # Defaults are not validated so we can set to -1 to indicate that the reasoning effort is unset before build time
+    low: int | None = Field(gt=0, default=-1)  # Default: 20% of the max reasoning budget
+    medium: int | None = Field(gt=0, default=-1)  # Default: 50% of the max reasoning budget
+    high: int | None = Field(gt=0, default=-1)  # Default: 80% of the max reasoning budget
+
+    min: int = Field(
+        description="The minimum number of tokens that can be used for reasoning for the model while reasoning "
+        "is enabled. Note that it should not be 0 since it would disable reasoning.",
+        gt=0,
+        default=-1,  # -1 default value is overriden at build time. Pydantic does not validate defaults so it's ok here
+        # Defaults to the "low" reasoning effort if not set
+    )
+    max: int = Field(
+        description="The maximum number of tokens that can be used for reasoning for the model.",
+        gt=0,
+        default=-1,  # -1 default value is overriden at build time. Pydantic does not validate defaults so it's ok here
+    )
+
+    def __getitem__(self, key: ReasoningEffort) -> int | None:
+        return getattr(self, key)
+
+    def corresponding_effort(self, budget: int) -> ReasoningEffort | None:
+        highest_matching_effort: ReasoningEffort | None = None
+        if budget == 0 and self.disabled is not None:
+            return ReasoningEffort.DISABLED
+
+        for effort in list(ReasoningEffort)[1:]:
+            value = self[effort]
+            if value is None:
+                continue
+            if value > budget and highest_matching_effort:
+                return highest_matching_effort
+            highest_matching_effort = effort
+
+        return highest_matching_effort
+
+    def corresponding_budget(self, effort: ReasoningEffort) -> int | None:
+        return getattr(self, effort, None)
+
+
+class ModelData(ModelDataSupports):
+    display_name: str = Field(description="The display name of the model, that will be used in the UIs, etc.")
+    icon_url: str = Field(description="The icon url of the model")
+
+    max_tokens_data: MaxTokensData
+
+    latest_model: Model | None = Field(
+        default=None,
+        description="The latest model for the family",
+    )
+
+    is_default: bool = Field(
+        default=False,
+        description="If true, the model will be used as default model.",
+    )
+
+    release_date: date = Field(description="The date the model was released")
+
+    quality_data: QualityData = Field(
+        description="The quality data of the model which allows computing the quality index",
+    )
+
+    speed_data: SpeedData = Field(
+        description="The speed data of the model which allows computing the speed index",
+    )
+
+    provider_name: str = Field(
+        description="The name of the provider for the model",
+    )
+
+    reasoning: ModelReasoningBudget | None = Field(
+        description="Reasoning configuration for the model. None if the model does not support reasoning.",
+        default=None,
+    )
+
+    aliases: list[str] | None = None
+    fallback: ModelFallback | None = Field(
+        description="Automatic fallback configuration. If None, the model fallback is disabled",
+    )
+
+    @property
+    def modes(self) -> list[str]:
+        out: list[str] = []
+        if self.supports_json_mode:
+            out.append("text")
+
+        if self.supports_input_image:
+            out.append("images")
+
+        if self.supports_input_audio:
+            out.append("audio")
+        return out
+
+
+class FinalModelData(ModelData):
+    model: Model
+
+    # TODO: this should be a dict since it's ordered
+    providers: list[tuple[Provider, ModelProviderData]] = Field(
+        description="The provider data for the model. Extracted from the model provider data list",
+    )
+
+    quality_index: int
+
+    speed_index: int
+
+    def supported_by_provider(self, provider: Provider) -> bool:
+        return any(p == provider for p, _ in self.providers)
+
+    def provider_data(self, provider: Provider) -> ModelProviderData:
+        for p, provider_data in self.providers:
+            if p == provider:
+                return provider_data
+        raise ProviderDoesNotSupportModelError(self.model, provider)
+
+    def is_not_supported_reason(  # noqa: C901
+        self,
+        io_typology: IOTypology,
+    ) -> str | None:
+        """Returns the reason why the model is not supported for the given task typology or
+        None if the task typology is supported"""
+
+        # Fireworks supports document inlining which makes models without vision "support" vision
+        # TODO[models]: Having this explicit exception is not great. Instead we should
+        # make the model data represent what WorkflowAI support instead of the model card
+        supports_inlining = any(provider == Provider.FIREWORKS for provider, _ in self.providers)
+
+        if self.supports_audio_only and not io_typology.input.has_audio:
+            return f"{self.display_name} does not support non-audio inputs"
+        if io_typology.input.has_image and not self.supports_input_image:
+            if supports_inlining:
+                return None
+            return f"{self.display_name} does not support input images"
+        if io_typology.input.has_audio and not self.supports_input_audio:
+            return f"{self.display_name} does not support input audio"
+        if io_typology.input.has_pdf and (not self.supports_input_pdf and not self.supports_input_image):
+            if supports_inlining:
+                return None
+            return f"{self.display_name} does not support input pdf"
+
+        if io_typology.output.has_image and not self.supports_output_image:
+            return f"{self.display_name} does not support output images"
+        # Right now we have no model supporting output audio or PDF but that could change in the future
+        if io_typology.output.has_audio:
+            return f"{self.display_name} does not support output audio"
+        if io_typology.output.has_pdf:
+            return f"{self.display_name} does not support output pdf"
+
+        if io_typology.output.has_text and not self.supports_output_text:
+            return f"{self.display_name} only supports data outputs"
+        return None
+
+
+class LatestModel(BaseModel):
+    # Used to map a latest model to a specific model
+    model: Model
+    display_name: str
+    is_default: bool = False
+    icon_url: str = ""  # Fixed at build time
+    aliases: list[str] | None = None
+
+
+class DeprecatedModel(BaseModel):
+    replacement_model: Model
+    aliases: list[str] | None = None
+    # We used to have different model ids per reasoning levels
+    # That's no longer the case but we need to allow converting an old model id to the corresponding reasoning level
+    reasoning_effort: ReasoningEffort | None = None
+
+
+type ModelDataMapping = dict[Model, FinalModelData | LatestModel | DeprecatedModel]

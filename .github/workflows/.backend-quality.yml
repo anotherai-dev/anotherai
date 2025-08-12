@@ -1,0 +1,127 @@
+name: Backend Quality
+on:
+  workflow_call:
+    inputs:
+      # Skipping needs to happen at the job level, otherwise
+      # Github will keep waiting for status checks
+      skip:
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  backend-quality:
+    if: inputs.skip != true
+    runs-on: ubuntu-latest
+    services:
+      psql:
+        image: postgres:17
+        env:
+          POSTGRES_USER: default
+          POSTGRES_PASSWORD: admin
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:6.0
+        ports:
+          - 6379:6379
+      azurite:
+        # Container used to check blob storage connection
+        image: mcr.microsoft.com/azure-storage/azurite
+        ports:
+          - 10000:10000
+          - 10001:10001
+          - 10002:10002
+      clickhouse:
+        image: clickhouse/clickhouse-server:latest
+        ports:
+          - 8123:8123
+          - 9000:9000
+        env:
+          CLICKHOUSE_DB: db_test
+          CLICKHOUSE_PASSWORD: admin
+          CLICKHOUSE_USER: default
+          CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    # No need to wait for mongo to be ready here
+    # It will likely be ready by the time we run tests
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "pyproject.toml"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install the project
+        run: uv sync --locked --all-extras --dev
+
+      - name: Ruff
+        run: uv run ruff check --output-format=github backend
+
+      - name: Pyright
+        run: uv run pyright backend
+
+      # Run all tests in the app directories
+      - name: Run Unit Tests
+        run: uv run pytest backend -W ignore::pydantic.warnings.PydanticDeprecatedSince20 -vv --junitxml=junit/test-results.xml --ignore=backend/tests -m "not poppler and not ffmpeg"
+  backend-components:
+    if: inputs.skip != true
+    runs-on: ubuntu-latest
+    services:
+      psql:
+        image: postgres:17
+        env:
+          POSTGRES_USER: default
+          POSTGRES_PASSWORD: admin
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:6.0
+        ports:
+          - 6379:6379
+      azurite:
+        # Container used to check blob storage connection
+        image: mcr.microsoft.com/azure-storage/azurite
+        ports:
+          - 10000:10000
+          - 10001:10001
+          - 10002:10002
+      clickhouse:
+        image: clickhouse/clickhouse-server:latest
+        ports:
+          - 8123:8123
+          - 9000:9000
+        env:
+          CLICKHOUSE_DB: db_test
+          CLICKHOUSE_PASSWORD: admin
+          CLICKHOUSE_USER: default
+          CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    # No need to wait for mongo to be ready here
+    # It will likely be ready by the time we run tests
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "pyproject.toml"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install the project
+        run: uv sync --locked --all-extras --dev
+
+      # Run all tests in the app directories
+      - name: Run Components Tests
+        run: uv run pytest backend/tests/components -W ignore::pydantic.warnings.PydanticDeprecatedSince20 -vv --junitxml=junit/test-results.xml -m "not poppler and not ffmpeg"

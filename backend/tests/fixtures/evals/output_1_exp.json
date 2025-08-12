@@ -1,0 +1,71 @@
+{
+    "issuer": {
+        "identifier": 618000030,
+        "name": "Nina J. Cox, O.D., PC",
+        "identifier_type": "TPA"
+    },
+    "recipient": {
+        "identifier": "123942",
+        "name": "Claudia A. Zehentmayr"
+    },
+    "creation_date": "2022-10-13",
+    "status": "ISSUED",
+    "isPaid": true,
+    "subject": {
+        "invoice_summary": "New Patient Exam and Refraction",
+        "invoice_title": "Invoice for New Patient Exam"
+    },
+    "billing_period": {
+        "start_date": "2022-09-12",
+        "end_date": "2022-09-12"
+    },
+    "invoice_identifier": "89292",
+    "line_items": [
+        {
+            "line_item_sequence": 1,
+            "line_item_system": "CPT",
+            "line_item_code": "92004",
+            "line_item_service_description": "New Patient Exam",
+            "line_item_occurrence_date": "2022-09-12",
+            "line_item_type": "BASE",
+            "line_item_amount": 170
+        },
+        {
+            "line_item_sequence": 2,
+            "line_item_system": "CPT",
+            "line_item_code": "92015",
+            "line_item_service_description": "Refraction",
+            "line_item_occurrence_date": "2022-09-12",
+            "line_item_type": "BASE",
+            "line_item_amount": 35
+        },
+        {
+            "line_item_sequence": 3,
+            "line_item_system": "CPT",
+            "line_item_code": "92004",
+            "line_item_service_description": "Copay",
+            "line_item_occurrence_date": "2022-09-12",
+            "line_item_type": "DISCOUNT",
+            "line_item_amount": -170
+        },
+        {
+            "line_item_sequence": 4,
+            "line_item_system": "CPT",
+            "line_item_code": "92015",
+            "line_item_service_description": "Copay",
+            "line_item_occurrence_date": "2022-09-12",
+            "line_item_type": "DISCOUNT",
+            "line_item_amount": -35
+        }
+    ],
+    "total_net_amount": 20,
+    "total_gross_amount": 205,
+    "payment_notes": "Payment applied by Visa at Nina J. Cox, O.D., PC",
+    "payment_terms": "No payment necessary",
+    "practitioner": {
+        "name": "Nina J. Cox",
+        "identifier": 1093717936,
+        "identifier_type": "NPI"
+    },
+    "service_date": "2022-09-12"
+}

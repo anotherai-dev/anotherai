@@ -1,0 +1,12 @@
+data: {"id":"79c93753-6457-9715-a704-f56c9ac37f35","object":"chat.completion.chunk","created":1734935795,"model":"accounts/fireworks/models/llama-v3p2-90b-vision-instruct","choices":[{"index":0,"delta":{"role":"assistant"},"finish_reason":null}],"usage":null}
+
+data: {"id":"79c93753-6457-9715-a704-f56c9ac37f35","object":"chat.completion.chunk","created":1734935795,"model":"accounts/fireworks/models/llama-v3p2-90b-vision-instruct","choices":[{"index":0,"delta":{"content":"{\"ex"},"finish_reason":null}],"usage":null}
+
+data: {"id":"79c93753-6457-9715-a704-f56c9ac37f35","object":"chat.completion.chunk","created":1734935795,"model":"accounts/fireworks/models/llama-v3p2-90b-vision-instruct","choices":[{"index":0,"delta":{"content":"planation\": \"I"},"finish_reason":null}],"usage":null}
+
+data: {"id":"79c93753-6457-9715-a704-f56c9ac37f35","object":"chat.completion.chunk","created":1734935795,"model":"accounts/fireworks/models/llama-v3p2-90b-vision-instruct","choices":[{"index":0,"delta":{"content":"'m sorry, but"},"finish_reason":null}],"usage":null}
+
+data: {"id":"79c93753-6457-9715-a704-f56c9ac37f35","object":"chat.completion.chunk","created":1734935795,"model":"accounts/fireworks/models/llama-v3p2-90b-vision-instruct","choices":[{"index":0,"delta":{},"finish_reason":"length"}],"usage":{"prompt_tokens":7001,"total_tokens":607,"completion_tokens":10}}
+
+data: [DONE]
+

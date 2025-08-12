@@ -1,0 +1,28 @@
+{
+    "id": "chatcmpl-b8a4dfe5-d83c-4fbe-a62c-9682df8e40dd",
+    "object": "chat.completion",
+    "created": 1734848322,
+    "model": "llama3-8b-8192",
+    "choices": [
+        {
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": "Here is the generated summary:\n\n```json\n{\n  ***"
+            },
+            "logprobs": null,
+            "finish_reason": "length"
+        }
+    ],
+    "usage": {
+        "queue_time": 0.0004922579999999954,
+        "prompt_tokens": 417,
+        "prompt_time": 0.049937947,
+        "completion_tokens": 12,
+        "completion_time": 0.01,
+        "total_tokens": 429,
+        "total_time": 0.059937947
+    },
+    "system_fingerprint": "fp_a97cfe35ae",
+    "x_groq": { "id": "req_01jfpg96rcfzm9a9v02g5px5vh" }
+}

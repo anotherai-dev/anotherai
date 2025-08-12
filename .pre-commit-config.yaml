@@ -1,0 +1,22 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff
+        name: formatting and linting (ruff)
+        entry: uv run ruff check --fix --exit-non-zero-on-fix
+        language: system
+        pass_filenames: true
+        types: [file, python]
+      - id: pyright
+        name: pyright
+        entry: uv run pyright
+        language: system
+        files: ^backend/
+        pass_filenames: false
+        args: [backend]
+      - id: prettier
+        name: prettier
+        entry: npx prettier --check
+        language: system
+        pass_filenames: true
+        types_or: [javascript, jsx, ts, tsx]

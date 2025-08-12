@@ -1,0 +1,146 @@
+[
+  {
+    "id": "ann-001",
+    "created_at": "2025-01-20T10:30:00Z",
+    "updated_at": "2025-01-20T10:30:00Z",
+    "author_name": "data_analyst",
+    "target": {
+      "completion_id": "01933b7c-b2a1-7000-8000-000000000001",
+      "experiment_id": "exp-billing-analysis",
+      "key_path": "response.solution"
+    },
+    "context": {
+      "agent_id": "customer-support-agent",
+      "experiment_id": "exp-billing-analysis"
+    },
+    "text": "Excellent resolution - correctly identified billing error and initiated refund",
+    "metric": {
+      "name": "quality_score",
+      "value": 9.2
+    },
+    "metadata": {
+      "category": "billing",
+      "reviewer_confidence": "high"
+    }
+  },
+  {
+    "id": "ann-002",
+    "created_at": "2025-01-20T14:15:00Z",
+    "updated_at": "2025-01-20T14:15:00Z",
+    "author_name": "code_reviewer",
+    "target": {
+      "completion_id": "01933b7c-b2a1-7000-8000-000000000002",
+      "experiment_id": "exp-code-quality",
+      "key_path": "response.suggestions"
+    },
+    "context": {
+      "agent_id": "code-review-agent",
+      "experiment_id": "exp-code-quality"
+    },
+    "text": "Code review caught important security vulnerability",
+    "metric": {
+      "name": "security_impact",
+      "value": "high"
+    },
+    "metadata": {
+      "vulnerability_type": "sql_injection",
+      "severity": "critical"
+    }
+  },
+  {
+    "id": "ann-003",
+    "created_at": "2025-01-20T16:45:00Z",
+    "updated_at": "2025-01-20T16:45:00Z",
+    "author_name": "data_analyst",
+    "target": {
+      "completion_id": "01933b7c-b2a1-7000-8000-000000000003",
+      "experiment_id": "exp-data-analysis",
+      "key_path": "response.insights"
+    },
+    "context": {
+      "agent_id": "data-analysis-agent",
+      "experiment_id": "exp-data-analysis"
+    },
+    "text": "Data analysis identified key trends but missed seasonal patterns",
+    "metric": {
+      "name": "accuracy",
+      "value": 7.8
+    },
+    "metadata": {
+      "analysis_type": "trend_analysis",
+      "data_quality": "good"
+    }
+  },
+  {
+    "id": "ann-004",
+    "created_at": "2025-01-19T09:00:00Z",
+    "updated_at": "2025-01-19T09:00:00Z",
+    "author_name": "user_feedback_bot",
+    "target": {
+      "completion_id": "01933b7c-b2a1-7000-8000-000000000001",
+      "experiment_id": null,
+      "key_path": null
+    },
+    "context": {
+      "agent_id": "customer-support-agent",
+      "experiment_id": null
+    },
+    "text": "Customer reported satisfaction with billing resolution",
+    "metric": {
+      "name": "user_feedback",
+      "value": true
+    },
+    "metadata": {
+      "feedback_source": "survey",
+      "response_time": "24h"
+    }
+  },
+  {
+    "id": "ann-005",
+    "created_at": "2025-01-20T11:30:00Z",
+    "updated_at": "2025-01-20T11:30:00Z",
+    "author_name": "performance_monitor",
+    "target": {
+      "completion_id": "01933b7c-b2a1-7000-8000-000000000002",
+      "experiment_id": "exp-code-quality",
+      "key_path": "response.execution_time"
+    },
+    "context": {
+      "agent_id": "code-review-agent",
+      "experiment_id": "exp-code-quality"
+    },
+    "text": "Response time within acceptable range",
+    "metric": {
+      "name": "response_time_ms",
+      "value": 3400.0
+    },
+    "metadata": {
+      "threshold": "5000ms",
+      "performance_tier": "acceptable"
+    }
+  },
+  {
+    "id": "ann-006",
+    "created_at": "2025-01-20T18:00:00Z",
+    "updated_at": "2025-01-20T18:00:00Z",
+    "author_name": "quality_assurance",
+    "target": {
+      "completion_id": "01933b7c-b2a1-7000-8000-000000000003",
+      "experiment_id": "exp-data-analysis",
+      "key_path": "response.methodology"
+    },
+    "context": {
+      "agent_id": "data-analysis-agent",
+      "experiment_id": "exp-data-analysis"
+    },
+    "text": "Methodology is sound but could benefit from additional validation steps",
+    "metric": {
+      "name": "methodology_score",
+      "value": 8.1
+    },
+    "metadata": {
+      "review_type": "methodology",
+      "improvement_potential": "medium"
+    }
+  }
+]

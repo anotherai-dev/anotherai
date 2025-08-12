@@ -1,0 +1,26 @@
+{
+    "data": {
+        "admin_delete_enabled": true,
+        "created_at": 1719400194393,
+        "created_by": "user_2h5YYUW7eTZWWeodFd5ldQjRr1O",
+        "has_image": false,
+        "id": "org_2iPlfJ5X4LwiQybM9qeT00YPdBe",
+        "image_url": "https://img.clerk.com/eyJ0eXBlIjoiZGVmYXVsdCIsImlpZCI6Imluc18yZjFXNkthRDg4c3BNVE0za2hRaEMxczNtU0MiLCJyaWQiOiJvcmdfMmlQbGZKNVg0THdpUXliTTlxZVQwMFlQZEJlIiwiaW5pdGlhbHMiOiJUIn0",
+        "logo_url": null,
+        "max_allowed_memberships": 0,
+        "name": "test 18",
+        "object": "organization",
+        "private_metadata": {},
+        "public_metadata": {},
+        "slug": "test-21",
+        "updated_at": 1719866213329
+    },
+    "event_attributes": {
+        "http_request": {
+            "client_ip": "",
+            "user_agent": "clerk/clerk-sdk-go@v2.0.0"
+        }
+    },
+    "object": "event",
+    "type": "organization.updated"
+}

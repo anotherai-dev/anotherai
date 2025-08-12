@@ -1,0 +1,274 @@
+{
+    "SSEs": [
+        {
+            "type": "message_start",
+            "message": {
+                "id": "msg_016fq4wCXhoKQrnh4AFsx39Y",
+                "type": "message",
+                "role": "assistant",
+                "model": "claude-3-5-sonnet-20241022",
+                "content": [],
+                "stop_reason": null,
+                "stop_sequence": null,
+                "usage": {
+                    "input_tokens": 1191,
+                    "cache_creation_input_tokens": 0,
+                    "cache_read_input_tokens": 0,
+                    "output_tokens": 2
+                }
+            }
+        },
+        {
+            "type": "content_block_start",
+            "index": 0,
+            "content_block": {
+                "type": "text",
+                "text": ""
+            }
+        },
+        {
+            "type": "ping"
+        },
+        {
+            "type": "content_block_delta",
+            "index": 0,
+            "delta": {
+                "type": "text_delta",
+                "text": "\n\nNow"
+            }
+        },
+        {
+            "type": "content_block_delta",
+            "index": 0,
+            "delta": {
+                "type": "text_delta",
+                "text": " I'll get all the weather information"
+            }
+        },
+        {
+            "type": "content_block_delta",
+            "index": 0,
+            "delta": {
+                "type": "text_delta",
+                "text": " using the city code:"
+            }
+        },
+        {
+            "type": "content_block_stop",
+            "index": 0
+        },
+        {
+            "type": "content_block_start",
+            "index": 1,
+            "content_block": {
+                "type": "tool_use",
+                "id": "toolu_019eEEq7enPNzjU6z6X34y7i",
+                "name": "get_temperature",
+                "input": {}
+            }
+        },
+        {
+            "type": "content_block_delta",
+            "index": 1,
+            "delta": {
+                "type": "input_json_delta",
+                "partial_json": ""
+            }
+        },
+        {
+            "type": "content_block_delta",
+            "index": 1,
+            "delta": {
+                "type": "input_json_delta",
+                "partial_json": "{\""
+            }
+        },
+        {
+            "type": "content_block_delta",
+            "index": 1,
+            "delta": {
+                "type": "input_json_delta",
+                "partial_json": "city_code"
+            }
+        },
+        {
+            "type": "content_block_delta",
+            "index": 1,
+            "delta": {
+                "type": "input_json_delta",
+                "partial_json": "\": \"125321"
+            }
+        },
+        {
+            "type": "content_block_delta",
+            "index": 1,
+            "delta": {
+                "type": "input_json_delta",
+                "partial_json": "\"}"
+            }
+        },
+        {
+            "type": "content_block_stop",
+            "index": 1
+        },
+        {
+            "type": "content_block_start",
+            "index": 2,
+            "content_block": {
+                "type": "tool_use",
+                "id": "toolu_01UgGE25XyALN9fmi7QD3Q8u",
+                "name": "get_rain_probability",
+                "input": {}
+            }
+        },
+        {
+            "type": "content_block_delta",
+            "index": 2,
+            "delta": {
+                "type": "input_json_delta",
+                "partial_json": ""
+            }
+        },
+        {
+            "type": "content_block_delta",
+            "index": 2,
+            "delta": {
+                "type": "input_json_delta",
+                "partial_json": "{\"ci"
+            }
+        },
+        {
+            "type": "content_block_delta",
+            "index": 2,
+            "delta": {
+                "type": "input_json_delta",
+                "partial_json": "ty_code\": "
+            }
+        },
+        {
+            "type": "content_block_delta",
+            "index": 2,
+            "delta": {
+                "type": "input_json_delta",
+                "partial_json": "\"125321\"}"
+            }
+        },
+        {
+            "type": "content_block_stop",
+            "index": 2
+        },
+        {
+            "type": "content_block_start",
+            "index": 3,
+            "content_block": {
+                "type": "tool_use",
+                "id": "toolu_01PRcJww2rnhd3BPbVdbkuXG",
+                "name": "get_wind_speed",
+                "input": {}
+            }
+        },
+        {
+            "type": "content_block_delta",
+            "index": 3,
+            "delta": {
+                "type": "input_json_delta",
+                "partial_json": ""
+            }
+        },
+        {
+            "type": "content_block_delta",
+            "index": 3,
+            "delta": {
+                "type": "input_json_delta",
+                "partial_json": "{\"c"
+            }
+        },
+        {
+            "type": "content_block_delta",
+            "index": 3,
+            "delta": {
+                "type": "input_json_delta",
+                "partial_json": "ity_"
+            }
+        },
+        {
+            "type": "content_block_delta",
+            "index": 3,
+            "delta": {
+                "type": "input_json_delta",
+                "partial_json": "code\": "
+            }
+        },
+        {
+            "type": "content_block_delta",
+            "index": 3,
+            "delta": {
+                "type": "input_json_delta",
+                "partial_json": "\"125321\"}"
+            }
+        },
+        {
+            "type": "content_block_stop",
+            "index": 3
+        },
+        {
+            "type": "content_block_start",
+            "index": 4,
+            "content_block": {
+                "type": "tool_use",
+                "id": "toolu_01AS6J6V1Jp6awe6vh4zf4eJ",
+                "name": "get_weather_conditions",
+                "input": {}
+            }
+        },
+        {
+            "type": "content_block_delta",
+            "index": 4,
+            "delta": {
+                "type": "input_json_delta",
+                "partial_json": ""
+            }
+        },
+        {
+            "type": "content_block_delta",
+            "index": 4,
+            "delta": {
+                "type": "input_json_delta",
+                "partial_json": "{\"city_code\""
+            }
+        },
+        {
+            "type": "content_block_delta",
+            "index": 4,
+            "delta": {
+                "type": "input_json_delta",
+                "partial_json": ": \"1"
+            }
+        },
+        {
+            "type": "content_block_delta",
+            "index": 4,
+            "delta": {
+                "type": "input_json_delta",
+                "partial_json": "25321\"}"
+            }
+        },
+        {
+            "type": "content_block_stop",
+            "index": 4
+        },
+        {
+            "type": "message_delta",
+            "delta": {
+                "stop_reason": "tool_use",
+                "stop_sequence": null
+            },
+            "usage": {
+                "output_tokens": 194
+            }
+        },
+        {
+            "type": "message_stop"
+        }
+    ]
+}

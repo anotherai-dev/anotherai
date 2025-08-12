@@ -1,0 +1,601 @@
+{
+    "summary": {
+      "id": "01JMDK9XYNY6RXSED6SDWW50WY",
+      "name": "OpenAI",
+      "subpath": "openai-1",
+      "support_label": "Report a problem",
+      "public_url": "https://status.openai.com/",
+      "logo_url": "https://storage.googleapis.com/incident-io-status-page-logos/01H537TKYPX5W42WRCKR1AGPFT/openai-1/xrs545k8.png",
+      "favicon_url": "https://storage.googleapis.com/incident-io-status-page-logos/01H537TKYPX5W42WRCKR1AGPFT/openai-1/v0bc3jd3.png",
+      "components": [
+        {
+          "id": "01JMXBRMFESJCBGJR10PDD3WCQ",
+          "name": "Files",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JP8CD9JR3HR6Y7G4Q75N4DVW",
+          "name": "Responses",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMDK9XYN8Z6K633X01G7WFD9",
+          "name": "Labs",
+          "description": "https://labs.openai.com",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMXBRMFEPDPH0F2A94WGEZP4",
+          "name": "Assistants",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMXBRMFEQW613TFE89F45035",
+          "name": "Realtime",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMXBRMFE0V9J9X2HY3SKX399",
+          "name": "Completions (legacy)",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMXBRMFE5ESNNV8JDHVCGSRD",
+          "name": "Batch",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMXBRMFE4MAP2BHSJNZ787WX",
+          "name": "Images",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMXBNJXGQ7D3666XG5F9CA23",
+          "name": "Mobile - Android",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMXBRMFE6N2NNT7DG6XZQ6PW",
+          "name": "Chat",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMXBNJXGRPKRQDYMKVYXDYHX",
+          "name": "Dall-E",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMXBNJXG5VWB72T922RQE6NR",
+          "name": "Memory",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JNKS9D9S72PMP1938PVFFQN4",
+          "name": "Compliance",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMXBRMFEMZK0HPK19RYET250",
+          "name": "Fine-tuning",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMXBRMFE796MJ8H81EGWA46P",
+          "name": "Uploads",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMXBNJXG0SGB04EF3FT2KMAC",
+          "name": "Single Sign-On",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMXBNJXGKKP51D4DEJ2HZJ8Q",
+          "name": "Search",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMXCAX0Q6C4KFTHY65EP0ZB2",
+          "name": "Feed",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMXCAX0QM438N5CDG2RMJ07X",
+          "name": "Video viewing",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMXCAX0Q10KMN6TADJHQNBSJ",
+          "name": "Login",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMXCAX0QN2ZHVMS54EEN1HXB",
+          "name": "Video generation",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JQ7EJWA29C5X2B3QW8P9BEFF",
+          "name": "Image Generation",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMDK9XYNGWKNFAQ12VC4SPQH",
+          "name": "Playground",
+          "description": "The OpenAI Playground at platform.openai.com",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMXBRMFEKVBWKK82B44QFMCE",
+          "name": "Audio",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMXBRMFEV0AJ0VVS68N9CD6R",
+          "name": "Embeddings",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMXBNJXG1S2D9V65P1ZZTD94",
+          "name": "Login",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMXBNJXGV1T5GT2M9XA83XNG",
+          "name": "Web",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMXBNJXGJ6C964H647A5DMX0",
+          "name": "GPT vision",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMXBNJXGGT5SR5DB9J7GYY48",
+          "name": "Voice mode",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMXBNJXGEJAHFSH95JQJ7HYH",
+          "name": "Mobile - iOS",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMXBNJXGRGNZZYDTSW4W0RP6",
+          "name": "WhatsApp",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMXBNJXGQ9MXPY3VGHKFDRJ6",
+          "name": "Context connectors",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JQ7EKW990MSPSWVXC7VPV2ZJ",
+          "name": "Image Generation",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMXBNJXG5HHAKA2FAFS7BXSM",
+          "name": "1-800-CHAT-GPT",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMXBNJXG1YMQPPCPCQX3MPA2",
+          "name": "File uploads",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMXBNJXG2C7G96DHRZ6P2MWD",
+          "name": "Advanced Data Analysis",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        },
+        {
+          "id": "01JMXBRMFEVZ7E0X9GD9FWR9WX",
+          "name": "Moderations",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY"
+        }
+      ],
+      "subscriptions_disabled": false,
+      "display_uptime_mode": "chart_and_percentage",
+      "allow_search_engine_indexing": true,
+      "affected_components": [
+        {
+          "component_id": "01JMXCAX0QN2ZHVMS54EEN1HXB",
+          "status": "degraded_performance"
+        }
+      ],
+      "ongoing_incidents": [
+        {
+          "updates": [
+            {
+              "published_at": "2025-04-08T17:48:00.517Z",
+              "id": "01JRB888M6PD0234TWT53M9G46",
+              "message": {
+                "type": "doc",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "New users may experience temporary delays in video generation capabilities. We are applying the mitigation and are monitoring the recovery."
+                      }
+                    ]
+                  }
+                ]
+              },
+              "message_string": "New users may experience temporary delays in video generation capabilities. We are applying the mitigation and are monitoring the recovery.",
+              "to_status": "monitoring",
+              "component_statuses": [
+                {
+                  "component_id": "01JMXCAX0QN2ZHVMS54EEN1HXB",
+                  "status": "degraded_performance"
+                }
+              ],
+              "automated_update": false
+            }
+          ],
+          "component_impacts": [
+            {
+              "start_at": "2025-04-01T06:30:00Z",
+              "id": "01JRB89XE4EQ1ZW0XMWXZEQQF8",
+              "component_id": "01JMXCAX0QN2ZHVMS54EEN1HXB",
+              "status_page_incident_id": "01JRB888M6TJVDDKGCA1YZ3ZHT",
+              "status": "degraded_performance"
+            }
+          ],
+          "status_summaries": [
+            {
+              "start_at": "2025-04-01T06:30:00Z",
+              "end_at": "2025-04-08T17:48:00.517Z",
+              "worst_component_status": "degraded_performance"
+            },
+            {
+              "start_at": "2025-04-08T17:48:00.517Z",
+              "worst_component_status": "degraded_performance"
+            }
+          ],
+          "published_at": "2025-04-08T17:48:00.517Z",
+          "id": "01JRB888M6TJVDDKGCA1YZ3ZHT",
+          "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY",
+          "name": "New users may experience temporary delays in video generation capabilities",
+          "status": "monitoring",
+          "affected_components": [
+            {
+              "component_id": "01JMXCAX0QN2ZHVMS54EEN1HXB",
+              "status": "degraded_performance",
+              "current_status": "degraded_performance"
+            }
+          ],
+          "type": "incident"
+        }
+      ],
+      "scheduled_maintenances": [],
+      "structure": {
+        "id": "01JQ7EKW99BAGEA45JM9MQVH94",
+        "status_page_id": "01JMDK9XYNY6RXSED6SDWW50WY",
+        "items": [
+          {
+            "group": {
+              "id": "01JQ7EKWQ2Q810TGEQ7A6V44HC",
+              "name": "APIs",
+              "description": "All OpenAI API services at api.openai.com",
+              "display_aggregated_uptime": true,
+              "hidden": false,
+              "components": [
+                {
+                  "component_id": "01JMXBRMFE6N2NNT7DG6XZQ6PW",
+                  "display_uptime": true,
+                  "name": "Chat",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                },
+                {
+                  "component_id": "01JMXBRMFE0V9J9X2HY3SKX399",
+                  "display_uptime": true,
+                  "name": "Completions (legacy)",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                },
+                {
+                  "component_id": "01JNKS9D9S72PMP1938PVFFQN4",
+                  "display_uptime": true,
+                  "name": "Compliance",
+                  "hidden": false,
+                  "data_available_since": "2025-03-05T18:32:33.849Z"
+                },
+                {
+                  "component_id": "01JMXBRMFE4MAP2BHSJNZ787WX",
+                  "display_uptime": true,
+                  "name": "Images",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                },
+                {
+                  "component_id": "01JMXBRMFEV0AJ0VVS68N9CD6R",
+                  "display_uptime": true,
+                  "name": "Embeddings",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                },
+                {
+                  "component_id": "01JMXBRMFE5ESNNV8JDHVCGSRD",
+                  "display_uptime": true,
+                  "name": "Batch",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                },
+                {
+                  "component_id": "01JMXBRMFEMZK0HPK19RYET250",
+                  "display_uptime": true,
+                  "name": "Fine-tuning",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                },
+                {
+                  "component_id": "01JMXBRMFESJCBGJR10PDD3WCQ",
+                  "display_uptime": true,
+                  "name": "Files",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                },
+                {
+                  "component_id": "01JMXBRMFEPDPH0F2A94WGEZP4",
+                  "display_uptime": true,
+                  "name": "Assistants",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                },
+                {
+                  "component_id": "01JMXBRMFEKVBWKK82B44QFMCE",
+                  "display_uptime": true,
+                  "name": "Audio",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                },
+                {
+                  "component_id": "01JMXBRMFEQW613TFE89F45035",
+                  "display_uptime": true,
+                  "name": "Realtime",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                },
+                {
+                  "component_id": "01JP8CD9JR3HR6Y7G4Q75N4DVW",
+                  "display_uptime": true,
+                  "name": "Responses",
+                  "hidden": false,
+                  "data_available_since": "2025-03-12T23:30:00Z"
+                },
+                {
+                  "component_id": "01JMXBRMFEVZ7E0X9GD9FWR9WX",
+                  "display_uptime": true,
+                  "name": "Moderations",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                },
+                {
+                  "component_id": "01JMXBRMFE796MJ8H81EGWA46P",
+                  "display_uptime": true,
+                  "name": "Uploads",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                }
+              ]
+            }
+          },
+          {
+            "group": {
+              "id": "01JQ7EKWQ2Q810TGEQ7BM2RYBW",
+              "name": "ChatGPT",
+              "description": "https://chat.openai.com",
+              "display_aggregated_uptime": true,
+              "hidden": false,
+              "components": [
+                {
+                  "component_id": "01JMXBNJXG1S2D9V65P1ZZTD94",
+                  "display_uptime": true,
+                  "name": "Login",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                },
+                {
+                  "component_id": "01JMXBNJXGV1T5GT2M9XA83XNG",
+                  "display_uptime": true,
+                  "name": "Web",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                },
+                {
+                  "component_id": "01JMXBNJXGEJAHFSH95JQJ7HYH",
+                  "display_uptime": true,
+                  "name": "Mobile - iOS",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                },
+                {
+                  "component_id": "01JMXBNJXGQ7D3666XG5F9CA23",
+                  "display_uptime": true,
+                  "name": "Mobile - Android",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                },
+                {
+                  "component_id": "01JMXBNJXGRGNZZYDTSW4W0RP6",
+                  "display_uptime": true,
+                  "name": "WhatsApp",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                },
+                {
+                  "component_id": "01JMXBNJXG5HHAKA2FAFS7BXSM",
+                  "display_uptime": true,
+                  "name": "1-800-CHAT-GPT",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                },
+                {
+                  "component_id": "01JMXBNJXGKKP51D4DEJ2HZJ8Q",
+                  "display_uptime": true,
+                  "name": "Search",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                },
+                {
+                  "component_id": "01JMXBNJXG2C7G96DHRZ6P2MWD",
+                  "display_uptime": true,
+                  "name": "Advanced Data Analysis",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                },
+                {
+                  "component_id": "01JMXBNJXGQ9MXPY3VGHKFDRJ6",
+                  "display_uptime": true,
+                  "name": "Context connectors",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                },
+                {
+                  "component_id": "01JMXBNJXGRPKRQDYMKVYXDYHX",
+                  "display_uptime": true,
+                  "name": "Dall-E",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                },
+                {
+                  "component_id": "01JMXBNJXG1YMQPPCPCQX3MPA2",
+                  "display_uptime": true,
+                  "name": "File uploads",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                },
+                {
+                  "component_id": "01JMXBNJXGJ6C964H647A5DMX0",
+                  "display_uptime": true,
+                  "name": "GPT vision",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                },
+                {
+                  "component_id": "01JMXBNJXGGT5SR5DB9J7GYY48",
+                  "display_uptime": true,
+                  "name": "Voice mode",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                },
+                {
+                  "component_id": "01JMXBNJXG5VWB72T922RQE6NR",
+                  "display_uptime": true,
+                  "name": "Memory",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                },
+                {
+                  "component_id": "01JMXBNJXG0SGB04EF3FT2KMAC",
+                  "display_uptime": true,
+                  "name": "Single Sign-On",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                },
+                {
+                  "component_id": "01JQ7EKW990MSPSWVXC7VPV2ZJ",
+                  "display_uptime": true,
+                  "name": "Image Generation",
+                  "hidden": false,
+                  "data_available_since": "2025-03-25T20:06:33Z"
+                }
+              ]
+            }
+          },
+          {
+            "group": {
+              "id": "01JQ7EKWQ2Q810TGEQ7C7JYZSA",
+              "name": "Sora",
+              "description": "https://sora.com/",
+              "display_aggregated_uptime": true,
+              "hidden": false,
+              "components": [
+                {
+                  "component_id": "01JMXCAX0Q10KMN6TADJHQNBSJ",
+                  "display_uptime": true,
+                  "name": "Login",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                },
+                {
+                  "component_id": "01JMXCAX0QN2ZHVMS54EEN1HXB",
+                  "display_uptime": true,
+                  "name": "Video generation",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                },
+                {
+                  "component_id": "01JMXCAX0QM438N5CDG2RMJ07X",
+                  "display_uptime": true,
+                  "name": "Video viewing",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                },
+                {
+                  "component_id": "01JMXCAX0Q6C4KFTHY65EP0ZB2",
+                  "display_uptime": true,
+                  "name": "Feed",
+                  "hidden": false,
+                  "data_available_since": "2021-03-02T02:07:24.886Z"
+                },
+                {
+                  "component_id": "01JQ7EJWA29C5X2B3QW8P9BEFF",
+                  "display_uptime": true,
+                  "name": "Image Generation",
+                  "hidden": false,
+                  "data_available_since": "2025-03-25T20:06:00.257Z"
+                }
+              ]
+            }
+          },
+          {
+            "component": {
+              "component_id": "01JMDK9XYNGWKNFAQ12VC4SPQH",
+              "display_uptime": true,
+              "name": "Playground",
+              "description": "The OpenAI Playground at platform.openai.com",
+              "hidden": false,
+              "data_available_since": "2021-04-01T23:05:27.97Z"
+            }
+          },
+          {
+            "component": {
+              "component_id": "01JMDK9XYN8Z6K633X01G7WFD9",
+              "display_uptime": true,
+              "name": "Labs",
+              "description": "https://labs.openai.com",
+              "hidden": false,
+              "data_available_since": "2023-02-21T12:19:49.771Z"
+            }
+          }
+        ]
+      },
+      "expose_status_summary_api": true,
+      "theme": "light",
+      "date_view": "list",
+      "locale": "en-US",
+      "page_type": "standalone",
+      "data_available_since": "2021-02-12T20:31:47Z",
+      "footer_text": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Availability metrics are reported at an aggregate level across all tiers, models and error types. Individual customer availability may vary depending on their subscription tier as well as the specific model and API features in use."
+              }
+            ]
+          }
+        ]
+      },
+      "page_view_tracking_disabled": true
+    }
+  }

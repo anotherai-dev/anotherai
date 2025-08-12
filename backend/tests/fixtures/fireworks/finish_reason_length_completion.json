@@ -1,0 +1,21 @@
+{
+    "id": "e214aa55-7d1d-4062-84b2-50704a75e925",
+    "object": "chat.completion",
+    "created": 1734935678,
+    "model": "accounts/fireworks/models/llama-v3p2-90b-vision-instruct",
+    "choices": [
+        {
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": "{\"city\": \"Paris\", \"country\": \""
+            },
+            "finish_reason": "length"
+        }
+    ],
+    "usage": {
+        "prompt_tokens": 7001,
+        "total_tokens": 607,
+        "completion_tokens": 10
+    }
+}

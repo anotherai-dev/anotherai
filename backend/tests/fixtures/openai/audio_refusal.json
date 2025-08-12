@@ -1,0 +1,22 @@
+{
+    "id": "chatcmpl-ANgWDRzjBVHe3yX0uMZcO31ZQvajl",
+    "object": "chat.completion",
+    "created": 1730208349,
+    "model": "gpt-4o-audio-preview-2024-10-01",
+    "choices": [
+        {
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": "I'm sorry, but I can't analyze the tone of voice from audio files. I can help you with other tasks if you need.",
+                "refusal": null
+            },
+            "finish_reason": "stop"
+        }
+    ],
+    "usage": {
+        "prompt_tokens": 483,
+        "completion_tokens": 26,
+        "total_tokens": 509
+    }
+}

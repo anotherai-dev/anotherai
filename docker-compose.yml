@@ -1,0 +1,92 @@
+services:
+  # Azure Storage Emulator
+  minio:
+    image: minio/minio
+    entrypoint: sh
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    # Create the task_runs bucket before starting minio
+    command: -c 'mkdir -p /data/anotherai && minio server --address ":9000" --console-address ":9001" /data'
+    environment:
+      MINIO_ACCESS_KEY: minio
+      MINIO_SECRET_KEY: miniosecret
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: miniosecret
+
+  # Redis, used as a job broker and result backend
+  redis:
+    # For now Azure only supports redis 6.0 :(
+    image: redis:6.0
+    ports:
+      - "6379:6379"
+  # ClickHouse, used to store runs
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    ports:
+      - 8123:8123
+      # No need for the 9000 port, it is also used by minio
+      - 9002:9000
+    environment:
+      CLICKHOUSE_PASSWORD: admin
+      CLICKHOUSE_USER: default
+      # Required to allow default user to create users
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+
+  psql:
+    image: postgres:17
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: admin
+      POSTGRES_USER: default
+  api:
+    build:
+      context: .
+      dockerfile: backend.Dockerfile
+    ports:
+      - 8000:8000
+    env_file:
+      - .env
+    depends_on:
+      - clickhouse
+      - psql
+      - redis
+      - minio
+    environment:
+      # Overriding variables so that they are accessible from within the docker network
+      PSQL_DSN: postgresql://default:admin@psql:5432/default
+      CLICKHOUSE_DSN: clickhouse://default:admin@clickhouse:8123/default
+      FILE_STORAGE_DSN: "s3://minio:miniosecret@minio:9000/anotherai?secure=false"
+      MIGRATE_STORAGE_ON_STARTUP: "1"
+    volumes:
+      - ./backend/core:/app/core
+      - ./backend/protocol:/app/protocol
+      - ./docs:/app/docs
+    command:
+      [
+        "uvicorn",
+        "protocol.api.api_server:api",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+        "--reload",
+        "--reload-exclude",
+        "**/*_test.py",
+        "--reload-exclude",
+        "tests/*",
+      ]
+  web:
+    build:
+      context: .
+      dockerfile: web.Dockerfile
+      target: dev
+    ports:
+      - 3000:3000
+    environment:
+      ANOTHERAI_API_URL: http://api:8000
+    volumes:
+      - ./web:/app/web
+    depends_on:
+      - api

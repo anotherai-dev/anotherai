@@ -1,0 +1,21 @@
+{
+    "metrics": {
+        "latencyMs": 1594
+    },
+    "output": {
+        "message": {
+            "content": [
+                {
+                    "text": "I apologize, but I cannot engage with or produce offensive language or content. Please rephrase your request in a respectful manner."
+                }
+            ],
+            "role": "assistant"
+        }
+    },
+    "stopReason": "end_turn",
+    "usage": {
+        "inputTokens": 267,
+        "outputTokens": 31,
+        "totalTokens": 298
+    }
+}

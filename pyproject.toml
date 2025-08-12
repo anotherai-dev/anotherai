@@ -1,0 +1,157 @@
+[project]
+name = "another-ai"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "aiohttp>=3.12.14",
+    "asyncpg>=0.30.0",
+    "asyncpg-stubs>=0.30.2",
+    "audioop-lts>=0.2.1",
+    "azure-storage-blob>=12.25.1",
+    "boto3>=1.39.5",
+    "clickhouse-connect>=0.8.18",
+    "fastapi>=0.104.0",
+    "fastmcp>=2.10.6",
+    "google-auth>=2.40.3",
+    "hiredis>=3.2.1",
+    "jinja2>=3.0.0",
+    "jsonschema>=4.24.0",
+    "mcp>=1.0.0",
+    "openai>=1.93.1",
+    "pydantic>=2.0.0",
+    "pydub>=0.25.1",
+    "pyjwt>=2.9.0",
+    "pyyaml>=6.0.0",
+    "sentry-sdk[fastapi]>=2.34.1",
+    "sqlparse>=0.5.3",
+    "starlette>=0.27.0",
+    "structlog>=25.4.0",
+    "taskiq>=0.11.17",
+    "taskiq-redis>=1.0.9",
+    "tiktoken>=0.9.0",
+    "uvicorn>=0.24.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest >=8.1.1,<9",
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "python-dotenv[cli]>=1.0.0",
+    "pyright>=1.1.403",
+    "pytest-httpx>=0.35.0",
+    "typer>=0.16.0",
+    "locust>=2.37.13",
+    "ruff>=0.12.3",
+    "ty>=0.0.1a14",
+    "freezegun>=1.5.3",
+    "pre-commit>=4.2.0",
+]
+
+[tool.ruff]
+src = ["backend"]
+line-length = 120
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    "*_pb2.py",
+    "*_pb2_grpc.py",
+    ".env",
+]
+lint.select = ["ALL"]
+lint.ignore = [
+    "D",
+    "PLC",
+    "FA",
+    "TRY",
+    "ANN",
+    "RET504",
+    "TCH",
+    "PTH",
+    "PLR",
+    "EM101",
+    "EM102",
+    "FBT001",
+    "FBT002",
+    "TD",
+    "PYI051",
+    "FIX002",
+    "PT012",  # pytest.raises should contain a single statement
+    "ERA001", # commented code # TODO: enable
+    "E501",   # line too long # TODO: enable
+    "A001",   # shadows built-in
+    "A002",   # shadows built-in
+    "ARG",    # unused argument # TODO: enable
+    "RUF012", # unused variable # TODO: enable
+]
+
+# Allow fix for all enabled rules (when `--fix`) is provided.
+lint.fixable = ["ALL"]
+
+[tool.ruff.lint.per-file-ignores]
+# in bin we use rich.print
+"scripts/*" = ["T201", "G004"]
+"api/tests/integration/mcp/*" = ["T201", "G004"]
+"integrations/python/*" = ["T201", "G004"]
+"./*test.py" = ["S101", "SLF001", "PGH003", "A001", "ARG001", "FBT003"]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"openai.BaseModel".msg = "Import from pydantic instead"
+"openai.Field".msg = "Import from pydantic instead"
+"anthropic.BaseModel".msg = "Import from pydantic instead"
+"anthropic.Field".msg = "Import from pydantic instead"
+"litellm.AsyncOpenAI".msg = "Import from openai instead"
+"litellm.OpenAI".msg = "Import from anthropic instead"
+"litellm.BaseModel".msg = "Import from pydantic instead"
+"litellm.Field".msg = "Import from pydantic instead"
+
+[tool.pyright]
+include = ["backend", "scripts"]
+ignore = []
+# Right now we can't enable strict mode and override some rules
+# See https://github.com/microsoft/pyright/issues/10712
+# Since we need to disable reportUnknownMemberType we just disable strict mode for now
+strict = []
+reportMatchNotExhaustive = true
+reportExplicitAny = false
+# There is a weird bug with pyright and the type keyword
+reportUnknownVariableType = false
+reportUnknownMemberType = false
+reportUnknownLambdaType = true
+reportMissingTypeArgument = true
+reportPrivateUsage = true
+reportTypeCommentUsage = true
+reportDeprecated = true
+reportDuplicateImport = true
+reportUnusedParameter = false             # handled by ruff
+reportImplicitStringConcatenation = false
+reportAny = false
+defineConstant = {}
+stubPath = "backend/stubs"
+pythonVersion = "3.13"
+pythonPlatform = "Linux"
+extraPaths = ["backend", "scripts"]
+
+[tool.ty.environment]
+extra-paths = ["backend", "scripts"]

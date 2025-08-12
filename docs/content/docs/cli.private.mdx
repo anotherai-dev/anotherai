@@ -1,0 +1,88 @@
+## AnotherAI CLI Tool
+
+For testing high-token content that exceeds the Read tool limit, use the `cli.py` script with input variables:
+
+### Setup
+```bash
+# Create virtual environment (one-time setup)
+python3 -m venv anotherai_env
+source anotherai_env/bin/activate
+pip install openai requests
+```
+
+### Input Variables Workflow
+
+For high-token content with multiple variables, use input IDs:
+
+**Step 1: Create input with variables**
+```bash
+source anotherai_env/bin/activate
+
+# Create input with structured variables and metadata (no file size limits)
+python cli.py add_input \
+  --content '{"email_content": "Large email content here...", "user_name": "Alice", "department": "Sales", "priority": "urgent"}' \s
+  --metadata '{"title": "Sales Analysis Data", "category": "quarterly-review", "source": "sales-team", "experiment": "v1"}'
+# Returns: Input ID: input_20250707_143337
+
+# Minimal example without metadata
+python cli.py add_input \
+  --content '{"email_content": "Large email content here...", "user_name": "Alice"}'
+```
+
+**Step 2: Use input IDs in testing**
+```bash
+# Test with input variables using input IDs
+python cli.py playground \
+  --agent-id "your-agent-name" \
+  --models "gpt-4o-mini,claude-3-5-sonnet-20241022" \
+  --messages '[{"role": "system", "content": "You are a helpful assistant"}, {"role": "user", "content": "Analyze {{email_content}} from {{user_name}} in {{department}} with {{priority}} priority"}]' \
+  --input-ids "input_20250707_143337" \
+  --api-key "wai-your-api-key" \
+  --output "results.json"
+```
+
+### Key Benefits
+- **No token limits**: Handle any size content via IDs instead of embedding
+- **Structured data**: Input variables support complex multi-field templates
+- **Flexible metadata**: Add custom metadata fields for categorization, tracking, and organization
+- **Reusable**: Same input IDs work across multiple experiments
+- **Multiple models**: Test same input across different models
+- **Performance metrics**: Cost and duration tracking for each test
+- **Clean output**: Optimized JSON structure for input variables
+
+### Metadata Examples
+```bash
+# Simple metadata
+--metadata '{"title": "Customer Support", "description": "Email analysis"}'
+
+# Rich metadata with multiple fields
+--metadata '{
+  "title": "Customer Support Analysis",
+  "category": "support",
+  "source": "zendesk",
+  "experiment_id": "exp_001",
+  "user_id": "analyst_123",
+  "tags": "urgent,billing,complaint",
+  "priority": "high",
+  "version": "v2.1"
+}'
+
+# No metadata (optional)
+# Just use --content without --metadata
+```
+
+### Example Results Format
+
+```json
+[
+  {
+    "model": "gpt-4o-mini",
+    "input_id": "input_20250707_143337",
+    "response": "Analysis of sales email...",
+    "cost": 0.000064,
+    "duration": 2.47
+  }
+]
+```
+
+Use this CLI for high-token testing, then create experiments with the best performing prompts/models.

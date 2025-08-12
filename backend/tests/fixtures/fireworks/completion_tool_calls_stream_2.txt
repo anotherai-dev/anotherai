@@ -1,0 +1,75 @@
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"role":"assistant"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":"The final"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":" answer"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":" to"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":" the user's"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":" question \"What"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":" is the score"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":" of the latest"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":" Jazz - Lakers"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":" game of Feb"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":" 12th"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":", 202"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":"5\" is"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":":\n\nThe Utah"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":" Jazz"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":" won the"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":" game against the"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":" Los Angeles Lakers"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":" with a"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":" score of "},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":"131-119"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":" on February "},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":"12, "},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":"2025.\n\n"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":"```"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":"json"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":"\n{\n  \""},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":"answer\": \"The"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":" Utah Jazz won the"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":" game against the Los"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":" Angeles Lakers with a"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":" score of 131"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":"-119 on February"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":" 12, "},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":"2025.\"\n}\n"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{"content":"```"},"finish_reason":null}],"usage":null}
+
+data: {"id":"b26a6448-3e43-4cad-a970-d647b119aed4","object":"chat.completion.chunk","created":1740135928,"model":"accounts/fireworks/models/llama-v3p1-405b-instruct","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":1551,"total_tokens":1651,"completion_tokens":100}}
+
+data: [DONE]

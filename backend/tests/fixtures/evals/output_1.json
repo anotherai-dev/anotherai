@@ -1,0 +1,62 @@
+{
+    "issuer": {
+        "identifier": 618000030.0,
+        "name": "Nina J. Cox, O.D., PC",
+        "identifier_type": "TPA"
+    },
+    "recipient": {
+        "identifier": "123942",
+        "name": "Claudia A. Zehentmayr"
+    },
+    "creation_date": "2022-10-13",
+    "status": "ISSUED",
+    "isPaid": true,
+    "subject": {
+        "invoice_summary": "New Patient Exam and Refraction",
+        "invoice_title": "Statement of Charges and Payments for Eye Exam Services"
+    },
+    "billing_period": {
+        "start_date": "2022-09-12",
+        "end_date": "2022-09-12"
+    },
+    "invoice_identifier": "89292",
+    "line_items": [
+        {
+            "line_item_sequence": 1,
+            "line_item_system": "CPT",
+            "line_item_code": "92004",
+            "line_item_service_description": "New Patient Exam",
+            "line_item_occurrence_date": "2022-09-12",
+            "line_item_type": "BASE",
+            "line_item_amount": 170
+        },
+        {
+            "line_item_sequence": 2,
+            "line_item_system": "CPT",
+            "line_item_code": "92015",
+            "line_item_service_description": "Refraction",
+            "line_item_occurrence_date": "2022-09-12",
+            "line_item_type": "BASE",
+            "line_item_amount": 35
+        },
+        {
+            "line_item_sequence": 3,
+            "line_item_system": "OTHER",
+            "line_item_code": "COPAY",
+            "line_item_service_description": "Copay",
+            "line_item_occurrence_date": "2022-09-12",
+            "line_item_type": "DEDUCTION",
+            "line_item_amount": 20
+        }
+    ],
+    "total_net_amount": 20,
+    "total_gross_amount": 205,
+    "payment_notes": "Payment applied by Visa. NO PAYMENT NECESSARY",
+    "payment_terms": "Billed to Insurance: $185.00 plus Sales Tax of $0.00 = $185.00",
+    "practitioner": {
+        "name": "Nina J Cox",
+        "identifier": 1093717936,
+        "identifier_type": "NPI"
+    },
+    "service_date": "2022-09-12"
+}

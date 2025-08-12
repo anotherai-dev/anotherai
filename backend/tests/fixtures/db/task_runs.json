@@ -1,0 +1,112 @@
+[
+    {
+        "_id": "f5d23529-8c22-4731-ae8b-0e9a38472494",
+        "tenant": "workflowai.com",
+        "start_time": {
+            "$date": "2024-05-24T21:11:36.024Z"
+        },
+        "end_time": {
+            "$date": "2024-05-24T21:11:37.059Z"
+        },
+        "duration_seconds": 1.034966,
+        "cost_usd": 0.00010099999999999999,
+        "task": {
+            "id": "say-hello",
+            "schema_id": 1,
+            "input_class_version": "ee31f451b9061ca46e309b075e4a9cab",
+            "output_class_version": "7d4f7e6c016e7064623373ab4b5c01be"
+        },
+        "task_input_hash": "ee26422708744c1091ce0b4c135e2c6f",
+        "task_input_preview": "language: \"German\"",
+        "task_input": {
+            "language": "German"
+        },
+        "task_output_hash": "61253e84c34d94817e740923102cdbc3",
+        "task_output_preview": "greeting: \"Hallo\"",
+        "task_output": {
+            "greeting": "Hallo"
+        },
+        "created_at": {
+            "$date": "2024-05-24T21:11:37.059Z"
+        },
+        "group": {
+            "alias": "9e26402ccc7a3753e2e8f7233c64df55",
+            "hash": "9e26402ccc7a3753e2e8f7233c64df55",
+            "iteration": 5,
+            "properties": {
+                "model": "claude-3-haiku-20240307",
+                "provider": "anthropic",
+                "temperature": 0,
+                "instructions": "",
+                "runner_name": "WorkflowAI",
+                "runner_version": "824599bbf2ba0180d0152aeba4e097ae",
+                "task_schema_id": 1,
+                "task_variant_id": "76f068a45a3e1a24167849dade4d8c41"
+            },
+            "tags": [
+                "model=claude-3-haiku-20240307",
+                "provider=anthropic",
+                "temperature=0"
+            ]
+        },
+        "llm_completions": [
+            {
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "Your goal is to generate a valid output based on the input data.\n\nThe task instructions are:\n\n\nInput will be provided in the user message using a JSON following the schema:\n```json\n{\n  \"description\": \"Schema for the input required to say hello\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"language\": {\n      \"description\": \"The language in which to say hello\",\n      \"type\": \"string\",\n      \"examples\": [\n        \"English\",\n        \"Spanish\",\n        \"French\"\n      ]\n    }\n  },\n  \"required\": [\n    \"language\"\n  ]\n}\n```\nThe output that you will return must be a JSON object equivalent to the following json shema:\n```json\n{\n  \"description\": \"Schema for the output of saying hello\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"greeting\": {\n      \"description\": \"The greeting message\",\n      \"type\": \"string\",\n      \"examples\": [\n        \"Hello\",\n        \"Hola\",\n        \"Bonjour\"\n      ]\n    }\n  },\n  \"required\": [\n    \"greeting\"\n  ]\n}\n```"
+                    },
+                    {
+                        "role": "user",
+                        "content": "Input is:\n```json\n{\n  \"language\": \"German\"\n}\n```"
+                    }
+                ],
+                "response": "Here is the output based on the input data:\n\n```json\n{\n  \"greeting\": \"Hallo\"\n}\n```",
+                "usage": {
+                    "prompt_token_count": 264,
+                    "prompt_cost_usd": 0.00006599999999999999,
+                    "completion_token_count": 28,
+                    "completion_cost_usd": 0.000035000000000000004
+                }
+            }
+        ],
+        "example_id": "6656968151f5d560b2255855",
+        "scores": [
+            {
+                "score": 0,
+                "created_at": {
+                    "$date": "2024-05-29T02:44:17.449Z"
+                },
+                "comment": "Difference at greeting: String values do not match. Got Hallo expected Hello",
+                "tags": [
+                    "hello",
+                    "greeting",
+                    "string"
+                ],
+                "evaluator": {
+                    "id": "6655f40684a06207d9a1f131",
+                    "name": "TaskEvaluator",
+                    "properties": {
+                        "name": "FieldBasedCompareOptions",
+                        "config": {
+                            "options": {
+                                "ignore": false,
+                                "type": "object",
+                                "strict_equality": false,
+                                "property_evaluations": {
+                                    "greeting": {
+                                        "ignore": false,
+                                        "type": "string",
+                                        "semantics": false,
+                                        "case_sensitive": true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "example_id": "6656968151f5d560b2255855"
+            }
+        ]
+    }
+]

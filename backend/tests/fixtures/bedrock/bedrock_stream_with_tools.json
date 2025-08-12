@@ -1,0 +1,301 @@
+{
+    "SSEs": [
+        {
+            "p": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUV",
+            "role": "assistant"
+        },
+        {
+            "contentBlockIndex": 0,
+            "delta": {
+                "text": "\n\nNow"
+            },
+            "p": "abcdef"
+        },
+        {
+            "contentBlockIndex": 0,
+            "delta": {
+                "text": ","
+            },
+            "p": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        },
+        {
+            "contentBlockIndex": 0,
+            "delta": {
+                "text": " I'll"
+            },
+            "p": "abcdefghijkl"
+        },
+        {
+            "contentBlockIndex": 0,
+            "delta": {
+                "text": " retrieve"
+            },
+            "p": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKL"
+        },
+        {
+            "contentBlockIndex": 0,
+            "delta": {
+                "text": " the weather information"
+            },
+            "p": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOP"
+        },
+        {
+            "contentBlockIndex": 0,
+            "delta": {
+                "text": " using"
+            },
+            "p": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012"
+        },
+        {
+            "contentBlockIndex": 0,
+            "delta": {
+                "text": " the city"
+            },
+            "p": "abcdefghijklmnopqrstuvwxyzABCDEFG"
+        },
+        {
+            "contentBlockIndex": 0,
+            "delta": {
+                "text": " code:"
+            },
+            "p": "abcdefghijklmno"
+        },
+        {
+            "contentBlockIndex": 0,
+            "p": "abcdefghijklmnopqrstuvwxyzA"
+        },
+        {
+            "contentBlockIndex": 1,
+            "p": "abcdefg",
+            "start": {
+                "toolUse": {
+                    "name": "get_temperature",
+                    "toolUseId": "tooluse_BbrvqbWgQmyeB79TM7dDRA"
+                }
+            }
+        },
+        {
+            "contentBlockIndex": 1,
+            "delta": {
+                "toolUse": {
+                    "input": ""
+                }
+            },
+            "p": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456"
+        },
+        {
+            "contentBlockIndex": 1,
+            "delta": {
+                "toolUse": {
+                    "input": "{\""
+                }
+            },
+            "p": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJ"
+        },
+        {
+            "contentBlockIndex": 1,
+            "delta": {
+                "toolUse": {
+                    "input": "city_code"
+                }
+            },
+            "p": "abc"
+        },
+        {
+            "contentBlockIndex": 1,
+            "delta": {
+                "toolUse": {
+                    "input": "\": \"125"
+                }
+            },
+            "p": "abcdefghijk"
+        },
+        {
+            "contentBlockIndex": 1,
+            "delta": {
+                "toolUse": {
+                    "input": "321\"}"
+                }
+            },
+            "p": "abcdefghijklmnopqrstuvwxy"
+        },
+        {
+            "contentBlockIndex": 1,
+            "p": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234"
+        },
+        {
+            "contentBlockIndex": 2,
+            "p": "abcdefghijklmnopqrstuvwxyzABCDEF",
+            "start": {
+                "toolUse": {
+                    "name": "get_rain_probability",
+                    "toolUseId": "tooluse_Lh3H3N-FSQ2B6gW1LYaKXQ"
+                }
+            }
+        },
+        {
+            "contentBlockIndex": 2,
+            "delta": {
+                "toolUse": {
+                    "input": ""
+                }
+            },
+            "p": "abcd"
+        },
+        {
+            "contentBlockIndex": 2,
+            "delta": {
+                "toolUse": {
+                    "input": "{\"city_co"
+                }
+            },
+            "p": "abcdefghijklmnopqrstu"
+        },
+        {
+            "contentBlockIndex": 2,
+            "delta": {
+                "toolUse": {
+                    "input": "de\": \"12"
+                }
+            },
+            "p": "abcdefghijklmnopqrstuvwxyzABCDEFG"
+        },
+        {
+            "contentBlockIndex": 2,
+            "delta": {
+                "toolUse": {
+                    "input": "5321\"}"
+                }
+            },
+            "p": "abcdefghijklmnopqrstuvwxyzABCD"
+        },
+        {
+            "contentBlockIndex": 2,
+            "p": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOP"
+        },
+        {
+            "contentBlockIndex": 3,
+            "p": "abcdefghijklmnopqrstuvwxyzABC",
+            "start": {
+                "toolUse": {
+                    "name": "get_wind_speed",
+                    "toolUseId": "tooluse_e6nmRdHAQCO4-eQeZzI8bw"
+                }
+            }
+        },
+        {
+            "contentBlockIndex": 3,
+            "delta": {
+                "toolUse": {
+                    "input": ""
+                }
+            },
+            "p": "abcdefghijklmnopqrstuvwxyzABCDEFGHI"
+        },
+        {
+            "contentBlockIndex": 3,
+            "delta": {
+                "toolUse": {
+                    "input": "{\"city_co"
+                }
+            },
+            "p": "abcdefghijklmnop"
+        },
+        {
+            "contentBlockIndex": 3,
+            "delta": {
+                "toolUse": {
+                    "input": "de\": \"12532"
+                }
+            },
+            "p": "abcdefghijklmnopqrstuvw"
+        },
+        {
+            "contentBlockIndex": 3,
+            "delta": {
+                "toolUse": {
+                    "input": "1\"}"
+                }
+            },
+            "p": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQ"
+        },
+        {
+            "contentBlockIndex": 3,
+            "p": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012"
+        },
+        {
+            "contentBlockIndex": 4,
+            "p": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJ",
+            "start": {
+                "toolUse": {
+                    "name": "get_weather_conditions",
+                    "toolUseId": "tooluse_ojzBRrx5T6G1g1TZCfzFlA"
+                }
+            }
+        },
+        {
+            "contentBlockIndex": 4,
+            "delta": {
+                "toolUse": {
+                    "input": ""
+                }
+            },
+            "p": "abcdefghijklmnopqrstuvwxyzABC"
+        },
+        {
+            "contentBlockIndex": 4,
+            "delta": {
+                "toolUse": {
+                    "input": "{\"city_"
+                }
+            },
+            "p": "abcdefghijklmnopqrstuvwxyzABCDEFGHI"
+        },
+        {
+            "contentBlockIndex": 4,
+            "delta": {
+                "toolUse": {
+                    "input": "co"
+                }
+            },
+            "p": "abcdefghijklmnopqrstuvwxyzABCDEFGH"
+        },
+        {
+            "contentBlockIndex": 4,
+            "delta": {
+                "toolUse": {
+                    "input": "de\": \""
+                }
+            },
+            "p": "abcdefghijklmnopqrstuvwxyzABCDEFGH"
+        },
+        {
+            "contentBlockIndex": 4,
+            "delta": {
+                "toolUse": {
+                    "input": "125321\"}"
+                }
+            },
+            "p": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRST"
+        },
+        {
+            "contentBlockIndex": 4,
+            "p": "abcdefghijklmnopqrstuvwxyzABCDEF"
+        },
+        {
+            "p": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012345678",
+            "stopReason": "tool_use"
+        },
+        {
+            "metrics": {
+                "latencyMs": 3442
+            },
+            "p": "abcdefghijklm",
+            "usage": {
+                "inputTokens": 1133,
+                "outputTokens": 130,
+                "totalTokens": 1263
+            }
+        }
+    ]
+}

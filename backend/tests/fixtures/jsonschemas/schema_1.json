@@ -1,0 +1,193 @@
+{
+    "$defs": {
+        "CalendarEventCategory": {
+            "enum": [
+                "UNSPECIFIED",
+                "IN_PERSON_MEETING",
+                "REMOTE_MEETING",
+                "FLIGHT",
+                "TO_DO",
+                "BIRTHDAY"
+            ],
+            "title": "CalendarEventCategory",
+            "type": "string"
+        },
+        "MeetingProvider": {
+            "enum": [
+                "ZOOM",
+                "GOOGLE_MEET",
+                "MICROSOFT_TEAMS",
+                "SKYPE",
+                "OTHER"
+            ],
+            "title": "MeetingProvider",
+            "type": "string"
+        }
+    },
+    "description": "The expected output of the EmailToCalendarProcessor. Each attribute corresponds to a question asked to the processor.\n\nThis class will be dynamically injected in the prompt as a \"schema\" for the LLM to enforce.",
+    "properties": {
+        "is_email_thread_about_an_event": {
+            "title": "Is Email Thread About An Event",
+            "type": "boolean"
+        },
+        "is_event_confirmed": {
+            "anyOf": [
+                {
+                    "type": "boolean"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "title": "Is Event Confirmed"
+        },
+        "event_category": {
+            "anyOf": [
+                {
+                    "$ref": "#/$defs/CalendarEventCategory"
+                },
+                {
+                    "type": "null"
+                }
+            ]
+        },
+        "is_event_all_day": {
+            "title": "Is Event All Day",
+            "type": "boolean"
+        },
+        "is_event_start_datetime_defined": {
+            "anyOf": [
+                {
+                    "type": "boolean"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "title": "Is Event Start Datetime Defined"
+        },
+        "event_start_datetime": {
+            "anyOf": [
+                {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "title": "Event Start Datetime"
+        },
+        "event_start_date": {
+            "anyOf": [
+                {
+                    "format": "date",
+                    "type": "string"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "title": "Event Start Date"
+        },
+        "is_event_end_datetime_defined": {
+            "anyOf": [
+                {
+                    "type": "boolean"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "title": "Is Event End Datetime Defined"
+        },
+        "event_end_datetime": {
+            "anyOf": [
+                {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "title": "Event End Datetime"
+        },
+        "event_end_date": {
+            "anyOf": [
+                {
+                    "format": "date",
+                    "type": "string"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "title": "Event End Date"
+        },
+        "event_title": {
+            "anyOf": [
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "title": "Event Title"
+        },
+        "remote_meeting_provider": {
+            "anyOf": [
+                {
+                    "$ref": "#/$defs/MeetingProvider"
+                },
+                {
+                    "type": "null"
+                }
+            ]
+        },
+        "event_location_details": {
+            "anyOf": [
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "title": "Event Location Details"
+        },
+        "event_participants_emails_addresses": {
+            "anyOf": [
+                {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "title": "Event Participants Emails Addresses"
+        }
+    },
+    "required": [
+        "is_email_thread_about_an_event",
+        "is_event_confirmed",
+        "event_category",
+        "is_event_all_day",
+        "is_event_start_datetime_defined",
+        "event_start_datetime",
+        "event_start_date",
+        "is_event_end_datetime_defined",
+        "event_end_datetime",
+        "event_end_date",
+        "event_title",
+        "remote_meeting_provider",
+        "event_location_details",
+        "event_participants_emails_addresses"
+    ],
+    "title": "EmailToCalendarOutput",
+    "type": "object"
+}

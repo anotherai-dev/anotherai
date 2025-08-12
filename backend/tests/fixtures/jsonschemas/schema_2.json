@@ -1,0 +1,137 @@
+{
+    "$defs": {
+        "Sub1": {
+            "properties": {
+                "key1": {
+                    "title": "Key1",
+                    "type": "string"
+                },
+                "key2": {
+                    "description": "Value in cents",
+                    "title": "Key2",
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "key1",
+                "key2"
+            ],
+            "title": "Sub1",
+            "type": "object"
+        },
+        "Sub2": {
+            "properties": {
+                "key3": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "description": "Some key3",
+                    "title": "Key3"
+                }
+            },
+            "required": [
+                "key3"
+            ],
+            "title": "Sub2",
+            "type": "object"
+        }
+    },
+    "properties": {
+        "name1": {
+            "description": "The name of the item",
+            "examples": [
+                "Widget"
+            ],
+            "title": "Name1",
+            "type": "string"
+        },
+        "description": {
+            "description": "A detailed description of the item",
+            "examples": [
+                "A useful tool for X"
+            ],
+            "fuzzy": true,
+            "title": "Description",
+            "type": "string"
+        },
+        "opt_description": {
+            "anyOf": [
+                {
+                    "fuzzy": true,
+                    "type": "string"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "title": "Opt Description"
+        },
+        "opt_description2": {
+            "anyOf": [
+                {
+                    "fuzzy": true,
+                    "type": "string"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "title": "Opt Description2"
+        },
+        "price": {
+            "description": "The price of the item in dollars",
+            "examples": [
+                12.99
+            ],
+            "title": "Price",
+            "type": "number"
+        },
+        "in_stock": {
+            "description": "Whether the item is in stock",
+            "title": "In Stock",
+            "type": "boolean"
+        },
+        "sub1": {
+            "allOf": [
+                {
+                    "$ref": "#/$defs/Sub1"
+                }
+            ],
+            "description": "A submodel"
+        },
+        "sub2": {
+            "description": "a list of submodels",
+            "items": {
+                "$ref": "#/$defs/Sub2"
+            },
+            "title": "Sub2",
+            "type": "array"
+        },
+        "string_array": {
+            "description": "A list of strings",
+            "items": {
+                "type": "string"
+            },
+            "title": "String Array",
+            "type": "array"
+        }
+    },
+    "required": [
+        "name1",
+        "description",
+        "price",
+        "in_stock",
+        "sub1",
+        "sub2",
+        "string_array"
+    ],
+    "title": "Item",
+    "type": "object"
+}

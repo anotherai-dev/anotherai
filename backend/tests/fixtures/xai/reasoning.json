@@ -1,0 +1,36 @@
+{
+  "id": "734e6a75-f2a2-40e9-8401-17db756e09f4",
+  "object": "chat.completion",
+  "created": 1744307584,
+  "model": "grok-3-mini-beta",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "{\"answer\": \"Happiness is subjective, but key strategies include practicing gratitude daily, building strong relationships, engaging in activities you enjoy, maintaining physical and mental health, and setting achievable goals.\"}",
+        "reasoning_content": "First, the user has provided an input in JSON format with a \"question\" key: \"How to be happy?\"\n\nMy role is to be a helpful question-answering assistant that provides clear and concise answers.\n\nThe instructions specify that I must output a single JSON string based on the <user_json_schema>. The schema is:\n\n{\n  \"properties\": {\n    \"answer\": {\n      \"description\": \"The answer to the question\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\"answer\"],\n  \"type\": \"object\"\n}\n\nSo, my response must be a JSON object with a single property: \"answer\", which is a string.\n\nI need to formulate a clear and concise answer to the question: \"How to be happy?\"\n\nHappiness is subjective, but I should give a general, helpful response. Key points could include:\n\n- Practicing gratitude\n\n- Building strong relationships\n\n- Engaging in activities you enjoy\n\n- Taking care of physical and mental health\n\n- Setting and achieving goals\n\nI have to keep it concise.\n\nPossible answer: \"To be happy, focus on practicing gratitude, nurturing relationships, pursuing passions, maintaining health, and setting achievable goals.\"\n\nEnsure the output is exactly a JSON string. So, it should look like: {\"answer\": \"Your answer here\"}\n\nFinally, output only that JSON string, nothing else.",
+        "refusal": null
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 243,
+    "completion_tokens": 40,
+    "total_tokens": 559,
+    "prompt_tokens_details": {
+      "text_tokens": 243,
+      "audio_tokens": 0,
+      "image_tokens": 0,
+      "cached_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 276,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "system_fingerprint": "fp_de23b57e5c"
+}

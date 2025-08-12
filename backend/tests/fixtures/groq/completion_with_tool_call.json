@@ -1,0 +1,42 @@
+{
+  "id": "chatcmpl-b9d33920-2594-495d-b47a-c1402af5d6ac",
+  "object": "chat.completion",
+  "created": 1745349668,
+  "model": "meta-llama/llama-4-maverick-17b-128e-instruct",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "tool_calls": [
+          {
+            "id": "call_2nd6",
+            "type": "function",
+            "function": {
+              "name": "get_current_time",
+              "arguments": "{\"timezone\": \"America/New_York\"}"
+            }
+          }
+        ]
+      },
+      "logprobs": null,
+      "finish_reason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "queue_time": 0.20091915899999999,
+    "prompt_tokens": 637,
+    "prompt_time": 0.018669699,
+    "completion_tokens": 52,
+    "completion_time": 0.219015701,
+    "total_tokens": 689,
+    "total_time": 0.2376854
+  },
+  "usage_breakdown": {
+    "models": null
+  },
+  "system_fingerprint": "fp_253f463456",
+  "x_groq": {
+    "id": "req_01jsff4vfpf9eshr8nj4b59qnr"
+  }
+}
