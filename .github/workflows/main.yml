@@ -10,6 +10,7 @@ on:
 permissions:
   contents: read
   id-token: write
+  packages: write
 
 jobs:
   backend-quality:
@@ -19,3 +20,15 @@ jobs:
   web-quality:
     uses: ./.github/workflows/.web-quality.yml
     secrets: inherit
+
+  build-ghcr-image-backend:
+    uses: ./.github/workflows/.build-ghcr.yml
+    secrets: inherit
+    with:
+      service: backend
+
+  build-ghcr-image-web:
+    uses: ./.github/workflows/.build-ghcr.yml
+    secrets: inherit
+    with:
+      service: web
