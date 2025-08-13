@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - main
-      # TODO: remove
-      - guillaume/deploy
 
 permissions:
   contents: read
@@ -22,12 +20,14 @@ jobs:
     secrets: inherit
 
   build-ghcr-image-backend:
+    needs: backend-quality
     uses: ./.github/workflows/.build-ghcr.yml
     secrets: inherit
     with:
       service: backend
 
   build-ghcr-image-web:
+    needs: web-quality
     uses: ./.github/workflows/.build-ghcr.yml
     secrets: inherit
     with:
