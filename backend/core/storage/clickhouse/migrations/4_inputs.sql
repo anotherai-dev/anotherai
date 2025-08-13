@@ -9,5 +9,7 @@ CREATE TABLE inputs (
     created_at DateTime64(3),
     agent_id LowCardinality(String),
     metadata Map(String, String),
-) Engine = MergeTree PRIMARY KEY (tenant_uid, agent_id)
+) -- Use a replacing merge tree to only store one input by ORDER BY
+-- Latest input is the one with the latest created_at
+ENGINE = ReplacingMergeTree(created_at) PRIMARY KEY (tenant_uid, agent_id)
 ORDER BY (tenant_uid, agent_id, input_id);
