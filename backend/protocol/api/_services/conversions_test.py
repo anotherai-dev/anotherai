@@ -19,7 +19,7 @@ from tests.fake_models import fake_graph, fake_view
 @pytest.fixture(autouse=True)
 def patched_app_url():
     base = "https://anotherai.dev"
-    with patch("protocol.api._services.conversions.ANOTHERAI_APP_URL", new=base):
+    with patch("protocol.api._services._urls.ANOTHERAI_APP_URL", new=base):
         yield base
 
 
