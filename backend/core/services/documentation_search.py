@@ -29,10 +29,9 @@ _LOCAL_DOCS_DIR: str = _doc_directory()
 # TODO: test
 # TODO: find a better name
 class DocumentationSearch:
-
-    def __init__(self):
-        self._config = self._load_config()
-        self._current_env = self._get_environment()
+    def __init__(self, config: dict[str, Any] | None = None, current_env: str | None = None):
+        self._config = config or self._load_config()
+        self._current_env = current_env or self._get_environment()
 
     def get_available_pages_descriptions(self) -> str:
         """Generate formatted descriptions of all available documentation pages for MCP tool docstring."""
@@ -116,6 +115,53 @@ class DocumentationSearch:
 
         return found_sections
 
+    def _offline_documentation_search(
+        self,
+        query: str,
+        all_doc_sections: list[DocumentationSection],
+    ) -> list[DocumentationSection]:
+        """Simple offline search using basic text matching and scoring."""
+        if not query.strip():
+            return []
+
+        query_lower = query.lower()
+        query_words = set(query_lower.split())
+
+        scored_sections = []
+
+        for section in all_doc_sections:
+            score = 0
+            content_lower = section.content.lower()
+            path_lower = section.file_path.lower()
+
+            # Exact phrase match in content (high score)
+            if query_lower in content_lower:
+                score += 10
+
+            # Exact phrase match in file path (high score)
+            if query_lower in path_lower:
+                score += 15
+
+            # Word matches in content
+            content_words = set(content_lower.split())
+            matching_words = query_words.intersection(content_words)
+            score += len(matching_words) * 2
+
+            # Word matches in file path (weighted higher)
+            path_words = set(path_lower.split("/"))
+            path_matches = query_words.intersection(path_words)
+            score += len(path_matches) * 5
+
+            if score > 0:
+                scored_sections.append((section, score))
+
+        # Sort by score (highest first) and return top 5
+        def get_score(item: tuple[DocumentationSection, int]) -> int:
+            return item[1]
+
+        scored_sections.sort(key=get_score, reverse=True)
+        return [section for section, _ in scored_sections[:5]]
+
     async def search_documentation_by_query(
         self,
         query: str,
@@ -123,8 +169,7 @@ class DocumentationSearch:
     ) -> list[DocumentationSection]:
         all_doc_sections: list[DocumentationSection] = self.get_all_doc_sections()
 
-        # TODO: have a static list of the most relevant docs as a fallback ?
-        fallback_docs_sections: list[DocumentationSection] = []
+        # Removed fallback_docs_sections as we now use offline search as fallback
 
         try:
             result = await search_documentation_agent(
@@ -133,12 +178,15 @@ class DocumentationSearch:
                 usage_context=usage_context,
             )
         except Exception as e:
-            log.exception("Error in search documentation agent", exc_info=e)
-            return fallback_docs_sections
+            log.exception("Error in search documentation agent, falling back to offline search", exc_info=e)
+            return self._offline_documentation_search(query, all_doc_sections)
 
         if not result:
-            log.error("search_documentation_agent did not return any parsed result", query=query)
-            return fallback_docs_sections
+            log.error(
+                "search_documentation_agent did not return any parsed result, falling back to offline search",
+                query=query,
+            )
+            return self._offline_documentation_search(query, all_doc_sections)
 
         relevant_doc_sections: list[str] = (
             result.relevant_documentation_file_paths if result and result.relevant_documentation_file_paths else []
@@ -158,12 +206,13 @@ class DocumentationSearch:
                 unsupported_feature_feedback=result.unsupported_feature_feedback,
             )
 
-        # If agent did not report any missing doc sections but no relevant doc sections were found, we log a warning too
+        # If agent did not report any missing doc sections but no relevant doc sections were found, use offline search
         if not result.missing_doc_sections_feedback and not result.relevant_documentation_file_paths:
             log.warning(
-                "Documentation search agent has not found any relevant doc sections",
+                "Documentation search agent has not found any relevant doc sections, falling back to offline search",
                 query=query,
             )
+            return self._offline_documentation_search(query, all_doc_sections)
 
         return [
             document_section
@@ -234,3 +283,8 @@ class DocumentationSearch:
         content = content.replace("{{WEB_APP_URL}}", web_app_url)
 
         return content
+
+    async def search_documentation_offline(self, query: str) -> list[DocumentationSection]:
+        """Direct offline search without using the LLM agent."""
+        all_doc_sections: list[DocumentationSection] = self.get_all_doc_sections()
+        return self._offline_documentation_search(query, all_doc_sections)
