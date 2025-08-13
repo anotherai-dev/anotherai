@@ -67,7 +67,7 @@ To list all models programmatically: Use the list_models tool""",
         components = [
             f"Unknown {prefix}model: {model}",
             _check_lineup,
-            f"To list all models programmatically: Use the list_models tool",
+            "To list all models programmatically: Use the list_models tool",
         ]
         if suggested := await suggest_model(model):
             components.insert(1, f"Did you mean {suggested}?")

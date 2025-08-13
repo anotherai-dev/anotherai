@@ -36,3 +36,4 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}-${{ inputs.service }}:latest
             ghcr.io/${{ github.repository }}-${{ inputs.service }}:${{ github.sha }}
+          push: true
