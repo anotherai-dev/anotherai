@@ -41,7 +41,7 @@ services:
       POSTGRES_PASSWORD: admin
       POSTGRES_USER: default
   api:
-    image: ghcr.io/workflowai/playground-api:latest
+    image: ghcr.io/anotherai-dev/anotherai-backend:latest
     pull_policy: daily
     ports:
       - 8000:8000
@@ -59,7 +59,7 @@ services:
       FILE_STORAGE_DSN: "s3://minio:miniosecret@minio:9000/anotherai?secure=false"
       MIGRATE_STORAGE_ON_STARTUP: "1"
   web:
-    image: ghcr.io/workflowai/playground-web:latest
+    image: ghcr.io/anotherai-dev/anotherai-web:latest
     pull_policy: daily
     ports:
       - 3000:3000

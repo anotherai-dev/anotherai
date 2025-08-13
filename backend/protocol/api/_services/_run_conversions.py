@@ -36,6 +36,7 @@ from protocol.api._run_models import (
     OpenAIProxyToolChoiceFunction,
     OpenAIProxyToolDefinition,
 )
+from protocol.api._services._urls import completion_url
 
 _log = structlog.get_logger(__name__)
 
@@ -380,7 +381,7 @@ def completion_choice_from_domain(completion: AgentCompletion, deprecated_functi
         finish_reason=finish_reason,
         duration_seconds=completion.duration_seconds,
         cost_usd=completion.cost_usd,
-        url=org.app_run_url(completion.agent.id, completion.id),
+        url=completion_url(completion.id),
     )
 
 

@@ -5,7 +5,6 @@ from pydantic import TypeAdapter
 from pydantic_core import ValidationError
 from structlog import get_logger
 
-from core.consts import ANOTHERAI_APP_URL
 from core.domain.agent import Agent as DomainAgent
 from core.domain.agent_completion import AgentCompletion as DomainCompletion
 from core.domain.agent_input import AgentInput as DomainInput
@@ -62,16 +61,9 @@ from protocol.api._api_models import (
     View,
     ViewFolder,
 )
+from protocol.api._services._urls import experiments_url, view_url
 
 _log = get_logger(__name__)
-
-
-def experiments_url(experiment_id: str) -> str:
-    return f"{ANOTHERAI_APP_URL}/experiments/{experiment_id}"
-
-
-def view_url(view_id: str) -> str:
-    return f"{ANOTHERAI_APP_URL}/views/{view_id}"
 
 
 def _sanitize_datetime(dt: datetime):
