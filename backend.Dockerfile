@@ -1,10 +1,9 @@
 # Build stage
 ARG PYTHON_VERSION=3.13
 ARG ALPINE_VERSION=3.22
-ARG ARCH=linux/amd64
 ARG RELEASE_NAME=
 
-FROM --platform=${ARCH} python:${PYTHON_VERSION}-alpine${ALPINE_VERSION} AS base
+FROM python:${PYTHON_VERSION}-alpine${ALPINE_VERSION} AS base
 
 # ffmpeg is needed for audio processing
 # poppler is needed for pdf processing
