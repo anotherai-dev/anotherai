@@ -17,6 +17,14 @@ By using AnotherAI, you won't pay more than your current inference costs. We pri
 
 ## Get Started
 
+### Self Host Set UP
+
+First, you'll need to self-host your own instance ofAnotherAI. Ask Claude Code to do the setup for you by sending the following prompt:
+
+```
+claude "Please follow instructions in https://raw.githubusercontent.com/anotherai-dev/anotherai/refs/heads/main/examples/quickstart/INSTRUCTIONS.md"
+```
+
 ### MCP 
 
 AnotherAI is available as a MCP server in the IDEs below.
@@ -25,7 +33,13 @@ AnotherAI is available as a MCP server in the IDEs below.
 
 <Tab value="Cursor">
 
-<Callout type="info">**TODO:** Add a direct link to install the MCP.</Callout>
+Quick setup  (recommended):
+1. Complete the Self Host set up above and make sure the AnotherAI MCP server is running.
+2. Tap on this button below
+
+<a href="cursor://anysphere.cursor-deeplink/mcp/install?name=anotherai&config=eyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjgwMDAvbWNwLyJ9"><img src="https://cursor.com/deeplink/mcp-install-dark.svg" alt="Add anotherai MCP server to Cursor" height="32" /></a>
+
+Manual installation:
 
 1. Open Cursor
 2. Go to `Settings...`
@@ -36,18 +50,14 @@ AnotherAI is available as a MCP server in the IDEs below.
 Add the following configuration to your MCP servers config:
 
    ```json
-   {
-     "mcpServers": {
-       "anotherai": {
-         "url": "{{API_URL}}/mcp/",
-         "headers": {
-           "Authorization": "Bearer <your_api_key_here>"
-         }
-       }
-     }
-   }
+{
+  "mcpServers": {
+    "anotherai": {
+      "url": "http://127.0.0.1:8000/mcp/"
+    }
+  }
+}
    ```
-Replace `<your_api_key_here>` with your actual AnotherAI API token.
 
 Cursor UI should now look like this (note the green indicator and the number of tools enabled displayed):
 
@@ -61,13 +71,11 @@ Cursor UI should now look like this (note the green indicator and the number of 
 2. Type the following to install:
 
 ```bash
-claude mcp add anotherai -s user {{API_URL}}/mcp/ --transport http -H "Authorization: Bearer YOUR_API_KEY_HERE"
+claude mcp add --scope user --transport http anotherai http://localhost:8000/mcp/
 ```
 
-Replace `YOUR_API_KEY_HERE` with your AnotherAI API key.
-
 <Callout type="info">
-**Installation Scopes**: The `-s user` flag installs AnotherAI for your personal use across all projects. For team projects, you can use `-s project` instead to create a shared `.mcp.json` file that can be committed to version control and shared with your team members. Learn more about MCP scopes in the [Anthropic documentation](https://docs.anthropic.com/en/docs/claude-code/mcp#user-scope).
+**Installation Scopes**: The `--scope user` flag installs AnotherAI for your personal use across all projects. For team projects, you can use `--scope project` instead to create a shared `.mcp.json` file that can be committed to version control and shared with your team members. Learn more about MCP scopes in the [Anthropic documentation](https://docs.anthropic.com/en/docs/claude-code/mcp#user-scope).
 </Callout>
 
 3. Type the following to verify the server is properly connected:
@@ -86,13 +94,21 @@ You should see the AnotherAI server listed as "connected".
 
 </Tab>
 
-<Tab value="Windsurf">
-
-*Coming soon*
-
-</Tab>
-
 </Tabs>
+
+### Try out some prompts
+
+After you have the above self-hosting configuration and MCP set up, now you can try it. Here are some sample prompts you can send to Claude Code to get you started:
+
+```
+Create an experiment in AnotherAI that compares how GPT-5 mini and GPT-4 mini extract the sentiment from an input product review.
+```
+```
+Use AnotherAI to help me find the model that can summarize a long article the fastest.
+```
+```
+Use AnotherAI to test how clearly and accurately 5 different models can answer complex STEM questions.
+```
 
 ### Build a new agent 
 
@@ -105,47 +121,6 @@ Can you write a agent to classify emails as urgent or not?
 ```bash
 Can you migrate the following agent to AnotherAI?
 ```
-
-## Products
-
-<Callout type="warning">
-**TODO:** 
-</Callout>
-{/* 
-### Playground
-
-![header](</images/overview/playground.png>)
-
-<Card
-  title="Playground"
-  description="Our goal is to build the best playground that supports all leading AI models."
-  href="/playground"
-/>
-
-### Inference
-
-![header](</images/overview/inference.png>)
-
-<Callout type="info">
-should we show all the sections from inference, or just the header?
-</Callout>
-
-### Observability
-
-![header](</images/overview/observability.png>)
-
-### Deployments
-
-![header](</images/overview/deployments.png>)
-
-### Agents
-
-![header](</images/overview/agents.png>)
-
-### Evaluations
-
-![header](</images/overview/evaluations.png>) */}
-
 <Callout type="info">
 **Enterprise Compliance**: SOC2 & GDPR compliant. No training on your data. [Learn more](/compliance).
 </Callout>
