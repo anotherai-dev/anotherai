@@ -32,8 +32,11 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: backend.Dockerfile
+          file: ${{ inputs.service }}.Dockerfile
+          platforms: linux/amd64
           tags: |
             ghcr.io/${{ github.repository }}-${{ inputs.service }}:latest
             ghcr.io/${{ github.repository }}-${{ inputs.service }}:${{ github.sha }}
           push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

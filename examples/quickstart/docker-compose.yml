@@ -43,6 +43,7 @@ services:
   api:
     image: ghcr.io/anotherai-dev/anotherai-backend:latest
     pull_policy: daily
+    platform: linux/amd64
     ports:
       - 8000:8000
     env_file:
@@ -61,6 +62,7 @@ services:
   web:
     image: ghcr.io/anotherai-dev/anotherai-web:latest
     pull_policy: daily
+    platform: linux/amd64
     ports:
       - 3000:3000
     environment:
