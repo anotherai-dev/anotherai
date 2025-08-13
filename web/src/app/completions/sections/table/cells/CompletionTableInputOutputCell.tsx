@@ -2,13 +2,18 @@ import { PageError } from "@/components/PageError";
 import { VariablesViewer } from "@/components/VariablesViewer/VariablesViewer";
 import { MessagesViewer } from "@/components/messages/MessagesViewer";
 import { Error, Message } from "@/types/models";
+import { cx } from "class-variance-authority";
 
 interface CompletionTableInputOutputCellProps {
   value: unknown;
+  maxWidth?: string;
+  sharedPartsOfPrompts?: Message[];
 }
 
 export function CompletionTableInputOutputCell({
   value,
+  maxWidth = "max-w-xs",
+  sharedPartsOfPrompts,
 }: CompletionTableInputOutputCellProps) {
   if (value === null || value === undefined) {
     return <span className="text-xs text-gray-400">N/A</span>;
@@ -28,6 +33,7 @@ export function CompletionTableInputOutputCell({
       obj?.internal_anotherai_messages &&
       Array.isArray(obj.internal_anotherai_messages);
     const hasInternalError = obj?.internal_anotherai_error;
+
 
     // Output: has error property
     if (hasError || hasInternalError) {
@@ -52,7 +58,7 @@ export function CompletionTableInputOutputCell({
         ? obj.messages
         : obj.internal_anotherai_messages;
       return (
-        <div className="max-w-xs max-h-full overflow-y-auto space-y-2">
+        <div className={cx("max-h-full overflow-y-auto space-y-2", maxWidth)}>
           <div>
             <VariablesViewer
               variables={variables as Record<string, unknown>}
@@ -61,7 +67,7 @@ export function CompletionTableInputOutputCell({
             />
           </div>
           <div>
-            <MessagesViewer messages={messages as Message[]} />
+            <MessagesViewer messages={messages as Message[]} sharedPartsOfPrompts={sharedPartsOfPrompts} />
           </div>
         </div>
       );
@@ -73,7 +79,7 @@ export function CompletionTableInputOutputCell({
         ? obj.variables
         : obj.internal_anotherai_variables;
       return (
-        <div className="max-w-xs max-h-full overflow-y-auto">
+        <div className={cx("max-h-full overflow-y-auto", maxWidth)}>
           <VariablesViewer
             variables={variables as Record<string, unknown>}
             hideBorderForFirstLevel={true}
@@ -89,15 +95,15 @@ export function CompletionTableInputOutputCell({
         ? obj.messages
         : obj.internal_anotherai_messages;
       return (
-        <div className="max-w-xs max-h-full overflow-y-auto">
-          <MessagesViewer messages={messages as Message[]} />
+        <div className={cx("max-h-full overflow-y-auto", maxWidth)}>
+          <MessagesViewer messages={messages as Message[]} sharedPartsOfPrompts={sharedPartsOfPrompts} />
         </div>
       );
     }
 
     // Fallback: show raw object structure for debugging
     return (
-      <div className="text-xs text-gray-600 max-w-xs overflow-hidden">
+      <div className={cx("text-xs text-gray-600 overflow-hidden", maxWidth)}>
         <pre className="whitespace-pre-wrap">
           {JSON.stringify(obj, null, 2).substring(0, 200)}...
         </pre>
