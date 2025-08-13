@@ -1,6 +1,6 @@
+import { cx } from "class-variance-authority";
 import { SchemaViewer } from "@/components/SchemaViewer";
 import { OutputSchema } from "@/types/models";
-import { cx } from "class-variance-authority";
 
 interface CompletionOutputSchemaCellProps {
   value: unknown;
@@ -19,13 +19,13 @@ export function CompletionOutputSchemaCell({
 
   if (typeof value === "object" && value !== null) {
     const obj = value as Record<string, unknown>;
-    
+
     // Check if it has the expected OutputSchema structure
     if (obj.json_schema && typeof obj.json_schema === "object") {
       return (
         <div className={cx("max-h-full overflow-y-auto", maxWidth)}>
-          <SchemaViewer 
-            schema={obj as unknown as OutputSchema} 
+          <SchemaViewer
+            schema={obj as unknown as OutputSchema}
             sharedKeypathsOfSchemas={sharedKeypathsOfSchemas}
             className="text-xs"
           />

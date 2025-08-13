@@ -1,8 +1,8 @@
+import { cx } from "class-variance-authority";
 import { PageError } from "@/components/PageError";
 import { VariablesViewer } from "@/components/VariablesViewer/VariablesViewer";
 import { MessagesViewer } from "@/components/messages/MessagesViewer";
 import { Error, Message } from "@/types/models";
-import { cx } from "class-variance-authority";
 
 interface CompletionTableInputOutputCellProps {
   value: unknown;
@@ -33,7 +33,6 @@ export function CompletionTableInputOutputCell({
       obj?.internal_anotherai_messages &&
       Array.isArray(obj.internal_anotherai_messages);
     const hasInternalError = obj?.internal_anotherai_error;
-
 
     // Output: has error property
     if (hasError || hasInternalError) {
@@ -67,7 +66,10 @@ export function CompletionTableInputOutputCell({
             />
           </div>
           <div>
-            <MessagesViewer messages={messages as Message[]} sharedPartsOfPrompts={sharedPartsOfPrompts} />
+            <MessagesViewer
+              messages={messages as Message[]}
+              sharedPartsOfPrompts={sharedPartsOfPrompts}
+            />
           </div>
         </div>
       );
@@ -96,7 +98,10 @@ export function CompletionTableInputOutputCell({
         : obj.internal_anotherai_messages;
       return (
         <div className={cx("max-h-full overflow-y-auto", maxWidth)}>
-          <MessagesViewer messages={messages as Message[]} sharedPartsOfPrompts={sharedPartsOfPrompts} />
+          <MessagesViewer
+            messages={messages as Message[]}
+            sharedPartsOfPrompts={sharedPartsOfPrompts}
+          />
         </div>
       );
     }

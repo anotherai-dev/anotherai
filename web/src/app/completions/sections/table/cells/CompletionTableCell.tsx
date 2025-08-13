@@ -17,7 +17,13 @@ interface Props {
 }
 
 export function CompletionTableCell(props: Props) {
-  const { columnKey, value, maxWidth, sharedPartsOfPrompts, sharedKeypathsOfSchemas } = props;
+  const {
+    columnKey,
+    value,
+    maxWidth,
+    sharedPartsOfPrompts,
+    sharedKeypathsOfSchemas,
+  } = props;
 
   const parsedJSON = parseJSONValue(value);
 
@@ -28,9 +34,21 @@ export function CompletionTableCell(props: Props) {
       case "metadata":
         return <CompletionTableMetadataCell value={parsedJSON} />;
       case "output_schema":
-        return <CompletionOutputSchemaCell value={parsedJSON} maxWidth={maxWidth} sharedKeypathsOfSchemas={sharedKeypathsOfSchemas} />;
+        return (
+          <CompletionOutputSchemaCell
+            value={parsedJSON}
+            maxWidth={maxWidth}
+            sharedKeypathsOfSchemas={sharedKeypathsOfSchemas}
+          />
+        );
       default:
-        return <CompletionObjectTableCell value={parsedJSON} maxWidth={maxWidth} sharedPartsOfPrompts={sharedPartsOfPrompts} />;
+        return (
+          <CompletionObjectTableCell
+            value={parsedJSON}
+            maxWidth={maxWidth}
+            sharedPartsOfPrompts={sharedPartsOfPrompts}
+          />
+        );
     }
   }
 

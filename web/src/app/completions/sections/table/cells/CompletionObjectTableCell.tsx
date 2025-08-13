@@ -58,21 +58,39 @@ export function CompletionObjectTableCell(props: Props) {
 
   // Check if it's a container type from transformCompletionsData first
   if (isContainerType(value)) {
-    return <CompletionTableInputOutputCell value={value} maxWidth={maxWidth} sharedPartsOfPrompts={sharedPartsOfPrompts} />;
+    return (
+      <CompletionTableInputOutputCell
+        value={value}
+        maxWidth={maxWidth}
+        sharedPartsOfPrompts={sharedPartsOfPrompts}
+      />
+    );
   }
 
   // Check if it's a Message array
   if (isMessageArray(value)) {
     // Package messages in the format expected by InputOutputCell
     const wrappedValue = { internal_anotherai_messages: value };
-    return <CompletionTableInputOutputCell value={wrappedValue} maxWidth={maxWidth} sharedPartsOfPrompts={sharedPartsOfPrompts} />;
+    return (
+      <CompletionTableInputOutputCell
+        value={wrappedValue}
+        maxWidth={maxWidth}
+        sharedPartsOfPrompts={sharedPartsOfPrompts}
+      />
+    );
   }
 
   // Check if it's a variables object
   if (isVariablesObject(value)) {
     // Package variables in the format expected by InputOutputCell
     const wrappedValue = { internal_anotherai_variables: value };
-    return <CompletionTableInputOutputCell value={wrappedValue} maxWidth={maxWidth} sharedPartsOfPrompts={sharedPartsOfPrompts} />;
+    return (
+      <CompletionTableInputOutputCell
+        value={wrappedValue}
+        maxWidth={maxWidth}
+        sharedPartsOfPrompts={sharedPartsOfPrompts}
+      />
+    );
   }
 
   // For other object types, fall back to BaseTableCell

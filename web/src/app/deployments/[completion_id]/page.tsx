@@ -1,13 +1,13 @@
 "use client";
 
-import { useOrFetchCompletion } from "@/store/completion";
-import { useNewestCompletionId } from "@/store/completions";
+import { useRouter } from "next/navigation";
+import { use, useCallback } from "react";
 import { LoadingIndicator } from "@/components/LoadingIndicator";
+import { PageHeader } from "@/components/PageHeader";
 import { useToast } from "@/components/ToastProvider";
 import { CompareVersionsView } from "@/components/deployment-modal/components/CompareVersionsView";
-import { PageHeader } from "@/components/PageHeader";
-import { useCallback, use } from "react";
-import { useRouter } from "next/navigation";
+import { useOrFetchCompletion } from "@/store/completion";
+import { useNewestCompletionId } from "@/store/completions";
 
 interface DeploymentPageProps {
   params: Promise<{
@@ -22,13 +22,17 @@ export default function DeploymentPage({ params }: DeploymentPageProps) {
   const completionId = completion_id;
 
   // Fetch specific completion using the completion_id from URL
-  const { completion: specificCompletion, isLoading: isLoadingSpecific } = useOrFetchCompletion(completionId);
-  const { newestCompletionId, isLoading: isLoadingNewest } = useNewestCompletionId();
-  
-  // Always fetch the newest completion for the currently deployed version
-  const { completion: newestCompletion, isLoading: isLoadingNewestCompletion } = useOrFetchCompletion(newestCompletionId ?? undefined);
+  const { completion: specificCompletion, isLoading: isLoadingSpecific } =
+    useOrFetchCompletion(completionId);
+  const { newestCompletionId, isLoading: isLoadingNewest } =
+    useNewestCompletionId();
 
-  const isLoading = isLoadingSpecific || isLoadingNewest || isLoadingNewestCompletion;
+  // Always fetch the newest completion for the currently deployed version
+  const { completion: newestCompletion, isLoading: isLoadingNewestCompletion } =
+    useOrFetchCompletion(newestCompletionId ?? undefined);
+
+  const isLoading =
+    isLoadingSpecific || isLoadingNewest || isLoadingNewestCompletion;
 
   // Extract versions
   const versionToBeDeployed = specificCompletion?.version;
@@ -36,11 +40,11 @@ export default function DeploymentPage({ params }: DeploymentPageProps) {
 
   const handleConfirmDeploy = useCallback(() => {
     showToast(`Deployed`);
-    router.push('/');
+    router.push("/");
   }, [showToast, router]);
 
   const handleCancel = useCallback(() => {
-    router.push('/');
+    router.push("/");
   }, [router]);
 
   return (
@@ -50,7 +54,7 @@ export default function DeploymentPage({ params }: DeploymentPageProps) {
           breadcrumbs={[
             { label: "Home", href: "/" },
             { label: "Deployments" },
-            { label: completionId }
+            { label: completionId },
           ]}
           title="Deployment"
           copyablePrefixAndId={`anotherai/deployment/${completionId}`}
