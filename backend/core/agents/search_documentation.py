@@ -5,6 +5,7 @@ from openai.types.chat import ChatCompletionMessageParam
 from pydantic import BaseModel, Field
 
 from core.domain.documentation_section import DocumentationSection
+from core.domain.models.models import Model
 
 from ._client import client
 
@@ -137,6 +138,8 @@ Given a search query and all available documentation sections, you must:
             },
             "provider": "google_gemini",  # use Google Gemini to have implicit caching (https://ai.google.dev/gemini-api/docs/caching?lang=node&hl=fr#implicit-caching)
             "agent_id": "search-documentation-agent",
+            # Fallback with models that have a large context window
+            "use_fallback": [Model.GPT_41_MINI_2025_04_14, Model.LLAMA_4_MAVERICK_BASIC],
         },
         temperature=0.0,
     )
