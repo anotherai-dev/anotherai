@@ -36,7 +36,7 @@ async def sanitize_readonly_privileges(client: AsyncClient, tenant_uid: int, use
     if not user:
         user = build_tenant_uid_user(tenant_uid)
     database = client.client.database
-    tables = ["completions", "annotations", "experiments"]
+    tables = ["completions", "annotations", "experiments", "inputs"]
     for table in tables:
         _ = await client.command(
             f"CREATE ROW POLICY OR REPLACE tenant_{tenant_uid}_{table}_readonly ON {database}.{table} USING tenant_uid = {tenant_uid} TO {user}",

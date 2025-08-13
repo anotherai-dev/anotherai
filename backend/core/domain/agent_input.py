@@ -38,3 +38,6 @@ class SavedAgentInput(AgentInput):
     agent_id: str
     created_at: datetime
     metadata: dict[str, Any] | None = None
+
+    def _excluded_fields(self):
+        return {*super()._excluded_fields(), "agent_id", "created_at", "metadata"}

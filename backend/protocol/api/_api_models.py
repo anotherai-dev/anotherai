@@ -5,7 +5,7 @@ or in the conversion layer."""
 from datetime import date, datetime
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from core.utils.fields import datetime_factory
 
@@ -700,9 +700,15 @@ class QueryCompletionResponse(BaseModel):
 
 class CreateInputRequest(BaseModel):
     agent_id: str
-    messages: list[Message]
+    messages: list[Message] | None = None
     variables: dict[str, Any] | None = None
     metadata: dict[str, Any] | None = None
+
+    @model_validator(mode="after")
+    def validate_messages_or_variables(self):
+        if not self.messages and not self.variables:
+            raise ValueError("Either messages or variables must be provided")
+        return self
 
 
 class SavedInput(Input):
