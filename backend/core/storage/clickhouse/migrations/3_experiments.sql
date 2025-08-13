@@ -15,6 +15,6 @@ PRIMARY KEY (tenant_uid, agent_id, toDate(created_at))
 ORDER BY (
         tenant_uid,
         agent_id,
-        toDate(created_at) DESC,
+        toDate(created_at),
         id
     ) SETTINGS allow_experimental_reverse_key = 1;

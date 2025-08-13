@@ -1,10 +1,9 @@
-import json
 from datetime import datetime
 from typing import Annotated, Any, Literal
 from uuid import UUID
 
 import structlog
-from pydantic import BaseModel, Field, TypeAdapter, field_serializer, field_validator
+from pydantic import BaseModel, Field, field_serializer, field_validator
 
 from core.domain.agent import Agent
 from core.domain.agent_completion import AgentCompletion
@@ -12,11 +11,16 @@ from core.domain.agent_input import AgentInput
 from core.domain.agent_output import AgentOutput
 from core.domain.inference import LLMTrace, ToolTrace, Trace
 from core.domain.inference_usage import InferenceUsage
-from core.domain.message import Message
 from core.domain.version import Version
 from core.storage.clickhouse._models._ch_field_utils import (
     MAX_UINT_16,
     MAX_UINT_32,
+    dump_messages,
+    from_sanitized_metadata,
+    from_stringified_json,
+    parse_messages,
+    sanitize_metadata,
+    stringify_json,
     validate_fixed,
     validate_int,
 )
@@ -50,7 +54,7 @@ class _Trace(BaseModel):
         if isinstance(trace, LLMTrace):
             base.model = trace.model
             base.provider = trace.provider
-            base.usage = _stringify_json(trace.usage)
+            base.usage = stringify_json(trace.usage)
         elif isinstance(trace, ToolTrace):  # pyright: ignore [reportUnnecessaryIsInstance]
             base.name = trace.name
             base.tool_input_preview = trace.tool_input_preview
@@ -79,10 +83,6 @@ class _Trace(BaseModel):
                 tool_output_preview=self.tool_output_preview,
             )
         raise ValueError(f"Unknown trace kind: {self.kind}")
-
-
-# TODO: we should use a duplicated type to avoid side effects
-_Messages = TypeAdapter(list[Message])
 
 
 class ClickhouseCompletion(BaseModel):
@@ -149,29 +149,28 @@ class ClickhouseCompletion(BaseModel):
             version_id=completion.version.id,
             version_model=completion.version.model or "",
             # TODO: use a separate model for validation ?
-            version=_stringify_json(completion.version),
-            # Hashes
+            version=stringify_json(completion.version),
+            # IO
             input_id=completion.agent_input.id,
             input_preview=completion.agent_input.preview,
-            input_messages=_dump_messages(completion.agent_input.messages),
-            input_variables=_stringify_json(completion.agent_input.variables),
+            input_messages=dump_messages(completion.agent_input.messages),
+            input_variables=stringify_json(completion.agent_input.variables),
             output_id=completion.agent_output.id,
             output_preview=completion.agent_output.preview,
-            output_messages=_dump_messages(completion.agent_output.messages),
-            output_error=_stringify_json(completion.agent_output.error),
-            messages=_dump_messages(completion.messages),
-            # IO
+            output_messages=dump_messages(completion.agent_output.messages),
+            output_error=stringify_json(completion.agent_output.error),
+            messages=dump_messages(completion.messages),
             # Metrics
             duration_ds=_duration_ds(completion.duration_seconds),
             cost_millionth_usd=_cost_millionth_usd(completion.cost_usd),
-            metadata=_sanitize_metadata(completion.metadata),
+            metadata=sanitize_metadata(completion.metadata),
             source=completion.source,
             # Traces
             traces=[_Trace.from_domain(trace) for trace in completion.traces],
         )
 
     def _domain_version(self) -> Version:
-        payload: dict[str, Any] = _from_stringified_json(self.version) or {}
+        payload: dict[str, Any] = from_stringified_json(self.version) or {}
         if self.version_id:
             payload["id"] = self.version_id
         if self.version_model:
@@ -192,7 +191,7 @@ class ClickhouseCompletion(BaseModel):
                 self.output_preview,
                 self.output_id,
             ),
-            messages=_parse_messages(self.messages) or [],
+            messages=parse_messages(self.messages) or [],
             version=self._domain_version(),
             status="success" if not self.output_error else "failure",
             duration_seconds=_from_duration_ds(self.duration_ds),
@@ -277,69 +276,13 @@ def _from_duration_ds(duration: int) -> float:
     return duration / 10
 
 
-def _stringify_json(data: Any) -> str:
-    if isinstance(data, BaseModel):
-        data = data.model_dump(exclude_none=True)
-    # Remove spaces from the JSON string to allow using simplified json queries
-    # see https://clickhouse.com/docs/en/sql-reference/functions/json-functions#simplejsonextractstring
-    if not data:
-        return ""
-    return json.dumps(data, separators=(",", ":"))
-
-
-def _from_stringified_json(data: str) -> Any:
-    if not data:
-        return None
-    try:
-        return json.loads(data)
-    except json.JSONDecodeError:
-        return data
-
-
-def _sanitize_metadata_value(value: Any) -> str:
-    if value is None:
-        return ""
-    if isinstance(value, str):
-        return value
-    return json.dumps(value)
-
-
-def _from_sanitized_metadata_value(value: str) -> Any:
-    try:
-        return json.loads(value)
-    except json.JSONDecodeError:
-        return value
-
-
-def _sanitize_metadata(metadata: dict[str, Any] | None):
-    return {k: _sanitize_metadata_value(v) for k, v in metadata.items()} if metadata else {}
-
-
-def from_sanitized_metadata(metadata: dict[str, str] | None):
-    if not metadata:
-        return None
-    return {k: _from_sanitized_metadata_value(v) for k, v in metadata.items()}
-
-
-def _dump_messages(messages: list[Message] | None) -> str:
-    if not messages:
-        return ""
-    return _Messages.dump_json(messages, exclude_none=True).decode()
-
-
-def _parse_messages(messages: str) -> list[Message] | None:
-    if not messages:
-        return None
-    return _Messages.validate_json(messages)
-
-
 def _input_to_domain(input_variables: str, input_messages: str, preview: str, id: str) -> AgentInput:
     payload: dict[str, Any] = {
         "id": id,
         "preview": preview,
     }
-    payload["variables"] = _from_stringified_json(input_variables)
-    payload["messages"] = _parse_messages(input_messages)
+    payload["variables"] = from_stringified_json(input_variables)
+    payload["messages"] = parse_messages(input_messages)
     return AgentInput.model_validate(payload)
 
 
@@ -348,6 +291,6 @@ def _output_to_domain(output_messages: str, output_error: str, preview: str, id:
         "id": id,
         "preview": preview,
     }
-    payload["messages"] = _parse_messages(output_messages)
-    payload["error"] = _from_stringified_json(output_error)
+    payload["messages"] = parse_messages(output_messages)
+    payload["error"] = from_stringified_json(output_error)
     return AgentOutput.model_validate(payload)

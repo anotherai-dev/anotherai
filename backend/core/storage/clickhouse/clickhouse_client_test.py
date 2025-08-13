@@ -14,13 +14,14 @@ from core.domain.agent_completion import AgentCompletion
 from core.domain.annotation import Annotation
 from core.domain.exceptions import BadRequestError, ObjectNotFoundError
 from core.domain.experiment import Experiment
+from core.domain.message import Message
 from core.storage.clickhouse._models._ch_annotation import ClickhouseAnnotation
 from core.storage.clickhouse._models._ch_completion import ClickhouseCompletion
 from core.storage.clickhouse._models._ch_experiment import ClickhouseExperiment
 from core.storage.clickhouse._models._ch_field_utils import data_and_columns
 from core.storage.clickhouse.clickhouse_client import ClickhouseClient
 from core.utils.uuid import uuid7
-from tests.fake_models import fake_annotation, fake_completion, fake_experiment
+from tests.fake_models import fake_annotation, fake_completion, fake_experiment, fake_saved_agent_input
 from tests.utils import fixtures_json
 
 _insert_settings = {"async_insert": 1, "wait_for_async_insert": 1, "alter_sync": 1}
@@ -31,6 +32,7 @@ async def client(clickhouse_client: AsyncClient):
     _ = await clickhouse_client.command("TRUNCATE TABLE completions")  # pyright: ignore [reportUnknownMemberType]
     _ = await clickhouse_client.command("TRUNCATE TABLE annotations")  # pyright: ignore [reportUnknownMemberType]
     _ = await clickhouse_client.command("TRUNCATE TABLE experiments")  # pyright: ignore [reportUnknownMemberType]
+    _ = await clickhouse_client.command("TRUNCATE TABLE inputs")  # pyright: ignore [reportUnknownMemberType]
     return ClickhouseClient(clickhouse_client, 1)
 
 
@@ -129,6 +131,135 @@ class TestStoreAnnotation:
         )
 
         await client.store_annotation(annotation, _insert_settings)
+
+
+class TestStoreInput:
+    async def test_store_input_basic(self, client: ClickhouseClient):
+        """Test storing a basic SavedAgentInput successfully"""
+        input_data = fake_saved_agent_input()
+
+        # This should not raise any exceptions
+        await client.store_input(input_data, _insert_settings)
+
+    async def test_store_input_with_variables_and_messages(self, client: ClickhouseClient):
+        """Test storing input with both variables and messages"""
+        input_data = fake_saved_agent_input(
+            variables={"user_name": "Alice", "task": "analysis", "priority": 1},
+            messages=[
+                Message.with_text("System prompt", role="system"),
+                Message.with_text("User question", role="user"),
+            ],
+        )
+
+        await client.store_input(input_data, _insert_settings)
+
+    async def test_store_input_with_no_variables(self, client: ClickhouseClient):
+        """Test storing input with no variables"""
+        input_data = fake_saved_agent_input(variables=None)
+
+        await client.store_input(input_data, _insert_settings)
+
+    async def test_store_input_with_no_messages(self, client: ClickhouseClient):
+        """Test storing input with no messages"""
+        input_data = fake_saved_agent_input(messages=None)
+
+        await client.store_input(input_data, _insert_settings)
+
+    async def test_store_input_with_empty_variables(self, client: ClickhouseClient):
+        """Test storing input with empty variables dict"""
+        input_data = fake_saved_agent_input(variables={})
+
+        await client.store_input(input_data, _insert_settings)
+
+    async def test_store_input_with_empty_messages(self, client: ClickhouseClient):
+        """Test storing input with empty messages list"""
+        input_data = fake_saved_agent_input(messages=[])
+
+        await client.store_input(input_data, _insert_settings)
+
+    async def test_store_input_with_complex_variables(self, client: ClickhouseClient):
+        """Test storing input with complex nested variables"""
+        input_data = fake_saved_agent_input(
+            variables={
+                "user_profile": {
+                    "id": 123,
+                    "name": "John Doe",
+                    "preferences": ["analytics", "reports"],
+                    "settings": {"theme": "dark", "notifications": True},
+                },
+                "request_data": [1, 2, 3, "test"],
+                "simple_value": "hello",
+            },
+        )
+
+        await client.store_input(input_data, _insert_settings)
+
+    async def test_store_input_with_custom_metadata(self, client: ClickhouseClient):
+        """Test storing input with custom metadata"""
+        input_data = fake_saved_agent_input(
+            metadata={
+                "session_id": "sess_123",
+                "user_id": "user_456",
+                "source": "web_ui",
+                "version": "2.0",
+                "experiment": "A/B_test",
+            },
+        )
+
+        await client.store_input(input_data, _insert_settings)
+
+    async def test_store_input_with_no_metadata(self, client: ClickhouseClient):
+        """Test storing input with None metadata"""
+        input_data = fake_saved_agent_input(metadata=None)
+
+        await client.store_input(input_data, _insert_settings)
+
+    async def test_store_input_with_different_agent_ids(self, client: ClickhouseClient):
+        """Test storing inputs with different agent IDs"""
+        input1 = fake_saved_agent_input(
+            id="input-1",
+            agent_id="customer-support-agent",
+            preview="Customer support input",
+        )
+        input2 = fake_saved_agent_input(
+            id="input-2",
+            agent_id="data-analysis-agent",
+            preview="Data analysis input",
+        )
+
+        await client.store_input(input1, _insert_settings)
+        await client.store_input(input2, _insert_settings)
+
+    async def test_store_input_with_long_preview(self, client: ClickhouseClient):
+        """Test storing input with a long preview text"""
+        long_preview = (
+            "This is a very long preview text that contains multiple sentences and should test how the system handles longer input previews. "
+            * 10
+        )
+        input_data = fake_saved_agent_input(preview=long_preview)
+
+        await client.store_input(input_data, _insert_settings)
+
+    async def test_store_input_multiple_inputs(self, client: ClickhouseClient):
+        """Test storing multiple different inputs"""
+        inputs = [
+            fake_saved_agent_input(id="input-multi-1", agent_id="agent-1"),
+            fake_saved_agent_input(id="input-multi-2", agent_id="agent-2"),
+            fake_saved_agent_input(id="input-multi-3", agent_id="agent-3"),
+        ]
+
+        for input_data in inputs:
+            await client.store_input(input_data, _insert_settings)
+
+    async def test_store_input_with_special_characters(self, client: ClickhouseClient):
+        """Test storing input with special characters in text fields"""
+        input_data = fake_saved_agent_input(
+            preview="Special chars: éñüñ 中文 🎉 \"quotes\" 'apostrophes' & symbols",
+            variables={"text": "Contains 'quotes' and \"double quotes\" and unicode: 中文"},
+            messages=[Message.with_text("Message with émojis 🚀 and unicode", role="user")],
+        )
+
+        await client.store_input(input_data, _insert_settings)
 
 
 class TestStoreExperiment:

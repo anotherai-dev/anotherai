@@ -692,3 +692,20 @@ class CreateAPIKeyRequest(BaseModel):
 class QueryCompletionResponse(BaseModel):
     rows: list[dict[str, Any]]
     url: str
+
+
+# ----------------------------------------
+# Inputs
+
+
+class CreateInputRequest(BaseModel):
+    agent_id: str
+    messages: list[Message]
+    variables: dict[str, Any] | None = None
+    metadata: dict[str, Any] | None = None
+
+
+class SavedInput(Input):
+    agent_id: str
+    created_at: datetime
+    metadata: dict[str, Any] | None = None

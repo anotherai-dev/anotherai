@@ -9,6 +9,7 @@ from clickhouse_connect.driver.query import QueryResult
 from pydantic.main import BaseModel
 
 from core.domain.agent_completion import AgentCompletion
+from core.domain.agent_input import SavedAgentInput
 from core.domain.annotation import Annotation
 from core.domain.exceptions import BadRequestError, ObjectNotFoundError
 from core.domain.experiment import Experiment
@@ -16,6 +17,7 @@ from core.storage.clickhouse._models._ch_annotation import ClickhouseAnnotation
 from core.storage.clickhouse._models._ch_completion import ClickhouseCompletion
 from core.storage.clickhouse._models._ch_experiment import ClickhouseExperiment
 from core.storage.clickhouse._models._ch_field_utils import data_and_columns, zip_columns
+from core.storage.clickhouse._models._ch_input import ClickhouseInput
 from core.storage.clickhouse._utils import clone_client, sanitize_readonly_privileges
 from core.storage.completion_storage import CompletionField, CompletionStorage
 from core.utils.iter_utils import safe_map
@@ -52,6 +54,11 @@ class ClickhouseClient(CompletionStorage):
     async def store_experiment(self, experiment: Experiment, settings: dict[str, Any] | None = None):
         stored_model = ClickhouseExperiment.from_domain(self.tenant_uid, experiment)
         await self._insert("experiments", stored_model, settings)
+
+    @override
+    async def store_input(self, input: SavedAgentInput, settings: dict[str, Any] | None = None):
+        stored_model = ClickhouseInput.from_domain(self.tenant_uid, input)
+        await self._insert("inputs", stored_model, settings)
 
     @override
     async def add_completion_to_experiment(

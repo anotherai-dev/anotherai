@@ -1,6 +1,7 @@
 from typing import Any, Literal, Protocol
 
 from core.domain.agent_completion import AgentCompletion
+from core.domain.agent_input import SavedAgentInput
 from core.domain.annotation import Annotation
 from core.domain.experiment import Experiment
 
@@ -13,6 +14,8 @@ class CompletionStorage(Protocol):
     async def store_annotation(self, annotation: Annotation): ...
 
     async def store_experiment(self, experiment: Experiment): ...
+
+    async def store_input(self, input: SavedAgentInput): ...
 
     async def add_completion_to_experiment(self, experiment_id: str, completion_id: str): ...
 

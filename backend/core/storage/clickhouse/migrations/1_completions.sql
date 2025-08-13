@@ -65,10 +65,11 @@ ENGINE = ReplacingMergeTree(updated_at) --
 PARTITION BY toDate(UUIDv7ToDateTime(id)) -- Composite primary key, needs to be sparse
 PRIMARY KEY (tenant_uid, toDate(UUIDv7ToDateTime(id)))
 ORDER BY (
-        tenant_uid DESC,
-        toDate(UUIDv7ToDateTime(id)) DESC,
-        toUInt128(id) DESC -- Order by run uuid converted to UInt128 to avoid sorting error
-    ) SETTINGS allow_experimental_reverse_key = 1;
+        tenant_uid,
+        toDate(UUIDv7ToDateTime(id)),
+        toUInt128(id)
+    );
+-- It would be better to use a reverse order, but Clickhouse cloud does not yet support it :/
 -- Add a bloom filter index on the cache_hash, eval_hash and input_hash columns
 -- For somewhat efficient retrieval
 ALTER TABLE completions

@@ -1,11 +1,13 @@
+import json
 import logging
 from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime, timedelta
 from typing import Annotated, Any, cast
 from uuid import UUID
 
-from pydantic import AfterValidator, BaseModel, BeforeValidator, PlainSerializer
+from pydantic import AfterValidator, BaseModel, BeforeValidator, PlainSerializer, TypeAdapter
 
+from core.domain.message import Message
 from core.utils.uuid import uuid7
 
 
@@ -194,3 +196,63 @@ def zip_columns(
     mapping_fns = mapping_fns or {}
 
     return [_map_row(row, column_names, mapping_fns, nested_fields) for row in rows]
+
+
+# TODO: we should use a duplicated type to avoid side effects
+_Messages = TypeAdapter(list[Message])
+
+
+def dump_messages(messages: list[Message] | None) -> str:
+    if not messages:
+        return ""
+    return _Messages.dump_json(messages, exclude_none=True).decode()
+
+
+def parse_messages(messages: str) -> list[Message] | None:
+    if not messages:
+        return None
+    return _Messages.validate_json(messages)
+
+
+def _sanitize_metadata_value(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value
+    return json.dumps(value)
+
+
+def _from_sanitized_metadata_value(value: str) -> Any:
+    try:
+        return json.loads(value)
+    except json.JSONDecodeError:
+        return value
+
+
+def sanitize_metadata(metadata: dict[str, Any] | None):
+    return {k: _sanitize_metadata_value(v) for k, v in metadata.items()} if metadata else {}
+
+
+def from_sanitized_metadata(metadata: dict[str, str] | None):
+    if not metadata:
+        return None
+    return {k: _from_sanitized_metadata_value(v) for k, v in metadata.items()}
+
+
+def stringify_json(data: Any) -> str:
+    if isinstance(data, BaseModel):
+        data = data.model_dump(exclude_none=True)
+    # Remove spaces from the JSON string to allow using simplified json queries
+    # see https://clickhouse.com/docs/en/sql-reference/functions/json-functions#simplejsonextractstring
+    if not data:
+        return ""
+    return json.dumps(data, separators=(",", ":"))
+
+
+def from_stringified_json(data: str) -> Any:
+    if not data:
+        return None
+    try:
+        return json.loads(data)
+    except json.JSONDecodeError:
+        return data

@@ -70,7 +70,7 @@ def _messages_list_preview(
     return None
 
 
-def _input_preview(variables: dict[str, Any] | None, messages: Sequence[Message] | None):
+def compute_input_preview(variables: dict[str, Any] | None, messages: Sequence[Message] | None):
     if variables:
         first_preview = compute_preview(variables)
         if len(first_preview) < DEFAULT_PREVIEW_MAX_LEN and (
@@ -97,7 +97,7 @@ def _output_preview(output: AgentOutput):
 
 def assign_run_previews(completion: AgentCompletion):
     if not completion.agent_input.preview:
-        completion.agent_input.preview = _input_preview(
+        completion.agent_input.preview = compute_input_preview(
             completion.agent_input.variables,
             completion.agent_input.messages,
         )

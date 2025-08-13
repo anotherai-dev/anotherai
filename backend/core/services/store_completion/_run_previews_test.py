@@ -5,9 +5,9 @@ from core.domain.file import File
 from core.domain.message import Message, MessageContent
 from core.domain.tool_call import ToolCallRequest, ToolCallResult
 from core.services.store_completion._run_previews import (
-    _input_preview,
     _messages_list_preview,
     _tool_call_request_preview,
+    compute_input_preview,
 )
 
 
@@ -183,10 +183,10 @@ class TestInputPreview:
         messages = Message.with_text("Hello, world!", role="user")
         variables = {"value": "Hello, world!"}
 
-        assert _input_preview(variables, [messages]) == 'value: "Hello, world!" | User: Hello, world!'
+        assert compute_input_preview(variables, [messages]) == 'value: "Hello, world!" | User: Hello, world!'
 
     def test_reply_empty_object(self):
         messages = Message.with_text("Hello, world!", role="user")
         variables = {"value": "Hello, world!"}
 
-        assert _input_preview(variables, [messages]) == 'value: "Hello, world!" | User: Hello, world!'
+        assert compute_input_preview(variables, [messages]) == 'value: "Hello, world!" | User: Hello, world!'

@@ -8,6 +8,7 @@ from structlog import get_logger
 from core.domain.agent import Agent as DomainAgent
 from core.domain.agent_completion import AgentCompletion as DomainCompletion
 from core.domain.agent_input import AgentInput as DomainInput
+from core.domain.agent_input import SavedAgentInput as DomainSavedAgentInput
 from core.domain.agent_output import AgentOutput as DomainOutput
 from core.domain.annotation import Annotation as DomainAnnotation
 from core.domain.api_key import APIKey as DomainAPIKey
@@ -39,6 +40,7 @@ from protocol.api._api_models import (
     Completion,
     CreateAgentRequest,
     CreateExperimentRequest,
+    CreateInputRequest,
     CreateViewResponse,
     Error,
     Experiment,
@@ -53,6 +55,7 @@ from protocol.api._api_models import (
     ModelWithID,
     Output,
     OutputSchema,
+    SavedInput,
     SupportsModality,
     Tool,
     ToolCallRequest,
@@ -578,4 +581,25 @@ def api_key_from_domain_complete(api_key: DomainCompleteAPIKey) -> CompleteAPIKe
         last_used_at=api_key.last_used_at,
         created_by=api_key.created_by,
         key=api_key.api_key,
+    )
+
+
+def saved_input_from_domain(input: DomainSavedAgentInput) -> SavedInput:
+    return SavedInput(
+        id=input.id,
+        created_at=input.created_at,
+        agent_id=input.agent_id,
+        messages=[message_from_domain(m) for m in input.messages] if input.messages else None,
+        variables=input.variables or None,
+        metadata=input.metadata or None,
+    )
+
+
+def create_input_to_domain(input: CreateInputRequest) -> DomainSavedAgentInput:
+    return DomainSavedAgentInput(
+        created_at=datetime.now(UTC),
+        agent_id=input.agent_id,
+        messages=[message_to_domain(m) for m in input.messages] if input.messages else None,
+        variables=input.variables or None,
+        metadata=input.metadata or None,
     )

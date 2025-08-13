@@ -20,6 +20,7 @@ from protocol.api._services.annotation_service import AnnotationService
 from protocol.api._services.completion_service import CompletionService
 from protocol.api._services.documentation_service import DocumentationService
 from protocol.api._services.experiment_service import ExperimentService
+from protocol.api._services.input_service import InputService
 from protocol.api._services.organization_service import OrganizationService
 from protocol.api._services.playground_service import PlaygroundService
 from protocol.api._services.view_service import ViewService
@@ -127,3 +128,9 @@ async def organization_service() -> OrganizationService:
     deps = lifecyle_dependencies()
     tenant = await _authenticated_tenant()
     return OrganizationService(deps.storage_builder.tenants(tenant.uid))
+
+
+async def input_service() -> InputService:
+    deps = lifecyle_dependencies()
+    tenant = await _authenticated_tenant()
+    return InputService(deps.storage_builder.completions(tenant.uid), deps.storage_builder.files(tenant.uid))

@@ -4,7 +4,7 @@ from typing import Any
 
 from core.domain.agent import Agent
 from core.domain.agent_completion import AgentCompletion
-from core.domain.agent_input import AgentInput
+from core.domain.agent_input import AgentInput, SavedAgentInput
 from core.domain.agent_output import AgentOutput
 from core.domain.annotation import Annotation
 from core.domain.experiment import Experiment
@@ -176,3 +176,16 @@ def fake_view_folder(**kwargs: Any):
         name="Test View Folder",
         views=[fake_view()],
     )
+
+
+def fake_saved_agent_input(**kwargs: Any):
+    """Create a fake SavedAgentInput for testing purposes"""
+    return SavedAgentInput(
+        id="test-input-id",
+        agent_id="test-agent",
+        preview="Test input preview",
+        variables={"name": "John", "age": 30},
+        messages=[Message.with_text("Hello, how can I help you?", role="user")],
+        created_at=datetime(2025, 1, 20, 10, 0, 0, tzinfo=UTC),
+        metadata={"source": "test", "priority": "high"},
+    ).model_copy(update=kwargs)

@@ -12,6 +12,7 @@ from protocol.api._api_models import (
     Annotation,
     CompleteAPIKey,
     CreateAPIKeyRequest,
+    CreateInputRequest,
     CreateViewResponse,
     Experiment,
     Input,
@@ -53,7 +54,7 @@ async def playground(
     ),
     completion_query: str | None = Field(
         None,
-        description="🔄 PREFERRED for re-running experiments: SQL query to fetch completions and use the associated inputs. Must yield the input_variables and input_messages columns. Use this instead of query_completions() + inputs parameter when retrying existing completions.",
+        description="🔄 PREFERRED for re-running experiments or dealing with large inputs: SQL query to fetch completions and use the associated inputs. Must yield the input_variables and input_messages columns. Use this instead of query_completions() + inputs parameter when retrying existing completions.",
     ),
     prompts: list[list[Message]] | None = Field(
         default=None,
@@ -128,13 +129,14 @@ async def playground(
 
     For providing inputs, you have two options:
     - inputs parameter: provide a list of inputs directly (for new experiments with custom data)
-    - completion_query parameter: 🔄 PREFERRED for re-running experiments - provide a SQL query to fetch inputs from existing completions
+    - completion_query parameter: 🔄 PREFERRED for re-running experiments or dealing with large inputs - provide a SQL query to fetch inputs from existing completions
 
     ✅ USE the completion_query parameter when:
     - "retry the last 50 completions"
     - "repeat the last 50 completions with positive user feedback"
     - Re-running any existing completions with different models/settings
     - Comparing performance across different model versions
+    - Having to handle inputs that are too large to fit in the context window
 
     ❌ AVOID using the query_completions() tool to fetch data and then passing it to inputs parameter
 
@@ -145,6 +147,10 @@ async def playground(
     SELECT * FROM completions WHERE id IN (SELECT arrayJoin(completion_ids) FROM experiments WHERE id = 'exp-billing-analysis')
     - Use all the runs that have been annotated today
     SELECT input_variables, input_messages FROM completions JOIN annotations ON completions.id = annotations.completion_id WHERE annotations.created_at >= now() - INTERVAL 1 DAY
+    - Use input with IDs
+    SELECT * FROM inputs WHERE id = '...'
+    - Use input in a pre-emptively created dataset
+    SELECT * FROM inputs WHERE metadata['dataset'] = '...'
     """
 
     return await (await _mcp_utils.playground_service()).run(
@@ -547,3 +553,27 @@ async def create_or_update_view(
 async def create_api_key(name: str) -> CompleteAPIKey:
     """Create a new API key that can be used to authenticate with the Another AI MCP and API"""
     return await (await _mcp_utils.organization_service()).create_api_key(CreateAPIKeyRequest(name=name))
+
+
+# ------------------------------------------------------------
+# Inputs
+
+
+@mcp.tool()
+async def create_input(input: CreateInputRequest) -> str:
+    """Create a new input.
+    Use when you intend to re-use inputs or where inputs are two large to fit in the context window.
+
+    A good pattern when creating inputs is to group them in dataset which can be
+    done by using a metadata (for example metadata['dataset'] = 'my-dataset')
+
+    Input can be used by the playground tool by using the completion_query tool.
+    For example:
+    SELECT * FROM inputs WHERE metadata['dataset'] = 'my-dataset'
+    SELECT * FROM inputs WHERE input_id = '0000000000000'
+    """
+    saved = await (await _mcp_utils.input_service()).create_input(input)
+    return f"Successfully created input {saved.id}"
+
+
+# TODO: add

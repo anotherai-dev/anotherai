@@ -9,6 +9,7 @@ from protocol.api._services.agent_service import AgentService
 from protocol.api._services.annotation_service import AnnotationService
 from protocol.api._services.completion_service import CompletionService
 from protocol.api._services.experiment_service import ExperimentService
+from protocol.api._services.input_service import InputService
 from protocol.api._services.organization_service import OrganizationService
 from protocol.api._services.view_service import ViewService
 
@@ -81,3 +82,10 @@ def organization_service(tenant: TenantDep, dependencies: LifecycleDependenciesD
 
 
 OrganizationServiceDep = Annotated[OrganizationService, Depends(organization_service)]
+
+
+def input_service(tenant: TenantDep, dependencies: LifecycleDependenciesDep) -> InputService:
+    return InputService(dependencies.storage_builder.completions(tenant.uid))
+
+
+InputServiceDep = Annotated[InputService, Depends(input_service)]

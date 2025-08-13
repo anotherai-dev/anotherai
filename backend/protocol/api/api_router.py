@@ -10,12 +10,14 @@ from protocol.api._api_models import (
     Completion,
     CreateAPIKeyRequest,
     CreateExperimentRequest,
+    CreateInputRequest,
     CreateViewRequest,
     Experiment,
     Model,
     Page,
     PatchViewFolderRequest,
     PatchViewRequest,
+    SavedInput,
     View,
     ViewFolder,
 )
@@ -24,6 +26,7 @@ from protocol.api._dependencies._services import (
     AnnotationServiceDep,
     CompletionServiceDep,
     ExperimentServiceDep,
+    InputServiceDep,
     OrganizationServiceDep,
     ViewServiceDep,
 )
@@ -235,3 +238,20 @@ async def delete_api_key(
     key_id: str,
 ) -> None:
     await organization_service.delete_api_key(key_id)
+
+
+#  ------------------------------------------------------------
+#  Inputs
+
+
+@router.post("/v1/inputs")
+async def create_input(
+    input_service: InputServiceDep,
+    input: CreateInputRequest,
+) -> SavedInput:
+    """Create a new input for an agent.
+    The input can then be queried via the raw query endpoint"""
+    return await input_service.create_input(input)
+
+
+# TODO: add list and get input endpoints

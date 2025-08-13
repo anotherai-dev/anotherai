@@ -65,7 +65,7 @@ async def clickhouse_client():
 
     client = await create_async_client(dsn=dsn)
     # Drop all test tables
-    for table in ["completions", "annotations", "experiments", "migrations"]:
+    for table in ["completions", "annotations", "experiments", "migrations", "inputs"]:
         _ = await client.command(f"DROP TABLE IF EXISTS {table}")  # pyright: ignore[reportUnknownMemberType]
 
     # Drop all users except default
