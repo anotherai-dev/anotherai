@@ -1,4 +1,4 @@
-# Creating Agents with Image Input
+mad# Creating Agents with Image Input
 
 ## Overview
 
@@ -31,9 +31,7 @@ def image_description(image_url: str) -> str:
         messages=[
             {
                 "role": "system",
-                "content": """You are an image description specialist who provides detailed and accurate descriptions of images. Your task is to analyze the provided images and generate a comprehensive description that captures the key elements, context, and details visible in the image(s).
-
-                When multiple images are provided, create a unified description that covers all images. If additional information is provided, use it to inform your description and provide more context-specific details.
+                "content": """You are an image description specialist who provides detailed and accurate descriptions of images. Your task is to analyze the provided image and generate a comprehensive description that captures the key elements, context, and details visible in the image.
 
                 Your description should be:
                 - Clear and concise
@@ -54,43 +52,16 @@ def image_description(image_url: str) -> str:
     return res.choices[0].message.content
 ```
 
-### Breaking Down Each Part
-
-#### Function Signature
-```python
-def sassy_image_description(image_url: str) -> str:
-```
-The function accepts a string parameter `image_url`. This should be either:
-- A public URL to an image (e.g., `https://example.com/image.jpg`)
-- A base64-encoded data URL (e.g., `data:image/jpeg;base64,/9j/4AAQ...`)
-
-#### System Message
-```python
-{
-    "role": "system",
-    "content": "You are a sassy image description generator. You are given an image URL and you need to generate a sassy description of the image.",
-}
-```
-The system message is a regular string, just like in text-only agents. This sets the personality and task for the AI.
-
-#### User Message with Image
-```python
-{
-    "role": "user",
-    "content": [
-        {"type": "image_url", "image_url": {"url": image_url}},
-    ],
-}
-```
-This is where images differ from text inputs:
-- `content` is an **array** instead of a string
-- Each array element has a `type` field
+As you can see, images differ from text inputs:
 - For images, use `type: "image_url"`
 - The URL is nested: `image_url: {"url": image_url}`
 
-#### Mixing Text and Images
+### Combining Image Input with Text
 
-You can combine text and images in the same message:
+#### Mixing Static Text and Images
+
+[TODO: confirm if this is correct]
+You can combine text and image content in the same message. For example:
 
 ```python
 {
@@ -100,4 +71,54 @@ You can combine text and images in the same message:
         {"type": "image_url", "image_url": {"url": image_url}}
     ],
 }
+```
+
+#### Mixing Input Variables and Images
+
+[TODO: confirm if this is correct]
+When your input includes both images and an input variable, you can use Jinja2 templating in text content while keeping images in the structured format. For example:
+
+```python
+class ImageQuestionAnswer(BaseModel):
+    answer: str
+
+def answer_image_question(
+    image_url: str,
+    question: str,
+) -> ImageQuestionAnswer:
+    res = openai.beta.chat.completions.parse(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "system",
+                "content": """You are an image analyst who provides detailed and accurate answers to questions about images. Your task is to analyze the provided image and question about the image and generate a comprehensive answer.
+
+                Your answer should be:
+                - Clear and concise
+                - Factual and objective
+                - Well-structured and easy to understand""",
+            },
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text", 
+                        "text": "{{question}}"
+                    },
+                    {"type": "image_url", "image_url": {"url": image_url}}
+                ]
+            }
+        ],
+        response_format=ImageQuestionAnswer,
+        extra_body={
+            "input": {
+                "variables": {
+                    "question": question,
+                }
+            }
+        },
+    )
+    if not res.choices[0].message.parsed:
+        raise ValueError("No image question answer found")
+    return res.choices[0].message.parsed
 ```
