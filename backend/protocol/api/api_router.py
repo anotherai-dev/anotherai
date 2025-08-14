@@ -11,6 +11,7 @@ from protocol.api._api_models import (
     CreateAPIKeyRequest,
     CreateExperimentRequest,
     CreateViewRequest,
+    Deployment,
     Experiment,
     Model,
     Page,
@@ -235,3 +236,29 @@ async def delete_api_key(
     key_id: str,
 ) -> None:
     await organization_service.delete_api_key(key_id)
+
+
+# ------------------------------------------------------------
+# Deployments
+
+
+@router.get("/v1/agents/{agent_id}/deployments", response_model_exclude_none=True)
+async def list_deployments(agent_id: str) -> Page[Deployment]:
+    raise NotImplementedError
+
+
+@router.post("/v1/agents/{agent_id}/deployments", response_model_exclude_none=True)
+async def create_deployment(agent_id: str, deployment: Deployment) -> Deployment:
+    raise NotImplementedError
+
+
+@router.patch("/v1/agents/{agent_id}/deployments/{deployment_id}", response_model_exclude_none=True)
+async def patch_deployment(agent_id: str, deployment_id: str, deployment: Deployment) -> Deployment:
+    raise NotImplementedError
+
+
+@router.delete("/v1/agents/{agent_id}/deployments/{deployment_id}")
+async def archive_deployment(agent_id: str, deployment_id: str) -> None:
+    """Archives a deployment. The deployment can still be used if referred to by ID but no longer
+    appears in the list of deployments."""
+    raise NotImplementedError

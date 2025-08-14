@@ -5,7 +5,7 @@ or in the conversion layer."""
 from datetime import date, datetime
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from core.utils.fields import datetime_factory
 
@@ -692,3 +692,53 @@ class CreateAPIKeyRequest(BaseModel):
 class QueryCompletionResponse(BaseModel):
     rows: list[dict[str, Any]]
     url: str
+
+
+# ------------------------------------------------
+# Deployments
+
+
+class Deployment(BaseModel):
+    """A deployment represents a specific model configuration for production use."""
+
+    id: str = Field(
+        description="A user provided ID, unique per agent_id, for the deployment",
+        examples=["production#1"],
+    )
+
+    agent_id: str
+
+    version: Version = Field(
+        description="Version configuration including model, prompt, and tools",
+    )
+    created_at: datetime = Field(
+        default_factory=datetime_factory,
+        description="The timestamp when the deployment was created",
+    )
+
+    created_by: str
+
+    updated_at: datetime | None = None
+
+    metadata: dict[str, Any] | None = None
+
+
+class DeploymentUpdate(BaseModel):
+    version: Annotated[
+        Version | None,
+        Field(
+            description="""A new version for the deployment. Note that it is only possible to update the version of a
+        deployment when the new version expects a compatible variables (aka input_variables_schema) and response
+        format types (aka output_schema). Schemas are considered compatible if the structure they describe are
+        the same, i-e all fields have the same name, properties and types.""",
+        ),
+    ] = None
+
+    metadata: dict[str, Any] | None = None
+
+    @model_validator(mode="after")
+    def post_validate(self):
+        # check if at least one field is not None
+        if not self.version and not self.metadata:
+            raise ValueError("Either version or metadata must be provided")
+        return self

@@ -208,6 +208,14 @@ class _OpenAIProxyExtraFields(BaseModel):
         validation_alias=_alias_generator("conversation_id"),
     )
 
+    deployment_id: str | None = Field(
+        default=None,
+        # TODO: describe if the values in the code override the deployment or if the deployment is the priority
+        # We could also have the deployment id in the model: `deployments/<deployment_id>` which would clarify
+        # that the deployment is a priority
+        description="The deployment id to use for the request",
+    )
+
 
 class OpenAIProxyReasoning(BaseModel):
     """A custom reasoning object that allows setting an effort or a budget"""
