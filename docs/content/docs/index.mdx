@@ -53,7 +53,7 @@ Add the following configuration to your MCP servers config:
 {
   "mcpServers": {
     "anotherai": {
-      "url": "http://127.0.0.1:8000/mcp/"
+      "url": "{{API_URL}}/mcp/"
     }
   }
 }
@@ -71,7 +71,7 @@ Cursor UI should now look like this (note the green indicator and the number of 
 2. Type the following to install:
 
 ```bash
-claude mcp add --scope user --transport http anotherai http://localhost:8000/mcp/
+claude mcp add --scope user --transport http anotherai {{API_URL}}/mcp/
 ```
 
 <Callout type="info">
