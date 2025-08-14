@@ -702,8 +702,8 @@ class Deployment(BaseModel):
     """A deployment represents a specific model configuration for production use."""
 
     id: str = Field(
-        description="A user provided ID, unique per agent_id, for the deployment",
-        examples=["production#1"],
+        description="A unique user provided ID for the deployment",
+        examples=["my-agent:production#1"],
     )
 
     agent_id: str

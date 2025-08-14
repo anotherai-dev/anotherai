@@ -242,23 +242,23 @@ async def delete_api_key(
 # Deployments
 
 
-@router.get("/v1/agents/{agent_id}/deployments", response_model_exclude_none=True)
-async def list_deployments(agent_id: str) -> Page[Deployment]:
+@router.get("/v1//deployments", response_model_exclude_none=True)
+async def list_deployments() -> Page[Deployment]:
     raise NotImplementedError
 
 
-@router.post("/v1/agents/{agent_id}/deployments", response_model_exclude_none=True)
-async def create_deployment(agent_id: str, deployment: Deployment) -> Deployment:
+@router.post("/v1/deployments", response_model_exclude_none=True)
+async def create_deployment(deployment: Deployment) -> Deployment:
     raise NotImplementedError
 
 
-@router.patch("/v1/agents/{agent_id}/deployments/{deployment_id}", response_model_exclude_none=True)
-async def patch_deployment(agent_id: str, deployment_id: str, deployment: Deployment) -> Deployment:
+@router.patch("/v1/deployments/{deployment_id}", response_model_exclude_none=True)
+async def patch_deployment(deployment_id: str, deployment: Deployment) -> Deployment:
     raise NotImplementedError
 
 
-@router.delete("/v1/agents/{agent_id}/deployments/{deployment_id}")
-async def archive_deployment(agent_id: str, deployment_id: str) -> None:
+@router.delete("/v1/deployments/{deployment_id}")
+async def archive_deployment(deployment_id: str) -> None:
     """Archives a deployment. The deployment can still be used if referred to by ID but no longer
     appears in the list of deployments."""
     raise NotImplementedError
