@@ -2,9 +2,15 @@ import { cx } from "class-variance-authority";
 import { Copy } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useToast } from "../ToastProvider";
+import { ImageViewer } from "../messages/ImageViewer";
 
 const MAX_VALUE_LENGTH = 1500;
 const MAX_HEIGHT_PX = 150;
+
+// Helper function to detect image data URIs
+const isImageDataUri = (value: string): boolean => {
+  return typeof value === "string" && value.startsWith("data:image/");
+};
 
 const getTextSizeStyle = (textSize: "xs" | "sm" | "base" | string = "xs") => {
   if (textSize === "xs" || textSize === "sm" || textSize === "base") {
@@ -66,6 +72,41 @@ export function ValueDisplay({
 
   // Handle string values with potential see more functionality
   if (typeof value === "string") {
+    // Special handling for image data URIs
+    if (isImageDataUri(value)) {
+      return (
+        <div
+          className={cx(
+            "inline-block p-3 bg-white border border-gray-200 rounded-[2px] relative",
+            textSizeClass
+          )}
+          style={textSizeStyle}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          <div className="mb-2">
+            <ImageViewer imageUrl={value} alt="Variable image" />
+          </div>
+          <div className="text-xs text-gray-500">
+            Image data URI ({Math.round(value.length / 1024)}KB)
+          </div>
+          {isHovered && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                copyToClipboard();
+              }}
+              className="absolute top-1 right-1 p-1 bg-white border border-gray-200 rounded-[2px] hover:bg-gray-100 transition-colors cursor-pointer"
+              title="Copy image data URI to clipboard"
+            >
+              <Copy size={12} />
+            </button>
+          )}
+        </div>
+      );
+    }
+
+    // Regular string handling
     const shouldTruncateByLength =
       showSeeMore && value.length > MAX_VALUE_LENGTH;
     const shouldTruncate = shouldTruncateByLength || shouldTruncateByHeight;
