@@ -1,23 +1,31 @@
 ---
 title: Annotations
-description: Add feedback, metrics, and insights to your AI completions and experiments
+description: Add feedback and scores to your AI completions and experiments
 ---
 
-# Annotations
+## What are Annotations?
 
-Annotations enable you to add feedback and insights to your production and experiment completions. Content in annotations can be analyzed and used by your AI coding agent to improve your agents on your behalf.
+Simply put: annotations are the tool that allows you to add comments to your completions and experiments. The idea behind annotations is to give you  a way to provide clear, specific feedback on completions that your AI Coding agent can access and use to improve your agents on your behalf.
 
 ## What sort of content can be added in annotations?
 
-Ultimately, the goal of annotations is to provide feedback on completions that your coding agent can use to understand the success criteria for an agent and offer improvements to help the agent meet that goal.
+There are two types of annotations: text-based annotations and metric-based annotations (referred to below as "scores"). You can use one or both types of annotations on a completion; they are not mutually exclusive.
 
-Annotations can contain feedback about:
+### Text
+This is the primary way to use annotations.
+
+Text-based annotations can contain feedback about:
 - What is working (e.g. "The event descriptions are clear and the ideal length")
 - What is not working (e.g. "The description of the events are too verbose, and this model missed out on extracting the updated time of the team sync")
 
-The best part about annotations is that they don't need to be only good or only bad. You can highlight parts of a completion that are working well and parts that are not.
+Using text-based annotations allow you to provide thorough, nuanced feedback in cases where a completion's quality isn't straightforward. For example:
+1. If you don't consider a completion as all good or all bad, you can highlight parts of a completion that are working well and parts that are not.
+2. You can add specific thoughts and context to a completion so your coding agent will have an in-depth understanding of the completion's quality.
 
-Metadata can also be added to annotations to provide quantitative data on how certain prompts and models perform compared with others. There are no predefined metadata values, you can add whatever is important to you. Some common metadata keys are:
+However if you would like to incorporate more quantitative ratings, you can do that by using scores, which are described below!
+
+### Scores
+Scores can be added to annotations to provide quantitative evaluations. There are no predefined scores keys, you can add whatever is important to you. Some examples of common score metrics are:
 - Accuracy (does the content match what was expected?)
 - Tone (how appropriate is the tone given the context?)
 - Clarity (does the output make sense?)
@@ -27,7 +35,7 @@ Metadata can also be added to annotations to provide quantitative data on how ce
 
 ### In AnotherAI Web App
 
-You can add annotations directly in AnotherAI on both the experiments screen and in individual completion detail views. Annotations can be added for both entire completions and individual fields within the output (when the output is structured).
+You can add text-based annotations directly in AnotherAI on both the experiments screen and in individual completion detail views. Annotations can be added for both entire completions and individual fields within the output (when the output is structured).
 
 #### Annotations on Experiments Screen
 - To annotate entire completions: locate the "Add Annotation" button under each completion's output. Select the button to open a text box where you can add your feedback about the content of that specific completion. 
@@ -38,22 +46,18 @@ You can add annotations directly in AnotherAI on both the experiments screen and
 - To annotate entire completions: there is a text box on the top right of the screen where you can add your feedback about the content of the completion.
 - To annotate individual fields within the output, hover over the field you want to annotate and select the "Add Annotation" button. 
 
-Note: when adding annotations in the web app, you can only add text feedback. To add metadata, ask Claude Code to add it on your behalf.
-
-```
- I want to add the accuracy metadata with a value of 10 to this completion: http://localhost:3000/completions?showCompletionModal=01989fe9-4fa8-735a-d16a-6771d6c67ef7
-```
+Note: at this time, it's not possible to add scores directly in the web app.
 
 ### Using Claude or AI Agents
 
-You can also ask Claude Code to review completions and add annotations on your behalf. To ensure that Claude Code is evaluating the completions in the way you want, it's best to provide some guidance. For example:
+You can also ask Claude Code to review completions and add text-based, scores, or both types of annotations on your behalf. To ensure that Claude Code is evaluating the completions in the way you want, it's best to provide some guidance. For example:
 
 ```
 Review the completions in anotherai/experiment/019885bb-24ea-70f8-c41b-0cbb22cc3c00 
-and leave feedback about accuracy and tone. Evaluate accuracy based on whether the agent correctly extracted all todos from the transcript and evaluate tone based on whether the agent used an appropriately professional tone.
+and leave scores about the completion's accuracy and tone. Evaluate accuracy based on whether the agent correctly extracted all todos from the transcript and evaluate tone based on whether the agent used an appropriately professional tone.
 ```
 
-Claude will analyze the completions and add appropriate annotations with metadata. In the example above, Claude will add an annotation with the metadata "accuracy" and "tone" and assigned appropriate values for each, based on the content of the completion. 
+Claude will analyze the completions and add appropriate annotations. In the example above, Claude will add an annotation with the scores "accuracy" and "tone" and assigned appropriate values for each, based on the content of the completion. 
 
 ## Using Claude Code to Improve your Agents using Annotations
 
@@ -71,10 +75,10 @@ Claude can also leverage annotations to provide you with insights about your age
 
 ### 1. **Create Performance Reports**
 ```
-Summarize the accuracy metrics for all completions of calendar-event-extractor that used GPT-5. 
+Provide a report on the accuracy scores for all completions of calendar-event-extractor that used GPT-5. 
 ```
 
 ### 2. **Compare Model Performance**
 ```
-Which model has the best tone based on annotations?
+Which model has the best tone overall, based on annotations?
 ```
