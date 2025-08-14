@@ -1,7 +1,8 @@
 {
   "private": true,
   "workspaces": [
-    "web"
+    "web",
+    "docs"
   ],
   "devDependencies": {
     "@eslint/eslintrc": "^3",
