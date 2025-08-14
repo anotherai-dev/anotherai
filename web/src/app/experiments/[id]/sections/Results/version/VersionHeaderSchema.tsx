@@ -68,7 +68,10 @@ export function VersionHeaderSchema(props: VersionHeaderSchemaProps) {
     );
   }
 
-  if (!version.output_schema || Object.keys(version.output_schema).length === 0) {
+  if (
+    !version.output_schema ||
+    Object.keys(version.output_schema).length === 0
+  ) {
     return null;
   }
 

@@ -63,9 +63,12 @@ export function UniversalPieChart({
 
     const containerElement = containerRef.current;
     if (containerElement) {
-      containerElement.addEventListener('mousemove', handleGlobalMouseMove);
+      containerElement.addEventListener("mousemove", handleGlobalMouseMove);
       return () => {
-        containerElement.removeEventListener('mousemove', handleGlobalMouseMove);
+        containerElement.removeEventListener(
+          "mousemove",
+          handleGlobalMouseMove
+        );
       };
     }
   }, []);
@@ -128,7 +131,7 @@ export function UniversalPieChart({
 
     // Calculate the chart height based on the actual pie size + padding
     // This ensures the chart container is just big enough for the pie + margins
-    const chartHeight = (outerRadius * 2) + 80; // 40px padding top and bottom
+    const chartHeight = outerRadius * 2 + 80; // 40px padding top and bottom
 
     return { pieData, outerRadius, chartHeight };
   }, [data, containerDimensions]);
@@ -152,10 +155,7 @@ export function UniversalPieChart({
       onMouseMove={handleMouseMove}
     >
       {/* Pie Chart Container - Dynamic height based on pie size */}
-      <div 
-        className="flex-shrink-0"
-        style={{ height: `${chartHeight}px` }}
-      >
+      <div className="flex-shrink-0" style={{ height: `${chartHeight}px` }}>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie

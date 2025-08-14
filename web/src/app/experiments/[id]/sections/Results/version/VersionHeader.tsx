@@ -1,18 +1,18 @@
 import { useMemo } from "react";
 import { HoverPopover } from "@/components/HoverPopover";
+import {
+  findIndexOfVersionThatFirstUsedThosePrompt,
+  findIndexOfVersionThatFirstUsedThosePromptAndSchema,
+  findIndexOfVersionThatFirstUsedThoseSchema,
+} from "@/components/utils/utils";
 import { VersionDetailsView } from "@/components/version-details/VersionDetailsView";
 import { Annotation, Message, Version } from "@/types/models";
-import { 
-  findIndexOfVersionThatFirstUsedThosePromptAndSchema,
-  findIndexOfVersionThatFirstUsedThosePrompt,
-  findIndexOfVersionThatFirstUsedThoseSchema
-} from "@/components/utils/utils";
 import { VersionHeaderMetrics } from "./VersionHeaderMetrics";
 import { VersionHeaderModel } from "./VersionHeaderModel";
 import { VersionHeaderPriceAndLatency } from "./VersionHeaderPriceAndLatency";
 import { VersionHeaderPrompt } from "./VersionHeaderPrompt";
-import { VersionHeaderSharedPromptAndSchema } from "./VersionHeaderSharedPromptAndSchema";
 import { VersionHeaderSchema } from "./VersionHeaderSchema";
+import { VersionHeaderSharedPromptAndSchema } from "./VersionHeaderSharedPromptAndSchema";
 import { VersionOptionalKeysView } from "./VersionOptionalKeysView";
 
 type VersionHeaderProps = {
@@ -68,29 +68,34 @@ export function VersionHeader(props: VersionHeaderProps) {
 
     const showPrompt = optionalKeysToShow.includes("prompt");
     const showSchema = optionalKeysToShow.includes("output_schema");
-    
+
     if (!showPrompt && !showSchema) {
       return { showCombined: false, showPrompt: false, showSchema: false };
     }
 
     // If showing both, check if they match the same version
     if (showPrompt && showSchema) {
-      const indexOfVersionThatFirstUsedThosePromptAndSchema = findIndexOfVersionThatFirstUsedThosePromptAndSchema(versions, version);
-      const indexOfVersionThatFirstUsedThosePrompt = findIndexOfVersionThatFirstUsedThosePrompt(versions, version);
-      const indexOfVersionThatFirstUsedThoseSchema = findIndexOfVersionThatFirstUsedThoseSchema(versions, version);
-      
+      const indexOfVersionThatFirstUsedThosePromptAndSchema =
+        findIndexOfVersionThatFirstUsedThosePromptAndSchema(versions, version);
+      const indexOfVersionThatFirstUsedThosePrompt =
+        findIndexOfVersionThatFirstUsedThosePrompt(versions, version);
+      const indexOfVersionThatFirstUsedThoseSchema =
+        findIndexOfVersionThatFirstUsedThoseSchema(versions, version);
+
       // If both match and they match the same version (and not current), show combined
       if (
         indexOfVersionThatFirstUsedThosePromptAndSchema !== undefined &&
         indexOfVersionThatFirstUsedThosePromptAndSchema !== index &&
-        indexOfVersionThatFirstUsedThosePrompt === indexOfVersionThatFirstUsedThosePromptAndSchema &&
-        indexOfVersionThatFirstUsedThoseSchema === indexOfVersionThatFirstUsedThosePromptAndSchema
-      ) {
-        return { 
-          showCombined: true, 
-          showPrompt: false, 
-          showSchema: false,
+        indexOfVersionThatFirstUsedThosePrompt ===
+          indexOfVersionThatFirstUsedThosePromptAndSchema &&
+        indexOfVersionThatFirstUsedThoseSchema ===
           indexOfVersionThatFirstUsedThosePromptAndSchema
+      ) {
+        return {
+          showCombined: true,
+          showPrompt: false,
+          showSchema: false,
+          indexOfVersionThatFirstUsedThosePromptAndSchema,
         };
       }
     }
@@ -138,7 +143,9 @@ export function VersionHeader(props: VersionHeaderProps) {
             sharedKeypathsOfSchemas={sharedKeypathsOfSchemas}
             versions={versions}
             index={index}
-            indexOfVersionThatFirstUsedThosePromptAndSchema={promptAndSchemaLogic.indexOfVersionThatFirstUsedThosePromptAndSchema!}
+            indexOfVersionThatFirstUsedThosePromptAndSchema={
+              promptAndSchemaLogic.indexOfVersionThatFirstUsedThosePromptAndSchema!
+            }
             annotations={annotations}
             experimentId={experimentId}
             completionId={completionId}

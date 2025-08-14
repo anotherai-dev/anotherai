@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CartesianGrid,
-  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -114,11 +113,14 @@ export function UniversalLineChart({
     const processData = (inputData: ChartData[]) => {
       return inputData.map((dataPoint) => {
         const originalX = String(dataPoint.x);
-        const truncatedX = originalX.length > 20 ? originalX.substring(0, 20) + "..." : originalX;
-        
-        const newDataPoint: Record<string, unknown> = { 
+        const truncatedX =
+          originalX.length > 20
+            ? originalX.substring(0, 20) + "..."
+            : originalX;
+
+        const newDataPoint: Record<string, unknown> = {
           x: truncatedX,
-          originalX: originalX // Keep original for tooltip
+          originalX: originalX, // Keep original for tooltip
         };
 
         if (!isActuallyMultiSeries) {
@@ -241,7 +243,7 @@ export function UniversalLineChart({
         tickStyle: { fontSize: fontSize },
         axisLineStyle: { stroke: AXIS_STROKE_COLOR },
         tickLineStyle: { stroke: AXIS_STROKE_COLOR },
-        chartHeight: parseInt(height.replace('px', '')) || 200,
+        chartHeight: parseInt(height.replace("px", "")) || 200,
       };
 
     // For line charts, we need extra space to account for labels at the edges
@@ -251,7 +253,10 @@ export function UniversalLineChart({
     const maxLabelWidth = Math.max(
       ...data.map((item) => {
         const originalLabel = String(item.x);
-        const truncatedLabel = originalLabel.length > 20 ? originalLabel.substring(0, 20) + "..." : originalLabel;
+        const truncatedLabel =
+          originalLabel.length > 20
+            ? originalLabel.substring(0, 20) + "..."
+            : originalLabel;
         return measureTextWidth(truncatedLabel, fontSize);
       })
     );
@@ -274,7 +279,7 @@ export function UniversalLineChart({
         tickStyle: { fontSize: fontSize },
         axisLineStyle: { stroke: AXIS_STROKE_COLOR },
         tickLineStyle: { stroke: AXIS_STROKE_COLOR },
-        chartHeight: parseInt(height.replace('px', '')) || 200,
+        chartHeight: parseInt(height.replace("px", "")) || 200,
       };
     }
 
@@ -300,7 +305,7 @@ export function UniversalLineChart({
         tickStyle: { fontSize: Math.max(fontSize - 1, 10) },
         axisLineStyle: { stroke: AXIS_STROKE_COLOR },
         tickLineStyle: { stroke: AXIS_STROKE_COLOR },
-        chartHeight: parseInt(height.replace('px', '')) || 200,
+        chartHeight: parseInt(height.replace("px", "")) || 200,
       };
     }
 
@@ -333,7 +338,7 @@ export function UniversalLineChart({
         tickStyle: { fontSize: Math.max(fontSize - 1, 10) },
         axisLineStyle: { stroke: AXIS_STROKE_COLOR },
         tickLineStyle: { stroke: AXIS_STROKE_COLOR },
-        chartHeight: parseInt(height.replace('px', '')) || 200,
+        chartHeight: parseInt(height.replace("px", "")) || 200,
       };
     } else {
       // Use horizontal with interval
@@ -350,10 +355,10 @@ export function UniversalLineChart({
         tickStyle: { fontSize: fontSize },
         axisLineStyle: { stroke: AXIS_STROKE_COLOR },
         tickLineStyle: { stroke: AXIS_STROKE_COLOR },
-        chartHeight: parseInt(height.replace('px', '')) || 200,
+        chartHeight: parseInt(height.replace("px", "")) || 200,
       };
     }
-  }, [data, containerWidth, fontSize, measureTextWidth]);
+  }, [data, containerWidth, fontSize, measureTextWidth, height]);
 
   // Use a ref to track mouse position without causing re-renders
   const mousePosRef = useRef({ x: 0, y: 0 });
@@ -362,7 +367,10 @@ export function UniversalLineChart({
   const tooltipContent = useCallback(
     (props: {
       active?: boolean;
-      payload?: Array<{ value: number; payload: { x: string; originalX: string } }>;
+      payload?: Array<{
+        value: number;
+        payload: { x: string; originalX: string };
+      }>;
     }) => {
       // Use originalX in tooltip if available, otherwise fall back to x
       const modifiedProps = {
@@ -371,9 +379,9 @@ export function UniversalLineChart({
           ...item,
           payload: {
             ...item.payload,
-            x: item.payload.originalX || item.payload.x
-          }
-        }))
+            x: item.payload.originalX || item.payload.x,
+          },
+        })),
       };
 
       return (
@@ -405,107 +413,104 @@ export function UniversalLineChart({
       onMouseMove={handleMouseMove}
     >
       {/* Line Chart Container - Fixed height so legend doesn't interfere */}
-      <div 
-        className="flex-shrink-0"
-        style={{ height: `${chartHeight}px` }}
-      >
+      <div className="flex-shrink-0" style={{ height: `${chartHeight}px` }}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
             data={processedData}
             margin={{ top: 5, right: rightMargin, left: leftMargin, bottom: 0 }}
           >
-          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-          <XAxis
-            dataKey="x"
-            tick={tickStyle}
-            axisLine={axisLineStyle}
-            tickLine={tickLineStyle}
-            interval={interval}
-            angle={shouldRotate ? -45 : 0}
-            textAnchor={shouldRotate ? "end" : "middle"}
-            height={bottomMargin}
-            tickMargin={shouldRotate ? 10 : 5}
-            label={
-              xAxisLabelWithUnit
-                ? {
-                    value: xAxisLabelWithUnit,
-                    position: "insideBottom",
-                    offset: -10,
-                    style: {
-                      textAnchor: "middle",
-                      fontSize: fontSize,
-                      fill: "#6b7280",
-                    },
-                  }
-                : undefined
-            }
-          />
-          <YAxis
-            tick={{ fontSize: fontSize }}
-            axisLine={{ stroke: AXIS_STROKE_COLOR }}
-            tickLine={{ stroke: AXIS_STROKE_COLOR }}
-            tickFormatter={yAxisTickFormatter}
-            label={
-              yAxisLabelWithUnit
-                ? {
-                    value: yAxisLabelWithUnit,
-                    angle: -90,
-                    position: "insideLeft",
-                    style: {
-                      textAnchor: "middle",
-                      fontSize: fontSize,
-                      fill: "#6b7280",
-                    },
-                  }
-                : undefined
-            }
-          />
-          <Tooltip
-            content={tooltipContent}
-            animationDuration={0}
-            cursor={false}
-            allowEscapeViewBox={{ x: true, y: true }}
-            isAnimationActive={false}
-          />
-          {filteredSeries.length > 0 ? (
-            filteredSeries.map((seriesItem) => (
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <XAxis
+              dataKey="x"
+              tick={tickStyle}
+              axisLine={axisLineStyle}
+              tickLine={tickLineStyle}
+              interval={interval}
+              angle={shouldRotate ? -45 : 0}
+              textAnchor={shouldRotate ? "end" : "middle"}
+              height={bottomMargin}
+              tickMargin={shouldRotate ? 10 : 5}
+              label={
+                xAxisLabelWithUnit
+                  ? {
+                      value: xAxisLabelWithUnit,
+                      position: "insideBottom",
+                      offset: -10,
+                      style: {
+                        textAnchor: "middle",
+                        fontSize: fontSize,
+                        fill: "#6b7280",
+                      },
+                    }
+                  : undefined
+              }
+            />
+            <YAxis
+              tick={{ fontSize: fontSize }}
+              axisLine={{ stroke: AXIS_STROKE_COLOR }}
+              tickLine={{ stroke: AXIS_STROKE_COLOR }}
+              tickFormatter={yAxisTickFormatter}
+              label={
+                yAxisLabelWithUnit
+                  ? {
+                      value: yAxisLabelWithUnit,
+                      angle: -90,
+                      position: "insideLeft",
+                      style: {
+                        textAnchor: "middle",
+                        fontSize: fontSize,
+                        fill: "#6b7280",
+                      },
+                    }
+                  : undefined
+              }
+            />
+            <Tooltip
+              content={tooltipContent}
+              animationDuration={0}
+              cursor={false}
+              allowEscapeViewBox={{ x: true, y: true }}
+              isAnimationActive={false}
+            />
+            {filteredSeries.length > 0 ? (
+              filteredSeries.map((seriesItem) => (
+                <Line
+                  key={seriesItem.key}
+                  type="monotone"
+                  dataKey={seriesItem.key}
+                  name={seriesItem.name || seriesItem.key}
+                  stroke={seriesItem.color}
+                  strokeWidth={2}
+                  dot={{ fill: seriesItem.color, strokeWidth: 2, r: 4 }}
+                  activeDot={{
+                    r: 6,
+                    stroke: seriesItem.color,
+                    strokeWidth: 2,
+                    fill: "#fff",
+                  }}
+                  isAnimationActive={!disableAnimation}
+                  animationDuration={disableAnimation ? 0 : 400}
+                />
+              ))
+            ) : (
               <Line
-                key={seriesItem.key}
                 type="monotone"
-                dataKey={seriesItem.key}
-                name={seriesItem.name || seriesItem.key}
-                stroke={seriesItem.color}
+                dataKey="y"
+                stroke={lineColor}
                 strokeWidth={2}
-                dot={{ fill: seriesItem.color, strokeWidth: 2, r: 4 }}
+                dot={{ fill: lineColor, strokeWidth: 2, r: 4 }}
                 activeDot={{
                   r: 6,
-                  stroke: seriesItem.color,
+                  stroke: lineColor,
                   strokeWidth: 2,
                   fill: "#fff",
                 }}
                 isAnimationActive={!disableAnimation}
                 animationDuration={disableAnimation ? 0 : 400}
               />
-            ))
-          ) : (
-            <Line
-              type="monotone"
-              dataKey="y"
-              stroke={lineColor}
-              strokeWidth={2}
-              dot={{ fill: lineColor, strokeWidth: 2, r: 4 }}
-              activeDot={{
-                r: 6,
-                stroke: lineColor,
-                strokeWidth: 2,
-                fill: "#fff",
-              }}
-              isAnimationActive={!disableAnimation}
-              animationDuration={disableAnimation ? 0 : 400}
-            />
-          )}
-        </LineChart>
-      </ResponsiveContainer>
+            )}
+          </LineChart>
+        </ResponsiveContainer>
       </div>
 
       {/* Legend Below Line Chart - Now adds bonus height */}

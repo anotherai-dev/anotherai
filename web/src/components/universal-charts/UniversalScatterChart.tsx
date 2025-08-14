@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import {
   CartesianGrid,
   ResponsiveContainer,
@@ -57,21 +57,6 @@ export function UniversalScatterChart({
 }: UniversalScatterChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [containerWidth, setContainerWidth] = useState(0);
-
-  // Measure container width
-  useEffect(() => {
-    const updateWidth = () => {
-      if (containerRef.current) {
-        const width = containerRef.current.offsetWidth;
-        setContainerWidth(width);
-      }
-    };
-
-    updateWidth();
-    window.addEventListener("resize", updateWidth);
-    return () => window.removeEventListener("resize", updateWidth);
-  }, []);
 
   // Axis tick formatters (no units on axis ticks)
   const xAxisTickFormatter = xAxisFormatter;
@@ -114,7 +99,6 @@ export function UniversalScatterChart({
       return context.measureText(text).width;
     };
   }, []);
-
 
   // Use a ref to track mouse position without causing re-renders
   const mousePosRef = useRef({ x: 0, y: 0 });
@@ -185,9 +169,12 @@ export function UniversalScatterChart({
       // Try to parse x as number, fallback to index if it's not numeric
       const numericX = parseFloat(String(item.x));
       const originalName = String(item.x);
-      
-      const truncatedName = originalName.length > 20 ? originalName.substring(0, 20) + "..." : originalName;
-      
+
+      const truncatedName =
+        originalName.length > 20
+          ? originalName.substring(0, 20) + "..."
+          : originalName;
+
       const transformedItem: ScatterData = {
         x: isNaN(numericX) ? index : numericX,
         y: item.y,
