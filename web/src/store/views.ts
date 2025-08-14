@@ -252,6 +252,7 @@ export const useViews = create<ViewsState>((set, get) => ({
 
       const createdFolder: ViewFolder = await response.json();
 
+      // Optimistically add the folder for immediate UI feedback
       set(
         produce((state: ViewsState) => {
           state.viewFolders.push(createdFolder);
@@ -259,15 +260,41 @@ export const useViews = create<ViewsState>((set, get) => ({
         })
       );
 
+      // Immediately refetch to get correct backend order/position
+      get().fetchViewFolders();
+
       return createdFolder;
     } catch (error) {
       console.error("Failed to create view folder:", error);
+      // Refetch on error to revert optimistic update
+      get().fetchViewFolders();
       return null;
     }
   },
 
   patchViewFolder: async (folderId: string, patch: PatchViewFolderRequest) => {
     try {
+      // Optimistically update the UI immediately
+      if (patch.name !== undefined) {
+        set(
+          produce((state: ViewsState) => {
+            // Update in viewFolders array
+            const folderIndex = state.viewFolders.findIndex(
+              (f) => f.id === folderId
+            );
+            if (folderIndex !== -1) {
+              state.viewFolders[folderIndex].name = patch.name;
+            }
+
+            // Update in viewFoldersMap
+            const folder = state.viewFoldersMap.get(folderId);
+            if (folder) {
+              folder.name = patch.name;
+            }
+          })
+        );
+      }
+
       const response = await apiFetch(`/v1/view-folders/${folderId}`, {
         method: "PATCH",
         body: JSON.stringify(patch),
@@ -279,10 +306,12 @@ export const useViews = create<ViewsState>((set, get) => ({
         );
       }
 
-      // Refetch view folders to get the updated state
+      // Immediately refetch to get correct backend order/position
       get().fetchViewFolders();
     } catch (error) {
       console.error("Failed to patch view folder:", error);
+      // Refetch on error to revert optimistic update
+      get().fetchViewFolders();
       throw error;
     }
   },

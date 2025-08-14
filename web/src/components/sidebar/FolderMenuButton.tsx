@@ -2,30 +2,27 @@
 
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Edit, MoreVertical, Trash2 } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { useViews } from "@/store/views";
 import PopoverMenu from "../DropdownMenu";
 import { Modal } from "../Modal";
 
-interface ViewMenuButtonProps {
-  viewId: string;
-  viewName?: string;
-  isActive?: boolean;
-  onRemove?: (viewId: string) => void;
+interface FolderMenuButtonProps {
+  folderId: string;
+  folderName?: string;
   onRename?: () => void;
   onMenuOpenChange?: (isOpen: boolean) => void;
 }
 
-export default function ViewMenuButton({
-  viewId,
-  viewName,
-  isActive = false,
-  onRemove,
+export default function FolderMenuButton({
+  folderId,
+  folderName,
   onRename,
   onMenuOpenChange,
-}: ViewMenuButtonProps) {
+}: FolderMenuButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const { deleteViewFolder } = useViews();
 
   const handleOpenChange = useCallback(
     (open: boolean) => {
@@ -34,13 +31,8 @@ export default function ViewMenuButton({
     },
     [onMenuOpenChange]
   );
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const router = useRouter();
-  const pathname = usePathname();
-  const { deleteView } = useViews();
 
   const handleRenameClick = useCallback(() => {
-    setIsOpen(false);
     onRename?.();
   }, [onRename]);
 
@@ -51,31 +43,32 @@ export default function ViewMenuButton({
   const handleConfirmRemove = useCallback(async () => {
     setShowConfirmModal(false);
 
-    if (onRemove) {
-      onRemove(viewId);
-    } else {
-      // Check if we're currently viewing this view's page
-      const isCurrentlyViewing = pathname === `/view/${viewId}`;
-
-      await deleteView(viewId);
-
-      // If we were viewing the deleted view, redirect to completions page
-      if (isCurrentlyViewing) {
-        router.push("/completions");
-      }
+    try {
+      await deleteViewFolder(folderId);
+    } catch (error) {
+      console.error("Failed to delete folder:", error);
     }
-  }, [viewId, onRemove, deleteView, router, pathname]);
+  }, [folderId, deleteViewFolder]);
 
   const handleCancelRemove = useCallback(() => {
     setShowConfirmModal(false);
   }, []);
 
+  // Don't show menu for root folder (empty ID)
+  if (folderId === "") {
+    return null;
+  }
+
   const trigger = (
     <button
-      className={`p-1 mr-2 rounded transition-colors focus:outline-none ${
-        isOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-      } ${isActive ? "hover:bg-blue-200" : "hover:bg-gray-200"}`}
-      onClick={(e) => e.stopPropagation()}
+      className={`p-1 rounded transition-colors focus:outline-none ${
+        isOpen
+          ? "opacity-100 bg-gray-200"
+          : "opacity-0 group-hover/folder:opacity-100"
+      } hover:bg-gray-200`}
+      onClick={(e) => {
+        e.stopPropagation();
+      }}
     >
       <MoreVertical className="w-[14px] h-[14px]" />
     </button>
@@ -103,17 +96,22 @@ export default function ViewMenuButton({
       <Modal isOpen={showConfirmModal} onClose={handleCancelRemove}>
         <div className="bg-white rounded-[2px] border border-gray-200 shadow-lg py-4 max-w-md mx-auto">
           <h3 className="text-base font-bold text-gray-900 mb-4 border-b border-gray-200 border-dashed pb-4 px-4">
-            Remove View
+            Remove Folder
           </h3>
           <div className="text-[13px] text-gray-600 mb-4 px-4 border-b border-gray-100 pb-4">
             <p>
-              Are you sure you want to remove the view{" "}
+              Are you sure you want to remove the folder{" "}
               <span className="font-semibold text-gray-900">
-                {viewName || "Untitled"}
+                {folderName || "Untitled"}
               </span>
               ?
             </p>
-            <p>This action cannot be undone.</p>
+            <p className="mt-2">
+              <strong>
+                All views in this folder will be moved to the Default Folder.
+              </strong>
+            </p>
+            <p className="text-red-600 mt-1">This action cannot be undone.</p>
           </div>
           <div className="flex justify-end gap-2 px-4">
             <button
