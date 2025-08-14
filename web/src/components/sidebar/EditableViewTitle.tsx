@@ -32,6 +32,7 @@ const EditableViewTitle = forwardRef<
   const [editValue, setEditValue] = useState(title);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const focusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { patchView } = useViews();
 
   const startEditing = useCallback(() => {
@@ -61,14 +62,28 @@ const EditableViewTitle = forwardRef<
   // Focus input when entering edit mode
   useEffect(() => {
     if (isEditing && inputRef.current) {
+      // Clear any existing timeout
+      if (focusTimeoutRef.current) {
+        clearTimeout(focusTimeoutRef.current);
+      }
+
       // Small delay to ensure input is rendered and menu is closed
-      setTimeout(() => {
+      focusTimeoutRef.current = setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus();
           inputRef.current.select();
         }
+        focusTimeoutRef.current = null;
       }, 50);
     }
+
+    return () => {
+      // Clean up timeout on unmount or when isEditing changes
+      if (focusTimeoutRef.current) {
+        clearTimeout(focusTimeoutRef.current);
+        focusTimeoutRef.current = null;
+      }
+    };
   }, [isEditing]);
 
   const handleDoubleClick = useCallback(

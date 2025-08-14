@@ -28,6 +28,8 @@ const EditableFolderName = forwardRef<
   const [editValue, setEditValue] = useState(name);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const focusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const blurTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { patchViewFolder } = useViews();
 
   const startEditing = useCallback(() => {
@@ -56,9 +58,28 @@ const EditableFolderName = forwardRef<
   // Focus input when entering edit mode
   useEffect(() => {
     if (isEditing && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
+      // Clear any existing timeout
+      if (focusTimeoutRef.current) {
+        clearTimeout(focusTimeoutRef.current);
+      }
+
+      // Small delay to ensure input is rendered
+      focusTimeoutRef.current = setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+          inputRef.current.select();
+        }
+        focusTimeoutRef.current = null;
+      }, 50);
     }
+
+    return () => {
+      // Clean up timeout on unmount or when isEditing changes
+      if (focusTimeoutRef.current) {
+        clearTimeout(focusTimeoutRef.current);
+        focusTimeoutRef.current = null;
+      }
+    };
   }, [isEditing]);
 
   const handleDoubleClick = useCallback(() => {
@@ -112,13 +133,31 @@ const EditableFolderName = forwardRef<
   );
 
   const handleBlur = useCallback(() => {
+    // Clear any existing blur timeout
+    if (blurTimeoutRef.current) {
+      clearTimeout(blurTimeoutRef.current);
+    }
+
     // Small delay to allow click events to process first
-    setTimeout(() => {
+    blurTimeoutRef.current = setTimeout(() => {
       if (isEditing && !isSubmitting) {
         handleSubmit();
       }
+      blurTimeoutRef.current = null;
     }, 100);
   }, [isEditing, isSubmitting, handleSubmit]);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (focusTimeoutRef.current) {
+        clearTimeout(focusTimeoutRef.current);
+      }
+      if (blurTimeoutRef.current) {
+        clearTimeout(blurTimeoutRef.current);
+      }
+    };
+  }, []);
 
   if (isEditing) {
     return (

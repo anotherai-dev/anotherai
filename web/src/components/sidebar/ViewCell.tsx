@@ -2,16 +2,16 @@
 
 import { BarChart3, Table } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useRef, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { View } from "@/types/models";
 import EditableViewTitle, { EditableViewTitleRef } from "./EditableViewTitle";
 import ViewMenuButton from "./ViewMenuButton";
 
 interface ViewCellProps {
-  view: View & { folder_id?: string; view_type: "run_list" | "metric" };
+  view: View & { folder_id: string; view_type: "run_list" | "metric" };
 }
 
-export default function ViewCell({ view }: ViewCellProps) {
+function ViewCell({ view }: ViewCellProps) {
   const router = useRouter();
   const pathname = usePathname();
   const viewTitleRef = useRef<EditableViewTitleRef>(null);
@@ -105,3 +105,15 @@ export default function ViewCell({ view }: ViewCellProps) {
     </div>
   );
 }
+
+// Memoize ViewCell to prevent unnecessary re-renders
+export default React.memo(ViewCell, (prevProps, nextProps) => {
+  // Compare all relevant view properties that affect rendering
+  return (
+    prevProps.view.id === nextProps.view.id &&
+    prevProps.view.title === nextProps.view.title &&
+    prevProps.view.folder_id === nextProps.view.folder_id &&
+    prevProps.view.view_type === nextProps.view.view_type &&
+    prevProps.view.graph?.type === nextProps.view.graph?.type
+  );
+});

@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { useCallback, useRef } from "react";
+import React, { useCallback, useRef } from "react";
 import { View } from "@/types/models";
 import EditableFolderName, {
   EditableFolderNameRef,
@@ -25,7 +25,7 @@ interface FolderCellProps {
   onRefChange: (ref: EditableFolderNameRef | null) => void;
 }
 
-export default function FolderCell({
+function FolderCell({
   folderId,
   folderName,
   views,
@@ -112,5 +112,52 @@ export default function FolderCell({
     </div>
   );
 }
+
+// Helper function to compare view arrays for memoization
+function areViewArraysEqual(
+  prevViews: Array<
+    View & { folder_id: string; view_type: "run_list" | "metric" }
+  >,
+  nextViews: Array<
+    View & { folder_id: string; view_type: "run_list" | "metric" }
+  >
+): boolean {
+  if (prevViews.length !== nextViews.length) {
+    return false;
+  }
+
+  for (let i = 0; i < prevViews.length; i++) {
+    const prev = prevViews[i];
+    const next = nextViews[i];
+
+    if (
+      prev.id !== next.id ||
+      prev.title !== next.title ||
+      prev.folder_id !== next.folder_id ||
+      prev.view_type !== next.view_type ||
+      prev.graph?.type !== next.graph?.type
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+// Memoize FolderCell to prevent unnecessary re-renders
+export default React.memo(FolderCell, (prevProps, nextProps) => {
+  // Compare all props that affect rendering
+  return (
+    prevProps.folderId === nextProps.folderId &&
+    prevProps.folderName === nextProps.folderName &&
+    prevProps.isCollapsed === nextProps.isCollapsed &&
+    prevProps.isMenuOpen === nextProps.isMenuOpen &&
+    prevProps.isDragOver === nextProps.isDragOver &&
+    prevProps.isDragActive === nextProps.isDragActive &&
+    areViewArraysEqual(prevProps.views, nextProps.views)
+    // Note: Function props (callbacks) are not compared as they're typically stable
+    // due to useCallback in the parent component
+  );
+});
 
 export { type EditableFolderNameRef };

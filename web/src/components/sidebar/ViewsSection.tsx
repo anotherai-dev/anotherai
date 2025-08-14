@@ -26,6 +26,8 @@ export default function ViewsSection() {
 
   // Track if we're currently updating to prevent race conditions
   const isUpdatingRef = useRef(false);
+  const lastUpdateTimeRef = useRef<number>(0);
+  const pendingUpdateRef = useRef<NodeJS.Timeout | null>(null);
 
   const toggleFolderCollapse = useCallback((folderId: string) => {
     setCollapsedFolders((prev) => {
@@ -72,6 +74,47 @@ export default function ViewsSection() {
     []
   );
 
+  // Debounced update function to prevent race conditions
+  const debouncedUpdate = useCallback(async () => {
+    // Clear any pending update
+    if (pendingUpdateRef.current) {
+      clearTimeout(pendingUpdateRef.current);
+      pendingUpdateRef.current = null;
+    }
+
+    // Check if we're already updating or if an update was too recent
+    const now = Date.now();
+    const timeSinceLastUpdate = now - lastUpdateTimeRef.current;
+    const minTimeBetweenUpdates = 1000; // 1 second minimum between updates
+
+    if (isUpdatingRef.current || timeSinceLastUpdate < minTimeBetweenUpdates) {
+      // Schedule an update for later if not already scheduled
+      if (
+        !pendingUpdateRef.current &&
+        timeSinceLastUpdate < minTimeBetweenUpdates
+      ) {
+        const delay = minTimeBetweenUpdates - timeSinceLastUpdate;
+        pendingUpdateRef.current = setTimeout(() => {
+          pendingUpdateRef.current = null;
+          debouncedUpdate();
+        }, delay);
+      }
+      return;
+    }
+
+    // Proceed with the update
+    isUpdatingRef.current = true;
+    lastUpdateTimeRef.current = now;
+
+    try {
+      await update();
+    } catch (error) {
+      console.error("Failed to update views:", error);
+    } finally {
+      isUpdatingRef.current = false;
+    }
+  }, [update]);
+
   const handleDragOver = useCallback((e: React.DragEvent, folderId: string) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
@@ -91,10 +134,39 @@ export default function ViewsSection() {
       setDragOverFolder(null);
 
       try {
-        const dragData = JSON.parse(e.dataTransfer.getData("application/json"));
+        const rawData = e.dataTransfer.getData("application/json");
+        if (!rawData) {
+          console.warn("No drag data found");
+          return;
+        }
+
+        let dragData;
+        try {
+          dragData = JSON.parse(rawData);
+        } catch (parseError) {
+          console.error("Failed to parse drag data:", parseError);
+          return;
+        }
+
+        if (!dragData || typeof dragData !== "object") {
+          console.error("Invalid drag data format:", dragData);
+          return;
+        }
 
         if (dragData.type === "view") {
           const { viewId, sourceFolderId } = dragData;
+
+          if (
+            !viewId ||
+            sourceFolderId === undefined ||
+            sourceFolderId === null
+          ) {
+            console.error("Missing required drag data fields:", {
+              viewId,
+              sourceFolderId,
+            });
+            return;
+          }
 
           // Don't do anything if dropped on the same folder
           if (sourceFolderId === targetFolderId) {
@@ -104,14 +176,14 @@ export default function ViewsSection() {
           // Update the view's folder
           await patchView(viewId, { folder_id: targetFolderId });
 
-          // Refetch to get updated state
-          await update();
+          // Refetch to get updated state using debounced update
+          await debouncedUpdate();
         }
       } catch (error) {
         console.error("Failed to move view:", error);
       }
     },
-    [patchView, update]
+    [patchView, debouncedUpdate]
   );
 
   // Listen for drag operations globally to show drop zones
@@ -136,21 +208,33 @@ export default function ViewsSection() {
     };
   }, []);
 
-  // Auto-refresh functionality - less frequent to reduce blinking
+  // Auto-refresh functionality with race condition protection
   useEffect(() => {
     const interval = setInterval(async () => {
-      // Only update if page is visible and not already updating
-      if (!document.hidden && !isUpdatingRef.current && !isLoading) {
-        isUpdatingRef.current = true;
-        try {
-          await update();
-        } finally {
-          isUpdatingRef.current = false;
-        }
+      // Only update if page is visible and not currently loading
+      if (!document.hidden && !isLoading) {
+        debouncedUpdate();
       }
     }, 5000);
-    return () => clearInterval(interval);
-  }, [update, isLoading]); // Include update and isLoading in dependencies
+
+    return () => {
+      clearInterval(interval);
+      // Clean up any pending updates
+      if (pendingUpdateRef.current) {
+        clearTimeout(pendingUpdateRef.current);
+        pendingUpdateRef.current = null;
+      }
+    };
+  }, [debouncedUpdate, isLoading]);
+
+  // Cleanup pending updates on unmount
+  useEffect(() => {
+    return () => {
+      if (pendingUpdateRef.current) {
+        clearTimeout(pendingUpdateRef.current);
+      }
+    };
+  }, []);
 
   // Process view folders data - show all folders, even if empty
   const viewsByFolder = useMemo(() => {
@@ -208,7 +292,7 @@ export default function ViewsSection() {
           <div className="px-3">
             <p className="text-xs text-red-600">{error.message}</p>
             <button
-              onClick={update}
+              onClick={debouncedUpdate}
               className="mt-2 text-xs text-blue-600 hover:text-blue-800"
             >
               Try again
