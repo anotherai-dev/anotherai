@@ -3,8 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "next build",
-    "dev": "next dev --turbo",
+    "build": "next build && cp -r .next/static .next/standalone/docs/.next && cp -r public .next/standalone/docs/",
+    "dev": "next dev --turbopack",
     "start": "next start",
     "postinstall": "fumadocs-mdx",
     "lint": "next lint"
