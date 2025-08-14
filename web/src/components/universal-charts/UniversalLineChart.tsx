@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CartesianGrid,
-  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -109,21 +108,38 @@ export function UniversalLineChart({
     });
   }, [finalSeries, isActuallyMultiSeries, data]);
 
-  // Transform data to include zero values
+  // Transform data to include zero values and truncate long labels
   const processedData = useMemo(() => {
-    if (!isActuallyMultiSeries) return data;
+    const processData = (inputData: ChartData[]) => {
+      return inputData.map((dataPoint) => {
+        const originalX = String(dataPoint.x);
+        const truncatedX =
+          originalX.length > 20
+            ? originalX.substring(0, 20) + "..."
+            : originalX;
 
-    return data.map((dataPoint) => {
-      const newDataPoint: Record<string, unknown> = { x: dataPoint.x };
+        const newDataPoint: Record<string, unknown> = {
+          x: truncatedX,
+          originalX: originalX, // Keep original for tooltip
+        };
 
-      // Add all series values, including zeros
-      filteredSeries.forEach((seriesItem) => {
-        const value = Number(dataPoint[seriesItem.key] || 0);
-        newDataPoint[seriesItem.key] = value;
+        if (!isActuallyMultiSeries) {
+          // Single series - just copy y value
+          newDataPoint.y = dataPoint.y;
+          return newDataPoint;
+        }
+
+        // Multi-series - add all series values, including zeros
+        filteredSeries.forEach((seriesItem) => {
+          const value = Number(dataPoint[seriesItem.key] || 0);
+          newDataPoint[seriesItem.key] = value;
+        });
+
+        return newDataPoint;
       });
+    };
 
-      return newDataPoint;
-    });
+    return processData(data);
   }, [data, isActuallyMultiSeries, filteredSeries]);
 
   // Measure actual container width with debouncing
@@ -205,7 +221,7 @@ export function UniversalLineChart({
     []
   );
 
-  // Memoized label strategy calculation
+  // Memoized label strategy calculation and chart height
   const {
     shouldRotate,
     interval,
@@ -215,6 +231,7 @@ export function UniversalLineChart({
     tickStyle,
     axisLineStyle,
     tickLineStyle,
+    chartHeight,
   } = useMemo(() => {
     if (data.length <= 1)
       return {
@@ -226,14 +243,22 @@ export function UniversalLineChart({
         tickStyle: { fontSize: fontSize },
         axisLineStyle: { stroke: AXIS_STROKE_COLOR },
         tickLineStyle: { stroke: AXIS_STROKE_COLOR },
+        chartHeight: parseInt(height.replace("px", "")) || 200,
       };
 
     // For line charts, we need extra space to account for labels at the edges
     const availableWidthPerPoint = containerWidth / data.length;
 
-    // Measure the widest label
+    // Measure the widest label using truncated labels
     const maxLabelWidth = Math.max(
-      ...data.map((item) => measureTextWidth(String(item.x), fontSize))
+      ...data.map((item) => {
+        const originalLabel = String(item.x);
+        const truncatedLabel =
+          originalLabel.length > 20
+            ? originalLabel.substring(0, 20) + "..."
+            : originalLabel;
+        return measureTextWidth(truncatedLabel, fontSize);
+      })
     );
 
     const labelPadding = 8; // Minimum space between labels
@@ -254,6 +279,7 @@ export function UniversalLineChart({
         tickStyle: { fontSize: fontSize },
         axisLineStyle: { stroke: AXIS_STROKE_COLOR },
         tickLineStyle: { stroke: AXIS_STROKE_COLOR },
+        chartHeight: parseInt(height.replace("px", "")) || 200,
       };
     }
 
@@ -279,6 +305,7 @@ export function UniversalLineChart({
         tickStyle: { fontSize: Math.max(fontSize - 1, 10) },
         axisLineStyle: { stroke: AXIS_STROKE_COLOR },
         tickLineStyle: { stroke: AXIS_STROKE_COLOR },
+        chartHeight: parseInt(height.replace("px", "")) || 200,
       };
     }
 
@@ -311,6 +338,7 @@ export function UniversalLineChart({
         tickStyle: { fontSize: Math.max(fontSize - 1, 10) },
         axisLineStyle: { stroke: AXIS_STROKE_COLOR },
         tickLineStyle: { stroke: AXIS_STROKE_COLOR },
+        chartHeight: parseInt(height.replace("px", "")) || 200,
       };
     } else {
       // Use horizontal with interval
@@ -327,9 +355,10 @@ export function UniversalLineChart({
         tickStyle: { fontSize: fontSize },
         axisLineStyle: { stroke: AXIS_STROKE_COLOR },
         tickLineStyle: { stroke: AXIS_STROKE_COLOR },
+        chartHeight: parseInt(height.replace("px", "")) || 200,
       };
     }
-  }, [data, containerWidth, fontSize, measureTextWidth]);
+  }, [data, containerWidth, fontSize, measureTextWidth, height]);
 
   // Use a ref to track mouse position without causing re-renders
   const mousePosRef = useRef({ x: 0, y: 0 });
@@ -338,16 +367,33 @@ export function UniversalLineChart({
   const tooltipContent = useCallback(
     (props: {
       active?: boolean;
-      payload?: Array<{ value: number; payload: { x: string } }>;
-    }) => (
-      <CustomTooltip
-        {...props}
-        mousePos={mousePosRef.current}
-        formatter={tooltipFormatterWithUnit}
-        iconBorderRadius="50%"
-        isChartMultiSeries={isActuallyMultiSeries}
-      />
-    ),
+      payload?: Array<{
+        value: number;
+        payload: { x: string; originalX: string };
+      }>;
+    }) => {
+      // Use originalX in tooltip if available, otherwise fall back to x
+      const modifiedProps = {
+        ...props,
+        payload: props.payload?.map((item) => ({
+          ...item,
+          payload: {
+            ...item.payload,
+            x: item.payload.originalX || item.payload.x,
+          },
+        })),
+      };
+
+      return (
+        <CustomTooltip
+          {...modifiedProps}
+          mousePos={mousePosRef.current}
+          formatter={tooltipFormatterWithUnit}
+          iconBorderRadius="50%"
+          isChartMultiSeries={isActuallyMultiSeries}
+        />
+      );
+    },
     [tooltipFormatterWithUnit, isActuallyMultiSeries]
   );
 
@@ -363,123 +409,129 @@ export function UniversalLineChart({
   return (
     <div
       ref={containerRef}
-      className="flex-1 [&_.recharts-line]:!opacity-100 [&_.recharts-line:hover]:!opacity-100 [&_.recharts-wrapper]:!outline-none [&_.recharts-surface]:!outline-none [&_.recharts-tooltip-cursor]:!fill-transparent [&_.recharts-tooltip-item]:!text-gray-900 [&_.recharts-tooltip-item]:!font-medium [&_.recharts-tooltip-item]:text-[13px]"
+      className="flex-1 flex flex-col [&_.recharts-line]:!opacity-100 [&_.recharts-line:hover]:!opacity-100 [&_.recharts-wrapper]:!outline-none [&_.recharts-surface]:!outline-none [&_.recharts-tooltip-cursor]:!fill-transparent [&_.recharts-tooltip-item]:!text-gray-900 [&_.recharts-tooltip-item]:!font-medium [&_.recharts-tooltip-item]:text-[13px]"
       onMouseMove={handleMouseMove}
-      style={{ minHeight: height }}
     >
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart
-          data={processedData}
-          margin={{ top: 5, right: rightMargin, left: leftMargin, bottom: 0 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-          <XAxis
-            dataKey="x"
-            tick={tickStyle}
-            axisLine={axisLineStyle}
-            tickLine={tickLineStyle}
-            interval={interval}
-            angle={shouldRotate ? -45 : 0}
-            textAnchor={shouldRotate ? "end" : "middle"}
-            height={bottomMargin}
-            tickMargin={shouldRotate ? 10 : 5}
-            label={
-              xAxisLabelWithUnit
-                ? {
-                    value: xAxisLabelWithUnit,
-                    position: "insideBottom",
-                    offset: -10,
-                    style: {
-                      textAnchor: "middle",
-                      fontSize: fontSize,
-                      fill: "#6b7280",
-                    },
-                  }
-                : undefined
-            }
-          />
-          <YAxis
-            tick={{ fontSize: fontSize }}
-            axisLine={{ stroke: AXIS_STROKE_COLOR }}
-            tickLine={{ stroke: AXIS_STROKE_COLOR }}
-            tickFormatter={yAxisTickFormatter}
-            label={
-              yAxisLabelWithUnit
-                ? {
-                    value: yAxisLabelWithUnit,
-                    angle: -90,
-                    position: "insideLeft",
-                    style: {
-                      textAnchor: "middle",
-                      fontSize: fontSize,
-                      fill: "#6b7280",
-                    },
-                  }
-                : undefined
-            }
-          />
-          <Tooltip
-            content={tooltipContent}
-            animationDuration={0}
-            cursor={false}
-            allowEscapeViewBox={{ x: true, y: true }}
-            isAnimationActive={false}
-          />
-          {showLegend && filteredSeries.length > 0 && (
-            <Legend
-              wrapperStyle={{
-                fontSize: "12px",
-                paddingTop: xAxisLabelWithUnit ? "35px" : "10px", // More space if x-axis label is present
-                paddingBottom: "20px",
-              }}
-              iconType="line"
-              layout="horizontal"
-              align="center"
-              verticalAlign="bottom"
-              formatter={(value: string) => (
-                <span style={{ marginRight: "20px" }}>{value}</span>
-              )}
+      {/* Line Chart Container - Fixed height so legend doesn't interfere */}
+      <div className="flex-shrink-0" style={{ height: `${chartHeight}px` }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart
+            data={processedData}
+            margin={{ top: 5, right: rightMargin, left: leftMargin, bottom: 0 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <XAxis
+              dataKey="x"
+              tick={tickStyle}
+              axisLine={axisLineStyle}
+              tickLine={tickLineStyle}
+              interval={interval}
+              angle={shouldRotate ? -45 : 0}
+              textAnchor={shouldRotate ? "end" : "middle"}
+              height={bottomMargin}
+              tickMargin={shouldRotate ? 10 : 5}
+              label={
+                xAxisLabelWithUnit
+                  ? {
+                      value: xAxisLabelWithUnit,
+                      position: "insideBottom",
+                      offset: -10,
+                      style: {
+                        textAnchor: "middle",
+                        fontSize: fontSize,
+                        fill: "#6b7280",
+                      },
+                    }
+                  : undefined
+              }
             />
-          )}
-          {filteredSeries.length > 0 ? (
-            filteredSeries.map((seriesItem) => (
+            <YAxis
+              tick={{ fontSize: fontSize }}
+              axisLine={{ stroke: AXIS_STROKE_COLOR }}
+              tickLine={{ stroke: AXIS_STROKE_COLOR }}
+              tickFormatter={yAxisTickFormatter}
+              label={
+                yAxisLabelWithUnit
+                  ? {
+                      value: yAxisLabelWithUnit,
+                      angle: -90,
+                      position: "insideLeft",
+                      style: {
+                        textAnchor: "middle",
+                        fontSize: fontSize,
+                        fill: "#6b7280",
+                      },
+                    }
+                  : undefined
+              }
+            />
+            <Tooltip
+              content={tooltipContent}
+              animationDuration={0}
+              cursor={false}
+              allowEscapeViewBox={{ x: true, y: true }}
+              isAnimationActive={false}
+            />
+            {filteredSeries.length > 0 ? (
+              filteredSeries.map((seriesItem) => (
+                <Line
+                  key={seriesItem.key}
+                  type="monotone"
+                  dataKey={seriesItem.key}
+                  name={seriesItem.name || seriesItem.key}
+                  stroke={seriesItem.color}
+                  strokeWidth={2}
+                  dot={{ fill: seriesItem.color, strokeWidth: 2, r: 4 }}
+                  activeDot={{
+                    r: 6,
+                    stroke: seriesItem.color,
+                    strokeWidth: 2,
+                    fill: "#fff",
+                  }}
+                  isAnimationActive={!disableAnimation}
+                  animationDuration={disableAnimation ? 0 : 400}
+                />
+              ))
+            ) : (
               <Line
-                key={seriesItem.key}
                 type="monotone"
-                dataKey={seriesItem.key}
-                name={seriesItem.name || seriesItem.key}
-                stroke={seriesItem.color}
+                dataKey="y"
+                stroke={lineColor}
                 strokeWidth={2}
-                dot={{ fill: seriesItem.color, strokeWidth: 2, r: 4 }}
+                dot={{ fill: lineColor, strokeWidth: 2, r: 4 }}
                 activeDot={{
                   r: 6,
-                  stroke: seriesItem.color,
+                  stroke: lineColor,
                   strokeWidth: 2,
                   fill: "#fff",
                 }}
                 isAnimationActive={!disableAnimation}
                 animationDuration={disableAnimation ? 0 : 400}
               />
-            ))
-          ) : (
-            <Line
-              type="monotone"
-              dataKey="y"
-              stroke={lineColor}
-              strokeWidth={2}
-              dot={{ fill: lineColor, strokeWidth: 2, r: 4 }}
-              activeDot={{
-                r: 6,
-                stroke: lineColor,
-                strokeWidth: 2,
-                fill: "#fff",
-              }}
-              isAnimationActive={!disableAnimation}
-              animationDuration={disableAnimation ? 0 : 400}
-            />
-          )}
-        </LineChart>
-      </ResponsiveContainer>
+            )}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Legend Below Line Chart - Now adds bonus height */}
+      {showLegend && filteredSeries.length > 0 && (
+        <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 px-4 py-3 border-t border-gray-100">
+          {filteredSeries.map((seriesItem, index) => (
+            <div key={`legend-${index}`} className="flex items-center gap-2">
+              <div
+                className="w-3 h-[2px] flex-shrink-0"
+                style={{ backgroundColor: seriesItem.color }}
+              />
+              <span
+                className="text-gray-700 whitespace-nowrap"
+                style={{ fontSize: `${fontSize}px` }}
+              >
+                {seriesItem.name || seriesItem.key}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

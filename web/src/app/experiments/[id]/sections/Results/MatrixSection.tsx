@@ -174,7 +174,7 @@ export function MatrixSection(props: Props) {
         columnHeaders={tableData.columnHeaders}
         rowHeaders={tableData.rowHeaders}
         data={tableData.data}
-        minColumnWidth={300}
+        minColumnWidth={400}
       />
     </div>
   );
