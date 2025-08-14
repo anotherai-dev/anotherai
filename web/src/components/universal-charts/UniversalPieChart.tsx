@@ -25,7 +25,6 @@ export function UniversalPieChart({
   tooltipFormatter = (value) => value.toString(),
   colors = DEFAULT_CHART_COLORS,
   emptyMessage = "No data available",
-  height = "400px",
   fontSize = 12,
   disableAnimation = false,
   showLegend = true,
@@ -54,11 +53,34 @@ export function UniversalPieChart({
     return () => window.removeEventListener("resize", updateDimensions);
   }, []);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    mousePosRef.current = { x: e.clientX, y: e.clientY };
+  // Use a more direct approach - track all mouse moves over the entire container
+  useEffect(() => {
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      const newPos = { x: e.clientX, y: e.clientY };
+      mousePosRef.current = newPos;
+      setMousePos(newPos);
+    };
+
+    const containerElement = containerRef.current;
+    if (containerElement) {
+      containerElement.addEventListener('mousemove', handleGlobalMouseMove);
+      return () => {
+        containerElement.removeEventListener('mousemove', handleGlobalMouseMove);
+      };
+    }
   }, []);
 
-  // Memoized tooltip content function that uses ref instead of state
+  // State to force tooltip re-renders when mouse moves
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+  // Update mouse position state for tooltip re-rendering
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    const newPos = { x: e.clientX, y: e.clientY };
+    mousePosRef.current = newPos;
+    setMousePos(newPos);
+  }, []);
+
+  // Memoized tooltip content function that uses current mouse position
   const tooltipContent = useCallback(
     (props: {
       active?: boolean;
@@ -66,18 +88,18 @@ export function UniversalPieChart({
     }) => (
       <CustomTooltip
         {...props}
-        mousePos={mousePosRef.current}
+        mousePos={mousePos}
         formatter={tooltipFormatter}
         iconBorderRadius="50%"
       />
     ),
-    [tooltipFormatter]
+    [tooltipFormatter, mousePos]
   );
 
   // Memoized calculations for performance
-  const { pieData, outerRadius } = useMemo(() => {
+  const { pieData, outerRadius, chartHeight } = useMemo(() => {
     if (data.length === 0) {
-      return { pieData: [], outerRadius: 50 };
+      return { pieData: [], outerRadius: 50, chartHeight: 200 };
     }
 
     // Calculate total for percentage display
@@ -91,24 +113,24 @@ export function UniversalPieChart({
       percentage: ((item.y / total) * 100).toFixed(1),
     }));
 
-    // Calculate responsive radius based on container size
-    const { width, height } = containerDimensions;
+    // Calculate responsive radius based on container width
+    const { width } = containerDimensions;
 
-    // Since we now have proper flexbox layout, we can be more generous with the pie chart size
-    // The legend is handled separately and won't interfere
-    const availableWidth = width - 60; // 30px padding on each side
-    const availableHeight = height - 60; // 30px padding top and bottom
-
-    // Use the smaller dimension to ensure the pie fits
-    const maxRadius = Math.min(availableWidth, availableHeight) / 2 - 20; // 20px additional padding
+    // Base the radius primarily on width since that's what constrains us in narrow containers
+    const availableWidth = width - 80; // 40px padding on each side
+    const maxRadius = availableWidth / 2 - 20; // 20px additional padding
 
     // Set reasonable bounds
     const minRadius = 50;
-    const maxRadius_capped = Math.min(maxRadius, 200); // Allow larger pies now
+    const maxRadius_capped = Math.min(maxRadius, 200);
 
     const outerRadius = Math.max(minRadius, maxRadius_capped);
 
-    return { pieData, outerRadius };
+    // Calculate the chart height based on the actual pie size + padding
+    // This ensures the chart container is just big enough for the pie + margins
+    const chartHeight = (outerRadius * 2) + 80; // 40px padding top and bottom
+
+    return { pieData, outerRadius, chartHeight };
   }, [data, containerDimensions]);
 
   if (data.length === 0) {
@@ -128,10 +150,12 @@ export function UniversalPieChart({
       ref={containerRef}
       className="flex-1 flex flex-col [&_.recharts-pie]:!opacity-100 [&_.recharts-pie:hover]:!opacity-100 [&_.recharts-wrapper]:!outline-none [&_.recharts-surface]:!outline-none [&_.recharts-tooltip-cursor]:!fill-transparent [&_.recharts-tooltip-item]:!text-gray-900 [&_.recharts-tooltip-item]:!font-medium [&_.recharts-tooltip-item]:text-[13px]"
       onMouseMove={handleMouseMove}
-      style={{ minHeight: height }}
     >
-      {/* Pie Chart Container */}
-      <div className="flex-1 min-h-0">
+      {/* Pie Chart Container - Dynamic height based on pie size */}
+      <div 
+        className="flex-shrink-0"
+        style={{ height: `${chartHeight}px` }}
+      >
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -165,7 +189,7 @@ export function UniversalPieChart({
         </ResponsiveContainer>
       </div>
 
-      {/* Custom Legend Below Pie Chart */}
+      {/* Custom Legend Below Pie Chart - Now adds bonus height */}
       {showLegend && (
         <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 px-4 py-3 border-t border-gray-100">
           {pieData.map((entry, index) => (

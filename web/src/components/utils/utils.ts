@@ -406,6 +406,62 @@ export function findIndexOfVersionThatFirstUsedThosePromptAndSchema(
   return foundIndex === -1 ? undefined : foundIndex;
 }
 
+export function findIndexOfVersionThatFirstUsedThosePrompt(
+  versions: Version[],
+  currentVersion: Version
+): number | undefined {
+  // Helper function to check if prompt is empty/undefined
+  const isPromptEmpty = (prompt: Message[] | undefined | null) =>
+    !prompt || prompt.length === 0;
+
+  // Check if current version has prompt
+  if (isPromptEmpty(currentVersion.prompt)) {
+    return undefined;
+  }
+
+  const currentPromptString = JSON.stringify(currentVersion.prompt);
+
+  const foundIndex = versions.findIndex((v) => {
+    // Skip empty prompts
+    if (isPromptEmpty(v.prompt)) {
+      return false;
+    }
+
+    // Prompt must match
+    return JSON.stringify(v.prompt) === currentPromptString;
+  });
+
+  return foundIndex === -1 ? undefined : foundIndex;
+}
+
+export function findIndexOfVersionThatFirstUsedThoseSchema(
+  versions: Version[],
+  currentVersion: Version
+): number | undefined {
+  // Helper function to check if schema is empty/undefined
+  const isSchemaEmpty = (schema: object | undefined | null) =>
+    !schema || Object.keys(schema).length === 0;
+
+  // Check if current version has schema
+  if (isSchemaEmpty(currentVersion.output_schema)) {
+    return undefined;
+  }
+
+  const currentSchemaString = JSON.stringify(currentVersion.output_schema);
+
+  const foundIndex = versions.findIndex((v) => {
+    // Skip empty schemas
+    if (isSchemaEmpty(v.output_schema)) {
+      return false;
+    }
+
+    // Schema must match
+    return JSON.stringify(v.output_schema) === currentSchemaString;
+  });
+
+  return foundIndex === -1 ? undefined : foundIndex;
+}
+
 export function getSharedPartsOfPrompts(versions: Version[]): Message[] {
   if (!versions || versions.length === 0) {
     return [];
