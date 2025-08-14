@@ -164,4 +164,5 @@ chiefofstaffai/
 node_modules/
 
 .next
+
 docs/.source
