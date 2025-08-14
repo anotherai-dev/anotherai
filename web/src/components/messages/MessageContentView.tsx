@@ -1,4 +1,5 @@
 import { VariablesViewer } from "@/components/VariablesViewer/VariablesViewer";
+import { ImageViewer } from "@/components/messages/ImageViewer";
 import { MessageTextView } from "@/components/messages/MessageTextView";
 import {
   ToolCallRequestView,
@@ -113,7 +114,12 @@ export function MessageContentView(props: MessageContentViewProps) {
               </div>
             )}
             {item.image_url && (
-              <div className="text-gray-600 italic">Image attached</div>
+              <div className="mt-2">
+                <ImageViewer
+                  imageUrl={item.image_url}
+                  alt="Message attachment"
+                />
+              </div>
             )}
             {item.audio_url && (
               <div className="text-gray-600 italic">Audio attached</div>
