@@ -40,7 +40,8 @@ Technical details:
 
 ### API
 
-You can interact with the API directly, read the OpenAPI spec at {{API_URL}}/openapi.json
+You can interact with the API directly, read the [OpenAPI spec]({{API_URL}}/openapi.json)
+
 
 ### Observability
 
@@ -111,6 +112,7 @@ completion = client.chat.completions.create(  # or client.beta.chat.completions.
 ```
 
 #### model
+
 one of the model.id from the `list_models` MCP tool, or `curl {{API_URL}}/v1/models`
 AnotherAI allows non-OpenAI models to be used via a OpenAI SDK.
 each model listed by AnotherAI includes information about its price, its intelligence (quality_index), its capabilities, its context window.
