@@ -113,10 +113,10 @@ export function MessageContentView(props: MessageContentViewProps) {
                 )}
               </div>
             )}
-            {item.image_url && (
+            {(item.image_url || item.file?.url) && (
               <div className="mt-2">
                 <ImageViewer
-                  imageUrl={item.image_url}
+                  imageUrl={item.image_url || item.file?.url}
                   alt="Message attachment"
                 />
               </div>
