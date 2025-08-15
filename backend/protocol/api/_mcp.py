@@ -13,6 +13,7 @@ from protocol.api._api_models import (
     CompleteAPIKey,
     CreateAPIKeyRequest,
     CreateViewResponse,
+    Deployment,
     Experiment,
     Input,
     Message,
@@ -547,3 +548,35 @@ async def create_or_update_view(
 async def create_api_key(name: str) -> CompleteAPIKey:
     """Create a new API key that can be used to authenticate with the Another AI MCP and API"""
     return await (await _mcp_utils.organization_service()).create_api_key(CreateAPIKeyRequest(name=name))
+
+
+# ------------------------------------------------------------
+# Deployments
+
+
+@mcp.tool()
+async def list_deployments() -> Page[Deployment]:
+    """List all deployments"""
+    raise NotImplementedError
+
+
+@mcp.tool()
+async def create_or_update_deployment(
+    agent_id: str = Field(
+        description="The agent id to deploy the version to",
+    ),
+    version_id: str = Field(
+        description="The version id to deploy. Can be found in an experiment or a completion.",
+    ),
+) -> Deployment | str:
+    """Create a new deployment or update an existing deployment if id matches.
+
+    Note that overriding a deployment with a new id is only possible if the variable
+    (aka version.input_variables_schema) and response formats (version.output_schema) are compatible
+    between the deployments. Schemas are considered compatible if all their fields have the same name, type
+    and properties.
+
+    Updating an existing deployment needs user confirmation. You will be provided the URL where a user can
+    confirm the update.
+    """
+    raise NotImplementedError
