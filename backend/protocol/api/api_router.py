@@ -194,7 +194,7 @@ async def create_view_folder(
     return await view_service.create_view_folder(view_folder)
 
 
-@router.patch("v1/view-folders/{view_folder_id}", response_model_exclude_none=True)
+@router.patch("/v1/view-folders/{view_folder_id}", response_model_exclude_none=True)
 async def patch_view_folder(
     view_service: ViewServiceDep,
     view_folder_id: str,
@@ -203,7 +203,7 @@ async def patch_view_folder(
     await view_service.patch_view_folder(view_folder_id, view_folder)
 
 
-@router.delete("v1/view-folders/{view_folder_id}")
+@router.delete("/v1/view-folders/{view_folder_id}")
 async def delete_view_folder(
     view_service: ViewServiceDep,
     view_folder_id: str,

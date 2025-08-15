@@ -1,7 +1,7 @@
 "use client";
 
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { MoreVertical, Trash2 } from "lucide-react";
+import { Edit, MoreVertical, Trash2 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { useViews } from "@/store/views";
@@ -13,6 +13,8 @@ interface ViewMenuButtonProps {
   viewName?: string;
   isActive?: boolean;
   onRemove?: (viewId: string) => void;
+  onRename?: () => void;
+  onMenuOpenChange?: (isOpen: boolean) => void;
 }
 
 export default function ViewMenuButton({
@@ -20,12 +22,27 @@ export default function ViewMenuButton({
   viewName,
   isActive = false,
   onRemove,
+  onRename,
+  onMenuOpenChange,
 }: ViewMenuButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
+
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      setIsOpen(open);
+      onMenuOpenChange?.(open);
+    },
+    [onMenuOpenChange]
+  );
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const { deleteView } = useViews();
+
+  const handleRenameClick = useCallback(() => {
+    setIsOpen(false);
+    onRename?.();
+  }, [onRename]);
 
   const handleRemoveClick = useCallback(() => {
     setShowConfirmModal(true);
@@ -55,18 +72,25 @@ export default function ViewMenuButton({
 
   const trigger = (
     <button
-      className={`absolute top-2 right-2 p-1 rounded transition-colors focus:outline-none ${
+      className={`p-1 mr-2 rounded transition-colors focus:outline-none ${
         isOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"
       } ${isActive ? "hover:bg-blue-200" : "hover:bg-gray-200"}`}
       onClick={(e) => e.stopPropagation()}
     >
-      <MoreVertical className="w-4 h-4" />
+      <MoreVertical className="w-[14px] h-[14px]" />
     </button>
   );
 
   return (
     <>
-      <PopoverMenu trigger={trigger} onOpenChange={setIsOpen}>
+      <PopoverMenu trigger={trigger} onOpenChange={handleOpenChange}>
+        <DropdownMenu.Item
+          className="w-full flex items-center gap-2 px-2 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer outline-none"
+          onClick={handleRenameClick}
+        >
+          <Edit className="w-3 h-3" />
+          Rename
+        </DropdownMenu.Item>
         <DropdownMenu.Item
           className="w-full flex items-center gap-2 px-2 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors cursor-pointer outline-none"
           onClick={handleRemoveClick}
