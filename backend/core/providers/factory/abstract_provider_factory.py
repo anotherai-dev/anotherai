@@ -3,7 +3,7 @@ from collections.abc import Iterable
 from typing import Any
 
 from core.domain.models import Provider
-from core.providers._base.abstract_provider import AbstractProvider, ProviderConfigInterface
+from core.providers._base.abstract_provider import AbstractProvider
 from core.providers._base.config import ProviderConfig
 
 
@@ -26,8 +26,9 @@ class AbstractProviderFactory(ABC):
         pass
 
     @abstractmethod
-    def provider_type[ProviderConfigVar: ProviderConfigInterface](
-        self,
-        config: ProviderConfigVar,
-    ) -> type[AbstractProvider[ProviderConfigVar, Any]]:
+    def provider_type(self, provider: Provider) -> type[AbstractProvider[Any, Any]]:
+        pass
+
+    @abstractmethod
+    def available_providers(self) -> Iterable[Provider]:
         pass

@@ -2,7 +2,7 @@
 
 import pytest
 
-from core.utils.templates import InvalidTemplateError, TemplateManager, extract_variable_schema
+from core.utils.templates import InvalidTemplateError, TemplateManager, TemplateRenderingError, extract_variable_schema
 
 
 @pytest.fixture
@@ -68,6 +68,32 @@ class TestRenderTemplate:
         assert rendered == "Hello, John!"
         assert variables == {"name"}
         assert data == {"name": "John", "hello": "world"}
+
+    async def test_render_template_nested_object(self, template_manager: TemplateManager):
+        template = """User Profile:
+Name: {{user_profile.name}}
+Profile: {{user_profile.profile}}"""
+
+        rendered, variables = await template_manager.render_template(
+            template,
+            {"user_profile": {"name": "John", "profile": "Profile"}},
+        )
+        assert rendered == "User Profile:\nName: John\nProfile: Profile"
+        assert variables == {"user_profile"}
+
+    async def test_render_template_with_missing_variable(self, template_manager: TemplateManager):
+        template = """User Profile:
+Name: {{user_profile.name}}
+Profile: {{user_profile.profile}}"""
+        _ = await template_manager.add_template(template, key="user_profile")
+        with pytest.raises(TemplateRenderingError) as e:
+            await template_manager.render_template(template, {"bla": "bla"})
+        assert (
+            str(e.value)
+            == """Rendering the template failed: 'user_profile' is undefined
+- Missing variables: {'user_profile'}
+- Extra variables: {'bla'}"""
+        )
 
 
 class TestExtractVariableSchema:

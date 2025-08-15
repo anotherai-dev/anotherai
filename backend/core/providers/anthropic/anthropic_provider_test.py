@@ -434,15 +434,13 @@ class TestSingleStream:
 
 
 class TestComplete:
-    async def test_complete_pdf(self, httpx_mock: HTTPXMock):
+    async def test_complete_pdf(self, httpx_mock: HTTPXMock, anthropic_provider: AnthropicProvider):
         httpx_mock.add_response(
             url="https://api.anthropic.com/v1/messages",
             json=fixtures_json("anthropic", "completion.json"),
         )
 
-        provider = AnthropicProvider()
-
-        o = await provider.complete(
+        o = await anthropic_provider.complete(
             [
                 Message(
                     role="user",
@@ -487,15 +485,13 @@ class TestComplete:
             },
         )
 
-    async def test_complete_image(self, httpx_mock: HTTPXMock):
+    async def test_complete_image(self, httpx_mock: HTTPXMock, anthropic_provider: AnthropicProvider):
         httpx_mock.add_response(
             url="https://api.anthropic.com/v1/messages",
             json=fixtures_json("anthropic", "completion.json"),
         )
 
-        provider = AnthropicProvider()
-
-        o = await provider.complete(
+        o = await anthropic_provider.complete(
             [
                 Message(
                     role="user",
