@@ -1,29 +1,27 @@
-'use client';
-import { cn } from '@/lib/cn';
-import { buttonVariants } from 'fumadocs-ui/components/ui/button';
-import { ThumbsDown, ThumbsUp } from 'lucide-react';
-import { type SyntheticEvent, useEffect, useState } from 'react';
-import {
-  Collapsible,
-  CollapsibleContent,
-} from 'fumadocs-ui/components/ui/collapsible';
-import { cva } from 'class-variance-authority';
-import { usePathname } from 'next/navigation';
+"use client";
+
+import { cva } from "class-variance-authority";
+import { buttonVariants } from "fumadocs-ui/components/ui/button";
+import { Collapsible, CollapsibleContent } from "fumadocs-ui/components/ui/collapsible";
+import { ThumbsDown, ThumbsUp } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { type SyntheticEvent, useEffect, useState } from "react";
+import { cn } from "@/lib/cn";
 
 const rateButtonVariants = cva(
-  'inline-flex items-center gap-2 px-3 py-2 rounded-full font-medium border text-sm [&_svg]:size-4 disabled:cursor-not-allowed',
+  "inline-flex items-center gap-2 px-3 py-2 rounded-full font-medium border text-sm [&_svg]:size-4 disabled:cursor-not-allowed",
   {
     variants: {
       active: {
-        true: 'bg-fd-accent text-fd-accent-foreground [&_svg]:fill-current',
-        false: 'text-fd-muted-foreground',
+        true: "bg-fd-accent text-fd-accent-foreground [&_svg]:fill-current",
+        false: "text-fd-muted-foreground",
       },
     },
-  },
+  }
 );
 
 export interface Feedback {
-  opinion: 'good' | 'bad';
+  opinion: "good" | "bad";
   message: string;
 }
 
@@ -41,15 +39,11 @@ function set(url: string, feedback: Feedback | null) {
   else localStorage.removeItem(key);
 }
 
-export function Rate({
-  onRateAction,
-}: {
-  onRateAction: (url: string, feedback: Feedback) => Promise<void>;
-}) {
+export function Rate({ onRateAction }: { onRateAction: (url: string, feedback: Feedback) => Promise<void> }) {
   const url = usePathname();
   const [previous, setPrevious] = useState<Feedback | null>(null);
-  const [opinion, setOpinion] = useState<'good' | 'bad' | null>(null);
-  const [message, setMessage] = useState('');
+  const [opinion, setOpinion] = useState<"good" | "bad" | null>(null);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     setPrevious(get(url));
@@ -68,7 +62,7 @@ export function Rate({
 
     set(url, feedback);
     setPrevious(feedback);
-    setMessage('');
+    setMessage("");
     setOpinion(null);
   }
 
@@ -86,11 +80,11 @@ export function Rate({
           disabled={previous !== null}
           className={cn(
             rateButtonVariants({
-              active: (previous?.opinion ?? opinion) === 'good',
-            }),
+              active: (previous?.opinion ?? opinion) === "good",
+            })
           )}
           onClick={() => {
-            setOpinion('good');
+            setOpinion("good");
           }}
         >
           <ThumbsUp />
@@ -100,11 +94,11 @@ export function Rate({
           disabled={previous !== null}
           className={cn(
             rateButtonVariants({
-              active: (previous?.opinion ?? opinion) === 'bad',
-            }),
+              active: (previous?.opinion ?? opinion) === "bad",
+            })
           )}
           onClick={() => {
-            setOpinion('bad');
+            setOpinion("bad");
           }}
         >
           <ThumbsDown />
@@ -118,9 +112,9 @@ export function Rate({
             <button
               className={cn(
                 buttonVariants({
-                  color: 'secondary',
+                  color: "secondary",
                 }),
-                'text-xs',
+                "text-xs"
               )}
               onClick={() => {
                 setOpinion(previous?.opinion);
@@ -140,15 +134,12 @@ export function Rate({
               className="border rounded-lg bg-fd-secondary text-fd-secondary-foreground p-3 resize-none focus-visible:outline-none placeholder:text-fd-muted-foreground"
               placeholder="Leave your feedback..."
               onKeyDown={(e) => {
-                if (!e.shiftKey && e.key === 'Enter') {
+                if (!e.shiftKey && e.key === "Enter") {
                   submit(e);
                 }
               }}
             />
-            <button
-              type="submit"
-              className={cn(buttonVariants({ color: 'outline' }), 'w-fit px-3')}
-            >
+            <button type="submit" className={cn(buttonVariants({ color: "outline" }), "w-fit px-3")}>
               Submit
             </button>
           </form>
@@ -156,4 +147,4 @@ export function Rate({
       </CollapsibleContent>
     </Collapsible>
   );
-} 
+}

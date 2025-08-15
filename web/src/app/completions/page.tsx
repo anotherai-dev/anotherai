@@ -18,8 +18,7 @@ function CompletionsPageContent() {
   const queryFromUrl = searchParams.get("query");
   const [value, setValue] = useState(queryFromUrl || defaultQuery);
 
-  const placeholder =
-    "Enter SQL query (e.g., SELECT * FROM completions WHERE model = 'gpt-4') to search completions";
+  const placeholder = "Enter SQL query (e.g., SELECT * FROM completions WHERE model = 'gpt-4') to search completions";
 
   const { data, isLoading, error } = useCompletionsQuery(value);
 
@@ -39,10 +38,7 @@ function CompletionsPageContent() {
     const currentUrlQuery = searchParams.get("query");
 
     // Don't update URL if this matches what's already there
-    if (
-      currentUrlQuery === value ||
-      (currentUrlQuery === null && value === defaultQuery)
-    ) {
+    if (currentUrlQuery === value || (currentUrlQuery === null && value === defaultQuery)) {
       return;
     }
 
@@ -53,9 +49,7 @@ function CompletionsPageContent() {
       params.set("query", value);
     }
 
-    const newUrl = `${window.location.pathname}${
-      params.toString() ? `?${params.toString()}` : ""
-    }`;
+    const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
     router.replace(newUrl, { scroll: false });
   }, [value, router, searchParams]);
 

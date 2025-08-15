@@ -10,9 +10,7 @@ type VersionHeaderPriceAndLatencyProps = {
   showAvgPrefix?: boolean;
 };
 
-export function VersionHeaderPriceAndLatency(
-  props: VersionHeaderPriceAndLatencyProps
-) {
+export function VersionHeaderPriceAndLatency(props: VersionHeaderPriceAndLatencyProps) {
   const { priceAndLatency, showAvgPrefix } = props;
 
   if (!priceAndLatency) {

@@ -60,8 +60,7 @@ export function AgentsTable(props: AgentsTableProps) {
           name: agent.name && agent.name.trim() ? agent.name : agent.id,
           active: stats?.active ?? null,
         },
-        [AGENTS_COLUMNS.COMPLETIONS_LAST_7_DAYS]:
-          stats?.completions_last_7_days ?? null,
+        [AGENTS_COLUMNS.COMPLETIONS_LAST_7_DAYS]: stats?.completions_last_7_days ?? null,
         [AGENTS_COLUMNS.TOTAL_COST]: stats?.total_cost ?? null,
         [AGENTS_COLUMNS.CREATED_AT]: agent.created_at,
         _originalAgent: agent,
@@ -72,12 +71,8 @@ export function AgentsTable(props: AgentsTableProps) {
     // Sort by last completion date (most recent first), then by agent name
     return agentDisplayData.sort((a, b) => {
       // First sort by last completion date (most recent first)
-      const dateA = a._lastCompletionDate
-        ? new Date(a._lastCompletionDate).getTime()
-        : 0;
-      const dateB = b._lastCompletionDate
-        ? new Date(b._lastCompletionDate).getTime()
-        : 0;
+      const dateA = a._lastCompletionDate ? new Date(a._lastCompletionDate).getTime() : 0;
+      const dateB = b._lastCompletionDate ? new Date(b._lastCompletionDate).getTime() : 0;
 
       if (dateA !== dateB) {
         return dateB - dateA; // Most recent first
@@ -135,12 +130,7 @@ export function AgentsTable(props: AgentsTableProps) {
 
           switch (header) {
             case AGENTS_COLUMNS.AI_AGENT:
-              return (
-                <AgentsTableAgentCell
-                  key={header}
-                  value={value as { name: string; active: boolean | null }}
-                />
-              );
+              return <AgentsTableAgentCell key={header} value={value as { name: string; active: boolean | null }} />;
 
             case AGENTS_COLUMNS.COMPLETIONS_LAST_7_DAYS:
               return <AgentsBaseCell key={header} value={value} />;
@@ -150,20 +140,12 @@ export function AgentsTable(props: AgentsTableProps) {
                 <AgentsBaseCell
                   key={header}
                   value={value}
-                  formatter={(val) =>
-                    val ? `$${Math.max(Number(val), 0.01).toFixed(2)}` : "-"
-                  }
+                  formatter={(val) => (val ? `$${Math.max(Number(val), 0.01).toFixed(2)}` : "-")}
                 />
               );
 
             case AGENTS_COLUMNS.CREATED_AT:
-              return (
-                <AgentsBaseCell
-                  key={header}
-                  value={value}
-                  formatter={formatRelativeDate}
-                />
-              );
+              return <AgentsBaseCell key={header} value={value} formatter={formatRelativeDate} />;
 
             default:
               return <AgentsBaseCell key={header} value={value} />;

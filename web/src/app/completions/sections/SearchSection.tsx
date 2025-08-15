@@ -33,8 +33,7 @@ export function SearchSection({
   const editor = useEditor({
     editorProps: {
       attributes: {
-        class:
-          "focus:outline-none whitespace-pre-wrap w-full min-h-[20px] max-h-[120px] overflow-y-auto",
+        class: "focus:outline-none whitespace-pre-wrap w-full min-h-[20px] max-h-[120px] overflow-y-auto",
         autocorrect: "off",
         autocapitalize: "off",
         spellcheck: "false",
@@ -97,9 +96,7 @@ export function SearchSection({
           </div>
         </div>
         {editor?.isEmpty && placeholder && (
-          <div className="absolute top-2 left-9 text-gray-500 text-[13px] pointer-events-none">
-            {placeholder}
-          </div>
+          <div className="absolute top-2 left-9 text-gray-500 text-[13px] pointer-events-none">{placeholder}</div>
         )}
       </div>
       {!readOnly && (
@@ -108,12 +105,8 @@ export function SearchSection({
           disabled={isLoading}
           className="text-white px-6 py-2 rounded-[2px] text-[13px] font-semibold cursor-pointer transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center"
           style={{ backgroundColor: "#3B82F6" }}
-          onMouseEnter={(e) =>
-            !isLoading && (e.currentTarget.style.backgroundColor = "#2563EB")
-          }
-          onMouseLeave={(e) =>
-            !isLoading && (e.currentTarget.style.backgroundColor = "#3B82F6")
-          }
+          onMouseEnter={(e) => !isLoading && (e.currentTarget.style.backgroundColor = "#2563EB")}
+          onMouseLeave={(e) => !isLoading && (e.currentTarget.style.backgroundColor = "#3B82F6")}
         >
           {isLoading ? <LoadingIndicator size={16} /> : "Search"}
         </button>

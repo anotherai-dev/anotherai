@@ -41,9 +41,7 @@ export const useAgents = create<AgentsState>((set, get) => ({
       });
 
       if (!response.ok) {
-        throw new Error(
-          `Failed to fetch agents list: ${response.status} ${response.statusText}`
-        );
+        throw new Error(`Failed to fetch agents list: ${response.status} ${response.statusText}`);
       }
 
       const agentsData = await response.json();

@@ -67,15 +67,7 @@ export function AddAnnotationForm({
       // Could add error handling UI here - for now just log
       console.error("Failed to add annotation");
     }
-  }, [
-    annotationText,
-    isSubmitting,
-    completionId,
-    experimentId,
-    fullKeyPath,
-    addAnnotations,
-    onSuccess,
-  ]);
+  }, [annotationText, isSubmitting, completionId, experimentId, fullKeyPath, addAnnotations, onSuccess]);
 
   const handleCancel = useCallback(() => {
     setAnnotationText("");

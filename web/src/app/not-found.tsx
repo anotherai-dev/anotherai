@@ -17,21 +17,14 @@ export default function NotFound() {
 
         {/* Helpful Links */}
         <div className="bg-white rounded-[2px] border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Popular pages
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Popular pages</h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Link
               href="/completions"
               className="flex flex-col items-center p-4 bg-gray-50 hover:bg-gray-100 rounded-[2px] transition-colors duration-200"
             >
               <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center mb-2">
-                <svg
-                  className="w-5 h-5 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -40,12 +33,8 @@ export default function NotFound() {
                   />
                 </svg>
               </div>
-              <span className="font-medium text-gray-900 text-sm">
-                Completions
-              </span>
-              <span className="text-xs text-gray-600 text-center">
-                View completion history
-              </span>
+              <span className="font-medium text-gray-900 text-sm">Completions</span>
+              <span className="text-xs text-gray-600 text-center">View completion history</span>
             </Link>
 
             <Link
@@ -53,12 +42,7 @@ export default function NotFound() {
               className="flex flex-col items-center p-4 bg-gray-50 hover:bg-gray-100 rounded-[2px] transition-colors duration-200"
             >
               <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center mb-2">
-                <svg
-                  className="w-5 h-5 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -68,9 +52,7 @@ export default function NotFound() {
                 </svg>
               </div>
               <span className="font-medium text-gray-900 text-sm">Agents</span>
-              <span className="text-xs text-gray-600 text-center">
-                Explore AI agents
-              </span>
+              <span className="text-xs text-gray-600 text-center">Explore AI agents</span>
             </Link>
 
             <Link
@@ -78,12 +60,7 @@ export default function NotFound() {
               className="flex flex-col items-center p-4 bg-gray-50 hover:bg-gray-100 rounded-[2px] transition-colors duration-200"
             >
               <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center mb-2">
-                <svg
-                  className="w-5 h-5 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -92,12 +69,8 @@ export default function NotFound() {
                   />
                 </svg>
               </div>
-              <span className="font-medium text-gray-900 text-sm">
-                Experiments
-              </span>
-              <span className="text-xs text-gray-600 text-center">
-                Browse experiments
-              </span>
+              <span className="font-medium text-gray-900 text-sm">Experiments</span>
+              <span className="text-xs text-gray-600 text-center">Browse experiments</span>
             </Link>
           </div>
         </div>

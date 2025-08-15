@@ -30,7 +30,7 @@ interface ModelsResponse {
 
 async function getModelsCount(): Promise<number> {
   try {
-    const response = await fetch('https://api.workflowai.com/v1/models', {
+    const response = await fetch("https://api.workflowai.com/v1/models", {
       // Cache for 1 hour, revalidate in background
       next: { revalidate: 3600 },
     });
@@ -42,7 +42,7 @@ async function getModelsCount(): Promise<number> {
     const data: ModelsResponse = await response.json();
     return data.data.length;
   } catch (error) {
-    console.error('Error fetching models count:', error);
+    console.error("Error fetching models count:", error);
     // Return fallback count on error
     return 100;
   }

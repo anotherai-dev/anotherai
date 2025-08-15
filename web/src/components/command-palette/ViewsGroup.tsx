@@ -19,9 +19,7 @@ export function ViewsGroup({ viewsBySection, onSelect }: ViewsGroupProps) {
   if (entries.length === 0) return null;
 
   const isChart = (view: View) => {
-    return (
-      view.graph && ["bar", "line", "pie", "scatter"].includes(view.graph.type)
-    );
+    return view.graph && ["bar", "line", "pie", "scatter"].includes(view.graph.type);
   };
 
   const getViewType = (view: View) => {

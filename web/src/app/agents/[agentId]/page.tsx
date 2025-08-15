@@ -53,12 +53,7 @@ export default function AgentDetailPage() {
               title="Recent Completions"
               description={`Last ${details.last_completions.length} completions for this agent`}
             />
-            <CompletionsTable
-              data={details.last_completions}
-              isLoading={isLoading}
-              error={error}
-              maxHeight="800px"
-            />
+            <CompletionsTable data={details.last_completions} isLoading={isLoading} error={error} maxHeight="800px" />
             <div className="mt-4 text-left">
               <Link
                 href={`/completions?query=${encodeURIComponent(defaultQueryWithAgentFilter)}`}

@@ -15,15 +15,7 @@ export type HoverContainerProps = {
 };
 
 export const HoverContainer = (props: HoverContainerProps) => {
-  const {
-    children,
-    className = "",
-    as = "div",
-    onClick,
-    keyPath,
-    annotations,
-    onKeypathSelect,
-  } = props;
+  const { children, className = "", as = "div", onClick, keyPath, annotations, onKeypathSelect } = props;
 
   const handleClick = (e: React.MouseEvent) => {
     if (onKeypathSelect && keyPath && supportHover) {
@@ -47,9 +39,7 @@ export const HoverContainer = (props: HoverContainerProps) => {
       };
     }
 
-    const matchingAnnotations = annotations.filter(
-      (annotation) => annotation.target?.key_path === keyPath
-    );
+    const matchingAnnotations = annotations.filter((annotation) => annotation.target?.key_path === keyPath);
 
     const annotationCount = matchingAnnotations.length;
 
@@ -57,9 +47,7 @@ export const HoverContainer = (props: HoverContainerProps) => {
       supportHover: true,
       hoverBadgeText: "Add annotation",
       noHoverBadgeText:
-        annotationCount > 0
-          ? `${annotationCount} annotation${annotationCount === 1 ? "" : "s"}`
-          : undefined,
+        annotationCount > 0 ? `${annotationCount} annotation${annotationCount === 1 ? "" : "s"}` : undefined,
     };
   }, [annotations, keyPath]);
 
@@ -69,8 +57,7 @@ export const HoverContainer = (props: HoverContainerProps) => {
     <Component
       className={cx(
         className,
-        supportHover &&
-          "hover:bg-gray-100 hover:cursor-pointer transition-colors duration-150",
+        supportHover && "hover:bg-gray-100 hover:cursor-pointer transition-colors duration-150",
         supportHover && noHoverBadgeText && "flex items-center gap-2"
       )}
       onClick={handleClick}

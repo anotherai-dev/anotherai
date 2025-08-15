@@ -9,13 +9,7 @@ interface CommandPaletteItemProps {
   subtitle?: string;
 }
 
-export function CommandPaletteItem({
-  value,
-  onSelect,
-  icon,
-  title,
-  subtitle,
-}: CommandPaletteItemProps) {
+export function CommandPaletteItem({ value, onSelect, icon, title, subtitle }: CommandPaletteItemProps) {
   return (
     <Command.Item
       value={value}

@@ -49,25 +49,19 @@ export const useExperiments = create<ExperimentsState>((set, get) => ({
     );
 
     try {
-      const response = await apiFetch(
-        `/v1/experiments?limit=${targetPageSize}&offset=${offset}`,
-        {
-          method: "GET",
-        }
-      );
+      const response = await apiFetch(`/v1/experiments?limit=${targetPageSize}&offset=${offset}`, {
+        method: "GET",
+      });
 
       if (!response.ok) {
-        throw new Error(
-          `Failed to fetch experiments: ${response.status} ${response.statusText}`
-        );
+        throw new Error(`Failed to fetch experiments: ${response.status} ${response.statusText}`);
       }
 
       const data: ExperimentListResponse = await response.json();
 
       // Sort experiments by creation date (most recent first)
       const sortedExperiments = data.items.sort(
-        (a, b) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
 
       set(

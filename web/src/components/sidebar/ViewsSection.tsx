@@ -9,13 +9,9 @@ import { EditableFolderNameRef } from "./EditableFolderName";
 import FolderCell from "./FolderCell";
 
 export default function ViewsSection() {
-  const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(
-    new Set()
-  );
+  const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
-  const [openFolderMenus, setOpenFolderMenus] = useState<Set<string>>(
-    new Set()
-  );
+  const [openFolderMenus, setOpenFolderMenus] = useState<Set<string>>(new Set());
   const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
   const [isDragActive, setIsDragActive] = useState(false);
   const folderRefs = useRef<Map<string, EditableFolderNameRef>>(new Map());
@@ -54,25 +50,17 @@ export default function ViewsSection() {
     }
   }, [createViewFolder, isCreatingFolder]);
 
-  const handleFolderRename = useCallback((folderId: string) => {
-    const folderRef = folderRefs.current.get(folderId);
-    folderRef?.startEditing();
+  const handleFolderMenuOpenChange = useCallback((folderId: string, isOpen: boolean) => {
+    setOpenFolderMenus((prev) => {
+      const newSet = new Set(prev);
+      if (isOpen) {
+        newSet.add(folderId);
+      } else {
+        newSet.delete(folderId);
+      }
+      return newSet;
+    });
   }, []);
-
-  const handleFolderMenuOpenChange = useCallback(
-    (folderId: string, isOpen: boolean) => {
-      setOpenFolderMenus((prev) => {
-        const newSet = new Set(prev);
-        if (isOpen) {
-          newSet.add(folderId);
-        } else {
-          newSet.delete(folderId);
-        }
-        return newSet;
-      });
-    },
-    []
-  );
 
   // Debounced update function to prevent race conditions
   const debouncedUpdate = useCallback(async () => {
@@ -89,10 +77,7 @@ export default function ViewsSection() {
 
     if (isUpdatingRef.current || timeSinceLastUpdate < minTimeBetweenUpdates) {
       // Schedule an update for later if not already scheduled
-      if (
-        !pendingUpdateRef.current &&
-        timeSinceLastUpdate < minTimeBetweenUpdates
-      ) {
+      if (!pendingUpdateRef.current && timeSinceLastUpdate < minTimeBetweenUpdates) {
         const delay = minTimeBetweenUpdates - timeSinceLastUpdate;
         pendingUpdateRef.current = setTimeout(() => {
           pendingUpdateRef.current = null;
@@ -156,11 +141,7 @@ export default function ViewsSection() {
         if (dragData.type === "view") {
           const { viewId, sourceFolderId } = dragData;
 
-          if (
-            !viewId ||
-            sourceFolderId === undefined ||
-            sourceFolderId === null
-          ) {
+          if (!viewId || sourceFolderId === undefined || sourceFolderId === null) {
             console.error("Missing required drag data fields:", {
               viewId,
               sourceFolderId,
@@ -246,10 +227,7 @@ export default function ViewsSection() {
             folder.views?.map((view) => ({
               ...view,
               folder_id: folder.id,
-              view_type:
-                view.graph?.type === "table"
-                  ? ("run_list" as const)
-                  : ("metric" as const),
+              view_type: view.graph?.type === "table" ? ("run_list" as const) : ("metric" as const),
             })) || [],
         };
         return acc;
@@ -258,9 +236,7 @@ export default function ViewsSection() {
         string,
         {
           name: string;
-          views: Array<
-            View & { folder_id: string; view_type: "run_list" | "metric" }
-          >;
+          views: Array<View & { folder_id: string; view_type: "run_list" | "metric" }>;
         }
       >
     );
@@ -271,11 +247,7 @@ export default function ViewsSection() {
       {/* Views Header */}
       <div className="flex items-center justify-between pl-3 pr-[9px] py-2 mb-1 text-[11px] font-medium text-gray-500 uppercase tracking-wider">
         <span>Views</span>
-        <HoverPopover
-          content="Create new folder"
-          position="top"
-          popoverClassName="bg-gray-800 rounded-[2px]"
-        >
+        <HoverPopover content="Create new folder" position="top" popoverClassName="bg-gray-800 rounded-[2px]">
           <button
             onClick={handleCreateFolder}
             disabled={isCreatingFolder}
@@ -291,10 +263,7 @@ export default function ViewsSection() {
         {error ? (
           <div className="px-3">
             <p className="text-xs text-red-600">{error.message}</p>
-            <button
-              onClick={debouncedUpdate}
-              className="mt-2 text-xs text-blue-600 hover:text-blue-800"
-            >
+            <button onClick={debouncedUpdate} className="mt-2 text-xs text-blue-600 hover:text-blue-800">
               Try again
             </button>
           </div>
@@ -308,9 +277,7 @@ export default function ViewsSection() {
             {Object.entries(viewsByFolder).map(([folderId, folderData]) => {
               // Auto-collapse folders with no views by default
               const hasViews = folderData.views.length > 0;
-              const isCollapsed = hasViews
-                ? collapsedFolders.has(folderId)
-                : !collapsedFolders.has(folderId);
+              const isCollapsed = hasViews ? collapsedFolders.has(folderId) : !collapsedFolders.has(folderId);
               const isMenuOpen = openFolderMenus.has(folderId);
               const isDragOver = dragOverFolder === folderId;
 
@@ -325,10 +292,7 @@ export default function ViewsSection() {
                   isDragOver={isDragOver}
                   isDragActive={isDragActive}
                   onToggleCollapse={() => toggleFolderCollapse(folderId)}
-                  onRename={() => handleFolderRename(folderId)}
-                  onMenuOpenChange={(isOpen) =>
-                    handleFolderMenuOpenChange(folderId, isOpen)
-                  }
+                  onMenuOpenChange={(isOpen) => handleFolderMenuOpenChange(folderId, isOpen)}
                   onDragOver={(e) => handleDragOver(e, folderId)}
                   onDragLeave={handleDragLeave}
                   onDrop={(e) => handleDrop(e, folderId)}
@@ -348,9 +312,7 @@ export default function ViewsSection() {
 
       {/* Auto-refresh indicator */}
       <div className="px-3 pt-3 pb-2 border-t border-gray-200 mt-3">
-        <p className="text-xs text-gray-400 text-center">
-          Views update automatically
-        </p>
+        <p className="text-xs text-gray-400 text-center">Views update automatically</p>
       </div>
     </div>
   );

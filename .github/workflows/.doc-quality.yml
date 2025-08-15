@@ -1,4 +1,4 @@
-name: Web Quality
+name: Doc Quality
 on:
   workflow_call:
     inputs:
@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 jobs:
-  web-quality:
+  doc-quality:
     if: inputs.skip != true
     runs-on: ubuntu-latest
     steps:
@@ -27,16 +27,7 @@ jobs:
         run: npm install
 
       - name: Run prettier
-        run: npm run prettier-check --workspace=web
+        run: npm run prettier-check --workspace=docs
 
-  web-build:
-    if: inputs.skip != true
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Run build
-        run: npm run build --workspace=web
+      - name: Run build (including eslint)
+        run: npm run build --workspace=docs

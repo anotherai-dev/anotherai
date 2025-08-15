@@ -11,9 +11,7 @@ interface ModelPerformanceSectionProps {
   dailyCosts: DailyCost[];
 }
 
-export function ModelPerformanceSection({
-  dailyCosts,
-}: ModelPerformanceSectionProps) {
+export function ModelPerformanceSection({ dailyCosts }: ModelPerformanceSectionProps) {
   // Transform data for the universal chart - showing completions per day for last 30 days
   const chartData = dailyCosts.slice(-30).map((day) => ({
     x: new Date(day.date).toLocaleDateString("en-US", {

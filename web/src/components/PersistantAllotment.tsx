@@ -14,18 +14,9 @@ type PersistantAllotmentProps = {
 };
 
 export function PersistantAllotment(props: PersistantAllotmentProps) {
-  const {
-    name,
-    initialSize,
-    children,
-    className,
-    isAllotmentEnabled = true,
-  } = props;
+  const { name, initialSize, children, className, isAllotmentEnabled = true } = props;
 
-  const [allotmentSizes, setAllotmentSizes] = useLocalStorage<number[]>(
-    name,
-    initialSize
-  );
+  const [allotmentSizes, setAllotmentSizes] = useLocalStorage<number[]>(name, initialSize);
 
   const onAllotmentChange = useDebounceCallback(
     useCallback(
@@ -48,12 +39,7 @@ export function PersistantAllotment(props: PersistantAllotmentProps) {
   }
 
   return (
-    <Allotment
-      defaultSizes={allotmentSizes}
-      onChange={onAllotmentChange}
-      className={className}
-      separator={false}
-    >
+    <Allotment defaultSizes={allotmentSizes} onChange={onAllotmentChange} className={className} separator={false}>
       {children}
     </Allotment>
   );

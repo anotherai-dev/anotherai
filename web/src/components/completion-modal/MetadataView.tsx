@@ -30,8 +30,7 @@ export function MetadataView({ metadata }: Props) {
 
   const handleMetadataClick = useCallback(
     (key: string, value: unknown) => {
-      const stringValue =
-        typeof value === "string" ? value : JSON.stringify(value);
+      const stringValue = typeof value === "string" ? value : JSON.stringify(value);
       const query = `SELECT * FROM completions WHERE metadata['${key}'] = '${stringValue}'`;
       const encodedQuery = encodeURIComponent(query);
       router.push(`/completions?query=${encodedQuery}`);

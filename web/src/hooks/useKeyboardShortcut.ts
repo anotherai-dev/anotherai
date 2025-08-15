@@ -14,10 +14,7 @@ export function useKeyboardShortcut(keys: string[], callback: () => void) {
 
       const targetKeys = keys.map((key) => key.toLowerCase());
 
-      if (
-        keysPressed.length === targetKeys.length &&
-        targetKeys.every((key) => keysPressed.includes(key))
-      ) {
+      if (keysPressed.length === targetKeys.length && targetKeys.every((key) => keysPressed.includes(key))) {
         event.preventDefault();
         callback();
       }

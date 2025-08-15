@@ -38,10 +38,7 @@ export function VersionHeaderSchema(props: VersionHeaderSchemaProps) {
   }, [versions, version]);
 
   // If reusing schema from another version, show badge instead
-  if (
-    indexOfVersionThatFirstUsedThisSchema !== undefined &&
-    indexOfVersionThatFirstUsedThisSchema !== index
-  ) {
+  if (indexOfVersionThatFirstUsedThisSchema !== undefined && indexOfVersionThatFirstUsedThisSchema !== index) {
     return (
       <>
         <div className="mt-3 pt-4 border-t border-gray-200">
@@ -68,19 +65,14 @@ export function VersionHeaderSchema(props: VersionHeaderSchemaProps) {
     );
   }
 
-  if (
-    !version.output_schema ||
-    Object.keys(version.output_schema).length === 0
-  ) {
+  if (!version.output_schema || Object.keys(version.output_schema).length === 0) {
     return null;
   }
 
   return (
     <>
       <div className="mt-3 pt-2 border-t border-gray-200" />
-      <div className="text-gray-600 font-medium text-xs mb-2">
-        Output Schema
-      </div>
+      <div className="text-gray-600 font-medium text-xs mb-2">Output Schema</div>
       <VersionSchemaSection
         outputSchema={version.output_schema}
         sharedKeypathsOfSchemas={sharedKeypathsOfSchemas}

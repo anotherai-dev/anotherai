@@ -13,8 +13,7 @@ export default function AgentsPage() {
   const agentIds = useMemo(() => agents.map((agent) => agent.id), [agents]);
 
   // Fetch stats for all agents
-  const { allStats, isLoading: isLoadingStats } =
-    useOrFetchMultipleAgentStats(agentIds);
+  const { allStats, isLoading: isLoadingStats } = useOrFetchMultipleAgentStats(agentIds);
 
   return (
     <div className="flex flex-col w-full h-full mx-auto px-4 py-8 gap-6 bg-gray-50">
@@ -23,12 +22,7 @@ export default function AgentsPage() {
         description="View and manage your AI agents, monitor their performance, and analyze their completion statistics"
       />
 
-      <AgentsTable
-        agents={agents}
-        agentsStats={allStats}
-        isLoading={isLoading || isLoadingStats}
-        error={error}
-      />
+      <AgentsTable agents={agents} agentsStats={allStats} isLoading={isLoading || isLoadingStats} error={error} />
     </div>
   );
 }

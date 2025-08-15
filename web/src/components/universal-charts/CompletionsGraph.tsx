@@ -16,11 +16,7 @@ function getXAxisKey(graph: Graph, availableKeys: string[]): string {
 }
 
 // Helper function to determine Y-axis key from graph configuration
-function getYAxisKey(
-  graph: Graph,
-  availableKeys: string[],
-  xAxisKey: string
-): string {
+function getYAxisKey(graph: Graph, availableKeys: string[], xAxisKey: string): string {
   if ("y" in graph && graph.y?.[0]?.field) {
     return graph.y[0].field;
   }
@@ -47,12 +43,7 @@ function createSeriesFromYAxes(yAxes: YAxis[]) {
   }));
 }
 
-export function CompletionsGraph({
-  data,
-  isLoading,
-  error,
-  graph,
-}: CompletionsGraphProps) {
+export function CompletionsGraph({ data, isLoading, error, graph }: CompletionsGraphProps) {
   if (isLoading) {
     return (
       <div className="bg-white border border-gray-200 rounded-[2px] flex flex-col p-6">
@@ -90,12 +81,7 @@ export function CompletionsGraph({
     const yAxisKey = getYAxisKey(graph, availableKeys, xAxisKey);
 
     // Check if we have multiple Y axes defined (for line charts)
-    if (
-      graph.type === "line" &&
-      "y" in graph &&
-      graph.y &&
-      graph.y.length > 1
-    ) {
+    if (graph.type === "line" && "y" in graph && graph.y && graph.y.length > 1) {
       // Multi-Y axis line chart - transform data to include multiple Y series
       return data.map((item) => {
         if (!item || typeof item !== "object") {
@@ -121,32 +107,16 @@ export function CompletionsGraph({
     if ((graph.type === "bar" || graph.type === "line") && "y" in graph) {
       // Look for a potential series field (like 'model' in your case)
       // Common series field names to look for
-      const potentialSeriesFields = [
-        "model",
-        "version_model",
-        "agent_id",
-        "type",
-        "category",
-      ];
+      const potentialSeriesFields = ["model", "version_model", "agent_id", "type", "category"];
       const seriesField = availableKeys.find(
-        (key) =>
-          potentialSeriesFields.includes(key) &&
-          key !== xAxisKey &&
-          key !== yAxisKey
+        (key) => potentialSeriesFields.includes(key) && key !== xAxisKey && key !== yAxisKey
       );
 
       // If we found a series field and have multiple unique values, use multi-series
       if (seriesField) {
-        const uniqueSeriesValues = new Set(
-          data.map((item) => String(item[seriesField] || ""))
-        );
+        const uniqueSeriesValues = new Set(data.map((item) => String(item[seriesField] || "")));
         if (uniqueSeriesValues.size > 1) {
-          return transformToMultiSeriesChartData(
-            data,
-            xAxisKey,
-            yAxisKey,
-            seriesField
-          );
+          return transformToMultiSeriesChartData(data, xAxisKey, yAxisKey, seriesField);
         }
       }
     }
@@ -194,9 +164,7 @@ export function CompletionsGraph({
           <UniversalBarChart
             {...commonProps}
             barColor={primaryColor}
-            stackedBars={
-              ("stacked" in graph ? graph.stacked : false) as boolean
-            }
+            stackedBars={("stacked" in graph ? graph.stacked : false) as boolean}
           />
         );
 
@@ -206,18 +174,10 @@ export function CompletionsGraph({
           // Create series config for multi-Y line chart
           const series = createSeriesFromYAxes(graph.y);
 
-          return (
-            <UniversalLineChart
-              {...commonProps}
-              series={series}
-              showLegend={true}
-            />
-          );
+          return <UniversalLineChart {...commonProps} series={series} showLegend={true} />;
         } else {
           // Single Y axis - let UniversalLineChart handle multi-series detection automatically
-          return (
-            <UniversalLineChart {...commonProps} lineColor={primaryColor} />
-          );
+          return <UniversalLineChart {...commonProps} lineColor={primaryColor} />;
         }
 
       case "pie":
@@ -233,26 +193,18 @@ export function CompletionsGraph({
         );
 
       case "scatter":
-        return (
-          <UniversalScatterChart {...commonProps} dotColor={primaryColor} />
-        );
+        return <UniversalScatterChart {...commonProps} dotColor={primaryColor} />;
 
       default:
         return (
           <UniversalBarChart
             {...commonProps}
             barColor={primaryColor}
-            stackedBars={
-              ("stacked" in graph ? graph.stacked : false) as boolean
-            }
+            stackedBars={("stacked" in graph ? graph.stacked : false) as boolean}
           />
         );
     }
   };
 
-  return (
-    <div className="bg-white border border-gray-200 rounded-[2px] flex flex-col pt-6">
-      {renderChart()}
-    </div>
-  );
+  return <div className="bg-white border border-gray-200 rounded-[2px] flex flex-col pt-6">{renderChart()}</div>;
 }

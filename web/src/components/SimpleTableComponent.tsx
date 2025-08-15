@@ -72,15 +72,9 @@ export function SimpleTableComponent({
         "bg-gradient-to-b from-white to-gray-50 border border-gray-200 rounded-[2px] overflow-hidden relative",
         className
       )}
-      style={
-        maxHeight
-          ? { maxHeight, display: "flex", flexDirection: "column" }
-          : undefined
-      }
+      style={maxHeight ? { maxHeight, display: "flex", flexDirection: "column" } : undefined}
     >
-      <div
-        className={maxHeight ? "flex-1 overflow-auto" : "h-full overflow-auto"}
-      >
+      <div className={maxHeight ? "flex-1 overflow-auto" : "h-full overflow-auto"}>
         <table className="w-full">
           <thead className="bg-white sticky top-0 after:content-[''] after:absolute after:bottom-0 after:left-2 after:right-2 after:h-px after:bg-gray-200 z-20">
             <tr>
@@ -108,9 +102,7 @@ export function SimpleTableComponent({
                   onRowClick && "cursor-pointer"
                 )}
                 onClick={onRowClick ? () => onRowClick(rowIndex) : undefined}
-                onMouseEnter={
-                  onRowHover ? () => onRowHover(rowIndex) : undefined
-                }
+                onMouseEnter={onRowHover ? () => onRowHover(rowIndex) : undefined}
                 onMouseLeave={onRowLeave ? () => onRowLeave() : undefined}
               >
                 {row.map((cellContent, columnIndex) => (

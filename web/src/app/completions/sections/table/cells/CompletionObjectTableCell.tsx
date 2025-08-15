@@ -41,10 +41,7 @@ function isContainerType(value: unknown): value is Record<string, unknown> {
 
   // Check if it's an input container (has messages and/or variables)
   const hasMessages = "messages" in obj && Array.isArray(obj.messages);
-  const hasVariables =
-    "variables" in obj &&
-    typeof obj.variables === "object" &&
-    obj.variables !== null;
+  const hasVariables = "variables" in obj && typeof obj.variables === "object" && obj.variables !== null;
   const hasError = "error" in obj;
 
   // It's a container if it has any combination of these properties

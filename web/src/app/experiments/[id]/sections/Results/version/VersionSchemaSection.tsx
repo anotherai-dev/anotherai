@@ -15,16 +15,8 @@ type VersionSchemaSectionProps = {
 };
 
 export function VersionSchemaSection(props: VersionSchemaSectionProps) {
-  const {
-    outputSchema,
-    sharedKeypathsOfSchemas,
-    annotations,
-    experimentId,
-    completionId,
-    prefix,
-    className,
-    agentId,
-  } = props;
+  const { outputSchema, sharedKeypathsOfSchemas, annotations, experimentId, completionId, prefix, className, agentId } =
+    props;
   const [keypathSelected, setKeypathSelected] = useState<string | null>(null);
 
   const handleKeypathSelect = (keyPath: string) => {

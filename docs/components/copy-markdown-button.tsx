@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { useState } from "react";
 
 interface CopyMarkdownButtonProps {
   content: string;
@@ -15,7 +15,7 @@ export function CopyMarkdownButton({ content }: CopyMarkdownButtonProps) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Failed to copy:', err);
+      console.error("Failed to copy:", err);
     }
   };
 
@@ -44,7 +44,7 @@ export function CopyMarkdownButton({ content }: CopyMarkdownButtonProps) {
           </>
         )}
       </svg>
-      {copied ? 'Copied!' : 'Copy for LLM'}
+      {copied ? "Copied!" : "Copy for LLM"}
     </button>
   );
-} 
+}

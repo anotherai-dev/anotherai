@@ -8,13 +8,7 @@ interface PaginationProps {
   isLoading?: boolean;
 }
 
-export function Pagination({
-  currentPage,
-  totalItems,
-  pageSize,
-  onPageChange,
-  isLoading = false,
-}: PaginationProps) {
+export function Pagination({ currentPage, totalItems, pageSize, onPageChange, isLoading = false }: PaginationProps) {
   const totalPages = Math.ceil(totalItems / pageSize);
 
   if (totalPages <= 1) {
@@ -96,10 +90,7 @@ export function Pagination({
         <div className="flex items-center gap-1 mx-2">
           {pageNumbers.map((page, index) =>
             page === "..." ? (
-              <span
-                key={`ellipsis-${index}`}
-                className="px-2 py-1 text-sm text-gray-500"
-              >
+              <span key={`ellipsis-${index}`} className="px-2 py-1 text-sm text-gray-500">
                 ...
               </span>
             ) : (

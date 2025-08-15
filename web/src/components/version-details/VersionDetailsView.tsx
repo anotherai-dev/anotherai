@@ -12,11 +12,7 @@ type VersionDetailsViewProps = {
   showOutputSchema?: boolean;
 };
 
-export function VersionDetailsView({
-  version,
-  showPrompt = false,
-  showOutputSchema = false,
-}: VersionDetailsViewProps) {
+export function VersionDetailsView({ version, showPrompt = false, showOutputSchema = false }: VersionDetailsViewProps) {
   const extendedVersion = getVersionWithDefaults(version);
   const [isAdvancedExpanded, setIsAdvancedExpanded] = useState(false);
 
@@ -52,9 +48,7 @@ export function VersionDetailsView({
           onClick={() => setIsAdvancedExpanded(!isAdvancedExpanded)}
           className="w-full p-2 flex items-center justify-between hover:bg-gray-50 transition-colors"
         >
-          <span className="text-xs font-medium text-gray-700">
-            Advanced Settings
-          </span>
+          <span className="text-xs font-medium text-gray-700">Advanced Settings</span>
           {isAdvancedExpanded ? (
             <ChevronDown className="w-3 h-3 text-gray-500" />
           ) : (
@@ -66,58 +60,44 @@ export function VersionDetailsView({
             {/* Use Cache */}
             <div className="flex justify-between items-center">
               <span className="text-xs text-gray-600">Use Cache</span>
-              <span className="text-xs text-gray-900">
-                {extendedVersion.use_cache}
-              </span>
+              <span className="text-xs text-gray-900">{extendedVersion.use_cache}</span>
             </div>
 
             {/* Max Tokens */}
             <div className="flex justify-between items-center">
               <span className="text-xs text-gray-600">Max Tokens</span>
-              <span className="text-xs text-gray-900 ">
-                {extendedVersion.max_tokens}
-              </span>
+              <span className="text-xs text-gray-900 ">{extendedVersion.max_tokens}</span>
             </div>
 
             {/* Stream */}
             <div className="flex justify-between items-center">
               <span className="text-xs text-gray-600">Stream</span>
-              <span className="text-xs text-gray-900 ">
-                {extendedVersion.stream ? "true" : "false"}
-              </span>
+              <span className="text-xs text-gray-900 ">{extendedVersion.stream ? "true" : "false"}</span>
             </div>
 
             {/* Include Usage */}
             <div className="flex justify-between items-center">
               <span className="text-xs text-gray-600">Include Usage</span>
-              <span className="text-xs text-gray-900 ">
-                {extendedVersion.include_usage ? "true" : "false"}
-              </span>
+              <span className="text-xs text-gray-900 ">{extendedVersion.include_usage ? "true" : "false"}</span>
             </div>
 
             {/* Presence Penalty */}
             <div className="flex justify-between items-center">
               <span className="text-xs text-gray-600">Presence Penalty</span>
-              <span className="text-xs text-gray-900 ">
-                {extendedVersion.presence_penalty}
-              </span>
+              <span className="text-xs text-gray-900 ">{extendedVersion.presence_penalty}</span>
             </div>
 
             {/* Frequency Penalty */}
             <div className="flex justify-between items-center">
               <span className="text-xs text-gray-600">Frequency Penalty</span>
-              <span className="text-xs text-gray-900 ">
-                {extendedVersion.frequency_penalty}
-              </span>
+              <span className="text-xs text-gray-900 ">{extendedVersion.frequency_penalty}</span>
             </div>
 
             {/* Stop */}
             <div className="flex justify-between items-center">
               <span className="text-xs text-gray-600">Stop</span>
               <span className="text-xs text-gray-900 ">
-                {Array.isArray(extendedVersion.stop)
-                  ? extendedVersion.stop.join(", ")
-                  : extendedVersion.stop}
+                {Array.isArray(extendedVersion.stop) ? extendedVersion.stop.join(", ") : extendedVersion.stop}
               </span>
             </div>
 
@@ -148,9 +128,7 @@ export function VersionDetailsView({
       {/* Output Schema */}
       {showOutputSchema && version.output_schema && (
         <div className="bg-white border border-gray-200 rounded-[2px] p-2">
-          <div className="text-xs font-medium text-gray-700 mb-2">
-            Output Schema
-          </div>
+          <div className="text-xs font-medium text-gray-700 mb-2">Output Schema</div>
           <SchemaViewer schema={version.output_schema} />
         </div>
       )}

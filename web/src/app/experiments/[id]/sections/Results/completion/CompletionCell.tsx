@@ -19,22 +19,12 @@ export type CompletionCellProps = {
 };
 
 export function CompletionCell(props: CompletionCellProps) {
-  const {
-    completion,
-    allCosts,
-    allDurations,
-    annotations,
-    experimentId,
-    allMetricsPerKeyForRow,
-    agentId,
-  } = props;
+  const { completion, allCosts, allDurations, annotations, experimentId, allMetricsPerKeyForRow, agentId } = props;
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const filteredAnnotations = useMemo(() => {
-    return annotations?.filter(
-      (annotation) => annotation.target?.completion_id === completion?.id
-    );
+    return annotations?.filter((annotation) => annotation.target?.completion_id === completion?.id);
   }, [annotations, completion?.id]);
 
   const completionMetrics = useMemo(() => {
@@ -54,32 +44,25 @@ export function CompletionCell(props: CompletionCellProps) {
   const [keypathSelected, setKeypathSelected] = useState<string | null>(null);
 
   if (!completion) {
-    return (
-      <div className="text-xs text-gray-400 italic text-center py-8">
-        No completion found
-      </div>
-    );
+    return <div className="text-xs text-gray-400 italic text-center py-8">No completion found</div>;
   }
 
   return (
     <div className="flex flex-col h-full max-h-[800px]">
       <div className="flex-1 space-y-3 overflow-y-auto">
         {/* Error Display */}
-        {completion.output?.error && (
-          <PageError error={completion.output.error} />
-        )}
+        {completion.output?.error && <PageError error={completion.output.error} />}
 
         {/* Messages Display */}
-        {completion.output?.messages &&
-          completion.output.messages.length > 0 && (
-            <div className="h-max">
-              <MessagesViewer
-                messages={completion.output.messages}
-                annotations={filteredAnnotations}
-                onKeypathSelect={(keyPath) => setKeypathSelected(keyPath)}
-              />
-            </div>
-          )}
+        {completion.output?.messages && completion.output.messages.length > 0 && (
+          <div className="h-max">
+            <MessagesViewer
+              messages={completion.output.messages}
+              annotations={filteredAnnotations}
+              onKeypathSelect={(keyPath) => setKeypathSelected(keyPath)}
+            />
+          </div>
+        )}
 
         {/* Annotations Display */}
         <div className="h-max">
@@ -96,23 +79,18 @@ export function CompletionCell(props: CompletionCellProps) {
       </div>
 
       {/* Price, Latency and Metrics Display at bottom */}
-      {((completion.cost_usd !== undefined &&
-        completion.duration_seconds !== undefined) ||
+      {((completion.cost_usd !== undefined && completion.duration_seconds !== undefined) ||
         completionMetrics.length > 0) && (
         <div className="pt-3 border-t border-gray-200 mt-3 space-y-1">
-          {completion.cost_usd !== undefined &&
-            completion.duration_seconds !== undefined && (
-              <PriceAndLatencyDisplay
-                cost={completion.cost_usd}
-                duration={completion.duration_seconds}
-                allCosts={allCosts}
-                allDurations={allDurations}
-              />
-            )}
-          <CompletionMetrics
-            metrics={completionMetrics}
-            allMetricsPerKeyForRow={allMetricsPerKeyForRow}
-          />
+          {completion.cost_usd !== undefined && completion.duration_seconds !== undefined && (
+            <PriceAndLatencyDisplay
+              cost={completion.cost_usd}
+              duration={completion.duration_seconds}
+              allCosts={allCosts}
+              allDurations={allDurations}
+            />
+          )}
+          <CompletionMetrics metrics={completionMetrics} allMetricsPerKeyForRow={allMetricsPerKeyForRow} />
         </div>
       )}
 
