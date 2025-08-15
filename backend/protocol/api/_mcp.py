@@ -562,8 +562,13 @@ async def list_deployments() -> Page[Deployment]:
 
 @mcp.tool()
 async def create_or_update_deployment(
-    deployment: Annotated[Deployment, Field(description="The deployment to create or update")],
-) -> str:
+    agent_id: str = Field(
+        description="The agent id to deploy the version to",
+    ),
+    version_id: str = Field(
+        description="The version id to deploy. Can be found in an experiment or a completion.",
+    ),
+) -> Deployment | str:
     """Create a new deployment or update an existing deployment if id matches.
 
     Note that overriding a deployment with a new id is only possible if the variable
