@@ -242,7 +242,7 @@ async def delete_api_key(
 # Deployments
 
 
-@router.get("/v1//deployments", response_model_exclude_none=True)
+@router.get("/v1/deployments", response_model_exclude_none=True)
 async def list_deployments() -> Page[Deployment]:
     raise NotImplementedError
 

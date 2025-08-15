@@ -563,12 +563,15 @@ async def list_deployments() -> Page[Deployment]:
 @mcp.tool()
 async def create_or_update_deployment(
     deployment: Annotated[Deployment, Field(description="The deployment to create or update")],
-) -> Deployment:
+) -> str:
     """Create a new deployment or update an existing deployment if id matches.
 
     Note that overriding a deployment with a new id is only possible if the variable
     (aka version.input_variables_schema) and response formats (version.output_schema) are compatible
     between the deployments. Schemas are considered compatible if all their fields have the same name, type
     and properties.
+
+    Updating an existing deployment needs user confirmation. You will be provided the URL where a user can
+    confirm the update.
     """
     raise NotImplementedError
