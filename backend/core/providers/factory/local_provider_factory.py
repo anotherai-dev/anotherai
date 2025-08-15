@@ -1,13 +1,14 @@
-import logging
 from collections.abc import Iterable
 from typing import Any, override
+
+import structlog
 
 from core.domain.exceptions import (
     MissingEnvVariablesError,
 )
 from core.domain.models import Provider
 from core.domain.tenant_data import ProviderConfig
-from core.providers._base.abstract_provider import AbstractProvider, ProviderConfigInterface
+from core.providers._base.abstract_provider import AbstractProvider
 from core.providers.amazon_bedrock.amazon_bedrock_provider import AmazonBedrockProvider
 from core.providers.anthropic.anthropic_provider import AnthropicProvider
 from core.providers.factory.abstract_provider_factory import AbstractProviderFactory
@@ -33,7 +34,7 @@ _provider_cls: list[type[AbstractProvider[Any, Any]]] = [
     XAIProvider,
 ]
 
-_logger = logging.getLogger("LocalProviderFactory")
+_log = structlog.get_logger("LocalProviderFactory")
 
 
 class LocalProviderFactory(AbstractProviderFactory):
@@ -59,46 +60,48 @@ class LocalProviderFactory(AbstractProviderFactory):
         return self._providers[provider]
 
     @classmethod
-    def _build_providers_for_type(cls, provider: Provider, index: int):
+    def _build_providers_for_type(cls, provider: Provider):
         providers: list[AbstractProvider[Any, Any]] = []
         try:
             provider_type = cls.PROVIDER_TYPES[provider]
         except KeyError:
-            raise ValueError(f"Provider {provider} index {index} not supported") from None
+            raise ValueError(f"Provider {provider} not supported") from None
 
         for i in range(10):
             try:
                 providers.append(provider_type(index=i))
-                _logger.info(
+                _log.info(
                     "Successfully prepared provider",
-                    extra={"provider_name": provider, "index": i},
+                    provider=provider,
+                    index=i,
                 )
             except MissingEnvVariablesError:
                 if i == 0:
-                    _logger.warning(
-                        "Skipping provider",
-                        extra={"provider_name": provider},
-                        exc_info=True,
+                    _log.warning(
+                        "Skipping provider since env variables are missing",
+                        provider=provider,
+                        index=i,
+                        missing_env_vars=provider_type.required_env_vars(),
                     )
                 # We end at the first missing env variable
                 break
-            except Exception:
-                _logger.exception("Failed to prepare provider", extra={"provider_name": provider, "index": i})
+            except Exception as e:  # noqa: BLE001
+                _log.exception(
+                    "Failed to prepare provider",
+                    provider=provider,
+                    index=i,
+                    exc_info=e,
+                )
         return providers
 
     @classmethod
     def build_available_providers(cls) -> dict[Provider, list[AbstractProvider[Any, Any]]]:
-        return {
-            provider: cls._build_providers_for_type(provider, 0) for provider in LocalProviderFactory.PROVIDER_TYPES
-        }
+        return {provider: cls._build_providers_for_type(provider) for provider in LocalProviderFactory.PROVIDER_TYPES}
 
     @override
-    def provider_type[ProviderConfigVar: ProviderConfigInterface](
-        self,
-        config: ProviderConfigVar,
-    ) -> type[AbstractProvider[ProviderConfigVar, Any]]:
+    def provider_type(self, provider: Provider) -> type[AbstractProvider[Any, Any]]:
         """Return the provider type for the given provider."""
-        return self.PROVIDER_TYPES[config.provider]
+        return self.PROVIDER_TYPES[provider]
 
     @override
     def build_provider(
@@ -108,7 +111,12 @@ class LocalProviderFactory(AbstractProviderFactory):
         preserve_credits: bool | None,
     ) -> AbstractProvider[Any, Any]:
         """Build a provider from a configuration dictionary."""
-        return self.provider_type(config)(config=config, config_id=config_id, preserve_credits=preserve_credits)
+        return self.provider_type(config.provider)(
+            config=config,
+            config_id=config_id,
+            preserve_credits=preserve_credits,
+        )
 
+    @override
     def available_providers(self) -> Iterable[Provider]:
         return self._providers.keys()
