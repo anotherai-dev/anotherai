@@ -11,6 +11,7 @@ import { SignUpButton } from "@/components/auth/SignUpButton";
 import { SignedIn } from "@/components/auth/SignedIn";
 import { SignedOut } from "@/components/auth/SignedOut";
 import { CompletionModal } from "@/components/completion-modal/CompletionModal";
+import { DeploymentModal } from "@/components/deployment-modal/DeploymentModal";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -79,6 +80,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
             <Suspense fallback={null}>
               <CompletionModal />
+              <DeploymentModal />
               <ApiKeysModal />
             </Suspense>
           </ToastProvider>

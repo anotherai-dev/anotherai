@@ -239,6 +239,24 @@ export function getVersionWithDefaults(version: Version): ExtendedVersion {
   };
 }
 
+export function getVersionKeys(versions: Version[]): string[] {
+  if (versions.length === 0) return [];
+
+  const blackListedKeys: string[] = ["id"];
+
+  // Apply defaults to all versions
+  const versionsWithDefaults = versions.map(getVersionWithDefaults);
+
+  // Gather all unique keys from all versions (including default keys)
+  const allKeys = new Set<string>();
+  versionsWithDefaults.forEach((version) => {
+    Object.keys(version).forEach((key) => allKeys.add(key));
+  });
+
+  // Return all keys except blacklisted ones
+  return Array.from(allKeys).filter((key) => !blackListedKeys.includes(key));
+}
+
 export function getMatchingVersionKeys(versions: Version[]): string[] {
   // For single version, return all keys (including defaults) except blacklisted ones
   if (versions.length === 1) {
