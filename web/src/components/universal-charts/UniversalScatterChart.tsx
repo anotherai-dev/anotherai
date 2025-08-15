@@ -1,13 +1,5 @@
 import { useCallback, useMemo, useRef } from "react";
-import {
-  CartesianGrid,
-  ResponsiveContainer,
-  Scatter,
-  ScatterChart,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { CartesianGrid, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis } from "recharts";
 import { CustomTooltip } from "./CustomTooltip";
 
 interface ChartData {
@@ -105,10 +97,7 @@ export function UniversalScatterChart({
 
   // Memoized tooltip content function that uses ref instead of state
   const tooltipContent = useCallback(
-    (props: {
-      active?: boolean;
-      payload?: Array<{ value: number; payload: ScatterData }>;
-    }) => {
+    (props: { active?: boolean; payload?: Array<{ value: number; payload: ScatterData }> }) => {
       // Transform scatter chart payload to match CustomTooltip expectations
       if (props.active && props.payload && props.payload.length > 0) {
         const scatterData = props.payload[0].payload;
@@ -141,16 +130,7 @@ export function UniversalScatterChart({
   }, []);
 
   // Memoized data transformation and calculations
-  const {
-    scatterData,
-    xMin,
-    xMax,
-    yMin,
-    yMax,
-    xPadding,
-    yPadding,
-    leftMargin,
-  } = useMemo(() => {
+  const { scatterData, xMin, xMax, yMin, yMax, xPadding, yPadding, leftMargin } = useMemo(() => {
     if (data.length === 0) {
       return {
         scatterData: [],
@@ -170,10 +150,7 @@ export function UniversalScatterChart({
       const numericX = parseFloat(String(item.x));
       const originalName = String(item.x);
 
-      const truncatedName =
-        originalName.length > 20
-          ? originalName.substring(0, 20) + "..."
-          : originalName;
+      const truncatedName = originalName.length > 20 ? originalName.substring(0, 20) + "..." : originalName;
 
       const transformedItem: ScatterData = {
         x: isNaN(numericX) ? index : numericX,
@@ -211,9 +188,7 @@ export function UniversalScatterChart({
       yAxisTickFormatter((yMin + yMax) / 2), // Middle value
     ];
 
-    const maxYLabelWidth = Math.max(
-      ...yAxisLabels.map((label) => measureTextWidth(String(label), fontSize))
-    );
+    const maxYLabelWidth = Math.max(...yAxisLabels.map((label) => measureTextWidth(String(label), fontSize)));
 
     // Left margin: max label width + tick marks + some padding
     const leftMargin = Math.max(20, maxYLabelWidth + 5); // 5px for tick marks and spacing
@@ -242,10 +217,7 @@ export function UniversalScatterChart({
       style={{ minHeight: height }}
     >
       <ResponsiveContainer width="100%" height="100%">
-        <ScatterChart
-          data={scatterData}
-          margin={{ top: 20, right: 30, left: leftMargin, bottom: 40 }}
-        >
+        <ScatterChart data={scatterData} margin={{ top: 20, right: 30, left: leftMargin, bottom: 40 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
           <XAxis
             type="number"

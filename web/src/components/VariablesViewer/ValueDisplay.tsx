@@ -15,12 +15,7 @@ const isImageDataUri = (value: string): boolean => {
 const getTextSizeStyle = (textSize: "xs" | "sm" | "base" | string = "xs") => {
   if (textSize === "xs" || textSize === "sm" || textSize === "base") {
     return {
-      className:
-        textSize === "xs"
-          ? "text-xs"
-          : textSize === "sm"
-            ? "text-sm"
-            : "text-base",
+      className: textSize === "xs" ? "text-xs" : textSize === "sm" ? "text-sm" : "text-base",
       style: {},
     };
   }
@@ -33,17 +28,12 @@ export type ValueDisplayProps = {
   showSeeMore: boolean;
 };
 
-export function ValueDisplay({
-  value,
-  textSize,
-  showSeeMore,
-}: ValueDisplayProps) {
+export function ValueDisplay({ value, textSize, showSeeMore }: ValueDisplayProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldTruncateByHeight, setShouldTruncateByHeight] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const contentRef = useRef<HTMLSpanElement>(null);
-  const { className: textSizeClass, style: textSizeStyle } =
-    getTextSizeStyle(textSize);
+  const { className: textSizeClass, style: textSizeStyle } = getTextSizeStyle(textSize);
   const { showToast } = useToast();
 
   const copyToClipboard = useCallback(async () => {
@@ -59,12 +49,7 @@ export function ValueDisplay({
 
   // Check height-based truncation - must be at top level
   useEffect(() => {
-    if (
-      contentRef.current &&
-      !isExpanded &&
-      showSeeMore &&
-      typeof value === "string"
-    ) {
+    if (contentRef.current && !isExpanded && showSeeMore && typeof value === "string") {
       const height = contentRef.current.scrollHeight;
       setShouldTruncateByHeight(height > MAX_HEIGHT_PX);
     }
@@ -76,10 +61,7 @@ export function ValueDisplay({
     if (isImageDataUri(value)) {
       return (
         <div
-          className={cx(
-            "inline-block p-3 bg-white border border-gray-200 rounded-[2px] relative",
-            textSizeClass
-          )}
+          className={cx("inline-block p-3 bg-white border border-gray-200 rounded-[2px] relative", textSizeClass)}
           style={textSizeStyle}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
@@ -87,9 +69,7 @@ export function ValueDisplay({
           <div className="mb-2">
             <ImageViewer imageUrl={value} alt="Variable image" />
           </div>
-          <div className="text-xs text-gray-500">
-            Image data URI ({Math.round(value.length / 1024)}KB)
-          </div>
+          <div className="text-xs text-gray-500">Image data URI ({Math.round(value.length / 1024)}KB)</div>
           {isHovered && (
             <button
               onClick={(e) => {
@@ -107,13 +87,9 @@ export function ValueDisplay({
     }
 
     // Regular string handling
-    const shouldTruncateByLength =
-      showSeeMore && value.length > MAX_VALUE_LENGTH;
+    const shouldTruncateByLength = showSeeMore && value.length > MAX_VALUE_LENGTH;
     const shouldTruncate = shouldTruncateByLength || shouldTruncateByHeight;
-    const displayValue =
-      shouldTruncateByLength && !isExpanded
-        ? value.slice(0, MAX_VALUE_LENGTH)
-        : value;
+    const displayValue = shouldTruncateByLength && !isExpanded ? value.slice(0, MAX_VALUE_LENGTH) : value;
 
     return (
       <span
@@ -127,15 +103,8 @@ export function ValueDisplay({
         onMouseLeave={() => setIsHovered(false)}
       >
         <div
-          className={cx(
-            "py-1",
-            shouldTruncateByHeight && !isExpanded ? "overflow-hidden" : ""
-          )}
-          style={
-            shouldTruncateByHeight && !isExpanded
-              ? { maxHeight: `${MAX_HEIGHT_PX - 30}px` }
-              : {}
-          }
+          className={cx("py-1", shouldTruncateByHeight && !isExpanded ? "overflow-hidden" : "")}
+          style={shouldTruncateByHeight && !isExpanded ? { maxHeight: `${MAX_HEIGHT_PX - 30}px` } : {}}
         >
           {'"'}
           {displayValue}

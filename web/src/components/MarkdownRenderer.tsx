@@ -8,10 +8,7 @@ interface MarkdownRendererProps {
   className?: string;
 }
 
-export default function MarkdownRenderer({
-  content,
-  className = "",
-}: MarkdownRendererProps) {
+export default function MarkdownRenderer({ content, className = "" }: MarkdownRendererProps) {
   return (
     <div
       className={cx(
@@ -35,56 +32,28 @@ export default function MarkdownRenderer({
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeSanitize]}
         components={{
-          h1: ({ children }) => (
-            <h1 className="text-2xl font-bold mb-4">{children}</h1>
-          ),
-          h2: ({ children }) => (
-            <h2 className="text-xl font-semibold mb-3">{children}</h2>
-          ),
-          h3: ({ children }) => (
-            <h3 className="text-lg font-medium mb-2">{children}</h3>
-          ),
-          h4: ({ children }) => (
-            <h4 className="text-base font-medium mb-2">{children}</h4>
-          ),
-          h5: ({ children }) => (
-            <h5 className="text-sm font-medium mb-1">{children}</h5>
-          ),
-          h6: ({ children }) => (
-            <h6 className="text-xs font-medium mb-1">{children}</h6>
-          ),
-          strong: ({ children }) => (
-            <strong className="font-bold">{children}</strong>
-          ),
+          h1: ({ children }) => <h1 className="text-2xl font-bold mb-4">{children}</h1>,
+          h2: ({ children }) => <h2 className="text-xl font-semibold mb-3">{children}</h2>,
+          h3: ({ children }) => <h3 className="text-lg font-medium mb-2">{children}</h3>,
+          h4: ({ children }) => <h4 className="text-base font-medium mb-2">{children}</h4>,
+          h5: ({ children }) => <h5 className="text-sm font-medium mb-1">{children}</h5>,
+          h6: ({ children }) => <h6 className="text-xs font-medium mb-1">{children}</h6>,
+          strong: ({ children }) => <strong className="font-bold">{children}</strong>,
           em: ({ children }) => <em className="italic">{children}</em>,
-          code: ({ children }) => (
-            <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">
-              {children}
-            </code>
-          ),
+          code: ({ children }) => <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">{children}</code>,
           pre: ({ children }) => (
-            <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto font-mono text-sm mb-4">
-              {children}
-            </pre>
+            <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto font-mono text-sm mb-4">{children}</pre>
           ),
           blockquote: ({ children }) => (
-            <blockquote className="border-l-4 border-gray-400 pl-4 italic my-4">
-              {children}
-            </blockquote>
+            <blockquote className="border-l-4 border-gray-400 pl-4 italic my-4">{children}</blockquote>
           ),
           table: ({ children }) => (
-            <table className="w-full border-collapse border border-gray-300 my-4">
-              {children}
-            </table>
+            <table className="w-full border-collapse border border-gray-300 my-4">{children}</table>
           ),
           th: ({ children }) => (
-            <th className="border border-gray-300 bg-gray-100 px-4 py-2 text-left font-semibold">
-              {children}
-            </th>
+            <th className="border border-gray-300 bg-gray-100 px-4 py-2 text-left font-semibold">{children}</th>
           ),
-          td: ({ children }) => (
-            <td className="border border-gray-300 px-4 py-2">{children}</td>
-          ),
+          td: ({ children }) => <td className="border border-gray-300 px-4 py-2">{children}</td>,
         }}
       >
         {content}

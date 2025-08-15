@@ -18,12 +18,7 @@ export function AgentsGroup({ agents, onSelect }: AgentsGroupProps) {
           value={`agent:${agent.agent_id} ${agent.agent_id} agent completions executions`}
           onSelect={() => onSelect(`agent:${agent.agent_id}`)}
           icon={
-            <svg
-              className="w-4 h-4 text-gray-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"

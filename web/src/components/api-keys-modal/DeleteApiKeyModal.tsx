@@ -9,13 +9,7 @@ interface DeleteApiKeyModalProps {
   isDeleting: boolean;
 }
 
-export function DeleteApiKeyModal({
-  isOpen,
-  onClose,
-  onConfirm,
-  apiKey,
-  isDeleting,
-}: DeleteApiKeyModalProps) {
+export function DeleteApiKeyModal({ isOpen, onClose, onConfirm, apiKey, isDeleting }: DeleteApiKeyModalProps) {
   if (!apiKey) return null;
 
   return (

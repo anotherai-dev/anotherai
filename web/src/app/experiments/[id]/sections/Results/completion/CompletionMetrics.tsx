@@ -23,16 +23,8 @@ export function CompletionMetrics(props: CompletionMetricsProps) {
             : "bg-transparent border border-gray-200 text-gray-700";
 
         return (
-          <div
-            key={key}
-            className={cx(
-              "flex justify-between items-center px-2 py-1 rounded text-xs",
-              badgeColor
-            )}
-          >
-            <span className="text-gray-600 capitalize">
-              {key.replace(/_/g, " ")}
-            </span>
+          <div key={key} className={cx("flex justify-between items-center px-2 py-1 rounded text-xs", badgeColor)}>
+            <span className="text-gray-600 capitalize">{key.replace(/_/g, " ")}</span>
             <span className="font-medium">{average.toFixed(2)}</span>
           </div>
         );

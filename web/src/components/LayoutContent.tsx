@@ -5,11 +5,7 @@ import CommandPalette from "@/components/CommandPalette";
 import NavigationSidebar from "@/components/sidebar/NavigationSidebar";
 import { useKeyboardShortcut } from "@/hooks/useKeyboardShortcut";
 
-export default function LayoutContent({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function LayoutContent({ children }: { children: React.ReactNode }) {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
   useKeyboardShortcut(["mod", "k"], () => {
@@ -19,15 +15,10 @@ export default function LayoutContent({
   return (
     <>
       <div className="flex h-screen">
-        <NavigationSidebar
-          onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
-        />
+        <NavigationSidebar onOpenCommandPalette={() => setIsCommandPaletteOpen(true)} />
         <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
-      <CommandPalette
-        isOpen={isCommandPaletteOpen}
-        onClose={() => setIsCommandPaletteOpen(false)}
-      />
+      <CommandPalette isOpen={isCommandPaletteOpen} onClose={() => setIsCommandPaletteOpen(false)} />
     </>
   );
 }

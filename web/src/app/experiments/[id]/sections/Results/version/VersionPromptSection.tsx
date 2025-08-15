@@ -14,25 +14,12 @@ type VersionPromptSectionProps = {
 };
 
 export function VersionPromptSection(props: VersionPromptSectionProps) {
-  const {
-    prompt,
-    sharedPartsOfPrompts,
-    annotations,
-    experimentId,
-    completionId,
-    prefix,
-    className,
-    agentId,
-  } = props;
+  const { prompt, sharedPartsOfPrompts, annotations, experimentId, completionId, prefix, className, agentId } = props;
 
   return (
     <div className={className}>
       <div className="overflow-y-auto max-h-80">
-        <MessagesViewer
-          messages={prompt}
-          sharedPartsOfPrompts={sharedPartsOfPrompts}
-          annotations={annotations}
-        />
+        <MessagesViewer messages={prompt} sharedPartsOfPrompts={sharedPartsOfPrompts} annotations={annotations} />
       </div>
       <AnnotationsView
         annotations={annotations}

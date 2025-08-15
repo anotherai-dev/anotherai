@@ -1,4 +1,4 @@
-import { WorkflowModelsTable } from './workflow-models-table';
+import { WorkflowModelsTable } from "./workflow-models-table";
 
 interface ModelSupports {
   input_image: boolean;
@@ -32,7 +32,7 @@ interface ModelsResponse {
 
 async function getModels(): Promise<Model[]> {
   try {
-    const response = await fetch('https://api.workflowai.com/v1/models', {
+    const response = await fetch("https://api.workflowai.com/v1/models", {
       // Cache for 1 hour, revalidate in background
       next: { revalidate: 3600 },
     });
@@ -45,7 +45,7 @@ async function getModels(): Promise<Model[]> {
     // Sort models by created date (newest first)
     return data.data.sort((a, b) => b.created - a.created);
   } catch (error) {
-    console.error('Error fetching models:', error);
+    console.error("Error fetching models:", error);
     // Return empty array on error to show empty table
     return [];
   }
@@ -56,8 +56,8 @@ export async function WorkflowModelsWrapper() {
 
   if (models.length === 0) {
     return (
-      <div className='rounded-lg border bg-card text-card-foreground shadow-sm p-4'>
-        <p className='text-muted-foreground'>Unable to load models at this time. Please try again later.</p>
+      <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-4">
+        <p className="text-muted-foreground">Unable to load models at this time. Please try again later.</p>
       </div>
     );
   }

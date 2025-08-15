@@ -3,9 +3,7 @@
 import { ChevronDown, ChevronRight } from "lucide-react";
 import React, { useCallback, useRef } from "react";
 import { View } from "@/types/models";
-import EditableFolderName, {
-  EditableFolderNameRef,
-} from "./EditableFolderName";
+import EditableFolderName, { EditableFolderNameRef } from "./EditableFolderName";
 import FolderMenuButton from "./FolderMenuButton";
 import ViewCell from "./ViewCell";
 
@@ -55,9 +53,7 @@ function FolderCell({
             : isDragActive
               ? "border border-transparent border-dashed rounded-[2px]"
               : ""
-        } ${isMenuOpen ? "hover:bg-gray-100 bg-gray-100" : "hover:bg-gray-100"} ${
-          folderId === "" ? "py-2" : "py-1"
-        }`}
+        } ${isMenuOpen ? "hover:bg-gray-100 bg-gray-100" : "hover:bg-gray-100"} ${folderId === "" ? "py-2" : "py-1"}`}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
         onDrop={onDrop}
@@ -68,11 +64,7 @@ function FolderCell({
             isDragOver ? "text-gray-800" : "text-gray-500 hover:text-gray-700"
           }`}
         >
-          {isCollapsed ? (
-            <ChevronRight className="w-3 h-3" />
-          ) : (
-            <ChevronDown className="w-3 h-3" />
-          )}
+          {isCollapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           <EditableFolderName
             ref={(ref) => {
               folderRef.current = ref;
@@ -90,12 +82,7 @@ function FolderCell({
         />
       </div>
       {!isCollapsed && (
-        <div
-          className="space-y-1"
-          onDragOver={onDragOver}
-          onDragLeave={onDragLeave}
-          onDrop={onDrop}
-        >
+        <div className="space-y-1" onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}>
           {views.length > 0 ? (
             views.map((view) => (
               <div key={view.id} className="group">
@@ -103,9 +90,7 @@ function FolderCell({
               </div>
             ))
           ) : (
-            <div className="pl-7 pr-3 py-0.5 text-xs text-gray-400 italic">
-              No views in this folder
-            </div>
+            <div className="pl-7 pr-3 py-0.5 text-xs text-gray-400 italic">No views in this folder</div>
           )}
         </div>
       )}
@@ -115,12 +100,8 @@ function FolderCell({
 
 // Helper function to compare view arrays for memoization
 function areViewArraysEqual(
-  prevViews: Array<
-    View & { folder_id: string; view_type: "run_list" | "metric" }
-  >,
-  nextViews: Array<
-    View & { folder_id: string; view_type: "run_list" | "metric" }
-  >
+  prevViews: Array<View & { folder_id: string; view_type: "run_list" | "metric" }>,
+  nextViews: Array<View & { folder_id: string; view_type: "run_list" | "metric" }>
 ): boolean {
   if (prevViews.length !== nextViews.length) {
     return false;

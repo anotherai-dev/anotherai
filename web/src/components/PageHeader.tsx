@@ -17,14 +17,7 @@ interface PageHeaderProps {
 }
 
 export function PageHeader(props: PageHeaderProps) {
-  const {
-    breadcrumbs,
-    title,
-    description,
-    copyablePrefixAndId,
-    className = "mb-8",
-    rightContent,
-  } = props;
+  const { breadcrumbs, title, description, copyablePrefixAndId, className = "mb-8", rightContent } = props;
   const { showToast } = useToast();
 
   const handleCopy = async () => {

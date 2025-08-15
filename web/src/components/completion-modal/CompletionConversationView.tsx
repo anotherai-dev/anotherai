@@ -28,11 +28,7 @@ export function CompletionConversationView(props: Props) {
       // Get metrics for this completion
       const completionMetrics = annotations
         ? findAllMetricKeysAndAverages(
-            annotations.filter(
-              (annotation) =>
-                annotation.target?.completion_id === completion.id &&
-                annotation.metric
-            )
+            annotations.filter((annotation) => annotation.target?.completion_id === completion.id && annotation.metric)
           )
         : [];
 
@@ -67,15 +63,9 @@ export function CompletionConversationView(props: Props) {
       </div>
 
       <div className="px-4 pt-4 overflow-y-auto space-y-3">
-        <MessagesViewer
-          messages={messages}
-          annotations={annotations}
-          onKeypathSelect={onKeypathSelect}
-        />
+        <MessagesViewer messages={messages} annotations={annotations} onKeypathSelect={onKeypathSelect} />
 
-        {completion.output?.error && (
-          <PageError error={completion.output.error} />
-        )}
+        {completion.output?.error && <PageError error={completion.output.error} />}
       </div>
     </div>
   );

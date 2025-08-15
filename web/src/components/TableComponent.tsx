@@ -65,10 +65,7 @@ export function TableComponent({
   return (
     <div
       ref={containerRef}
-      className={cx(
-        "bg-white border border-gray-200 rounded-lg overflow-hidden relative",
-        className
-      )}
+      className={cx("bg-white border border-gray-200 rounded-lg overflow-hidden relative", className)}
     >
       {/* Border overlay after sticky header column - fixed position */}
       <div

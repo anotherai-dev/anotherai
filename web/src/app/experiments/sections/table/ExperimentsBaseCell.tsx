@@ -3,10 +3,7 @@ interface ExperimentsBaseCellProps {
   formatter?: (value: unknown) => string;
 }
 
-export function ExperimentsBaseCell({
-  value,
-  formatter,
-}: ExperimentsBaseCellProps) {
+export function ExperimentsBaseCell({ value, formatter }: ExperimentsBaseCellProps) {
   const displayValue = formatter
     ? formatter(value)
     : value === null || value === undefined || value === ""

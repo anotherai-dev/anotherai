@@ -1,0 +1,4 @@
+.yarn
+.next
+**/*.mdx
+.source

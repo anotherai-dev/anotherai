@@ -55,25 +55,14 @@ export function ApiKeysList({ apiKeys }: ApiKeysListProps) {
     return (
       <div className="flex flex-1 w-full items-center justify-center">
         <div className="text-center px-4">
-          <h3 className="text-base font-medium text-gray-900 mb-2">
-            No API keys
-          </h3>
-          <p className="text-sm text-gray-500">
-            Create your first API key to start using the API.
-          </p>
+          <h3 className="text-base font-medium text-gray-900 mb-2">No API keys</h3>
+          <p className="text-sm text-gray-500">Create your first API key to start using the API.</p>
         </div>
       </div>
     );
   }
 
-  const columnHeaders = [
-    "Name",
-    "Created by",
-    "Created on",
-    "Last used",
-    "Key",
-    "",
-  ];
+  const columnHeaders = ["Name", "Created by", "Created on", "Last used", "Key", ""];
 
   const tableData = apiKeys.map((apiKey) => [
     <span key="name" className="font-medium text-gray-900">
@@ -88,10 +77,7 @@ export function ApiKeysList({ apiKeys }: ApiKeysListProps) {
     <span key="last-used" className="text-gray-700">
       {apiKey.last_used_at ? formatDate(apiKey.last_used_at) : "Never"}
     </span>,
-    <code
-      key="key"
-      className="text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-700"
-    >
+    <code key="key" className="text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-700">
       {apiKey.partial_key}
     </code>,
     <button

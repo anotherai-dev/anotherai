@@ -1,5 +1,5 @@
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -36,4 +36,4 @@ export const hasErrorInput = [
   "border-red-500 dark:border-red-700",
   // ring color
   "ring-red-200 dark:ring-red-700/30",
-]; 
+];

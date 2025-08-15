@@ -50,10 +50,7 @@ export const DEFAULT_CHART_COLORS = [
 ];
 
 // Auto-detect series from chart data - common logic for all chart types
-export function autoDetectSeries(
-  data: Record<string, unknown>[],
-  providedSeries?: SeriesConfig[]
-): SeriesConfig[] {
+export function autoDetectSeries(data: Record<string, unknown>[], providedSeries?: SeriesConfig[]): SeriesConfig[] {
   if (providedSeries && providedSeries.length > 0) {
     return providedSeries;
   }

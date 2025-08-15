@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { ChevronDown } from 'lucide-react';
-import { useState } from 'react';
+import { ChevronDown } from "lucide-react";
+import { useState } from "react";
 
 export function TOCDropdown() {
   const [isOpen, setIsOpen] = useState(false);
-  const [selected, setSelected] = useState('Integration #1');
+  const [selected, setSelected] = useState("Integration #1");
 
-  const options = ['Integration #1', 'Integration #2'];
+  const options = ["Integration #1", "Integration #2"];
 
   return (
     <div className="relative mb-4">
@@ -19,20 +19,12 @@ export function TOCDropdown() {
         aria-haspopup="listbox"
       >
         <span>{selected}</span>
-        <ChevronDown
-          className={`h-4 w-4 transition-transform ${
-            isOpen ? 'rotate-180' : ''
-          }`}
-        />
+        <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
       {isOpen && (
         <div className="absolute z-10 mt-1 w-full rounded-md border bg-fd-popover shadow-lg">
-          <ul
-            className="py-1"
-            role="listbox"
-            aria-label="Options"
-          >
+          <ul className="py-1" role="listbox" aria-label="Options">
             {options.map((option) => (
               <li key={option}>
                 <button
@@ -54,4 +46,4 @@ export function TOCDropdown() {
       )}
     </div>
   );
-} 
+}

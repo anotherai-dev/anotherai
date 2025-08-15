@@ -12,23 +12,13 @@ type MatchingBaseValueProps = {
   keyPath?: string;
 };
 
-export function MatchingBaseValue({
-  value,
-  annotations,
-  experimentId,
-  completionId,
-  keyPath,
-}: MatchingBaseValueProps) {
+export function MatchingBaseValue({ value, annotations, experimentId, completionId, keyPath }: MatchingBaseValueProps) {
   const [showAddForm, setShowAddForm] = useState(false);
 
   const displayValue = useMemo(() => {
     if (value === null || value === undefined) {
       return "null";
-    } else if (
-      typeof value === "string" ||
-      typeof value === "number" ||
-      typeof value === "boolean"
-    ) {
+    } else if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
       return String(value);
     } else if (Array.isArray(value)) {
       return value.length === 0 ? "No tools available" : JSON.stringify(value);

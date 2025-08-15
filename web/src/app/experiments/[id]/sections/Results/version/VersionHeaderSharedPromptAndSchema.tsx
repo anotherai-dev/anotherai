@@ -15,15 +15,9 @@ type VersionHeaderSharedPromptAndSchemaProps = {
   agentId?: string;
 };
 
-export function VersionHeaderSharedPromptAndSchema(
-  props: VersionHeaderSharedPromptAndSchemaProps
-) {
-  const {
-    version,
-    sharedPartsOfPrompts,
-    sharedKeypathsOfSchemas,
-    indexOfVersionThatFirstUsedThosePromptAndSchema,
-  } = props;
+export function VersionHeaderSharedPromptAndSchema(props: VersionHeaderSharedPromptAndSchemaProps) {
+  const { version, sharedPartsOfPrompts, sharedKeypathsOfSchemas, indexOfVersionThatFirstUsedThosePromptAndSchema } =
+    props;
 
   return (
     <>

@@ -39,17 +39,12 @@ export const useCompletions = create<CompletionsState>((set, get) => ({
 
     try {
       const encodedQuery = encodeURIComponent(query);
-      const response = await apiFetch(
-        `/v1/completions/query?query=${encodedQuery}`,
-        {
-          method: "GET",
-        }
-      );
+      const response = await apiFetch(`/v1/completions/query?query=${encodedQuery}`, {
+        method: "GET",
+      });
 
       if (!response.ok) {
-        throw new Error(
-          `Failed to query completions: ${response.status} ${response.statusText}`
-        );
+        throw new Error(`Failed to query completions: ${response.status} ${response.statusText}`);
       }
 
       const completionsData: Record<string, unknown>[] = await response.json();
@@ -85,17 +80,11 @@ export const useCompletionsQuery = (query: string | undefined) => {
   const queryCompletions = useCompletions((state) => state.queryCompletions);
   const queryKey = query?.trim();
 
-  const queryResult = useCompletions((state) =>
-    queryKey ? state.queryResults.get(queryKey) : undefined
-  );
+  const queryResult = useCompletions((state) => (queryKey ? state.queryResults.get(queryKey) : undefined));
 
-  const isLoading = useCompletions((state) =>
-    queryKey ? (state.isLoadingQuery.get(queryKey) ?? false) : false
-  );
+  const isLoading = useCompletions((state) => (queryKey ? (state.isLoadingQuery.get(queryKey) ?? false) : false));
 
-  const error = useCompletions((state) =>
-    queryKey ? state.queryErrors.get(queryKey) : undefined
-  );
+  const error = useCompletions((state) => (queryKey ? state.queryErrors.get(queryKey) : undefined));
 
   useEffect(() => {
     if (queryKey) {

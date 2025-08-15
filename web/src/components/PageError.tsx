@@ -39,10 +39,7 @@ function parseErrorInput(error: Error | string | unknown): {
     // Check for common error object patterns
     if (errorObj.message && typeof errorObj.message === "string") {
       return {
-        title:
-          errorObj.title && typeof errorObj.title === "string"
-            ? errorObj.title
-            : undefined,
+        title: errorObj.title && typeof errorObj.title === "string" ? errorObj.title : undefined,
         message: errorObj.message,
       };
     }
@@ -85,37 +82,25 @@ function getErrorDetails(error: Error | string | unknown): ErrorDetails {
     color = "text-orange-800";
     bgColor = "bg-orange-50";
     borderColor = "border-orange-200";
-  } else if (
-    lowerMessage.includes("timeout") ||
-    lowerMessage.includes("timed out")
-  ) {
+  } else if (lowerMessage.includes("timeout") || lowerMessage.includes("timed out")) {
     icon = <Clock className="w-4 h-4" />;
     title = errorTitle || "Request Timeout";
     color = "text-yellow-800";
     bgColor = "bg-yellow-50";
     borderColor = "border-yellow-200";
-  } else if (
-    lowerMessage.includes("rate limit") ||
-    lowerMessage.includes("rate_limit")
-  ) {
+  } else if (lowerMessage.includes("rate limit") || lowerMessage.includes("rate_limit")) {
     icon = <Ban className="w-4 h-4" />;
     title = errorTitle || "Rate Limit Exceeded";
     color = "text-purple-800";
     bgColor = "bg-purple-50";
     borderColor = "border-purple-200";
-  } else if (
-    lowerMessage.includes("server") ||
-    lowerMessage.includes("overload")
-  ) {
+  } else if (lowerMessage.includes("server") || lowerMessage.includes("overload")) {
     icon = <Server className="w-4 h-4" />;
     title = errorTitle || "Server Error";
     color = "text-red-800";
     bgColor = "bg-red-50";
     borderColor = "border-red-200";
-  } else if (
-    lowerMessage.includes("content") &&
-    lowerMessage.includes("moderation")
-  ) {
+  } else if (lowerMessage.includes("content") && lowerMessage.includes("moderation")) {
     icon = <Shield className="w-4 h-4" />;
     title = errorTitle || "Content Moderation";
     color = "text-blue-800";
@@ -133,11 +118,7 @@ function getErrorDetails(error: Error | string | unknown): ErrorDetails {
   };
 }
 
-export function PageError({
-  error,
-  showDescription = true,
-  fitWidth = false,
-}: PageErrorProps) {
+export function PageError({ error, showDescription = true, fitWidth = false }: PageErrorProps) {
   const errorDetails = getErrorDetails(error);
 
   return (
@@ -146,13 +127,9 @@ export function PageError({
     >
       <div className="flex flex-col min-w-0 max-w-full">
         <div className="flex items-start gap-2 min-w-0 max-w-full">
-          <div className={`${errorDetails.color} mt-0.5 flex-shrink-0`}>
-            {errorDetails.icon}
-          </div>
+          <div className={`${errorDetails.color} mt-0.5 flex-shrink-0`}>{errorDetails.icon}</div>
           <div className="flex-1 min-w-0 max-w-full overflow-hidden">
-            <div
-              className={`text-sm font-medium ${errorDetails.color} ${showDescription ? "mb-1" : ""} truncate`}
-            >
+            <div className={`text-sm font-medium ${errorDetails.color} ${showDescription ? "mb-1" : ""} truncate`}>
               {errorDetails.title}
             </div>
           </div>

@@ -33,37 +33,13 @@ export function CompletionTableCell(props: Props) {
       return <CompletionTableDateCell value={value} format="relative" />;
     case "model":
     case "version_model":
-      return (
-        <CompletionTableBadgeCell
-          value={value}
-          variant="default"
-          rounded="2px"
-        />
-      );
+      return <CompletionTableBadgeCell value={value} variant="default" rounded="2px" />;
     case "cost_millionth_usd":
-      return (
-        <CompletionTableBadgeCell
-          value={Number(value)}
-          variant="white"
-          rounded="2px"
-        />
-      );
+      return <CompletionTableBadgeCell value={Number(value)} variant="white" rounded="2px" />;
     case "cost_usd":
-      return (
-        <CompletionTableBadgeCell
-          value={`$${Number(value).toFixed(6)}`}
-          variant="white"
-          rounded="2px"
-        />
-      );
+      return <CompletionTableBadgeCell value={`$${Number(value).toFixed(6)}`} variant="white" rounded="2px" />;
     case "duration_ds":
-      return (
-        <CompletionTableBadgeCell
-          value={`${(Number(value) / 10).toFixed(2)}s`}
-          variant="white"
-          rounded="2px"
-        />
-      );
+      return <CompletionTableBadgeCell value={`${(Number(value) / 10).toFixed(2)}s`} variant="white" rounded="2px" />;
     default:
       if (isDateValue(value)) {
         return <CompletionTableDateCell value={value} format="relative" />;

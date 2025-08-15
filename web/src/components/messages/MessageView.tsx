@@ -14,8 +14,7 @@ type MessageViewProps = {
 };
 
 export function MessageView(props: MessageViewProps) {
-  const { message, index, sharedPartsOfPrompts, annotations, onKeypathSelect } =
-    props;
+  const { message, index, sharedPartsOfPrompts, annotations, onKeypathSelect } = props;
   const [isHovered, setIsHovered] = useState(false);
   const { showToast } = useToast();
 
@@ -63,20 +62,14 @@ export function MessageView(props: MessageViewProps) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div
-        className={`flex items-center gap-2 px-3 py-2 bg-transparent rounded-t-[2px]`}
-      >
-        <span className="text-[12.5px] font-semibold text-gray-700">
-          {getRoleDisplay(message.role)}
-        </span>
+      <div className={`flex items-center gap-2 px-3 py-2 bg-transparent rounded-t-[2px]`}>
+        <span className="text-[12.5px] font-semibold text-gray-700">{getRoleDisplay(message.role)}</span>
       </div>
       <div className="pt-1 pb-3 px-3 bg-transparent">
         <MessageContentView
           content={message.content}
           contentToCompareTo={
-            sharedPartsOfPrompts?.[index]?.role === message.role
-              ? sharedPartsOfPrompts[index]?.content
-              : undefined
+            sharedPartsOfPrompts?.[index]?.role === message.role ? sharedPartsOfPrompts[index]?.content : undefined
           }
           compareMode={sharedPartsOfPrompts !== undefined}
           annotations={annotations}
@@ -89,30 +82,22 @@ export function MessageView(props: MessageViewProps) {
             <div className="grid grid-cols-2 gap-0">
               <div className="px-3 py-3 text-xs bg-gray-50 flex justify-between items-center">
                 <span className="font-medium text-gray-600">Cost</span>
-                <span className="text-gray-800">
-                  ${(message.cost_usd || 0).toFixed(5)}
-                </span>
+                <span className="text-gray-800">${(message.cost_usd || 0).toFixed(5)}</span>
               </div>
               <div className="px-3 py-3 text-xs bg-gray-50 border-l border-gray-200 flex justify-between items-center">
                 <span className="font-medium text-gray-600">Duration</span>
-                <span className="text-gray-800">
-                  {formatDuration(message.duration_seconds || 0)}
-                </span>
+                <span className="text-gray-800">{formatDuration(message.duration_seconds || 0)}</span>
               </div>
             </div>
           )}
           {hasMetrics && (
-            <div
-              className={`${hasCostOrDuration ? "border-t border-gray-200" : ""}`}
-            >
+            <div className={`${hasCostOrDuration ? "border-t border-gray-200" : ""}`}>
               {message.metrics?.map(({ key, average }) => (
                 <div
                   key={key}
                   className="px-3 py-3 text-xs bg-gray-50 flex justify-between items-center border-b border-gray-200 last:border-b-0"
                 >
-                  <span className="font-medium text-gray-600 capitalize">
-                    {key.replace(/_/g, " ")}
-                  </span>
+                  <span className="font-medium text-gray-600 capitalize">{key.replace(/_/g, " ")}</span>
                   <span className="text-gray-800">{average.toFixed(2)}</span>
                 </div>
               ))}

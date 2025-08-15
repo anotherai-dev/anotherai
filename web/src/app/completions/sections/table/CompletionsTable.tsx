@@ -14,12 +14,7 @@ interface CompletionsTableProps {
   maxHeight?: string;
 }
 
-export function CompletionsTable({
-  data,
-  isLoading,
-  error,
-  maxHeight,
-}: CompletionsTableProps) {
+export function CompletionsTable({ data, isLoading, error, maxHeight }: CompletionsTableProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -64,9 +59,7 @@ export function CompletionsTable({
   if (!isLoading && data.length === 0) {
     return (
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-        <p className="text-gray-500">
-          No completions found. Try adjusting your query.
-        </p>
+        <p className="text-gray-500">No completions found. Try adjusting your query.</p>
       </div>
     );
   }
@@ -79,13 +72,7 @@ export function CompletionsTable({
     <SimpleTableComponent
       columnHeaders={columnHeaders}
       data={modifiedData.map((row) =>
-        columnHeaders.map((header) => (
-          <CompletionTableCell
-            key={header}
-            columnKey={header}
-            value={row[header]}
-          />
-        ))
+        columnHeaders.map((header) => <CompletionTableCell key={header} columnKey={header} value={row[header]} />)
       )}
       minCellWidth={120}
       onRowClick={hasIdColumn ? handleRowClick : undefined}

@@ -56,9 +56,7 @@ export function VersionHeader(props: VersionHeaderProps) {
   } = props;
 
   const optionalKeysToShowWithoutPromptAndOutputSchema = useMemo(() => {
-    return optionalKeysToShow.filter(
-      (key) => key !== "prompt" && key !== "output_schema"
-    );
+    return optionalKeysToShow.filter((key) => key !== "prompt" && key !== "output_schema");
   }, [optionalKeysToShow]);
 
   const promptAndSchemaLogic = useMemo(() => {
@@ -75,21 +73,19 @@ export function VersionHeader(props: VersionHeaderProps) {
 
     // If showing both, check if they match the same version
     if (showPrompt && showSchema) {
-      const indexOfVersionThatFirstUsedThosePromptAndSchema =
-        findIndexOfVersionThatFirstUsedThosePromptAndSchema(versions, version);
-      const indexOfVersionThatFirstUsedThosePrompt =
-        findIndexOfVersionThatFirstUsedThosePrompt(versions, version);
-      const indexOfVersionThatFirstUsedThoseSchema =
-        findIndexOfVersionThatFirstUsedThoseSchema(versions, version);
+      const indexOfVersionThatFirstUsedThosePromptAndSchema = findIndexOfVersionThatFirstUsedThosePromptAndSchema(
+        versions,
+        version
+      );
+      const indexOfVersionThatFirstUsedThosePrompt = findIndexOfVersionThatFirstUsedThosePrompt(versions, version);
+      const indexOfVersionThatFirstUsedThoseSchema = findIndexOfVersionThatFirstUsedThoseSchema(versions, version);
 
       // If both match and they match the same version (and not current), show combined
       if (
         indexOfVersionThatFirstUsedThosePromptAndSchema !== undefined &&
         indexOfVersionThatFirstUsedThosePromptAndSchema !== index &&
-        indexOfVersionThatFirstUsedThosePrompt ===
-          indexOfVersionThatFirstUsedThosePromptAndSchema &&
-        indexOfVersionThatFirstUsedThoseSchema ===
-          indexOfVersionThatFirstUsedThosePromptAndSchema
+        indexOfVersionThatFirstUsedThosePrompt === indexOfVersionThatFirstUsedThosePromptAndSchema &&
+        indexOfVersionThatFirstUsedThoseSchema === indexOfVersionThatFirstUsedThosePromptAndSchema
       ) {
         return {
           showCombined: true,
@@ -108,9 +104,7 @@ export function VersionHeader(props: VersionHeaderProps) {
       <div className="flex-1 space-y-2">
         <div>
           <HoverPopover
-            content={
-              <VersionDetailsView version={version} showPrompt={false} />
-            }
+            content={<VersionDetailsView version={version} showPrompt={false} />}
             position="bottom"
             popoverClassName="rounded bg-white border border-gray-200 w-80"
           >
@@ -185,15 +179,8 @@ export function VersionHeader(props: VersionHeaderProps) {
       {(priceAndLatency || metrics) && (
         <div className="mt-auto">
           <div className="mt-3 pt-2 border-t border-gray-200" />
-          <VersionHeaderPriceAndLatency
-            priceAndLatency={priceAndLatency}
-            showAvgPrefix={showAvgPrefix}
-          />
-          <VersionHeaderMetrics
-            metrics={metrics}
-            allMetricsPerKey={allMetricsPerKey}
-            showAvgPrefix={showAvgPrefix}
-          />
+          <VersionHeaderPriceAndLatency priceAndLatency={priceAndLatency} showAvgPrefix={showAvgPrefix} />
+          <VersionHeaderMetrics metrics={metrics} allMetricsPerKey={allMetricsPerKey} showAvgPrefix={showAvgPrefix} />
         </div>
       )}
     </div>
