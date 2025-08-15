@@ -50,11 +50,6 @@ export default function ViewsSection() {
     }
   }, [createViewFolder, isCreatingFolder]);
 
-  const handleFolderRename = useCallback((folderId: string) => {
-    const folderRef = folderRefs.current.get(folderId);
-    folderRef?.startEditing();
-  }, []);
-
   const handleFolderMenuOpenChange = useCallback((folderId: string, isOpen: boolean) => {
     setOpenFolderMenus((prev) => {
       const newSet = new Set(prev);
@@ -297,7 +292,6 @@ export default function ViewsSection() {
                   isDragOver={isDragOver}
                   isDragActive={isDragActive}
                   onToggleCollapse={() => toggleFolderCollapse(folderId)}
-                  onRename={() => handleFolderRename(folderId)}
                   onMenuOpenChange={(isOpen) => handleFolderMenuOpenChange(folderId, isOpen)}
                   onDragOver={(e) => handleDragOver(e, folderId)}
                   onDragLeave={handleDragLeave}

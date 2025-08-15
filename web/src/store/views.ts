@@ -261,13 +261,13 @@ export const useViews = create<ViewsState>((set, get) => ({
             // Update in viewFolders array
             const folderIndex = state.viewFolders.findIndex((f) => f.id === folderId);
             if (folderIndex !== -1) {
-              state.viewFolders[folderIndex].name = patch.name;
+              state.viewFolders[folderIndex].name = patch.name ?? "";
             }
 
             // Update in viewFoldersMap
             const folder = state.viewFoldersMap.get(folderId);
             if (folder) {
-              folder.name = patch.name;
+              folder.name = patch.name ?? "";
             }
           })
         );

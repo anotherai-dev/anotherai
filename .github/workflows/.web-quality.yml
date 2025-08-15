@@ -29,4 +29,5 @@ jobs:
       - name: Run prettier
         run: npm run prettier-check --workspace=web
 
-      # Build and lint will actually happen in Vercel
+      - name: Run build
+        run: npm run build --workspace=web

@@ -31,7 +31,6 @@ export function MessagesViewer(props: MessagesViewerProps) {
             (item.text && item.text.trim() !== "") ||
             item.object ||
             item.image_url ||
-            item.file?.url ||
             item.audio_url ||
             item.tool_call_request ||
             item.tool_call_result
