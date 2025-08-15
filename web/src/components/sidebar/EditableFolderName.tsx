@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  forwardRef,
-  useCallback,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { useViews } from "@/store/views";
 
 interface EditableFolderNameProps {
@@ -20,10 +13,10 @@ export interface EditableFolderNameRef {
   startEditing: () => void;
 }
 
-const EditableFolderName = forwardRef<
-  EditableFolderNameRef,
-  EditableFolderNameProps
->(function EditableFolderName({ folderId, name, className = "" }, ref) {
+const EditableFolderName = forwardRef<EditableFolderNameRef, EditableFolderNameProps>(function EditableFolderName(
+  { folderId, name, className = "" },
+  ref
+) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(name);
   const [isSubmitting, setIsSubmitting] = useState(false);

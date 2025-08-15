@@ -5,9 +5,7 @@ interface CompletionTableVersionCellProps {
   value: unknown;
 }
 
-export function CompletionTableVersionCell({
-  value,
-}: CompletionTableVersionCellProps) {
+export function CompletionTableVersionCell({ value }: CompletionTableVersionCellProps) {
   if (value === null || value === undefined) {
     return <span className="text-xs text-gray-400">N/A</span>;
   }
@@ -82,28 +80,19 @@ export function CompletionTableVersionCell({
 
       // Check stop (default: none/undefined)
       if (obj.stop !== undefined) {
-        const stopValue = Array.isArray(obj.stop)
-          ? obj.stop.join(", ")
-          : String(obj.stop);
+        const stopValue = Array.isArray(obj.stop) ? obj.stop.join(", ") : String(obj.stop);
         nonDefaultEntries.push({ key: "stop", value: stopValue });
       }
 
       // Check tool_choice (default: "auto")
       if (obj.tool_choice !== undefined && obj.tool_choice !== "auto") {
-        const toolChoice =
-          typeof obj.tool_choice === "string"
-            ? obj.tool_choice
-            : JSON.stringify(obj.tool_choice);
+        const toolChoice = typeof obj.tool_choice === "string" ? obj.tool_choice : JSON.stringify(obj.tool_choice);
         nonDefaultEntries.push({ key: "tool_choice", value: toolChoice });
       }
 
       return (
         <div className="space-y-1">
-          <CompletionTableBadgeCell
-            value={obj.model}
-            variant="default"
-            rounded="2px"
-          />
+          <CompletionTableBadgeCell value={obj.model} variant="default" rounded="2px" />
           {nonDefaultEntries.map(({ key, value }, index) => (
             <div
               key={index}

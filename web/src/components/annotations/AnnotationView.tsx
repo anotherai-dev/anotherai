@@ -10,12 +10,7 @@ export type AnnotationViewProps = {
   keyPathPrefix?: string;
 };
 
-export function AnnotationView({
-  annotation,
-  className = "",
-  onDelete,
-  keyPathPrefix,
-}: AnnotationViewProps) {
+export function AnnotationView({ annotation, className = "", onDelete, keyPathPrefix }: AnnotationViewProps) {
   // Extract the keyPath without prefix for display
   const displayKeyPath = useMemo(() => {
     if (!annotation.target?.key_path) return undefined;
@@ -46,12 +41,8 @@ export function AnnotationView({
       )}
       <div className="flex justify-between items-start mb-1">
         <div className="text-xs flex items-center gap-2">
-          <span className="text-gray-700 font-semibold">
-            {annotation.author_name}
-          </span>
-          <span className="text-gray-400">
-            {formatRelativeDate(annotation.created_at)}
-          </span>
+          <span className="text-gray-700 font-semibold">{annotation.author_name}</span>
+          <span className="text-gray-400">{formatRelativeDate(annotation.created_at)}</span>
         </div>
       </div>
       {displayKeyPath && (
@@ -61,17 +52,11 @@ export function AnnotationView({
           </span>
         </div>
       )}
-      {annotation.text && (
-        <div className="text-xs text-gray-800 whitespace-pre-wrap">
-          {annotation.text}
-        </div>
-      )}
+      {annotation.text && <div className="text-xs text-gray-800 whitespace-pre-wrap">{annotation.text}</div>}
       {annotation.metric && (
         <div className="mt-2">
           <div className="inline-flex justify-between items-center px-2 py-1 bg-transparent border border-gray-200 text-gray-700 rounded text-xs">
-            <span className="text-gray-600 capitalize">
-              {annotation.metric.name.replace(/_/g, " ")}
-            </span>
+            <span className="text-gray-600 capitalize">{annotation.metric.name.replace(/_/g, " ")}</span>
             <span className="font-medium ml-2">{annotation.metric.value}</span>
           </div>
         </div>

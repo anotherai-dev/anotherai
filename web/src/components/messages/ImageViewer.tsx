@@ -8,11 +8,7 @@ interface ImageViewerProps {
   className?: string;
 }
 
-export function ImageViewer({
-  imageUrl,
-  alt = "Image",
-  className,
-}: ImageViewerProps) {
+export function ImageViewer({ imageUrl, alt = "Image", className }: ImageViewerProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -44,11 +40,7 @@ export function ImageViewer({
   if (hasError) {
     return (
       <div className="flex items-center gap-2 p-3 bg-gray-50 border border-gray-200 rounded-md text-gray-600">
-        <svg
-          className="w-4 h-4 flex-shrink-0"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
+        <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
           <path
             fillRule="evenodd"
             d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
@@ -128,18 +120,8 @@ export function ImageViewer({
             className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-colors cursor-pointer"
             aria-label="Close image"
           >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>

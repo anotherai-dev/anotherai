@@ -1,10 +1,5 @@
 import { rehypeCode } from "fumadocs-core/mdx-plugins";
-import {
-  defineConfig,
-  defineDocs,
-  frontmatterSchema,
-  metaSchema,
-} from "fumadocs-mdx/config";
+import { defineConfig, defineDocs, frontmatterSchema, metaSchema } from "fumadocs-mdx/config";
 import { remarkTemplateReplacement } from "./lib/template-replacement";
 
 // You can customise Zod schemas for frontmatter and `meta.json` here

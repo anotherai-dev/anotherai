@@ -25,9 +25,7 @@ export function MessageTextView(props: MessageTextViewProps) {
 
   // Decode HTML entities in the text
   const decodedText = decodeHtmlEntities(text);
-  const decodedSharedText = sharedText
-    ? decodeHtmlEntities(sharedText)
-    : undefined;
+  const decodedSharedText = sharedText ? decodeHtmlEntities(sharedText) : undefined;
 
   useEffect(() => {
     if (contentRef.current && !isExpanded) {
@@ -39,33 +37,20 @@ export function MessageTextView(props: MessageTextViewProps) {
   if (!compareMode || !sharedText) {
     const shouldTruncateByLength = decodedText.length > MAX_TEXT_LENGTH;
     const shouldTruncate = shouldTruncateByLength || shouldTruncateByHeight;
-    const displayText =
-      shouldTruncateByLength && !isExpanded
-        ? decodedText.slice(0, MAX_TEXT_LENGTH)
-        : decodedText;
+    const displayText = shouldTruncateByLength && !isExpanded ? decodedText.slice(0, MAX_TEXT_LENGTH) : decodedText;
 
     return (
       <div>
         <div
           ref={contentRef}
-          className={
-            shouldTruncateByHeight && !isExpanded ? "overflow-hidden" : ""
-          }
-          style={
-            shouldTruncateByHeight && !isExpanded
-              ? { maxHeight: `${MAX_HEIGHT_PX}px` }
-              : {}
-          }
+          className={shouldTruncateByHeight && !isExpanded ? "overflow-hidden" : ""}
+          style={shouldTruncateByHeight && !isExpanded ? { maxHeight: `${MAX_HEIGHT_PX}px` } : {}}
         >
           {(() => {
             // Bold input variables in the form {{variable}}
             const parts = displayText.split(/(\{\{[^}]+\}\})/g);
             return parts.map((part, i) =>
-              /^\{\{[^}]+\}\}$/.test(part) ? (
-                <b key={i}>{part}</b>
-              ) : (
-                <React.Fragment key={i}>{part}</React.Fragment>
-              )
+              /^\{\{[^}]+\}\}$/.test(part) ? <b key={i}>{part}</b> : <React.Fragment key={i}>{part}</React.Fragment>
             );
           })()}
           {shouldTruncateByLength && !isExpanded && <span>...</span>}
@@ -95,9 +80,7 @@ export function MessageTextView(props: MessageTextViewProps) {
     <>
       {words.map((word, i) => {
         const cleanWord = word.trim().toLowerCase();
-        const isShared = sharedWords.some(
-          (sharedWord) => cleanWord && sharedWord.toLowerCase() === cleanWord
-        );
+        const isShared = sharedWords.some((sharedWord) => cleanWord && sharedWord.toLowerCase() === cleanWord);
 
         // Handle input variables
         if (/^\{\{[^}]+\}\}$/.test(word)) {

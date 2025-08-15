@@ -12,13 +12,7 @@ type MatchingToolValueProps = {
   keyPath?: string;
 };
 
-export function MatchingToolValue({
-  tools,
-  annotations,
-  experimentId,
-  completionId,
-  keyPath,
-}: MatchingToolValueProps) {
+export function MatchingToolValue({ tools, annotations, experimentId, completionId, keyPath }: MatchingToolValueProps) {
   const [showAddForm, setShowAddForm] = useState(false);
 
   const handleAddAnnotation = (e?: React.MouseEvent) => {
@@ -33,13 +27,9 @@ export function MatchingToolValue({
         {tools.map((tool, index) => (
           <div key={index} className="flex justify-between items-center">
             <div className="flex-1 min-w-0">
-              <div className="text-xs font-medium text-gray-700 truncate">
-                {tool.name || `Tool ${index + 1}`}
-              </div>
+              <div className="text-xs font-medium text-gray-700 truncate">{tool.name || `Tool ${index + 1}`}</div>
             </div>
-            <span className="text-xs text-gray-500 bg-gray-100 px-1 py-0.5 rounded ml-2 flex-shrink-0">
-              function
-            </span>
+            <span className="text-xs text-gray-500 bg-gray-100 px-1 py-0.5 rounded ml-2 flex-shrink-0">function</span>
           </div>
         ))}
       </div>

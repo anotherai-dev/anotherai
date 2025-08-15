@@ -23,18 +23,8 @@ const navigationItems = [
     description: "View and search completions",
     href: "/completions",
     icon: () => (
-      <svg
-        className="w-4 h-4"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M5 12h14M12 5l7 7-7 7"
-        />
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
       </svg>
     ),
     keywords: ["completions", "runs", "executions", "logs"],
@@ -45,12 +35,7 @@ const navigationItems = [
     description: "Manage and review experiments",
     href: "/experiments",
     icon: () => (
-      <svg
-        className="w-4 h-4"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -67,12 +52,7 @@ const navigationItems = [
     description: "Manage and view agents",
     href: "/agents",
     icon: () => (
-      <svg
-        className="w-4 h-4"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -85,10 +65,7 @@ const navigationItems = [
   },
 ];
 
-export default function CommandPalette({
-  isOpen,
-  onClose,
-}: CommandPaletteProps) {
+export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const router = useRouter();
 
   // Fetch data
@@ -156,10 +133,7 @@ export default function CommandPalette({
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm" onClick={onClose}>
       <div className="flex items-start justify-center pt-[10vh]">
         <div className="w-full max-w-xl" onClick={(e) => e.stopPropagation()}>
           <Command
@@ -173,10 +147,7 @@ export default function CommandPalette({
               const valueLower = value.toLowerCase();
 
               // Extract the actual content (remove prefixes like "nav:" or "view:")
-              const cleanValue = valueLower.replace(
-                /^(nav:|view:)[^\s]*\s/,
-                ""
-              );
+              const cleanValue = valueLower.replace(/^(nav:|view:)[^\s]*\s/, "");
 
               // Exact match gets highest score
               if (cleanValue.includes(searchLower)) {
@@ -213,15 +184,9 @@ export default function CommandPalette({
                 {isLoading ? "Loading..." : "No results found."}
               </Command.Empty>
 
-              <NavigationGroup
-                items={navigationItems}
-                onSelect={handleSelect}
-              />
+              <NavigationGroup items={navigationItems} onSelect={handleSelect} />
               <AgentsGroup agents={agents} onSelect={handleSelect} />
-              <ViewsGroup
-                viewsBySection={viewsByFolder}
-                onSelect={handleSelect}
-              />
+              <ViewsGroup viewsBySection={viewsByFolder} onSelect={handleSelect} />
             </Command.List>
 
             <div className="border-t border-gray-200 px-3 py-2 text-xs text-gray-500 bg-gray-50 rounded-b-lg">

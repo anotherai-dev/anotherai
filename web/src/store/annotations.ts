@@ -67,10 +67,8 @@ export const useAnnotations = create<AnnotationsState>((set, get) => ({
 
     try {
       const params = new URLSearchParams();
-      if (filters?.experiment_id)
-        params.append("experiment_id", filters.experiment_id);
-      if (filters?.completion_id)
-        params.append("completion_id", filters.completion_id);
+      if (filters?.experiment_id) params.append("experiment_id", filters.experiment_id);
+      if (filters?.completion_id) params.append("completion_id", filters.completion_id);
       if (filters?.since) params.append("since", filters.since);
       if (filters?.limit) params.append("limit", filters.limit.toString());
 
@@ -121,9 +119,7 @@ export const useAnnotations = create<AnnotationsState>((set, get) => ({
       });
 
       if (!response.ok) {
-        console.error(
-          `Failed to add annotations: ${response.status} ${response.statusText}`
-        );
+        console.error(`Failed to add annotations: ${response.status} ${response.statusText}`);
         return false;
       }
 
@@ -151,9 +147,7 @@ export const useAnnotations = create<AnnotationsState>((set, get) => ({
       });
 
       if (!response.ok) {
-        console.error(
-          `Failed to delete annotation: ${response.status} ${response.statusText}`
-        );
+        console.error(`Failed to delete annotation: ${response.status} ${response.statusText}`);
         return false;
       }
 
@@ -161,9 +155,7 @@ export const useAnnotations = create<AnnotationsState>((set, get) => ({
       set(
         produce((state: AnnotationsState) => {
           state.annotations.forEach((annotationList, key) => {
-            const filtered = annotationList.filter(
-              (annotation) => annotation.id !== annotationId
-            );
+            const filtered = annotationList.filter((annotation) => annotation.id !== annotationId);
             state.annotations.set(key, filtered);
           });
         })
@@ -200,13 +192,9 @@ export const useOrFetchAnnotations = (filters?: AnnotationFilters) => {
     const result = state.annotations.get(filterKey);
     return result ?? EMPTY_ANNOTATIONS;
   });
-  const isLoading = useAnnotations(
-    (state) => state.isLoading.get(filterKey) ?? false
-  );
+  const isLoading = useAnnotations((state) => state.isLoading.get(filterKey) ?? false);
   const error = useAnnotations((state) => state.errors.get(filterKey));
-  const hasFetched = useAnnotations(
-    (state) => state.hasFetched.get(filterKey) ?? false
-  );
+  const hasFetched = useAnnotations((state) => state.hasFetched.get(filterKey) ?? false);
 
   const annotationsRef = useRef(annotations);
   annotationsRef.current = annotations;

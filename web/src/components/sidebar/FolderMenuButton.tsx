@@ -14,12 +14,7 @@ interface FolderMenuButtonProps {
   onMenuOpenChange?: (isOpen: boolean) => void;
 }
 
-export default function FolderMenuButton({
-  folderId,
-  folderName,
-  onRename,
-  onMenuOpenChange,
-}: FolderMenuButtonProps) {
+export default function FolderMenuButton({ folderId, folderName, onRename, onMenuOpenChange }: FolderMenuButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const { deleteViewFolder } = useViews();
@@ -62,9 +57,7 @@ export default function FolderMenuButton({
   const trigger = (
     <button
       className={`p-1 rounded transition-colors focus:outline-none ${
-        isOpen
-          ? "opacity-100 bg-gray-200"
-          : "opacity-0 group-hover/folder:opacity-100"
+        isOpen ? "opacity-100 bg-gray-200" : "opacity-0 group-hover/folder:opacity-100"
       } hover:bg-gray-200`}
       onClick={(e) => {
         e.stopPropagation();
@@ -101,15 +94,10 @@ export default function FolderMenuButton({
           <div className="text-[13px] text-gray-600 mb-4 px-4 border-b border-gray-100 pb-4">
             <p>
               Are you sure you want to remove the folder{" "}
-              <span className="font-semibold text-gray-900">
-                {folderName || "Untitled"}
-              </span>
-              ?
+              <span className="font-semibold text-gray-900">{folderName || "Untitled"}</span>?
             </p>
             <p className="mt-2">
-              <strong>
-                All views in this folder will be moved to the Default Folder.
-              </strong>
+              <strong>All views in this folder will be moved to the Default Folder.</strong>
             </p>
             <p className="text-red-600 mt-1">This action cannot be undone.</p>
           </div>

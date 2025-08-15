@@ -28,22 +28,15 @@ try {
 }
 
 // Determine environment (default to production for builds)
-const environment =
-  process.env.NODE_ENV === "development" ? "local" : "production";
+const environment = process.env.NODE_ENV === "development" ? "local" : "production";
 
 // Get environment variables or fallback to config
 const getTemplateVariables = () => {
   const envConfig = config.environments?.[environment] || config.default || {};
 
   return {
-    API_URL:
-      process.env.NEXT_PUBLIC_API_URL ||
-      envConfig.API_URL ||
-      "https://api.anotherai.dev",
-    WEB_APP_URL:
-      process.env.NEXT_PUBLIC_WEB_APP_URL ||
-      envConfig.WEB_APP_URL ||
-      "https://anotherai.dev",
+    API_URL: process.env.NEXT_PUBLIC_API_URL || envConfig.API_URL || "https://api.anotherai.dev",
+    WEB_APP_URL: process.env.NEXT_PUBLIC_WEB_APP_URL || envConfig.WEB_APP_URL || "https://anotherai.dev",
   };
 };
 
@@ -58,9 +51,7 @@ export function remarkTemplateReplacement() {
         // Check if this is a template variable (with single braces like {API_URL})
         Object.entries(variables).forEach(([key, value]) => {
           if (expressionContent.trim() === `{${key}}`) {
-            console.log(
-              `Replacing MDX expression {${key}} with text node containing ${value}`
-            );
+            console.log(`Replacing MDX expression {${key}} with text node containing ${value}`);
             // Convert the mdxTextExpression to a regular text node
             (node as { type: string; value: string }).type = "text";
             node.value = value as string;

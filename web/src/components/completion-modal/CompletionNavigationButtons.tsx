@@ -8,9 +8,7 @@ interface CompletionNavigationButtonsProps {
   completionId: string;
 }
 
-export function CompletionNavigationButtons({
-  completionId,
-}: CompletionNavigationButtonsProps) {
+export function CompletionNavigationButtons({ completionId }: CompletionNavigationButtonsProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const storedCompletionsList = useStoredCompletionsList();
@@ -29,9 +27,7 @@ export function CompletionNavigationButtons({
   const navigateUp = useCallback(() => {
     if (!storedCompletionsList || !completionId) return;
 
-    const currentIndex = storedCompletionsList.findIndex(
-      (completion) => String(completion.id) === completionId
-    );
+    const currentIndex = storedCompletionsList.findIndex((completion) => String(completion.id) === completionId);
     if (currentIndex > 0) {
       const targetCompletion = storedCompletionsList[currentIndex - 1];
       const targetId = String(targetCompletion.id);
@@ -42,9 +38,7 @@ export function CompletionNavigationButtons({
   const navigateDown = useCallback(() => {
     if (!storedCompletionsList || !completionId) return;
 
-    const currentIndex = storedCompletionsList.findIndex(
-      (completion) => String(completion.id) === completionId
-    );
+    const currentIndex = storedCompletionsList.findIndex((completion) => String(completion.id) === completionId);
     if (currentIndex >= 0 && currentIndex < storedCompletionsList.length - 1) {
       const targetCompletion = storedCompletionsList[currentIndex + 1];
       const targetId = String(targetCompletion.id);
@@ -62,13 +56,10 @@ export function CompletionNavigationButtons({
   }
 
   // Find current position in the list
-  const currentIndex = storedCompletionsList.findIndex(
-    (completion) => String(completion.id) === completionId
-  );
+  const currentIndex = storedCompletionsList.findIndex((completion) => String(completion.id) === completionId);
 
   const canNavigateUp = currentIndex > 0;
-  const canNavigateDown =
-    currentIndex >= 0 && currentIndex < storedCompletionsList.length - 1;
+  const canNavigateDown = currentIndex >= 0 && currentIndex < storedCompletionsList.length - 1;
 
   return (
     <div className="flex items-center gap-2">

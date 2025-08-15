@@ -65,10 +65,7 @@ export function UniversalPieChart({
     if (containerElement) {
       containerElement.addEventListener("mousemove", handleGlobalMouseMove);
       return () => {
-        containerElement.removeEventListener(
-          "mousemove",
-          handleGlobalMouseMove
-        );
+        containerElement.removeEventListener("mousemove", handleGlobalMouseMove);
       };
     }
   }, []);
@@ -85,16 +82,8 @@ export function UniversalPieChart({
 
   // Memoized tooltip content function that uses current mouse position
   const tooltipContent = useCallback(
-    (props: {
-      active?: boolean;
-      payload?: Array<{ value: number; payload: { x: string; y: number } }>;
-    }) => (
-      <CustomTooltip
-        {...props}
-        mousePos={mousePos}
-        formatter={tooltipFormatter}
-        iconBorderRadius="50%"
-      />
+    (props: { active?: boolean; payload?: Array<{ value: number; payload: { x: string; y: number } }> }) => (
+      <CustomTooltip {...props} mousePos={mousePos} formatter={tooltipFormatter} iconBorderRadius="50%" />
     ),
     [tooltipFormatter, mousePos]
   );
@@ -171,12 +160,7 @@ export function UniversalPieChart({
               animationDuration={disableAnimation ? 0 : 400}
             >
               {pieData.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={colors[index % colors.length]}
-                  stroke="#fff"
-                  strokeWidth={2}
-                />
+                <Cell key={`cell-${index}`} fill={colors[index % colors.length]} stroke="#fff" strokeWidth={2} />
               ))}
             </Pie>
             <Tooltip
@@ -198,10 +182,7 @@ export function UniversalPieChart({
                 className="w-3 h-3 rounded-sm flex-shrink-0"
                 style={{ backgroundColor: colors[index % colors.length] }}
               />
-              <span
-                className="text-gray-700 whitespace-nowrap"
-                style={{ fontSize: `${fontSize}px` }}
-              >
+              <span className="text-gray-700 whitespace-nowrap" style={{ fontSize: `${fontSize}px` }}>
                 {entry.name} ({entry.percentage}%)
               </span>
             </div>

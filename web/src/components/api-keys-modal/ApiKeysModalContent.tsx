@@ -15,9 +15,7 @@ export function ApiKeysModalContent({ onClose }: ApiKeysModalContentProps) {
   const { apiKeys, isLoading, error } = useOrFetchAPIKeys();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showCreatedModal, setShowCreatedModal] = useState(false);
-  const [createdApiKey, setCreatedApiKey] = useState<CompleteAPIKey | null>(
-    null
-  );
+  const [createdApiKey, setCreatedApiKey] = useState<CompleteAPIKey | null>(null);
 
   const handleCreateSuccess = (apiKey: CompleteAPIKey) => {
     setCreatedApiKey(apiKey);
@@ -69,11 +67,7 @@ export function ApiKeysModalContent({ onClose }: ApiKeysModalContentProps) {
         onSuccess={handleCreateSuccess}
       />
 
-      <ApiKeyCreatedModal
-        isOpen={showCreatedModal}
-        onClose={() => setShowCreatedModal(false)}
-        apiKey={createdApiKey}
-      />
+      <ApiKeyCreatedModal isOpen={showCreatedModal} onClose={() => setShowCreatedModal(false)} apiKey={createdApiKey} />
     </div>
   );
 }

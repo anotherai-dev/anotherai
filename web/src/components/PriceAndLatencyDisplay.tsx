@@ -1,9 +1,5 @@
 import { cx } from "class-variance-authority";
-import {
-  formatCurrency,
-  formatDuration,
-  getMetricBadgeColor,
-} from "@/components/utils/utils";
+import { formatCurrency, formatDuration, getMetricBadgeColor } from "@/components/utils/utils";
 
 type PriceAndLatencyDisplayProps = {
   cost: number;
@@ -28,26 +24,12 @@ export function PriceAndLatencyDisplay(props: PriceAndLatencyDisplayProps) {
 
   return (
     <div className="space-y-1">
-      <div
-        className={cx(
-          "flex justify-between items-center px-2 py-1 rounded text-xs",
-          costBadgeColor
-        )}
-      >
-        <span className="text-gray-600">
-          {showAvgPrefix ? "Average Cost" : "Cost"}
-        </span>
+      <div className={cx("flex justify-between items-center px-2 py-1 rounded text-xs", costBadgeColor)}>
+        <span className="text-gray-600">{showAvgPrefix ? "Average Cost" : "Cost"}</span>
         <span className="font-medium">{formatCurrency(cost)}</span>
       </div>
-      <div
-        className={cx(
-          "flex justify-between items-center px-2 py-1 rounded text-xs",
-          durationBadgeColor
-        )}
-      >
-        <span className="text-gray-600">
-          {showAvgPrefix ? "Average Duration" : "Duration"}
-        </span>
+      <div className={cx("flex justify-between items-center px-2 py-1 rounded text-xs", durationBadgeColor)}>
+        <span className="text-gray-600">{showAvgPrefix ? "Average Duration" : "Duration"}</span>
         <span className="font-medium">{formatDuration(duration)}</span>
       </div>
     </div>

@@ -38,21 +38,14 @@ export default function ExperimentDetailPage() {
     <div className="min-h-screen bg-white">
       <div className="container mx-auto px-4 py-8">
         <PageHeader
-          breadcrumbs={[
-            { label: "Experiments", href: "/experiments" },
-            { label: experiment.id },
-          ]}
+          breadcrumbs={[{ label: "Experiments", href: "/experiments" }, { label: experiment.id }]}
           title={experiment.title}
           description={experiment.description}
           copyablePrefixAndId={`anotherai/experiment/${experimentId}`}
         />
         <OriginalResultsSection experiment={experiment} />
         <MatrixSection experiment={experiment} annotations={annotations} />
-        <MatchingSection
-          experiment={experiment}
-          annotations={annotations}
-          experimentId={experimentId}
-        />
+        <MatchingSection experiment={experiment} annotations={annotations} experimentId={experimentId} />
       </div>
     </div>
   );

@@ -2,11 +2,7 @@ import { enableMapSet, produce } from "immer";
 import { useCallback, useEffect, useRef } from "react";
 import { create } from "zustand";
 import { apiFetch } from "@/lib/apiFetch";
-import {
-  Experiment,
-  ExperimentWithLookups,
-  createExperimentWithLookups,
-} from "@/types/models";
+import { Experiment, ExperimentWithLookups, createExperimentWithLookups } from "@/types/models";
 
 enableMapSet();
 
@@ -41,10 +37,7 @@ export const useExperiment = create<ExperimentState>((set, get) => ({
       if (!response.ok) {
         set(
           produce((state: ExperimentState) => {
-            state.experimentErrors.set(
-              experimentId,
-              new Error(`${response.status} ${response.statusText}`)
-            );
+            state.experimentErrors.set(experimentId, new Error(`${response.status} ${response.statusText}`));
             state.isLoadingExperiment.set(experimentId, false);
           })
         );
@@ -75,19 +68,13 @@ export const useExperiment = create<ExperimentState>((set, get) => ({
 
 export const useOrFetchExperiment = (experimentId: string | undefined) => {
   const fetchExperiment = useExperiment((state) => state.fetchExperiment);
-  const experiment = useExperiment((state) =>
-    experimentId ? state.experiments.get(experimentId) : undefined
-  );
+  const experiment = useExperiment((state) => (experimentId ? state.experiments.get(experimentId) : undefined));
 
   const isLoading = useExperiment((state) =>
-    experimentId
-      ? (state.isLoadingExperiment.get(experimentId) ?? false)
-      : false
+    experimentId ? (state.isLoadingExperiment.get(experimentId) ?? false) : false
   );
 
-  const error = useExperiment((state) =>
-    experimentId ? state.experimentErrors.get(experimentId) : undefined
-  );
+  const error = useExperiment((state) => (experimentId ? state.experimentErrors.get(experimentId) : undefined));
 
   const experimentRef = useRef(experiment);
   experimentRef.current = experiment;

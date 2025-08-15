@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_ANOTHERAI_API_URL ??
-  process.env.ANOTHERAI_API_URL ??
-  "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_ANOTHERAI_API_URL ?? process.env.ANOTHERAI_API_URL ?? "http://localhost:8000";
 
 const proxyHandler = async (req: NextRequest) => {
   const incomingUrl = new URL(req.url, `http://${req.headers.get("host")}`);
@@ -18,12 +15,7 @@ const proxyHandler = async (req: NextRequest) => {
       body: null as string | null,
     };
 
-    if (
-      req.method === "POST" ||
-      req.method === "PUT" ||
-      req.method === "PATCH" ||
-      req.method === "DELETE"
-    ) {
+    if (req.method === "POST" || req.method === "PUT" || req.method === "PATCH" || req.method === "DELETE") {
       const bodyData = await req.text();
       if (bodyData) {
         options.body = bodyData;
@@ -43,12 +35,9 @@ const proxyHandler = async (req: NextRequest) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error("Error forwarding request", error);
-    return new NextResponse(
-      `An error occurred while forwarding the request: ${error?.message}`,
-      {
-        status: error?.status || 500,
-      }
-    );
+    return new NextResponse(`An error occurred while forwarding the request: ${error?.message}`, {
+      status: error?.status || 500,
+    });
   }
 };
 

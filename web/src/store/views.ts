@@ -32,13 +32,8 @@ interface ViewsState {
 
   // View folder operations
   fetchViewFolders: (page?: number, pageSize?: number) => Promise<void>;
-  createViewFolder: (
-    folder: Omit<ViewFolder, "id" | "views">
-  ) => Promise<ViewFolder | null>;
-  patchViewFolder: (
-    folderId: string,
-    patch: PatchViewFolderRequest
-  ) => Promise<void>;
+  createViewFolder: (folder: Omit<ViewFolder, "id" | "views">) => Promise<ViewFolder | null>;
+  patchViewFolder: (folderId: string, patch: PatchViewFolderRequest) => Promise<void>;
   deleteViewFolder: (folderId: string) => Promise<void>;
 
   // View operations
@@ -99,9 +94,7 @@ export const useViews = create<ViewsState>((set, get) => ({
       });
 
       if (!response.ok) {
-        console.error(
-          `Failed to fetch view folders: ${response.status} ${response.statusText}`
-        );
+        console.error(`Failed to fetch view folders: ${response.status} ${response.statusText}`);
         set(
           produce((state: ViewsState) => {
             state.viewFoldersError = new Error(
@@ -117,9 +110,7 @@ export const useViews = create<ViewsState>((set, get) => ({
       const data: ViewListResponse = await response.json();
 
       // Create maps for both folders and individual views
-      const viewFoldersMap = new Map(
-        data.items.map((folder) => [folder.id, folder])
-      );
+      const viewFoldersMap = new Map(data.items.map((folder) => [folder.id, folder]));
       const viewsMap = new Map<string, View>();
 
       data.items.forEach((folder) => {
@@ -167,9 +158,7 @@ export const useViews = create<ViewsState>((set, get) => ({
     const state = get();
 
     // Cancel any existing request for this view
-    const existingController = state.abortControllers.get(
-      `fetchView-${viewId}`
-    );
+    const existingController = state.abortControllers.get(`fetchView-${viewId}`);
     if (existingController) {
       existingController.abort();
     }
@@ -192,17 +181,10 @@ export const useViews = create<ViewsState>((set, get) => ({
       });
 
       if (!response.ok) {
-        console.error(
-          `Failed to fetch view: ${response.status} ${response.statusText}`
-        );
+        console.error(`Failed to fetch view: ${response.status} ${response.statusText}`);
         set(
           produce((state: ViewsState) => {
-            state.viewErrors.set(
-              viewId,
-              new Error(
-                `Failed to fetch view: ${response.status} ${response.statusText}`
-              )
-            );
+            state.viewErrors.set(viewId, new Error(`Failed to fetch view: ${response.status} ${response.statusText}`));
             state.isLoadingView.set(viewId, false);
             state.abortControllers.delete(`fetchView-${viewId}`);
           })
@@ -245,9 +227,7 @@ export const useViews = create<ViewsState>((set, get) => ({
       });
 
       if (!response.ok) {
-        throw new Error(
-          `Failed to create view folder: ${response.status} ${response.statusText}`
-        );
+        throw new Error(`Failed to create view folder: ${response.status} ${response.statusText}`);
       }
 
       const createdFolder: ViewFolder = await response.json();
@@ -279,9 +259,7 @@ export const useViews = create<ViewsState>((set, get) => ({
         set(
           produce((state: ViewsState) => {
             // Update in viewFolders array
-            const folderIndex = state.viewFolders.findIndex(
-              (f) => f.id === folderId
-            );
+            const folderIndex = state.viewFolders.findIndex((f) => f.id === folderId);
             if (folderIndex !== -1) {
               state.viewFolders[folderIndex].name = patch.name;
             }
@@ -301,9 +279,7 @@ export const useViews = create<ViewsState>((set, get) => ({
       });
 
       if (!response.ok) {
-        throw new Error(
-          `Failed to patch view folder: ${response.status} ${response.statusText}`
-        );
+        throw new Error(`Failed to patch view folder: ${response.status} ${response.statusText}`);
       }
 
       // Immediately refetch to get correct backend order/position
@@ -323,9 +299,7 @@ export const useViews = create<ViewsState>((set, get) => ({
       });
 
       if (!response.ok) {
-        throw new Error(
-          `Failed to delete view folder: ${response.status} ${response.statusText}`
-        );
+        throw new Error(`Failed to delete view folder: ${response.status} ${response.statusText}`);
       }
 
       set(
@@ -334,9 +308,7 @@ export const useViews = create<ViewsState>((set, get) => ({
           const folder = state.viewFoldersMap.get(folderId);
 
           // Remove folder from arrays and maps
-          state.viewFolders = state.viewFolders.filter(
-            (f) => f.id !== folderId
-          );
+          state.viewFolders = state.viewFolders.filter((f) => f.id !== folderId);
           state.viewFoldersMap.delete(folderId);
 
           // Also remove all views from this folder
@@ -361,9 +333,7 @@ export const useViews = create<ViewsState>((set, get) => ({
       });
 
       if (!response.ok) {
-        throw new Error(
-          `Failed to create view: ${response.status} ${response.statusText}`
-        );
+        throw new Error(`Failed to create view: ${response.status} ${response.statusText}`);
       }
 
       const createdView: CreateViewResponse = await response.json();
@@ -386,9 +356,7 @@ export const useViews = create<ViewsState>((set, get) => ({
       });
 
       if (!response.ok) {
-        throw new Error(
-          `Failed to patch view: ${response.status} ${response.statusText}`
-        );
+        throw new Error(`Failed to patch view: ${response.status} ${response.statusText}`);
       }
 
       const updatedView: View = await response.json();
@@ -420,9 +388,7 @@ export const useViews = create<ViewsState>((set, get) => ({
       });
 
       if (!response.ok) {
-        console.error(
-          `Failed to delete view: ${response.status} ${response.statusText}`
-        );
+        console.error(`Failed to delete view: ${response.status} ${response.statusText}`);
         return;
       }
 
@@ -458,17 +424,11 @@ export const useViews = create<ViewsState>((set, get) => ({
 // Hook for fetching individual views
 export const useOrFetchView = (viewId: string | undefined) => {
   const fetchView = useViews((state) => state.fetchView);
-  const view = useViews((state) =>
-    viewId ? state.viewsMap.get(viewId) : undefined
-  );
+  const view = useViews((state) => (viewId ? state.viewsMap.get(viewId) : undefined));
 
-  const isLoading = useViews((state) =>
-    viewId ? (state.isLoadingView.get(viewId) ?? false) : false
-  );
+  const isLoading = useViews((state) => (viewId ? (state.isLoadingView.get(viewId) ?? false) : false));
 
-  const error = useViews((state) =>
-    viewId ? state.viewErrors.get(viewId) : undefined
-  );
+  const error = useViews((state) => (viewId ? state.viewErrors.get(viewId) : undefined));
 
   const viewRef = useRef(view);
   viewRef.current = view;
@@ -534,9 +494,7 @@ export const useOrFetchViewFolders = () => {
 
 // Hook for getting a specific view folder
 export const useViewFolder = (folderId: string | undefined) => {
-  const viewFolder = useViews((state) =>
-    folderId ? state.viewFoldersMap.get(folderId) : undefined
-  );
+  const viewFolder = useViews((state) => (folderId ? state.viewFoldersMap.get(folderId) : undefined));
 
   return viewFolder;
 };

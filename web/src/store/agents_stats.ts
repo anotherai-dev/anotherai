@@ -27,9 +27,7 @@ interface AgentsStatsState {
   statsErrors: Map<string, Error>;
 
   fetchAgentStats: (agentId: string) => Promise<AgentStats>;
-  fetchMultipleAgentStats: (
-    agentIds: string[]
-  ) => Promise<Map<string, AgentStats>>;
+  fetchMultipleAgentStats: (agentIds: string[]) => Promise<Map<string, AgentStats>>;
 }
 
 export const useAgentsStats = create<AgentsStatsState>((set, get) => ({
@@ -73,17 +71,12 @@ export const useAgentsStats = create<AgentsStatsState>((set, get) => ({
         WHERE agent_id = '${agentId}'
       `;
 
-      const response = await apiFetch(
-        `/v1/completions/query?query=${encodeURIComponent(query)}`,
-        {
-          method: "GET",
-        }
-      );
+      const response = await apiFetch(`/v1/completions/query?query=${encodeURIComponent(query)}`, {
+        method: "GET",
+      });
 
       if (!response.ok) {
-        throw new Error(
-          `Failed to fetch stats for agent ${agentId}: ${response.status} ${response.statusText}`
-        );
+        throw new Error(`Failed to fetch stats for agent ${agentId}: ${response.status} ${response.statusText}`);
       }
 
       const statsData = (await response.json()) as {
@@ -102,9 +95,7 @@ export const useAgentsStats = create<AgentsStatsState>((set, get) => ({
       const threeDaysAgo = new Date();
       threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 
-      const isActive = stats.last_completion
-        ? new Date(stats.last_completion) > threeDaysAgo
-        : false;
+      const isActive = stats.last_completion ? new Date(stats.last_completion) > threeDaysAgo : false;
 
       const agentStatsResult: AgentStatsResult = {
         agent_id: agentId,
@@ -178,17 +169,12 @@ export const useAgentsStats = create<AgentsStatsState>((set, get) => ({
         GROUP BY agent_id
       `;
 
-      const response = await apiFetch(
-        `/v1/completions/query?query=${encodeURIComponent(query)}`,
-        {
-          method: "GET",
-        }
-      );
+      const response = await apiFetch(`/v1/completions/query?query=${encodeURIComponent(query)}`, {
+        method: "GET",
+      });
 
       if (!response.ok) {
-        throw new Error(
-          `Failed to fetch stats for multiple agents: ${response.status} ${response.statusText}`
-        );
+        throw new Error(`Failed to fetch stats for multiple agents: ${response.status} ${response.statusText}`);
       }
 
       const statsData = (await response.json()) as {
@@ -206,9 +192,7 @@ export const useAgentsStats = create<AgentsStatsState>((set, get) => ({
 
       // Process results and create map
       statsData.forEach((row) => {
-        const isActive = row.last_completion
-          ? new Date(row.last_completion) > threeDaysAgo
-          : false;
+        const isActive = row.last_completion ? new Date(row.last_completion) > threeDaysAgo : false;
 
         const agentStatsResult: AgentStatsResult = {
           agent_id: row.agent_id,
@@ -295,17 +279,11 @@ export const useAgentsStats = create<AgentsStatsState>((set, get) => ({
 
 export const useOrFetchAgentStats = (agentId: string | undefined) => {
   const fetchAgentStats = useAgentsStats((state) => state.fetchAgentStats);
-  const agentStats = useAgentsStats((state) =>
-    agentId ? state.agentStats.get(agentId) : undefined
-  );
+  const agentStats = useAgentsStats((state) => (agentId ? state.agentStats.get(agentId) : undefined));
 
-  const isLoading = useAgentsStats((state) =>
-    agentId ? (state.isLoadingStats.get(agentId) ?? false) : false
-  );
+  const isLoading = useAgentsStats((state) => (agentId ? (state.isLoadingStats.get(agentId) ?? false) : false));
 
-  const error = useAgentsStats((state) =>
-    agentId ? state.statsErrors.get(agentId) : undefined
-  );
+  const error = useAgentsStats((state) => (agentId ? state.statsErrors.get(agentId) : undefined));
 
   const agentStatsRef = useRef(agentStats);
   agentStatsRef.current = agentStats;
@@ -338,15 +316,11 @@ export const useOrFetchAgentStats = (agentId: string | undefined) => {
 };
 
 export const useOrFetchMultipleAgentStats = (agentIds: string[]) => {
-  const fetchMultipleAgentStats = useAgentsStats(
-    (state) => state.fetchMultipleAgentStats
-  );
+  const fetchMultipleAgentStats = useAgentsStats((state) => state.fetchMultipleAgentStats);
   const agentStats = useAgentsStats((state) => state.agentStats);
 
   const allStats = new Map<string, AgentStats>();
-  const anyLoading = agentIds.some(
-    (id) => useAgentsStats.getState().isLoadingStats.get(id) ?? false
-  );
+  const anyLoading = agentIds.some((id) => useAgentsStats.getState().isLoadingStats.get(id) ?? false);
 
   agentIds.forEach((agentId) => {
     const stats = agentStats.get(agentId);

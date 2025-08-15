@@ -3,10 +3,7 @@ interface CompletionTableDateCellProps {
   format?: "date" | "datetime" | "time" | "relative";
 }
 
-export function CompletionTableDateCell({
-  value,
-  format = "date",
-}: CompletionTableDateCellProps) {
+export function CompletionTableDateCell({ value, format = "date" }: CompletionTableDateCellProps) {
   if (value === null || value === undefined) {
     return <span className="text-xs text-gray-400">N/A</span>;
   }
@@ -40,7 +37,5 @@ export function CompletionTableDateCell({
     }
   };
 
-  return (
-    <span className="text-xs text-gray-800">{formatDate(date, format)}</span>
-  );
+  return <span className="text-xs text-gray-800">{formatDate(date, format)}</span>;
 }

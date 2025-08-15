@@ -24,11 +24,7 @@ export default function PopoverMenu({
       <DropdownMenu.Trigger asChild>{trigger}</DropdownMenu.Trigger>
 
       <DropdownMenu.Portal>
-        <DropdownMenu.Content
-          className={className}
-          sideOffset={sideOffset}
-          align={align}
-        >
+        <DropdownMenu.Content className={className} sideOffset={sideOffset} align={align}>
           {children}
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
