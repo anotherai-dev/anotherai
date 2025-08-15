@@ -3,9 +3,9 @@
 import Image from "next/image";
 import { ReactNode, useEffect, useMemo, useState } from "react";
 import { getAuthStrategy } from "@/lib/authStrategy";
+import { authLogger } from "@/lib/logger";
 import { calculateRefreshInterval } from "@/lib/tokenUtils";
 import { useAuthToken } from "@/store/authToken";
-import { authLogger } from "@/lib/logger";
 
 interface ClerkComponents {
   ClerkProvider: React.ComponentType<{
@@ -131,7 +131,7 @@ function TokenSyncWrapper({ clerkComponents, children }: { clerkComponents: Cler
 
     const syncWithRetry = async (maxRetries = 3, baseDelay = 1000) => {
       if (isSyncing || stop) return null;
-      
+
       isSyncing = true;
       let syncedToken: string | null = null;
 
@@ -164,7 +164,7 @@ function TokenSyncWrapper({ clerkComponents, children }: { clerkComponents: Cler
       } finally {
         isSyncing = false;
       }
-      
+
       return syncedToken;
     };
 
@@ -190,10 +190,10 @@ function TokenSyncWrapper({ clerkComponents, children }: { clerkComponents: Cler
 
         // Perform initial sync with retry
         const token = await syncWithRetry();
-        
+
         // Schedule periodic refresh based on token
         scheduleNextRefresh(token);
-        
+
         return token;
       } catch (error) {
         authLogger.error("Token sync initialization failed", error);

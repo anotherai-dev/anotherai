@@ -1,7 +1,7 @@
 "use client";
 
-import { useAuthToken } from "@/store/authToken";
 import { authLogger } from "@/lib/logger";
+import { useAuthToken } from "@/store/authToken";
 
 /**
  * Checks if a JWT token is expired
