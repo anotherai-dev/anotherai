@@ -8,15 +8,7 @@ type HoverPopoverProps = {
   className?: string;
   popoverClassName?: string;
   delay?: number;
-  position?:
-    | "top"
-    | "bottom"
-    | "left"
-    | "right"
-    | "topRight"
-    | "topRightAligned"
-    | "rightOverlap"
-    | "bottomLeft";
+  position?: "top" | "bottom" | "left" | "right" | "topRight" | "topRightAligned" | "rightOverlap" | "bottomLeft";
 };
 
 export function HoverPopover({
@@ -194,9 +186,7 @@ export function HoverPopover({
         {children}
       </div>
 
-      {typeof document !== "undefined" &&
-        popoverContent &&
-        createPortal(popoverContent, document.body)}
+      {typeof document !== "undefined" && popoverContent && createPortal(popoverContent, document.body)}
     </>
   );
 }

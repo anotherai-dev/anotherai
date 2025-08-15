@@ -1,13 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CustomTooltip } from "./CustomTooltip";
 import { SeriesConfig, autoDetectSeries } from "./utils";
 
@@ -113,10 +105,7 @@ export function UniversalLineChart({
     const processData = (inputData: ChartData[]) => {
       return inputData.map((dataPoint) => {
         const originalX = String(dataPoint.x);
-        const truncatedX =
-          originalX.length > 20
-            ? originalX.substring(0, 20) + "..."
-            : originalX;
+        const truncatedX = originalX.length > 20 ? originalX.substring(0, 20) + "..." : originalX;
 
         const newDataPoint: Record<string, unknown> = {
           x: truncatedX,
@@ -152,9 +141,7 @@ export function UniversalLineChart({
         const newWidth = width - 60; // Account for margins (left: 20, right: 30, padding)
 
         // Only update if width changed significantly to prevent micro-adjustments
-        setContainerWidth((prev) =>
-          Math.abs(prev - newWidth) > 5 ? newWidth : prev
-        );
+        setContainerWidth((prev) => (Math.abs(prev - newWidth) > 5 ? newWidth : prev));
       }
     };
 
@@ -179,47 +166,44 @@ export function UniversalLineChart({
   }, []);
 
   // Optimized text width measurement with caching
-  const measureTextWidth = useCallback(
-    (text: string, fontSize: number): number => {
-      const cacheKey = `${text}-${fontSize}`;
+  const measureTextWidth = useCallback((text: string, fontSize: number): number => {
+    const cacheKey = `${text}-${fontSize}`;
 
-      // Check cache first
-      if (textMeasurementCache.has(cacheKey)) {
-        return textMeasurementCache.get(cacheKey)!;
+    // Check cache first
+    if (textMeasurementCache.has(cacheKey)) {
+      return textMeasurementCache.get(cacheKey)!;
+    }
+
+    // Fallback if canvas not available
+    if (!globalCanvas) {
+      const fallbackWidth = text.length * fontSize * 0.6;
+      textMeasurementCache.set(cacheKey, fallbackWidth);
+      return fallbackWidth;
+    }
+
+    const context = globalCanvas.getContext("2d");
+    if (!context) {
+      const fallbackWidth = text.length * fontSize * 0.6;
+      textMeasurementCache.set(cacheKey, fallbackWidth);
+      return fallbackWidth;
+    }
+
+    context.font = `${fontSize}px Arial, sans-serif`;
+    const width = context.measureText(text).width;
+
+    // Cache the result
+    textMeasurementCache.set(cacheKey, width);
+
+    // Prevent cache from growing too large
+    if (textMeasurementCache.size > 1000) {
+      const firstKey = textMeasurementCache.keys().next().value;
+      if (firstKey !== undefined) {
+        textMeasurementCache.delete(firstKey);
       }
+    }
 
-      // Fallback if canvas not available
-      if (!globalCanvas) {
-        const fallbackWidth = text.length * fontSize * 0.6;
-        textMeasurementCache.set(cacheKey, fallbackWidth);
-        return fallbackWidth;
-      }
-
-      const context = globalCanvas.getContext("2d");
-      if (!context) {
-        const fallbackWidth = text.length * fontSize * 0.6;
-        textMeasurementCache.set(cacheKey, fallbackWidth);
-        return fallbackWidth;
-      }
-
-      context.font = `${fontSize}px Arial, sans-serif`;
-      const width = context.measureText(text).width;
-
-      // Cache the result
-      textMeasurementCache.set(cacheKey, width);
-
-      // Prevent cache from growing too large
-      if (textMeasurementCache.size > 1000) {
-        const firstKey = textMeasurementCache.keys().next().value;
-        if (firstKey !== undefined) {
-          textMeasurementCache.delete(firstKey);
-        }
-      }
-
-      return width;
-    },
-    []
-  );
+    return width;
+  }, []);
 
   // Memoized label strategy calculation and chart height
   const {
@@ -253,10 +237,7 @@ export function UniversalLineChart({
     const maxLabelWidth = Math.max(
       ...data.map((item) => {
         const originalLabel = String(item.x);
-        const truncatedLabel =
-          originalLabel.length > 20
-            ? originalLabel.substring(0, 20) + "..."
-            : originalLabel;
+        const truncatedLabel = originalLabel.length > 20 ? originalLabel.substring(0, 20) + "..." : originalLabel;
         return measureTextWidth(truncatedLabel, fontSize);
       })
     );
@@ -310,19 +291,12 @@ export function UniversalLineChart({
     }
 
     // Need to skip labels - calculate how many we can show
-    const maxLabelsHorizontal = Math.floor(
-      containerWidth / totalHorizontalSpace
-    );
-    const maxLabelsRotated = Math.floor(
-      containerWidth / rotatedHorizontalSpace
-    );
+    const maxLabelsHorizontal = Math.floor(containerWidth / totalHorizontalSpace);
+    const maxLabelsRotated = Math.floor(containerWidth / rotatedHorizontalSpace);
 
     if (maxLabelsRotated > maxLabelsHorizontal) {
       // Use rotation with interval
-      const interval = Math.max(
-        0,
-        Math.ceil(data.length / maxLabelsRotated) - 1
-      );
+      const interval = Math.max(0, Math.ceil(data.length / maxLabelsRotated) - 1);
       const textVertical = maxLabelWidth * 0.707;
       const fontVertical = fontSize * 0.707;
       const totalVertical = textVertical + fontVertical + 25;
@@ -342,10 +316,7 @@ export function UniversalLineChart({
       };
     } else {
       // Use horizontal with interval
-      const interval = Math.max(
-        0,
-        Math.ceil(data.length / maxLabelsHorizontal) - 1
-      );
+      const interval = Math.max(0, Math.ceil(data.length / maxLabelsHorizontal) - 1);
       return {
         shouldRotate: false,
         interval,
@@ -415,10 +386,7 @@ export function UniversalLineChart({
       {/* Line Chart Container - Fixed height so legend doesn't interfere */}
       <div className="flex-shrink-0" style={{ height: `${chartHeight}px` }}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart
-            data={processedData}
-            margin={{ top: 5, right: rightMargin, left: leftMargin, bottom: 0 }}
-          >
+          <LineChart data={processedData} margin={{ top: 5, right: rightMargin, left: leftMargin, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis
               dataKey="x"
@@ -518,14 +486,8 @@ export function UniversalLineChart({
         <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 px-4 py-3 border-t border-gray-100">
           {filteredSeries.map((seriesItem, index) => (
             <div key={`legend-${index}`} className="flex items-center gap-2">
-              <div
-                className="w-3 h-[2px] flex-shrink-0"
-                style={{ backgroundColor: seriesItem.color }}
-              />
-              <span
-                className="text-gray-700 whitespace-nowrap"
-                style={{ fontSize: `${fontSize}px` }}
-              >
+              <div className="w-3 h-[2px] flex-shrink-0" style={{ backgroundColor: seriesItem.color }} />
+              <span className="text-gray-700 whitespace-nowrap" style={{ fontSize: `${fontSize}px` }}>
                 {seriesItem.name || seriesItem.key}
               </span>
             </div>

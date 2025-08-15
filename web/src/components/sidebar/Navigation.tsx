@@ -15,13 +15,7 @@ export default function Navigation() {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-8">
             <div className="flex items-center cursor-default">
-              <Image
-                src="/sidebar-logo.png"
-                alt="Logo"
-                width={32}
-                height={32}
-                className="rounded-md"
-              />
+              <Image src="/sidebar-logo.png" alt="Logo" width={32} height={32} className="rounded-md" />
             </div>
 
             <div className="flex space-x-4">

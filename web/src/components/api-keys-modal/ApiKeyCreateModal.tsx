@@ -9,11 +9,7 @@ interface ApiKeyCreateModalProps {
   onSuccess: (apiKey: CompleteAPIKey) => void;
 }
 
-export function ApiKeyCreateModal({
-  isOpen,
-  onClose,
-  onSuccess,
-}: ApiKeyCreateModalProps) {
+export function ApiKeyCreateModal({ isOpen, onClose, onSuccess }: ApiKeyCreateModalProps) {
   const [name, setName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const { createAPIKey } = useAPIKeys();
@@ -50,10 +46,7 @@ export function ApiKeyCreateModal({
 
         <div className="text-[13px] text-gray-600 mb-4 px-4 pt-1 pb-3 border-b border-gray-100">
           <div className="mb-2">
-            <label
-              htmlFor="apiKeyName"
-              className="block text-[13px] font-semibold text-gray-700 mb-2"
-            >
+            <label htmlFor="apiKeyName" className="block text-[13px] font-semibold text-gray-700 mb-2">
               API Key Name
             </label>
             <input

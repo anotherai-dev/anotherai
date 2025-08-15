@@ -108,10 +108,7 @@ export default function ViewMenuButton({
           <div className="text-[13px] text-gray-600 mb-4 px-4 border-b border-gray-100 pb-4">
             <p>
               Are you sure you want to remove the view{" "}
-              <span className="font-semibold text-gray-900">
-                {viewName || "Untitled"}
-              </span>
-              ?
+              <span className="font-semibold text-gray-900">{viewName || "Untitled"}</span>?
             </p>
             <p>This action cannot be undone.</p>
           </div>

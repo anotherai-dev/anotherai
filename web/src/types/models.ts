@@ -96,15 +96,7 @@ export interface Annotation {
   };
   text?: string;
   metric?: {
-    name:
-      | "accuracy"
-      | "precision"
-      | "mse"
-      | "rmse"
-      | "mae"
-      | "time_to_first_token"
-      | "user_feedback"
-      | string;
+    name: "accuracy" | "precision" | "mse" | "rmse" | "mae" | "time_to_first_token" | "user_feedback" | string;
     value: number;
   };
   metadata?: Record<string, unknown>;
@@ -168,9 +160,7 @@ export type ExperimentWithLookups = Experiment & {
 };
 
 // Helper function to create lookup maps for efficient access
-export function createExperimentWithLookups(
-  experiment: Experiment
-): ExperimentWithLookups {
+export function createExperimentWithLookups(experiment: Experiment): ExperimentWithLookups {
   const versionMap = new Map(experiment.versions.map((v) => [v.id, v]));
   const inputMap = new Map(experiment.inputs.map((i) => [i.id, i]));
   const completionMap = new Map(experiment.completions.map((c) => [c.id, c]));

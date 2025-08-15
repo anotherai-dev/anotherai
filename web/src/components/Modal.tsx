@@ -39,10 +39,7 @@ export function Modal({ isOpen, onClose, children }: ModalProps) {
   }
 
   const modalContent = (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-white/70"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/70" onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()}>{children}</div>
     </div>
   );

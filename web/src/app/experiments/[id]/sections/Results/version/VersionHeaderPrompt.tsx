@@ -38,10 +38,7 @@ export function VersionHeaderPrompt(props: VersionHeaderPromptProps) {
   }, [versions, version]);
 
   // If reusing prompt from another version, show badge instead
-  if (
-    indexOfVersionThatFirstUsedThisPrompt !== undefined &&
-    indexOfVersionThatFirstUsedThisPrompt !== index
-  ) {
+  if (indexOfVersionThatFirstUsedThisPrompt !== undefined && indexOfVersionThatFirstUsedThisPrompt !== index) {
     return (
       <>
         <div className="mt-3 pt-4 border-t border-gray-200">

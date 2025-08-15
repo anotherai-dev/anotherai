@@ -1,11 +1,5 @@
 import { getVersionKeyDisplayName } from "@/components/utils/utils";
-import {
-  Annotation,
-  ExtendedVersion,
-  Message,
-  OutputSchema,
-  Tool,
-} from "@/types/models";
+import { Annotation, ExtendedVersion, Message, OutputSchema, Tool } from "@/types/models";
 import { VersionPromptSection } from "../Results/version/VersionPromptSection";
 import { VersionSchemaSection } from "../Results/version/VersionSchemaSection";
 import { MatchingBaseValue } from "./MatchingBaseValue";
@@ -31,9 +25,7 @@ export function MatchingRow({
   // Get display name for the key
   const displayName = getVersionKeyDisplayName(keyName);
   // Extract the raw value
-  const rawValue = (versionWithDefaults as unknown as Record<string, unknown>)[
-    keyName
-  ];
+  const rawValue = (versionWithDefaults as unknown as Record<string, unknown>)[keyName];
 
   // Render appropriate component based on key type
   const renderValue = () => {
@@ -87,12 +79,8 @@ export function MatchingRow({
 
   return (
     <div className="flex border-b border-gray-200/60 last:border-b-0 mx-[8px]">
-      <div className="w-54 px-2 py-[12px] text-xs font-semibold text-gray-900">
-        {displayName}
-      </div>
-      <div className="flex-1 text-xs text-gray-900 items-center px-2">
-        {renderValue()}
-      </div>
+      <div className="w-54 px-2 py-[12px] text-xs font-semibold text-gray-900">{displayName}</div>
+      <div className="flex-1 text-xs text-gray-900 items-center px-2">{renderValue()}</div>
     </div>
   );
 }

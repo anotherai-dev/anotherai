@@ -12,24 +12,14 @@ type MessagesViewerProps = {
 };
 
 export function MessagesViewer(props: MessagesViewerProps) {
-  const {
-    messages,
-    className = "",
-    sharedPartsOfPrompts,
-    annotations,
-    onKeypathSelect,
-  } = props;
+  const { messages, className = "", sharedPartsOfPrompts, annotations, onKeypathSelect } = props;
 
   // Filter out messages with empty content
   const filteredMessages = messages.filter((message) => {
     if (typeof message.content === "string") {
       return message.content.trim() !== "";
     }
-    if (
-      message.content &&
-      typeof message.content === "object" &&
-      !Array.isArray(message.content)
-    ) {
+    if (message.content && typeof message.content === "object" && !Array.isArray(message.content)) {
       // Direct object content (structured output)
       return Object.keys(message.content).length > 0;
     }

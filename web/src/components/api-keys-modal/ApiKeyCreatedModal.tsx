@@ -9,11 +9,7 @@ interface ApiKeyCreatedModalProps {
   apiKey: CompleteAPIKey | null;
 }
 
-export function ApiKeyCreatedModal({
-  isOpen,
-  onClose,
-  apiKey,
-}: ApiKeyCreatedModalProps) {
+export function ApiKeyCreatedModal({ isOpen, onClose, apiKey }: ApiKeyCreatedModalProps) {
   const { showToast } = useToast();
 
   const handleCopy = async () => {
@@ -38,9 +34,8 @@ export function ApiKeyCreatedModal({
 
         <div className="text-[13px] text-gray-600 mb-4 px-4 pt-1 border-b border-gray-100 pb-3">
           <p className="mb-4">
-            Please save this API key somewhere safe and accessible. For security
-            reasons, you will not be able to view it again. If you lose this API
-            key, you will need to generate a new one.
+            Please save this API key somewhere safe and accessible. For security reasons, you will not be able to view
+            it again. If you lose this API key, you will need to generate a new one.
           </p>
 
           <div>

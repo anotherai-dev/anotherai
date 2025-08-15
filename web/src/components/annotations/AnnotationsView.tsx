@@ -70,12 +70,7 @@ export function AnnotationsView({
   );
 
   // Show component even if no annotations when add button is enabled or form is always shown
-  if (
-    filteredAnnotations.length === 0 &&
-    !showAddButton &&
-    !alwaysShowAddForm &&
-    !showAddForm
-  ) {
+  if (filteredAnnotations.length === 0 && !showAddButton && !alwaysShowAddForm && !showAddForm) {
     return null;
   }
 
@@ -105,12 +100,7 @@ export function AnnotationsView({
             Add Annotation
           </button>
 
-          {agentId && (
-            <AnnotationsPromptLabel
-              annotations={filteredAnnotations}
-              agentId={agentId}
-            />
-          )}
+          {agentId && <AnnotationsPromptLabel annotations={filteredAnnotations} agentId={agentId} />}
         </div>
       )}
 

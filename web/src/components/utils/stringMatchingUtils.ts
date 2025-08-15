@@ -39,9 +39,7 @@ function removeContainedSubstrings(strings: string[]): string[] {
 
   for (const str of sorted) {
     // Check if this string is contained in any already accepted string
-    const isContained = result.some(
-      (existing) => existing.length > str.length && existing.includes(str)
-    );
+    const isContained = result.some((existing) => existing.length > str.length && existing.includes(str));
     if (!isContained) {
       result.push(str);
     }
@@ -65,8 +63,7 @@ export function findCommonSubstrings(texts: string[]): string {
 
   // Performance optimization: if we have many texts or very long texts, use a more efficient approach
   const totalLength = validTexts.reduce((sum, text) => sum + text.length, 0);
-  const shouldUseOptimizedApproach =
-    validTexts.length > 10 || totalLength > 10000;
+  const shouldUseOptimizedApproach = validTexts.length > 10 || totalLength > 10000;
 
   if (shouldUseOptimizedApproach) {
     return findCommonSubstringsOptimized(validTexts);
@@ -91,10 +88,7 @@ function findCommonSubstringsOriginal(texts: string[]): string {
 
       // Skip whitespace-only substrings or substrings with too much whitespace
       const trimmed = substring.trim();
-      if (
-        trimmed.length < MIN_WORD_LENGTH ||
-        trimmed.length < substring.length * WHITESPACE_RATIO_THRESHOLD
-      ) {
+      if (trimmed.length < MIN_WORD_LENGTH || trimmed.length < substring.length * WHITESPACE_RATIO_THRESHOLD) {
         continue;
       }
 
@@ -138,20 +132,14 @@ function findCommonSubstringsOriginal(texts: string[]): string {
 function findCommonSubstringsOptimized(texts: string[]): string {
   // Preprocess texts: normalize and create word mappings that preserve original casing
   const textData = texts.map((text) => {
-    const words = text
-      .split(/\s+/)
-      .filter((word) => word.length >= MIN_WORD_LENGTH);
+    const words = text.split(/\s+/).filter((word) => word.length >= MIN_WORD_LENGTH);
     const normalizedWords = words
       .map((word) => ({
         original: word,
         normalized: word.toLowerCase().replace(/[^\w@.-]/g, ""), // Preserve important chars
         startsAlphanumeric: /^[a-zA-Z0-9@.-]/.test(word), // Allow emails, URLs, and numbers
       }))
-      .filter(
-        (wordData) =>
-          wordData.normalized.length >= MIN_WORD_LENGTH &&
-          wordData.startsAlphanumeric
-      );
+      .filter((wordData) => wordData.normalized.length >= MIN_WORD_LENGTH && wordData.startsAlphanumeric);
 
     return {
       originalText: text,
@@ -207,47 +195,27 @@ function findCommonSubstringsOptimized(texts: string[]): string {
   const relevantTextData = textData.slice(0, maxTextsForPhrases);
 
   if (relevantTextData.every((data) => data.sentences.length > 0)) {
-    const firstSentences = relevantTextData[0].sentences.slice(
-      0,
-      MAX_SENTENCES_TO_PROCESS
-    );
-    const otherLowerTexts = relevantTextData
-      .slice(1)
-      .map((data) => data.lowerText);
+    const firstSentences = relevantTextData[0].sentences.slice(0, MAX_SENTENCES_TO_PROCESS);
+    const otherLowerTexts = relevantTextData.slice(1).map((data) => data.lowerText);
 
     for (const sentence of firstSentences) {
-      const words = sentence
-        .split(/\s+/)
-        .filter((word) => word.length >= MIN_WORD_LENGTH);
+      const words = sentence.split(/\s+/).filter((word) => word.length >= MIN_WORD_LENGTH);
 
       // Look for phrases of MIN_PHRASE_WORDS-MAX_PHRASE_WORDS words with consistent word filtering
-      for (
-        let phraseLen = MIN_PHRASE_WORDS;
-        phraseLen <= Math.min(MAX_PHRASE_WORDS, words.length);
-        phraseLen++
-      ) {
+      for (let phraseLen = MIN_PHRASE_WORDS; phraseLen <= Math.min(MAX_PHRASE_WORDS, words.length); phraseLen++) {
         for (let i = 0; i <= words.length - phraseLen; i++) {
           const phrase = words.slice(i, i + phraseLen).join(" ");
           const normalizedPhrase = phrase.toLowerCase();
 
           // Use consistent phrase length validation
-          if (
-            phrase.length < MIN_PHRASE_LENGTH ||
-            phrase.length > MAX_PHRASE_LENGTH
-          )
-            continue;
+          if (phrase.length < MIN_PHRASE_LENGTH || phrase.length > MAX_PHRASE_LENGTH) continue;
 
           // Apply whitespace ratio check for consistency with original approach
           const trimmed = phrase.trim();
-          if (trimmed.length < phrase.length * WHITESPACE_RATIO_THRESHOLD)
-            continue;
+          if (trimmed.length < phrase.length * WHITESPACE_RATIO_THRESHOLD) continue;
 
           // Check if this phrase appears in other texts (case insensitive for consistency)
-          if (
-            otherLowerTexts.every((lowerText) =>
-              lowerText.includes(normalizedPhrase)
-            )
-          ) {
+          if (otherLowerTexts.every((lowerText) => lowerText.includes(normalizedPhrase))) {
             commonPhrases.push(phrase); // Keep original casing
           }
         }

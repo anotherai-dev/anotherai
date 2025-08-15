@@ -7,7 +7,9 @@
     "dev": "next dev --turbopack",
     "start": "next start",
     "postinstall": "fumadocs-mdx",
-    "lint": "next lint"
+    "lint": "next lint",
+    "prettier-format": "prettier --write .",
+    "prettier-check": "prettier --check ."
   },
   "dependencies": {
     "@remixicon/react": "^4.6.0",

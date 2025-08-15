@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  forwardRef,
-  useCallback,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { useViews } from "@/store/views";
 
 interface EditableViewTitleProps {
@@ -21,10 +14,7 @@ export interface EditableViewTitleRef {
   startEditing: () => void;
 }
 
-const EditableViewTitle = forwardRef<
-  EditableViewTitleRef,
-  EditableViewTitleProps
->(function EditableViewTitle(
+const EditableViewTitle = forwardRef<EditableViewTitleRef, EditableViewTitleProps>(function EditableViewTitle(
   { viewId, title, className = "", onEditingChange },
   ref
 ) {

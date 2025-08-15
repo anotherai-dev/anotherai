@@ -1,7 +1,7 @@
-import { loader } from 'fumadocs-core/source';
-import { BookMarked, BookOpen, Code, FileCode, FileText, Plug, Sparkles, TestTube } from 'lucide-react';
-import { createElement } from 'react';
-import { docs } from '@/.source';
+import { loader } from "fumadocs-core/source";
+import { BookMarked, BookOpen, Code, FileCode, FileText, Plug, Sparkles, TestTube } from "lucide-react";
+import { createElement } from "react";
+import { docs } from "@/.source";
 
 // Icon mapping
 const icons: Record<string, React.ElementType> = {
@@ -18,7 +18,7 @@ const icons: Record<string, React.ElementType> = {
 // See https://fumadocs.vercel.app/docs/headless/source-api for more info
 export const source = loader({
   // it assigns a URL to your pages
-  baseUrl: '/',
+  baseUrl: "/",
   source: docs.toFumadocsSource(),
   icon(name) {
     if (!name || !(name in icons)) return undefined;

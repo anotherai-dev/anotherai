@@ -19,12 +19,7 @@ export type VariablesViewerProps = {
 const getTextSizeStyle = (textSize: "xs" | "sm" | "base" | string = "xs") => {
   if (textSize === "xs" || textSize === "sm" || textSize === "base") {
     return {
-      className:
-        textSize === "xs"
-          ? "text-xs"
-          : textSize === "sm"
-            ? "text-sm"
-            : "text-base",
+      className: textSize === "xs" ? "text-xs" : textSize === "sm" ? "text-sm" : "text-base",
       style: {},
     };
   }
@@ -36,9 +31,7 @@ const renderValueBadge = (
   textSize: "xs" | "sm" | "base" | string = "xs",
   showSeeMore: boolean = false
 ) => {
-  return (
-    <ValueDisplay value={value} textSize={textSize} showSeeMore={showSeeMore} />
-  );
+  return <ValueDisplay value={value} textSize={textSize} showSeeMore={showSeeMore} />;
 };
 
 const renderProperty = (
@@ -56,32 +49,24 @@ const renderProperty = (
   if (value && typeof value === "object" && !Array.isArray(value)) {
     const entries = Object.entries(value);
     const shouldHideBorder = isFirstLevel && hideBorderForFirstLevel;
-    const { className: textSizeClass, style: textSizeStyle } =
-      getTextSizeStyle(textSize);
+    const { className: textSizeClass, style: textSizeStyle } = getTextSizeStyle(textSize);
 
     if (shouldHideBorder) {
       // Render without border for first level
       return (
         <div key={key} className="mb-3 inline-block">
           <div className="flex items-center gap-3 py-2">
-            <span
-              className={cx("font-medium text-gray-900", textSizeClass)}
-              style={textSizeStyle}
-            >
+            <span className={cx("font-medium text-gray-900", textSizeClass)} style={textSizeStyle}>
               {key}
             </span>
           </div>
 
           <div className="bg-transparent">
             {entries.map(([childKey, childValue], index) => {
-              const childKeyPath = keyPath
-                ? `${keyPath}.${childKey}`
-                : childKey;
+              const childKeyPath = keyPath ? `${keyPath}.${childKey}` : childKey;
               return (
                 <div key={childKey}>
-                  {index > 0 && (
-                    <div className="border-t border-dashed border-gray-200 -mx-px"></div>
-                  )}
+                  {index > 0 && <div className="border-t border-dashed border-gray-200 -mx-px"></div>}
                   <div className="p-1">
                     {renderProperty(
                       childKey,
@@ -104,15 +89,9 @@ const renderProperty = (
     }
 
     return (
-      <div
-        key={key}
-        className="border border-gray-200 rounded-[2px] mb-3 inline-block"
-      >
+      <div key={key} className="border border-gray-200 rounded-[2px] mb-3 inline-block">
         <div className="flex items-center gap-3 px-3 py-2 bg-gray-100 rounded-t-[2px] border-b border-gray-200">
-          <span
-            className={cx("font-medium text-gray-900", textSizeClass)}
-            style={textSizeStyle}
-          >
+          <span className={cx("font-medium text-gray-900", textSizeClass)} style={textSizeStyle}>
             {key}
           </span>
         </div>
@@ -122,9 +101,7 @@ const renderProperty = (
             const childKeyPath = keyPath ? `${keyPath}.${childKey}` : childKey;
             return (
               <div key={childKey}>
-                {index > 0 && (
-                  <div className="border-t border-dashed border-gray-200 -mx-px"></div>
-                )}
+                {index > 0 && <div className="border-t border-dashed border-gray-200 -mx-px"></div>}
                 <div className="p-1">
                   {renderProperty(
                     childKey,
@@ -165,8 +142,7 @@ const renderProperty = (
 
   // For primitive types, display badge below property name
   const isArrayIndex = /^\d+$/.test(key);
-  const { className: textSizeClass, style: textSizeStyle } =
-    getTextSizeStyle(textSize);
+  const { className: textSizeClass, style: textSizeStyle } = getTextSizeStyle(textSize);
 
   return (
     <div key={key} className="py-1">
@@ -178,11 +154,7 @@ const renderProperty = (
       >
         <div className="mb-1">
           <span
-            className={cx(
-              "font-semibold",
-              textSizeClass,
-              isArrayIndex ? "text-gray-600" : "text-gray-900"
-            )}
+            className={cx("font-semibold", textSizeClass, isArrayIndex ? "text-gray-600" : "text-gray-900")}
             style={textSizeStyle}
           >
             {key}
@@ -215,8 +187,7 @@ function CollapsibleArray({
   showSeeMore?: boolean;
 }) {
   const [isExpanded, setIsExpanded] = useState(true);
-  const { className: textSizeClass, style: textSizeStyle } =
-    getTextSizeStyle(textSize);
+  const { className: textSizeClass, style: textSizeStyle } = getTextSizeStyle(textSize);
 
   return (
     <div>
@@ -232,11 +203,7 @@ function CollapsibleArray({
           annotations={annotations}
           onKeypathSelect={onKeypathSelect}
         >
-          {isExpanded ? (
-            <ChevronDown className="w-3 h-3" />
-          ) : (
-            <ChevronRight className="w-3 h-3" />
-          )}
+          {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
           <span className={textSizeClass} style={textSizeStyle}>
             {arrayKey}:
           </span>
@@ -259,9 +226,7 @@ function CollapsibleArray({
           <div className="ml-3 mt-2">
             {arrayValue.map((item, index) => {
               const isLast = index === arrayValue.length - 1;
-              const itemKeyPath = keyPath
-                ? `${keyPath}[${index}]`
-                : `${arrayKey}[${index}]`;
+              const itemKeyPath = keyPath ? `${keyPath}[${index}]` : `${arrayKey}[${index}]`;
               return (
                 <div key={index} className="py-1 relative">
                   {/* Vertical line segment - extends from top to the horizontal connector */}
@@ -269,50 +234,38 @@ function CollapsibleArray({
                   {/* Horizontal connector from vertical line to item - centered */}
                   <div className="absolute left-[-10px] top-1/2 -translate-y-1/2 w-2 h-px border-t border-gray-200"></div>
                   {/* Hide the vertical line below the last item */}
-                  {isLast && (
-                    <div className="absolute left-[-10px] top-1/2 bottom-0 w-px bg-white"></div>
-                  )}
+                  {isLast && <div className="absolute left-[-10px] top-1/2 bottom-0 w-px bg-white"></div>}
                   <div className="flex items-center gap-3">
-                    <span
-                      className={cx(
-                        "font-semibold text-gray-600",
-                        textSizeClass
-                      )}
-                      style={textSizeStyle}
-                    >
+                    <span className={cx("font-semibold text-gray-600", textSizeClass)} style={textSizeStyle}>
                       {index}:
                     </span>
                     <div className="flex-1">
-                      {item &&
-                      typeof item === "object" &&
-                      !Array.isArray(item) ? (
+                      {item && typeof item === "object" && !Array.isArray(item) ? (
                         <div className="border border-gray-200 rounded-[2px] inline-block">
                           <div className="bg-transparent">
-                            {Object.entries(item).map(
-                              ([childKey, childValue], childIndex) => {
-                                const childKeyPath = `${itemKeyPath}.${childKey}`;
-                                return (
-                                  <div key={childKey}>
-                                    {childIndex > 0 && (
-                                      <div className="border-t border-dashed border-gray-200 -mx-px"></div>
+                            {Object.entries(item).map(([childKey, childValue], childIndex) => {
+                              const childKeyPath = `${itemKeyPath}.${childKey}`;
+                              return (
+                                <div key={childKey}>
+                                  {childIndex > 0 && (
+                                    <div className="border-t border-dashed border-gray-200 -mx-px"></div>
+                                  )}
+                                  <div className="p-1">
+                                    {renderProperty(
+                                      childKey,
+                                      childValue,
+                                      false,
+                                      hideBorderForFirstLevel,
+                                      textSize,
+                                      annotations,
+                                      childKeyPath,
+                                      onKeypathSelect,
+                                      showSeeMore
                                     )}
-                                    <div className="p-1">
-                                      {renderProperty(
-                                        childKey,
-                                        childValue,
-                                        false,
-                                        hideBorderForFirstLevel,
-                                        textSize,
-                                        annotations,
-                                        childKeyPath,
-                                        onKeypathSelect,
-                                        showSeeMore
-                                      )}
-                                    </div>
                                   </div>
-                                );
-                              }
-                            )}
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       ) : (
@@ -349,8 +302,7 @@ export function VariablesViewer(props: VariablesViewerProps) {
     maxHeight = "20rem",
   } = props;
 
-  const { className: textSizeClass, style: textSizeStyle } =
-    getTextSizeStyle(textSize);
+  const { className: textSizeClass, style: textSizeStyle } = getTextSizeStyle(textSize);
 
   // Convert special height values to CSS
   const getMaxHeightStyle = (height: string) => {
@@ -373,17 +325,12 @@ export function VariablesViewer(props: VariablesViewerProps) {
     return (
       <div
         className={cx(
-          hideBorderForFirstLevel
-            ? "bg-transparent"
-            : "border border-gray-200 rounded-[2px] bg-white",
+          hideBorderForFirstLevel ? "bg-transparent" : "border border-gray-200 rounded-[2px] bg-white",
           className
         )}
       >
         <div className={hideBorderForFirstLevel ? "" : "p-3"}>
-          <div
-            className={cx("text-gray-500 italic font-normal", textSizeClass)}
-            style={textSizeStyle}
-          >
+          <div className={cx("text-gray-500 italic font-normal", textSizeClass)} style={textSizeStyle}>
             no variables defined
           </div>
         </div>
@@ -394,17 +341,12 @@ export function VariablesViewer(props: VariablesViewerProps) {
   return (
     <div
       className={cx(
-        hideBorderForFirstLevel
-          ? "bg-transparent"
-          : "border border-gray-200 rounded-[2px] bg-white",
+        hideBorderForFirstLevel ? "bg-transparent" : "border border-gray-200 rounded-[2px] bg-white",
         className
       )}
     >
       <div
-        className={cx(
-          shouldShowOverflow ? "overflow-y-auto" : "",
-          hideBorderForFirstLevel ? "" : "p-3"
-        )}
+        className={cx(shouldShowOverflow ? "overflow-y-auto" : "", hideBorderForFirstLevel ? "" : "p-3")}
         style={{ maxHeight: getMaxHeightStyle(maxHeight) }}
       >
         <div className="space-y-1">

@@ -82,17 +82,12 @@ export const useAgentStats = create<AgentStatsState>((set, get) => ({
     try {
       // Helper function to execute queries
       const executeQuery = async (query: string) => {
-        const response = await apiFetch(
-          `/v1/completions/query?query=${encodeURIComponent(query)}`,
-          {
-            method: "GET",
-          }
-        );
+        const response = await apiFetch(`/v1/completions/query?query=${encodeURIComponent(query)}`, {
+          method: "GET",
+        });
 
         if (!response.ok) {
-          throw new Error(
-            `Query failed: ${response.status} ${response.statusText}`
-          );
+          throw new Error(`Query failed: ${response.status} ${response.statusText}`);
         }
 
         return await response.json();
@@ -143,10 +138,7 @@ export const useAgentStats = create<AgentStatsState>((set, get) => ({
       };
 
       // Process daily costs (group by date client-side)
-      const dailyGroups = new Map<
-        string,
-        { total_cost: number; completion_count: number }
-      >();
+      const dailyGroups = new Map<string, { total_cost: number; completion_count: number }>();
       dailyCostData.forEach((item) => {
         const date = item.created_at.split("T")[0];
         const existing = dailyGroups.get(date) || {
@@ -208,17 +200,11 @@ export const useAgentStats = create<AgentStatsState>((set, get) => ({
 
 export const useOrFetchAgentDetails = (agentId: string | undefined) => {
   const fetchAgentDetails = useAgentStats((state) => state.fetchAgentDetails);
-  const agentDetails = useAgentStats((state) =>
-    agentId ? state.agentDetails.get(agentId) : undefined
-  );
+  const agentDetails = useAgentStats((state) => (agentId ? state.agentDetails.get(agentId) : undefined));
 
-  const isLoading = useAgentStats((state) =>
-    agentId ? (state.isLoadingDetails.get(agentId) ?? false) : false
-  );
+  const isLoading = useAgentStats((state) => (agentId ? (state.isLoadingDetails.get(agentId) ?? false) : false));
 
-  const error = useAgentStats((state) =>
-    agentId ? state.detailsErrors.get(agentId) : undefined
-  );
+  const error = useAgentStats((state) => (agentId ? state.detailsErrors.get(agentId) : undefined));
 
   const agentDetailsRef = useRef(agentDetails);
   agentDetailsRef.current = agentDetails;
