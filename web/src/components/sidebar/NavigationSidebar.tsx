@@ -28,22 +28,13 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
   return (
     <div className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col h-screen">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+      <div className="py-4 pl-3 pr-2 border-b border-gray-200 flex items-center justify-between">
         <div className="flex items-center gap-2">
           {/* AnotherAI Logo */}
           <Image src="/sidebar-logo.png" alt="AnotherAI Logo" width={32} height={32} className="w-8 h-8" />
           <span className="font-semibold text-gray-900">AnotherAI</span>
         </div>
         <div className="flex items-center gap-1">
-          {onOpenCommandPalette && (
-            <button
-              onClick={onOpenCommandPalette}
-              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors cursor-pointer"
-              title="Open command palette (⌘K)"
-            >
-              <Search className="w-5 h-5" />
-            </button>
-          )}
           <button
             onClick={() => setIsExpanded(false)}
             className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors cursor-pointer"
@@ -55,10 +46,10 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
       </div>
 
       {/* Search Bar */}
-      <div className="p-3 border-b border-gray-200">
+      <div className="py-3 px-2 border-b border-gray-200">
         <button
           onClick={onOpenCommandPalette}
-          className="w-full flex items-center gap-3 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors group cursor-pointer"
+          className="w-full flex items-center gap-3 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-[4px] transition-colors group cursor-pointer"
         >
           <Search className="w-4 h-4 text-gray-400 group-hover:text-gray-500" />
           <span className="text-sm text-gray-500 group-hover:text-gray-600">Search</span>
@@ -79,7 +70,7 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
         <div className="p-2 border-b border-gray-200">
           <Link
             href="/completions"
-            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors mb-1 ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-[2px] ${
               pathname === "/completions" ? "bg-blue-100 text-blue-700" : "text-gray-700 hover:bg-gray-100"
             }`}
           >
@@ -91,7 +82,7 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
 
           <Link
             href="/experiments"
-            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors mb-1 ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-[2px] ${
               pathname === "/experiments" ? "bg-blue-100 text-blue-700" : "text-gray-700 hover:bg-gray-100"
             }`}
           >
@@ -108,7 +99,7 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
 
           <Link
             href="/agents"
-            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors mb-1 ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-[2px] ${
               pathname === "/agents" ? "bg-blue-100 text-blue-700" : "text-gray-700 hover:bg-gray-100"
             }`}
           >
@@ -127,7 +118,7 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
             href="https://github.com/anotherai-dev/anotherai"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors mb-1 text-gray-700 hover:bg-gray-100"
+            className="flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-1 text-gray-700 hover:bg-gray-100"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
