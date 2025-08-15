@@ -55,7 +55,7 @@ def audio_input_to_domain(audio_input: "OpenAIAudioInput") -> File:
     content_type = audio_input.format
     if "/" not in content_type:
         content_type = f"audio/{content_type}"
-    if not audio_input.format or audio_input.data.startswith("https://"):
+    if audio_input.data.startswith("https://"):
         # Special case for when the format is not provided or when the data is in fact a URL
         return File(url=audio_input.data, format=FileKind.AUDIO)
     return File(data=audio_input.data, content_type=content_type, format=FileKind.AUDIO)
