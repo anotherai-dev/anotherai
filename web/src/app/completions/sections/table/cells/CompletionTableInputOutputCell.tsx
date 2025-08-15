@@ -51,10 +51,7 @@ export function CompletionTableInputOutputCell({
             />
           </div>
           <div>
-            <MessagesViewer
-              messages={messages as Message[]}
-              sharedPartsOfPrompts={sharedPartsOfPrompts}
-            />
+            <MessagesViewer messages={messages as Message[]} sharedPartsOfPrompts={sharedPartsOfPrompts} />
           </div>
         </div>
       );
@@ -79,10 +76,7 @@ export function CompletionTableInputOutputCell({
       const messages = hasMessages ? obj.messages : obj.internal_anotherai_messages;
       return (
         <div className={cx("max-h-full overflow-y-auto", maxWidth)}>
-          <MessagesViewer
-            messages={messages as Message[]}
-            sharedPartsOfPrompts={sharedPartsOfPrompts}
-          />
+          <MessagesViewer messages={messages as Message[]} sharedPartsOfPrompts={sharedPartsOfPrompts} />
         </div>
       );
     }
@@ -90,9 +84,7 @@ export function CompletionTableInputOutputCell({
     // Fallback: show raw object structure for debugging
     return (
       <div className={cx("text-xs text-gray-600 overflow-hidden", maxWidth)}>
-        <pre className="whitespace-pre-wrap">
-          {JSON.stringify(obj, null, 2).substring(0, 200)}...
-        </pre>
+        <pre className="whitespace-pre-wrap">{JSON.stringify(obj, null, 2).substring(0, 200)}...</pre>
       </div>
     );
   }

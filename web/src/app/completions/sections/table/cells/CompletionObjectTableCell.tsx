@@ -56,11 +56,7 @@ export function CompletionObjectTableCell(props: Props) {
   // Check if it's a container type from transformCompletionsData first
   if (isContainerType(value)) {
     return (
-      <CompletionTableInputOutputCell
-        value={value}
-        maxWidth={maxWidth}
-        sharedPartsOfPrompts={sharedPartsOfPrompts}
-      />
+      <CompletionTableInputOutputCell value={value} maxWidth={maxWidth} sharedPartsOfPrompts={sharedPartsOfPrompts} />
     );
   }
 

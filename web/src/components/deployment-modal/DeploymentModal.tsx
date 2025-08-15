@@ -16,22 +16,19 @@ export function DeploymentModal() {
   const { showToast } = useToast();
 
   const deploymentParam = searchParams.get("showDeploymentModal");
-  const completionId =
-    deploymentParam && deploymentParam !== "true" ? deploymentParam : undefined;
+  const completionId = deploymentParam && deploymentParam !== "true" ? deploymentParam : undefined;
   const isOpen = !!deploymentParam;
 
   // Fetch specific completion if ID provided, otherwise get newest
-  const { completion: specificCompletion, isLoading: isLoadingSpecific } =
-    useOrFetchCompletion(completionId);
-  const { newestCompletionId, isLoading: isLoadingNewest } =
-    useNewestCompletionId();
+  const { completion: specificCompletion, isLoading: isLoadingSpecific } = useOrFetchCompletion(completionId);
+  const { newestCompletionId, isLoading: isLoadingNewest } = useNewestCompletionId();
 
   // Always fetch the newest completion for the currently deployed version
-  const { completion: newestCompletion, isLoading: isLoadingNewestCompletion } =
-    useOrFetchCompletion(newestCompletionId ?? undefined);
+  const { completion: newestCompletion, isLoading: isLoadingNewestCompletion } = useOrFetchCompletion(
+    newestCompletionId ?? undefined
+  );
 
-  const isLoading =
-    isLoadingSpecific || isLoadingNewest || isLoadingNewestCompletion;
+  const isLoading = isLoadingSpecific || isLoadingNewest || isLoadingNewestCompletion;
 
   // Extract versions
   const versionToBeDeployed = specificCompletion?.version;
@@ -40,9 +37,7 @@ export function DeploymentModal() {
   const closeModal = useCallback(() => {
     const params = new URLSearchParams(searchParams);
     params.delete("showDeploymentModal");
-    const newUrl = `${window.location.pathname}${
-      params.toString() ? `?${params.toString()}` : ""
-    }`;
+    const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
     router.replace(newUrl, { scroll: false });
   }, [searchParams, router]);
 

@@ -22,17 +22,15 @@ export default function DeploymentPage({ params }: DeploymentPageProps) {
   const completionId = completion_id;
 
   // Fetch specific completion using the completion_id from URL
-  const { completion: specificCompletion, isLoading: isLoadingSpecific } =
-    useOrFetchCompletion(completionId);
-  const { newestCompletionId, isLoading: isLoadingNewest } =
-    useNewestCompletionId();
+  const { completion: specificCompletion, isLoading: isLoadingSpecific } = useOrFetchCompletion(completionId);
+  const { newestCompletionId, isLoading: isLoadingNewest } = useNewestCompletionId();
 
   // Always fetch the newest completion for the currently deployed version
-  const { completion: newestCompletion, isLoading: isLoadingNewestCompletion } =
-    useOrFetchCompletion(newestCompletionId ?? undefined);
+  const { completion: newestCompletion, isLoading: isLoadingNewestCompletion } = useOrFetchCompletion(
+    newestCompletionId ?? undefined
+  );
 
-  const isLoading =
-    isLoadingSpecific || isLoadingNewest || isLoadingNewestCompletion;
+  const isLoading = isLoadingSpecific || isLoadingNewest || isLoadingNewestCompletion;
 
   // Extract versions
   const versionToBeDeployed = specificCompletion?.version;
@@ -51,11 +49,7 @@ export default function DeploymentPage({ params }: DeploymentPageProps) {
     <div className="flex flex-col w-full h-screen bg-gray-50">
       <div className="px-4 pt-8">
         <PageHeader
-          breadcrumbs={[
-            { label: "Home", href: "/" },
-            { label: "Deployments" },
-            { label: completionId },
-          ]}
+          breadcrumbs={[{ label: "Home", href: "/" }, { label: "Deployments" }, { label: completionId }]}
           title="Deployment"
           copyablePrefixAndId={`anotherai/deployment/${completionId}`}
           className="mb-2"

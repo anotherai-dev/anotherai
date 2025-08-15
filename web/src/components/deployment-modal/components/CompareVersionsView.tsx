@@ -16,73 +16,56 @@ interface CompareVersionsViewProps {
   versionToBeDeployed?: Version;
 }
 
-export function CompareVersionsView({
-  versionCurrentlyDeployed,
-  versionToBeDeployed,
-}: CompareVersionsViewProps) {
+export function CompareVersionsView({ versionCurrentlyDeployed, versionToBeDeployed }: CompareVersionsViewProps) {
   const [isUnchangedExpanded, setIsUnchangedExpanded] = useState(false);
   const [isDiffMode, setIsDiffMode] = useState(true);
   // Calculate shared parts for diff highlighting
   const sharedPartsOfPrompts = useMemo(() => {
     if (!versionCurrentlyDeployed || !versionToBeDeployed) return undefined;
-    return getSharedPartsOfPrompts([
-      versionCurrentlyDeployed,
-      versionToBeDeployed,
-    ]);
+    return getSharedPartsOfPrompts([versionCurrentlyDeployed, versionToBeDeployed]);
   }, [versionCurrentlyDeployed, versionToBeDeployed]);
 
   const sharedKeypathsOfSchemas = useMemo(() => {
     if (!versionCurrentlyDeployed || !versionToBeDeployed) return undefined;
-    return getSharedKeypathsOfSchemas([
-      versionCurrentlyDeployed,
-      versionToBeDeployed,
-    ]);
+    return getSharedKeypathsOfSchemas([versionCurrentlyDeployed, versionToBeDeployed]);
   }, [versionCurrentlyDeployed, versionToBeDeployed]);
 
   // Use the same logic as MatchingSection to get all version keys and defaults
-  const { changedKeys, unchangedKeys, currentWithDefaults, newWithDefaults } =
-    useMemo(() => {
-      // Create versions array to use getMatchingVersionKeys (same as MatchingSection)
-      const versions = [];
-      if (versionCurrentlyDeployed) versions.push(versionCurrentlyDeployed);
-      if (versionToBeDeployed) versions.push(versionToBeDeployed);
+  const { changedKeys, unchangedKeys, currentWithDefaults, newWithDefaults } = useMemo(() => {
+    // Create versions array to use getMatchingVersionKeys (same as MatchingSection)
+    const versions = [];
+    if (versionCurrentlyDeployed) versions.push(versionCurrentlyDeployed);
+    if (versionToBeDeployed) versions.push(versionToBeDeployed);
 
-      // If we only have one version, add it twice so getMatchingVersionKeys works properly
-      if (versions.length === 1) {
-        versions.push(versions[0]);
-      }
+    // If we only have one version, add it twice so getMatchingVersionKeys works properly
+    if (versions.length === 1) {
+      versions.push(versions[0]);
+    }
 
-      // Get all keys and matching keys
-      const allKeys = versions.length > 0 ? getVersionKeys(versions) : [];
-      const matchingKeys =
-        versions.length > 0 ? getMatchingVersionKeys(versions) : [];
+    // Get all keys and matching keys
+    const allKeys = versions.length > 0 ? getVersionKeys(versions) : [];
+    const matchingKeys = versions.length > 0 ? getMatchingVersionKeys(versions) : [];
 
-      // Get unmatching keys by removing matching ones from all keys
-      const unmatchingKeys = allKeys.filter(
-        (key) => !matchingKeys.includes(key)
-      );
-      const sortedUnmatchingKeys = sortVersionKeys(unmatchingKeys);
+    // Get unmatching keys by removing matching ones from all keys
+    const unmatchingKeys = allKeys.filter((key) => !matchingKeys.includes(key));
+    const sortedUnmatchingKeys = sortVersionKeys(unmatchingKeys);
 
-      // Apply defaults to both versions
-      const currentDefaults = versionCurrentlyDeployed
-        ? getVersionWithDefaults(versionCurrentlyDeployed)
-        : undefined;
-      const newDefaults = versionToBeDeployed
-        ? getVersionWithDefaults(versionToBeDeployed)
-        : undefined;
+    // Apply defaults to both versions
+    const currentDefaults = versionCurrentlyDeployed ? getVersionWithDefaults(versionCurrentlyDeployed) : undefined;
+    const newDefaults = versionToBeDeployed ? getVersionWithDefaults(versionToBeDeployed) : undefined;
 
-      // Changed keys are the unmatching keys (values are different)
-      const changed = sortedUnmatchingKeys;
-      // Unchanged keys are the matching keys (values are the same)
-      const unchanged = sortVersionKeys(matchingKeys);
+    // Changed keys are the unmatching keys (values are different)
+    const changed = sortedUnmatchingKeys;
+    // Unchanged keys are the matching keys (values are the same)
+    const unchanged = sortVersionKeys(matchingKeys);
 
-      return {
-        changedKeys: changed,
-        unchangedKeys: unchanged,
-        currentWithDefaults: currentDefaults,
-        newWithDefaults: newDefaults,
-      };
-    }, [versionCurrentlyDeployed, versionToBeDeployed]);
+    return {
+      changedKeys: changed,
+      unchangedKeys: unchanged,
+      currentWithDefaults: currentDefaults,
+      newWithDefaults: newDefaults,
+    };
+  }, [versionCurrentlyDeployed, versionToBeDeployed]);
 
   return (
     <div className="flex flex-col h-full p-6 overflow-y-auto">

@@ -27,29 +27,21 @@ export function CompareSection({
 
   // Prepare table data
   const data = keys.map((key) => {
-    const currentValue =
-      currentWithDefaults?.[key as keyof typeof currentWithDefaults];
+    const currentValue = currentWithDefaults?.[key as keyof typeof currentWithDefaults];
     const newValue = newWithDefaults?.[key as keyof typeof newWithDefaults];
 
     return [
       <span key="property" className="text-[12px] font-medium text-gray-900">
         {getVersionKeyDisplayName(key)}
       </span>,
-      <CompletionTableCell
-        key="current"
-        columnKey={key}
-        value={currentValue}
-        maxWidth="w-full"
-      />,
+      <CompletionTableCell key="current" columnKey={key} value={currentValue} maxWidth="w-full" />,
       <CompletionTableCell
         key="new"
         columnKey={key}
         value={newValue}
         maxWidth="w-full"
         sharedPartsOfPrompts={isDiffMode ? sharedPartsOfPrompts : undefined}
-        sharedKeypathsOfSchemas={
-          isDiffMode ? sharedKeypathsOfSchemas : undefined
-        }
+        sharedKeypathsOfSchemas={isDiffMode ? sharedKeypathsOfSchemas : undefined}
       />,
     ];
   });

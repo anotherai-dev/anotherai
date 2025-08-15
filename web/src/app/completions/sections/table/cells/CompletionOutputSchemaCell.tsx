@@ -37,9 +37,7 @@ export function CompletionOutputSchemaCell({
   // Fallback for unexpected format
   return (
     <div className={cx("text-xs text-gray-600 overflow-hidden", maxWidth)}>
-      <pre className="whitespace-pre-wrap">
-        {JSON.stringify(value, null, 2).substring(0, 200)}...
-      </pre>
+      <pre className="whitespace-pre-wrap">{JSON.stringify(value, null, 2).substring(0, 200)}...</pre>
     </div>
   );
 }

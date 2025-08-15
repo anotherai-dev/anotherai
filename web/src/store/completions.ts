@@ -51,15 +51,10 @@ export const useCompletions = create<CompletionsState>((set, get) => ({
       });
 
       if (!response.ok) {
-        console.error(
-          `Failed to query completions: ${response.status} ${response.statusText}`
-        );
+        console.error(`Failed to query completions: ${response.status} ${response.statusText}`);
         set(
           produce((state: CompletionsState) => {
-            state.queryErrors.set(
-              queryKey,
-              new Error(`HTTP ${response.status}: ${response.statusText}`)
-            );
+            state.queryErrors.set(queryKey, new Error(`HTTP ${response.status}: ${response.statusText}`));
             state.isLoadingQuery.set(queryKey, false);
           })
         );
@@ -105,35 +100,26 @@ export const useCompletions = create<CompletionsState>((set, get) => ({
     );
 
     try {
-      const query =
-        "SELECT id FROM completions ORDER BY created_at DESC LIMIT 1";
+      const query = "SELECT id FROM completions ORDER BY created_at DESC LIMIT 1";
       const encodedQuery = encodeURIComponent(query);
-      const response = await apiFetch(
-        `/v1/completions/query?query=${encodedQuery}`,
-        {
-          method: "GET",
-        }
-      );
+      const response = await apiFetch(`/v1/completions/query?query=${encodedQuery}`, {
+        method: "GET",
+      });
 
       if (!response.ok) {
-        console.error(
-          `Failed to fetch newest completion ID: ${response.status} ${response.statusText}`
-        );
+        console.error(`Failed to fetch newest completion ID: ${response.status} ${response.statusText}`);
         set(
           produce((state: CompletionsState) => {
             state.newestCompletionId = null;
             state.isLoadingNewest = false;
-            state.newestError = new Error(
-              `HTTP ${response.status}: ${response.statusText}`
-            );
+            state.newestError = new Error(`HTTP ${response.status}: ${response.statusText}`);
           })
         );
         return;
       }
 
       const completionsData: Record<string, unknown>[] = await response.json();
-      const newestCompletionId =
-        completionsData.length > 0 ? (completionsData[0].id as string) : null;
+      const newestCompletionId = completionsData.length > 0 ? (completionsData[0].id as string) : null;
 
       set(
         produce((state: CompletionsState) => {
@@ -183,12 +169,8 @@ export const useCompletionsQuery = (query: string | undefined) => {
 };
 
 export const useNewestCompletionId = () => {
-  const fetchNewestCompletionId = useCompletions(
-    (state) => state.fetchNewestCompletionId
-  );
-  const newestCompletionId = useCompletions(
-    (state) => state.newestCompletionId
-  );
+  const fetchNewestCompletionId = useCompletions((state) => state.fetchNewestCompletionId);
+  const newestCompletionId = useCompletions((state) => state.newestCompletionId);
   const isLoading = useCompletions((state) => state.isLoadingNewest);
   const error = useCompletions((state) => state.newestError);
 

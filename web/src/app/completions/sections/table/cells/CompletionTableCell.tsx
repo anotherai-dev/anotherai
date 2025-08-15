@@ -17,13 +17,7 @@ interface Props {
 }
 
 export function CompletionTableCell(props: Props) {
-  const {
-    columnKey,
-    value,
-    maxWidth,
-    sharedPartsOfPrompts,
-    sharedKeypathsOfSchemas,
-  } = props;
+  const { columnKey, value, maxWidth, sharedPartsOfPrompts, sharedKeypathsOfSchemas } = props;
 
   const parsedJSON = parseJSONValue(value);
 
