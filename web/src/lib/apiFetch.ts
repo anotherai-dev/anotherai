@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuthToken } from "@/store/authToken";
+import { authLogger } from "@/lib/logger";
 
 /**
  * Checks if a JWT token is expired
@@ -37,7 +38,7 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   if (token && !isTokenExpired(token)) {
     headers["Authorization"] = `Bearer ${token}`;
   } else if (token && isTokenExpired(token)) {
-    console.warn("JWT token is expired, making request without Authorization header");
+    authLogger.warn("JWT token is expired, making request without Authorization header");
   }
 
   // Make the request through Next.js API proxy

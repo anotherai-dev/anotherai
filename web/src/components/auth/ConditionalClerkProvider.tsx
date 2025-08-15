@@ -5,6 +5,7 @@ import { ReactNode, useEffect, useMemo, useState } from "react";
 import { getAuthStrategy } from "@/lib/authStrategy";
 import { calculateRefreshInterval } from "@/lib/tokenUtils";
 import { useAuthToken } from "@/store/authToken";
+import { authLogger } from "@/lib/logger";
 
 interface ClerkComponents {
   ClerkProvider: React.ComponentType<{
@@ -45,7 +46,7 @@ export function ConditionalClerkProvider({ children }: { children: ReactNode }) 
           setIsLoading(false);
         })
         .catch((error) => {
-          console.log("Auth components failed to load:", error.message);
+          authLogger.error("Auth components failed to load", error);
           setIsLoading(false);
         });
     } else {
@@ -126,34 +127,44 @@ function TokenSyncWrapper({ clerkComponents, children }: { clerkComponents: Cler
 
     let stop = false;
     let intervalId: NodeJS.Timeout | null = null;
+    let isSyncing = false;
 
     const syncWithRetry = async (maxRetries = 3, baseDelay = 1000) => {
+      if (isSyncing || stop) return null;
+      
+      isSyncing = true;
       let syncedToken: string | null = null;
 
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        if (stop) return null;
+      try {
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          if (stop) break;
 
-        try {
-          // Always try to get token - Clerk might have valid session even if isSignedIn is unclear
-          const jwt = await getToken();
-          syncedToken = jwt;
-          if (!stop) {
-            setToken(jwt ?? null);
-          }
-          return syncedToken; // Success, return the token
-        } catch (error) {
-          const isLastAttempt = attempt === maxRetries;
-          if (isLastAttempt) {
-            console.warn(`Token sync failed after ${maxRetries} attempts:`, error);
-            // Don't clear token on final failure, keep existing state
-          } else {
-            console.warn(`Token sync attempt ${attempt} failed, retrying...`, error);
-            // Exponential backoff: 1s, 2s, 4s
-            const delay = baseDelay * Math.pow(2, attempt - 1);
-            await new Promise((resolve) => setTimeout(resolve, delay));
+          try {
+            // Always try to get token - Clerk might have valid session even if isSignedIn is unclear
+            const jwt = await getToken();
+            syncedToken = jwt;
+            if (!stop) {
+              setToken(jwt ?? null);
+            }
+            authLogger.debug("Token sync successful", { hasToken: !!jwt });
+            break; // Success, exit retry loop
+          } catch (error) {
+            const isLastAttempt = attempt === maxRetries;
+            if (isLastAttempt) {
+              authLogger.warn(`Token sync failed after ${maxRetries} attempts`, error);
+              // Don't clear token on final failure, keep existing state
+            } else {
+              authLogger.debug(`Token sync attempt ${attempt} failed, retrying...`);
+              // Exponential backoff: 1s, 2s, 4s
+              const delay = baseDelay * Math.pow(2, attempt - 1);
+              await new Promise((resolve) => setTimeout(resolve, delay));
+            }
           }
         }
+      } finally {
+        isSyncing = false;
       }
+      
       return syncedToken;
     };
 
@@ -168,10 +179,29 @@ function TokenSyncWrapper({ clerkComponents, children }: { clerkComponents: Cler
       }, refreshInterval);
     };
 
-    // Initial sync with retry, then schedule dynamic refresh
-    syncWithRetry().then((token) => {
-      scheduleNextRefresh(token);
-    });
+    // Single consolidated token sync effect
+    const handleTokenSync = async () => {
+      try {
+        // Clear any signed-out state immediately
+        if (isSignedIn === false) {
+          setToken(null);
+          return null;
+        }
+
+        // Perform initial sync with retry
+        const token = await syncWithRetry();
+        
+        // Schedule periodic refresh based on token
+        scheduleNextRefresh(token);
+        
+        return token;
+      } catch (error) {
+        authLogger.error("Token sync initialization failed", error);
+        return null;
+      }
+    };
+
+    handleTokenSync();
 
     return () => {
       stop = true;
@@ -179,26 +209,6 @@ function TokenSyncWrapper({ clerkComponents, children }: { clerkComponents: Cler
         clearTimeout(intervalId);
       }
     };
-  }, [isLoaded, isSignedIn, getToken, setToken]);
-
-  // Additional effect to trigger token sync when isSignedIn changes or when loaded
-  useEffect(() => {
-    if (isLoaded) {
-      const syncImmediate = async () => {
-        try {
-          // Always try to get token when auth is loaded, even if isSignedIn is unclear
-          const jwt = await getToken();
-          setToken(jwt ?? null);
-        } catch (error) {
-          console.warn("Token sync error:", error);
-          // If getting token fails and user appears signed out, clear token
-          if (isSignedIn === false) {
-            setToken(null);
-          }
-        }
-      };
-      syncImmediate();
-    }
   }, [isLoaded, isSignedIn, getToken, setToken]);
 
   return <>{children}</>;
