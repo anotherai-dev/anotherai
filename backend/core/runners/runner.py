@@ -232,6 +232,7 @@ class Runner:
 
     def _build_pipeline(self, builder: AgentCompletionBuilder):
         pipeline = ProviderPipeline(
+            agent_id=self._agent.id,
             version=self._version,
             custom_configs=self._custom_configs,
             factory=self._provider_factory,
@@ -257,11 +258,13 @@ class Runner:
         pipeline = self._build_pipeline(builder)
 
         # TODO: model_data
-        for provider, options, _ in pipeline.provider_iterator():
+        for provider, options, _ in pipeline.provider_iterator(raise_at_end=True):
             with pipeline.wrap_provider_call(provider):
                 return await self._build_output_from_messages(provider, options, builder.messages)
 
-        return pipeline.raise_on_end(self._agent.id)
+        # Will never be reached since raise_at_end is True
+        # Returning for type safety
+        return pipeline.raise_on_end()
 
     async def _prepare_messages(
         self,
