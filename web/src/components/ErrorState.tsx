@@ -23,10 +23,7 @@ export default function ErrorState(props: Props) {
         <h2 className="text-red-800 font-semibold mb-2">{title}</h2>
         <p className="text-red-600">{error || "An error occurred"}</p>
         <div className="mt-4 space-x-4">
-          <button
-            onClick={onRetry}
-            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-          >
+          <button onClick={onRetry} className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
             Retry
           </button>
         </div>

@@ -1,0 +1,33 @@
+name: Doc Quality
+on:
+  workflow_call:
+    inputs:
+      # Skipping needs to happen at the job level, otherwise
+      # Github will keep waiting for status checks
+      skip:
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  doc-quality:
+    if: inputs.skip != true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run prettier
+        run: npm run prettier-check --workspace=docs
+
+      - name: Run build (including eslint)
+        run: npm run build --workspace=docs

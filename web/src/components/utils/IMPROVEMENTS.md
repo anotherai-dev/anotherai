@@ -18,9 +18,7 @@
 // Before: O(n²) with array operations
 let commonWordSet = new Set(textData[0].wordSet);
 for (let i = 1; i < textData.length; i++) {
-  commonWordSet = new Set(
-    [...commonWordSet].filter((word) => textData[i].wordSet.has(word))
-  );
+  commonWordSet = new Set([...commonWordSet].filter((word) => textData[i].wordSet.has(word)));
 }
 
 // After: O(n) with optimized intersection

@@ -9,12 +9,7 @@ export function AgentActivityIndicator(props: Props) {
 
   return (
     <div className="relative">
-      <div
-        className={cn(
-          "w-[6px] h-[6px] rounded-full",
-          isActive ? "bg-green-500 animate-pulse" : "bg-gray-300"
-        )}
-      />
+      <div className={cn("w-[6px] h-[6px] rounded-full", isActive ? "bg-green-500 animate-pulse" : "bg-gray-300")} />
       <div
         className={cn(
           "absolute top-[-3px] left-[-3px] w-[12px] h-[12px] rounded-full border",

@@ -30,15 +30,7 @@ interface ExperimentsTableProps {
 }
 
 export function ExperimentsTable(props: ExperimentsTableProps) {
-  const {
-    experiments,
-    total,
-    currentPage,
-    pageSize,
-    isLoading,
-    error,
-    onPageChange,
-  } = props;
+  const { experiments, total, currentPage, pageSize, isLoading, error, onPageChange } = props;
   const router = useRouter();
 
   // Define display columns
@@ -96,9 +88,7 @@ export function ExperimentsTable(props: ExperimentsTableProps) {
     return (
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
         <p className="text-gray-500">No experiments found.</p>
-        <p className="text-gray-400 text-sm mt-2">
-          Create your first experiment to get started
-        </p>
+        <p className="text-gray-400 text-sm mt-2">Create your first experiment to get started</p>
       </div>
     );
   }
@@ -137,13 +127,7 @@ export function ExperimentsTable(props: ExperimentsTableProps) {
                 return <ExperimentsBaseCell key={header} value={value} />;
 
               case EXPERIMENTS_COLUMNS.CREATED_AT:
-                return (
-                  <ExperimentsBaseCell
-                    key={header}
-                    value={value}
-                    formatter={formatRelativeDate}
-                  />
-                );
+                return <ExperimentsBaseCell key={header} value={value} formatter={formatRelativeDate} />;
 
               default:
                 return <ExperimentsBaseCell key={header} value={value} />;

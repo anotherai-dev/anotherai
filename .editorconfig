@@ -1,0 +1,25 @@
+# https://editorconfig.org
+
+root = true
+
+
+[*]
+end_of_line = lf
+insert_final_newline = true
+max_line_length = 120
+
+
+[*.{py,json,yml,md,ts,js,jsx,tsx}]
+charset = utf-8
+trim_trailing_whitespace = true
+
+[**.{ts,js,jsx,tsx,yml}]
+indent_size = 2
+indent_style = space
+
+[*.py]
+indent_size = 4
+indent_style = space
+
+[Makefile]
+indent_style = tab

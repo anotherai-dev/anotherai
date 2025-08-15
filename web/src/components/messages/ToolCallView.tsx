@@ -10,25 +10,18 @@ interface ToolCallResultViewProps {
   toolCallResult: ToolCallResult;
 }
 
-export function ToolCallRequestView({
-  toolCallRequest,
-}: ToolCallRequestViewProps) {
+export function ToolCallRequestView({ toolCallRequest }: ToolCallRequestViewProps) {
   // Handle both field name variations
   const toolName =
-    toolCallRequest.name ||
-    ((toolCallRequest as unknown as Record<string, unknown>)
-      .tool_name as string);
+    toolCallRequest.name || ((toolCallRequest as unknown as Record<string, unknown>).tool_name as string);
   const toolArguments =
     toolCallRequest.arguments ||
-    ((toolCallRequest as unknown as Record<string, unknown>)
-      .tool_input_dict as Record<string, unknown>);
+    ((toolCallRequest as unknown as Record<string, unknown>).tool_input_dict as Record<string, unknown>);
 
   return (
     <div className="border border-gray-200 rounded-[2px] bg-slate-50 p-3 my-2">
       <div className="mb-2">
-        <span className="text-xs font-semibold text-gray-800">
-          Tool Call Request
-        </span>
+        <span className="text-xs font-semibold text-gray-800">Tool Call Request</span>
       </div>
 
       {toolName && (
@@ -41,11 +34,7 @@ export function ToolCallRequestView({
 
       {toolArguments && Object.keys(toolArguments).length > 0 && (
         <div className="mt-2 border border-gray-200 rounded-[2px] bg-white p-2">
-          <VariablesViewer
-            variables={toolArguments}
-            hideBorderForFirstLevel={true}
-            textSize="xs"
-          />
+          <VariablesViewer variables={toolArguments} hideBorderForFirstLevel={true} textSize="xs" />
         </div>
       )}
 
@@ -54,9 +43,7 @@ export function ToolCallRequestView({
   );
 }
 
-export function ToolCallResultView({
-  toolCallResult,
-}: ToolCallResultViewProps) {
+export function ToolCallResultView({ toolCallResult }: ToolCallResultViewProps) {
   // Parse the output if it's a JSON string
   let parsedOutput: Record<string, unknown> | unknown = toolCallResult.output;
   if (typeof toolCallResult.output === "string") {
@@ -71,9 +58,7 @@ export function ToolCallResultView({
   return (
     <div className="border border-gray-200 rounded-[2px] bg-slate-50 p-3 my-2">
       <div className="mb-2">
-        <span className="text-xs font-semibold text-gray-800">
-          Tool Call Response
-        </span>
+        <span className="text-xs font-semibold text-gray-800">Tool Call Response</span>
       </div>
 
       {toolCallResult.error ? (
@@ -89,9 +74,7 @@ export function ToolCallResultView({
           />
         </div>
       ) : (
-        <div className="mt-2 text-xs text-gray-500 italic">
-          No output data available
-        </div>
+        <div className="mt-2 text-xs text-gray-500 italic">No output data available</div>
       )}
 
       <div className="text-xs text-gray-600 mt-2">id: {toolCallResult.id}</div>

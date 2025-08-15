@@ -1,5 +1,5 @@
 import { cx } from "class-variance-authority";
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 
 export interface TableProps {
   // Column headers (first row)
@@ -25,13 +25,47 @@ export function TableComponent({
   minHeaderHeight = 150,
 }: TableProps) {
   const headerRowWidth = "240px";
+  const [containerWidth, setContainerWidth] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Measure container width
+  useEffect(() => {
+    const updateWidth = () => {
+      if (containerRef.current) {
+        const width = containerRef.current.offsetWidth;
+        setContainerWidth(width);
+      }
+    };
+
+    updateWidth();
+    window.addEventListener("resize", updateWidth);
+    return () => window.removeEventListener("resize", updateWidth);
+  }, []);
+
+  // Calculate column width based on available space and number of columns
+  const calculateColumnWidth = () => {
+    const numColumns = columnHeaders.length;
+    if (numColumns === 0) return minColumnWidth;
+
+    // Available width = container width - header row width (240px) - padding/margins
+    const headerRowWidthPx = 240;
+    const availableWidth = containerWidth - headerRowWidthPx - 20; // 20px for padding/margins
+
+    if (availableWidth <= 0) return minColumnWidth;
+
+    // Calculate equal width for all columns
+    const equalWidth = availableWidth / numColumns;
+
+    // If equal width is less than minColumnWidth, use minColumnWidth (will trigger horizontal scroll)
+    return Math.max(equalWidth, minColumnWidth);
+  };
+
+  const columnWidth = calculateColumnWidth();
 
   return (
     <div
-      className={cx(
-        "bg-white border border-gray-200 rounded-lg overflow-hidden relative",
-        className
-      )}
+      ref={containerRef}
+      className={cx("bg-white border border-gray-200 rounded-lg overflow-hidden relative", className)}
     >
       {/* Border overlay after sticky header column - fixed position */}
       <div
@@ -58,7 +92,9 @@ export function TableComponent({
                   key={index}
                   className="px-4 py-3 text-left text-xs font-medium text-gray-500 border-r border-gray-200 last:border-r-0 align-top"
                   style={{
-                    minWidth: `${minColumnWidth}px`,
+                    width: `${columnWidth}px`,
+                    minWidth: `${columnWidth}px`,
+                    maxWidth: `${columnWidth}px`,
                     height: `${minHeaderHeight}px`,
                   }}
                 >
@@ -91,7 +127,9 @@ export function TableComponent({
                     key={columnIndex}
                     className="px-4 py-4 text-sm border-r border-gray-200 last:border-r-0 align-top"
                     style={{
-                      minWidth: `${minColumnWidth}px`,
+                      width: `${columnWidth}px`,
+                      minWidth: `${columnWidth}px`,
+                      maxWidth: `${columnWidth}px`,
                     }}
                   >
                     <div className="h-full">{cellContent}</div>

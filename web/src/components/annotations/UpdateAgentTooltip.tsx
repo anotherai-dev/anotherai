@@ -38,9 +38,7 @@ export function UpdateAgentTooltip({ agentId }: UpdateAgentTooltipProps) {
             <span className="flex-1 w-full whitespace-pre-wrap">{`Copy and paste the prompt below into the client's chat, and fill in the details you'd like to update:`}</span>
           </div>
         </div>
-        <div className="mt-3 italic font-bold w-full whitespace-pre-wrap">
-          {promptText}
-        </div>
+        <div className="mt-3 italic font-bold w-full whitespace-pre-wrap">{promptText}</div>
       </div>
 
       <div className="flex gap-2 mt-4 w-full items-center justify-end">

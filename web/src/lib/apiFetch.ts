@@ -8,10 +8,7 @@
  * @param options - Standard fetch options
  * @returns Promise<Response>
  */
-export async function apiFetch(
-  path: string,
-  options: RequestInit = {}
-): Promise<Response> {
+export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
   // Prepare headers
   const headers: Record<string, string> = {
     "Content-Type": "application/json",

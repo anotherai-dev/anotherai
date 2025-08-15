@@ -25,10 +25,7 @@ export function CostOverTimeSection({ dailyCosts }: CostOverTimeSectionProps) {
   return (
     <div className="bg-white border border-gray-200 rounded-[2px] flex flex-col">
       <div className="p-4">
-        <SectionHeader
-          title="Cost Over Time"
-          description="Daily costs for the last 30 days"
-        />
+        <SectionHeader title="Cost Over Time" description="Daily costs for the last 30 days" />
       </div>
       <UniversalBarChart
         data={chartData}

@@ -52,10 +52,7 @@ export const SqlKeywordExtension = Extension.create({
         props: {
           decorations(state) {
             const decorations: Decoration[] = [];
-            const keywordRegex = new RegExp(
-              `\\b(${SQL_KEYWORDS.join("|")})\\b`,
-              "gi"
-            );
+            const keywordRegex = new RegExp(`\\b(${SQL_KEYWORDS.join("|")})\\b`, "gi");
 
             state.doc.descendants((node, pos) => {
               if (node.isText && node.text) {

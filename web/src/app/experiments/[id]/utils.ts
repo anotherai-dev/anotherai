@@ -1,9 +1,5 @@
 import { getCompletionsPerVersion } from "@/components/utils/utils";
-import {
-  Annotation,
-  ExperimentCompletion,
-  ExperimentWithLookups,
-} from "@/types/models";
+import { Annotation, ExperimentCompletion, ExperimentWithLookups } from "@/types/models";
 
 /**
  * Finds all unique metric keys and their average values from a collection of annotations.
@@ -11,17 +7,12 @@ import {
  * @param annotations - Array of annotations to extract metrics from
  * @returns Array of objects with key and average value for each metric type
  */
-export function findAllMetricKeysAndAverages(
-  annotations: Annotation[]
-): Array<{ key: string; average: number }> {
+export function findAllMetricKeysAndAverages(annotations: Annotation[]): Array<{ key: string; average: number }> {
   const metricsMap = new Map<string, number[]>();
 
   // Collect all values for each metric key
   annotations.forEach((annotation) => {
-    if (
-      annotation.metric?.name &&
-      typeof annotation.metric.value === "number"
-    ) {
+    if (annotation.metric?.name && typeof annotation.metric.value === "number") {
       const key = annotation.metric.name;
       const value = annotation.metric.value;
 
@@ -36,9 +27,7 @@ export function findAllMetricKeysAndAverages(
   // Calculate averages and return sorted results
   const results = Array.from(metricsMap.entries()).map(([key, values]) => ({
     key,
-    average: parseFloat(
-      (values.reduce((sum, val) => sum + val, 0) / values.length).toFixed(2)
-    ),
+    average: parseFloat((values.reduce((sum, val) => sum + val, 0) / values.length).toFixed(2)),
   }));
 
   return results.sort((a, b) => a.key.localeCompare(b.key));
@@ -59,10 +48,7 @@ export function getMetricsPerVersion(
     return undefined;
   }
 
-  const metricsPerVersion: Record<
-    string,
-    Array<{ key: string; average: number }>
-  > = {};
+  const metricsPerVersion: Record<string, Array<{ key: string; average: number }>> = {};
 
   // Use existing utility to get completions grouped by version
   const completionsPerVersion = getCompletionsPerVersion(experiment);
@@ -73,15 +59,11 @@ export function getMetricsPerVersion(
 
     // Filter annotations that belong to completions of this version
     const annotationsForVersion = annotations.filter(
-      (annotation) =>
-        annotation.target?.completion_id &&
-        completionIds.includes(annotation.target.completion_id)
+      (annotation) => annotation.target?.completion_id && completionIds.includes(annotation.target.completion_id)
     );
 
     // Get metrics for this version using the existing function
-    const metricsForVersion = findAllMetricKeysAndAverages(
-      annotationsForVersion
-    );
+    const metricsForVersion = findAllMetricKeysAndAverages(annotationsForVersion);
 
     metricsPerVersion[versionId] = metricsForVersion;
   });
@@ -96,9 +78,7 @@ export function getMetricsPerVersion(
  * @returns Object mapping metric key to array of all values across versions
  */
 export function getAllMetricsPerKey(
-  metricsPerVersion:
-    | Record<string, Array<{ key: string; average: number }>>
-    | undefined
+  metricsPerVersion: Record<string, Array<{ key: string; average: number }>> | undefined
 ): Record<string, number[]> | undefined {
   if (!metricsPerVersion) {
     return undefined;
@@ -140,8 +120,7 @@ export function getMetricsForCompletion(
 ): Array<{ key: string; average: number }> {
   // Filter annotations that target this specific completion
   const completionAnnotations = annotations.filter(
-    (annotation) =>
-      annotation.target?.completion_id === completionId && annotation.metric
+    (annotation) => annotation.target?.completion_id === completionId && annotation.metric
   );
 
   // Use the existing function to calculate metrics
@@ -171,19 +150,14 @@ export function getAllMetricsPerKeyForRow(
   // Get all completions for this input across all versions
   const completionsForInput = experiment.versions
     .map((version) => {
-      const completion = experiment.completions.find(
-        (c) => c.input.id === inputId && c.version.id === version.id
-      );
+      const completion = experiment.completions.find((c) => c.input.id === inputId && c.version.id === version.id);
       return completion;
     })
     .filter(Boolean) as ExperimentCompletion[];
 
   // For each completion, get its metrics and group by key
   completionsForInput.forEach((completion) => {
-    const metricsForCompletion = getMetricsForCompletion(
-      annotations,
-      completion.id
-    );
+    const metricsForCompletion = getMetricsForCompletion(annotations, completion.id);
 
     metricsForCompletion.forEach(({ key, average }) => {
       if (!metricsPerKeyForRow[key]) {

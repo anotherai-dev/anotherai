@@ -1,9 +1,7 @@
 import { VariablesViewer } from "@/components/VariablesViewer/VariablesViewer";
+import { ImageViewer } from "@/components/messages/ImageViewer";
 import { MessageTextView } from "@/components/messages/MessageTextView";
-import {
-  ToolCallRequestView,
-  ToolCallResultView,
-} from "@/components/messages/ToolCallView";
+import { ToolCallRequestView, ToolCallResultView } from "@/components/messages/ToolCallView";
 import { Annotation, MessageContent } from "@/types/models";
 
 type MessageContentViewProps = {
@@ -15,13 +13,7 @@ type MessageContentViewProps = {
 };
 
 export function MessageContentView(props: MessageContentViewProps) {
-  const {
-    content,
-    contentToCompareTo,
-    compareMode,
-    annotations,
-    onKeypathSelect,
-  } = props;
+  const { content, contentToCompareTo, compareMode, annotations, onKeypathSelect } = props;
 
   // Handle direct object content (structured output)
   if (content && typeof content === "object" && !Array.isArray(content)) {
@@ -38,8 +30,7 @@ export function MessageContentView(props: MessageContentViewProps) {
   }
 
   if (typeof content === "string") {
-    const sharedContent =
-      typeof contentToCompareTo === "string" ? contentToCompareTo : undefined;
+    const sharedContent = typeof contentToCompareTo === "string" ? contentToCompareTo : undefined;
 
     // Check if string content is parsable as JSON object
     try {
@@ -62,11 +53,7 @@ export function MessageContentView(props: MessageContentViewProps) {
 
     return (
       <div className="text-[12.5px] text-gray-900 whitespace-pre-wrap">
-        <MessageTextView
-          text={content}
-          sharedText={sharedContent}
-          compareMode={compareMode}
-        />
+        <MessageTextView text={content} sharedText={sharedContent} compareMode={compareMode} />
       </div>
     );
   }
@@ -76,9 +63,7 @@ export function MessageContentView(props: MessageContentViewProps) {
     <div className="space-y-1">
       {content.map((item, index) => {
         // Get corresponding shared content if available
-        const sharedContentArray = Array.isArray(contentToCompareTo)
-          ? contentToCompareTo
-          : undefined;
+        const sharedContentArray = Array.isArray(contentToCompareTo) ? contentToCompareTo : undefined;
         const sharedItem = sharedContentArray?.[index];
         const sharedText = sharedItem?.text;
 
@@ -86,11 +71,7 @@ export function MessageContentView(props: MessageContentViewProps) {
           <div key={index} className="text-[12.5px] text-gray-900">
             {item.text && (
               <div className="whitespace-pre-wrap">
-                <MessageTextView
-                  text={item.text}
-                  sharedText={sharedText}
-                  compareMode={compareMode}
-                />
+                <MessageTextView text={item.text} sharedText={sharedText} compareMode={compareMode} />
               </div>
             )}
             {item.object && (
@@ -113,17 +94,13 @@ export function MessageContentView(props: MessageContentViewProps) {
               </div>
             )}
             {item.image_url && (
-              <div className="text-gray-600 italic">Image attached</div>
+              <div className="mt-2">
+                <ImageViewer imageUrl={item.image_url} alt="Message attachment" />
+              </div>
             )}
-            {item.audio_url && (
-              <div className="text-gray-600 italic">Audio attached</div>
-            )}
-            {item.tool_call_request && (
-              <ToolCallRequestView toolCallRequest={item.tool_call_request} />
-            )}
-            {item.tool_call_result && (
-              <ToolCallResultView toolCallResult={item.tool_call_result} />
-            )}
+            {item.audio_url && <div className="text-gray-600 italic">Audio attached</div>}
+            {item.tool_call_request && <ToolCallRequestView toolCallRequest={item.tool_call_request} />}
+            {item.tool_call_result && <ToolCallResultView toolCallResult={item.tool_call_result} />}
           </div>
         );
       })}

@@ -42,9 +42,7 @@ export function ToastProvider({ children }: ToastProviderProps) {
           duration={2000}
         >
           <Check size={16} className="text-white" />
-          <Toast.Title className="text-sm font-medium text-white">
-            {message}
-          </Toast.Title>
+          <Toast.Title className="text-sm font-medium text-white">{message}</Toast.Title>
         </Toast.Root>
         <Toast.Viewport className="fixed bottom-4 left-1/2 transform -translate-x-1/2 flex flex-col gap-2 max-w-[100vw] m-0 list-none z-[2147483647] outline-none" />
       </Toast.Provider>

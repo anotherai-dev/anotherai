@@ -1,9 +1,5 @@
 import { useMemo } from "react";
-import {
-  getMatchingVersionKeys,
-  getVersionWithDefaults,
-  sortVersionKeys,
-} from "@/components/utils/utils";
+import { getMatchingVersionKeys, getVersionWithDefaults, sortVersionKeys } from "@/components/utils/utils";
 import { Annotation, ExperimentWithLookups } from "@/types/models";
 import { MatchingRow } from "./MatchingRow";
 
@@ -29,9 +25,7 @@ export function MatchingSection(props: Props) {
 
   return (
     <div className="mb-8">
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">
-        Matching Content
-      </h2>
+      <h2 className="text-xl font-semibold text-gray-900 mb-4">Matching Content</h2>
       <div className="bg-gray-50 border border-gray-200 rounded-[10px]">
         {matchingContentKeys.length > 0 && versionWithDefaults ? (
           matchingContentKeys.map((key) => (
@@ -46,9 +40,7 @@ export function MatchingSection(props: Props) {
             />
           ))
         ) : (
-          <div className="px-4 py-2 text-sm text-gray-700">
-            No matching keys found across versions
-          </div>
+          <div className="px-4 py-2 text-sm text-gray-700">No matching keys found across versions</div>
         )}
       </div>
     </div>

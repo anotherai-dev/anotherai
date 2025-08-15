@@ -25,6 +25,8 @@ jobs:
               - 'backend/**'
             web:
               - 'web/**'
+            docs:
+              - 'docs/**'
   backend:
     needs: changes
     uses: ./.github/workflows/.backend-quality.yml
@@ -37,6 +39,12 @@ jobs:
     uses: ./.github/workflows/.web-quality.yml
     with:
       skip: ${{ needs.changes.outputs.web == 'false' }}
+
+  docs:
+    needs: changes
+    uses: ./.github/workflows/.doc-quality.yml
+    with:
+      skip: ${{ needs.changes.outputs.docs == 'false' }}
 
   claude:
     needs: backend

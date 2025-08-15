@@ -30,18 +30,13 @@ export function CompletionModal() {
   const [keypathSelected, setKeypathSelected] = useState<string | null>(null);
 
   const hasInputVariables = useMemo(() => {
-    return (
-      completion?.input?.variables &&
-      Object.keys(completion.input.variables).length > 0
-    );
+    return completion?.input?.variables && Object.keys(completion.input.variables).length > 0;
   }, [completion?.input?.variables]);
 
   const closeModal = useCallback(() => {
     const params = new URLSearchParams(searchParams);
     params.delete("showCompletionModal");
-    const newUrl = `${window.location.pathname}${
-      params.toString() ? `?${params.toString()}` : ""
-    }`;
+    const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
     router.replace(newUrl, { scroll: false });
   }, [searchParams, router]);
 

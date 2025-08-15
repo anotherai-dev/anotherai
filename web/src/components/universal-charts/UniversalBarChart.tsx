@@ -1,14 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CustomTooltip } from "./CustomTooltip";
 import { SeriesConfig, autoDetectSeries } from "./utils";
 
@@ -105,24 +96,38 @@ export function UniversalBarChart({
     });
   }, [finalSeries, isActuallyMultiSeries, data]);
 
-  // Transform data to remove zero values completely
+  // Transform data to remove zero values completely and truncate long labels
   const processedData = useMemo(() => {
-    if (!isActuallyMultiSeries) return data;
+    const processData = (inputData: ChartData[]) => {
+      return inputData.map((dataPoint) => {
+        const originalX = String(dataPoint.x);
+        const truncatedX = originalX.length > 20 ? originalX.substring(0, 20) + "..." : originalX;
 
-    return data.map((dataPoint) => {
-      const newDataPoint: Record<string, unknown> = { x: dataPoint.x };
+        const newDataPoint: Record<string, unknown> = {
+          x: truncatedX,
+          originalX: originalX, // Keep original for tooltip
+        };
 
-      // Only add series that have non-zero values for this data point
-      filteredSeries.forEach((seriesItem) => {
-        const value = Number(dataPoint[seriesItem.key] || 0);
-        if (value > 0) {
-          newDataPoint[seriesItem.key] = value;
+        if (!isActuallyMultiSeries) {
+          // Single series - just copy y value
+          newDataPoint.y = dataPoint.y;
+          return newDataPoint;
         }
-        // Don't add the series at all if value is 0
-      });
 
-      return newDataPoint;
-    });
+        // Multi-series - only add series that have non-zero values for this data point
+        filteredSeries.forEach((seriesItem) => {
+          const value = Number(dataPoint[seriesItem.key] || 0);
+          if (value > 0) {
+            newDataPoint[seriesItem.key] = value;
+          }
+          // Don't add the series at all if value is 0
+        });
+
+        return newDataPoint;
+      });
+    };
+
+    return processData(data);
   }, [data, isActuallyMultiSeries, filteredSeries]);
 
   // Measure actual container width with debouncing
@@ -135,9 +140,7 @@ export function UniversalBarChart({
         const newWidth = width - 60; // Account for margins (left: 20, right: 30, padding)
 
         // Only update if width changed significantly to prevent micro-adjustments
-        setContainerWidth((prev) =>
-          Math.abs(prev - newWidth) > 5 ? newWidth : prev
-        );
+        setContainerWidth((prev) => (Math.abs(prev - newWidth) > 5 ? newWidth : prev));
       }
     };
 
@@ -169,15 +172,8 @@ export function UniversalBarChart({
     };
   }, []);
 
-  // Memoized label strategy calculation
-  const {
-    shouldRotate,
-    interval,
-    bottomMargin,
-    tickStyle,
-    axisLineStyle,
-    tickLineStyle,
-  } = useMemo(() => {
+  // Memoized label strategy calculation and chart height
+  const { shouldRotate, interval, bottomMargin, tickStyle, axisLineStyle, tickLineStyle, chartHeight } = useMemo(() => {
     if (data.length <= 1)
       return {
         shouldRotate: false,
@@ -186,13 +182,18 @@ export function UniversalBarChart({
         tickStyle: { fontSize: fontSize },
         axisLineStyle: { stroke: "#e0e0e0" },
         tickLineStyle: { stroke: "#e0e0e0" },
+        chartHeight: parseInt(height.replace("px", "")) || 200,
       };
 
     const availableWidthPerBar = containerWidth / data.length;
 
-    // Measure the widest label
+    // Measure the widest label using truncated labels
     const maxLabelWidth = Math.max(
-      ...data.map((item) => measureTextWidth(String(item.x), fontSize))
+      ...data.map((item) => {
+        const originalLabel = String(item.x);
+        const truncatedLabel = originalLabel.length > 20 ? originalLabel.substring(0, 20) + "..." : originalLabel;
+        return measureTextWidth(truncatedLabel, fontSize);
+      })
     );
 
     const labelPadding = 8; // Minimum space between labels
@@ -207,6 +208,7 @@ export function UniversalBarChart({
         tickStyle: { fontSize: fontSize },
         axisLineStyle: { stroke: "#e0e0e0" },
         tickLineStyle: { stroke: "#e0e0e0" },
+        chartHeight: parseInt(height.replace("px", "")) || 200,
       };
     }
 
@@ -226,23 +228,17 @@ export function UniversalBarChart({
         tickStyle: { fontSize: Math.max(fontSize - 1, 10) },
         axisLineStyle: { stroke: "#e0e0e0" },
         tickLineStyle: { stroke: "#e0e0e0" },
+        chartHeight: parseInt(height.replace("px", "")) || 200,
       };
     }
 
     // Need to skip labels - calculate how many we can show
-    const maxLabelsHorizontal = Math.floor(
-      containerWidth / totalHorizontalSpace
-    );
-    const maxLabelsRotated = Math.floor(
-      containerWidth / rotatedHorizontalSpace
-    );
+    const maxLabelsHorizontal = Math.floor(containerWidth / totalHorizontalSpace);
+    const maxLabelsRotated = Math.floor(containerWidth / rotatedHorizontalSpace);
 
     if (maxLabelsRotated > maxLabelsHorizontal) {
       // Use rotation with interval
-      const interval = Math.max(
-        0,
-        Math.ceil(data.length / maxLabelsRotated) - 1
-      );
+      const interval = Math.max(0, Math.ceil(data.length / maxLabelsRotated) - 1);
       const textVertical = maxLabelWidth * 0.707;
       const fontVertical = fontSize * 0.707;
       const totalVertical = textVertical + fontVertical + 25;
@@ -254,13 +250,11 @@ export function UniversalBarChart({
         tickStyle: { fontSize: Math.max(fontSize - 1, 10) },
         axisLineStyle: { stroke: "#e0e0e0" },
         tickLineStyle: { stroke: "#e0e0e0" },
+        chartHeight: parseInt(height.replace("px", "")) || 200,
       };
     } else {
       // Use horizontal with interval
-      const interval = Math.max(
-        0,
-        Math.ceil(data.length / maxLabelsHorizontal) - 1
-      );
+      const interval = Math.max(0, Math.ceil(data.length / maxLabelsHorizontal) - 1);
       return {
         shouldRotate: false,
         interval,
@@ -268,9 +262,10 @@ export function UniversalBarChart({
         tickStyle: { fontSize: fontSize },
         axisLineStyle: { stroke: "#e0e0e0" },
         tickLineStyle: { stroke: "#e0e0e0" },
+        chartHeight: parseInt(height.replace("px", "")) || 200,
       };
     }
-  }, [data, containerWidth, fontSize, measureTextWidth]);
+  }, [data, containerWidth, fontSize, measureTextWidth, height]);
 
   // Use a ref to track mouse position without causing re-renders
   const mousePosRef = useRef({ x: 0, y: 0 });
@@ -279,16 +274,33 @@ export function UniversalBarChart({
   const tooltipContent = useCallback(
     (props: {
       active?: boolean;
-      payload?: Array<{ value: number; payload: { x: string } }>;
-    }) => (
-      <CustomTooltip
-        {...props}
-        mousePos={mousePosRef.current}
-        formatter={tooltipFormatterWithUnit}
-        iconBorderRadius="1px"
-        isChartMultiSeries={isActuallyMultiSeries}
-      />
-    ),
+      payload?: Array<{
+        value: number;
+        payload: { x: string; originalX: string };
+      }>;
+    }) => {
+      // Use originalX in tooltip if available, otherwise fall back to x
+      const modifiedProps = {
+        ...props,
+        payload: props.payload?.map((item) => ({
+          ...item,
+          payload: {
+            ...item.payload,
+            x: item.payload.originalX || item.payload.x,
+          },
+        })),
+      };
+
+      return (
+        <CustomTooltip
+          {...modifiedProps}
+          mousePos={mousePosRef.current}
+          formatter={tooltipFormatterWithUnit}
+          iconBorderRadius="1px"
+          isChartMultiSeries={isActuallyMultiSeries}
+        />
+      );
+    },
     [tooltipFormatterWithUnit, isActuallyMultiSeries]
   );
 
@@ -304,108 +316,105 @@ export function UniversalBarChart({
   return (
     <div
       ref={containerRef}
-      className="flex-1 [&_.recharts-bar]:!opacity-100 [&_.recharts-bar:hover]:!opacity-100 [&_.recharts-wrapper]:!outline-none [&_.recharts-surface]:!outline-none [&_.recharts-tooltip-cursor]:!fill-transparent [&_.recharts-tooltip-item]:!text-gray-900 [&_.recharts-tooltip-item]:!font-medium [&_.recharts-tooltip-item]:text-[13px]"
+      className="flex-1 flex flex-col [&_.recharts-bar]:!opacity-100 [&_.recharts-bar:hover]:!opacity-100 [&_.recharts-wrapper]:!outline-none [&_.recharts-surface]:!outline-none [&_.recharts-tooltip-cursor]:!fill-transparent [&_.recharts-tooltip-item]:!text-gray-900 [&_.recharts-tooltip-item]:!font-medium [&_.recharts-tooltip-item]:text-[13px]"
       onMouseMove={handleMouseMove}
-      style={{ minHeight: height }}
     >
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={processedData}
-          margin={{ top: 5, right: 30, left: 20, bottom: 20 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-          <XAxis
-            dataKey="x"
-            tick={tickStyle}
-            axisLine={axisLineStyle}
-            tickLine={tickLineStyle}
-            interval={interval}
-            angle={shouldRotate ? -45 : 0}
-            textAnchor={shouldRotate ? "end" : "middle"}
-            height={bottomMargin}
-            tickMargin={shouldRotate ? 10 : 5}
-            label={
-              xAxisLabelWithUnit
-                ? {
-                    value: xAxisLabelWithUnit,
-                    position: "insideBottom",
-                    offset: -10,
-                    style: {
-                      textAnchor: "middle",
-                      fontSize: fontSize,
-                      fill: "#6b7280",
-                    },
-                  }
-                : undefined
-            }
-          />
-          <YAxis
-            tick={{ fontSize: fontSize }}
-            axisLine={{ stroke: "#e0e0e0" }}
-            tickLine={{ stroke: "#e0e0e0" }}
-            tickFormatter={yAxisTickFormatter}
-            label={
-              yAxisLabelWithUnit
-                ? {
-                    value: yAxisLabelWithUnit,
-                    angle: -90,
-                    position: "insideLeft",
-                    style: {
-                      textAnchor: "middle",
-                      fontSize: fontSize,
-                      fill: "#6b7280",
-                    },
-                  }
-                : undefined
-            }
-          />
-          <Tooltip
-            content={tooltipContent}
-            animationDuration={0}
-            cursor={false}
-            allowEscapeViewBox={{ x: true, y: true }}
-            isAnimationActive={false}
-          />
-          {showLegend && filteredSeries.length > 0 && (
-            <Legend
-              wrapperStyle={{
-                fontSize: "12px",
-                paddingTop: xAxisLabelWithUnit ? "35px" : "10px", // More space if x-axis label is present
-                paddingBottom: "20px",
-              }}
-              iconType="rect"
-              layout="horizontal"
-              align="center"
-              verticalAlign="bottom"
-              formatter={(value: string) => (
-                <span style={{ marginRight: "20px" }}>{value}</span>
-              )}
+      {/* Bar Chart Container - Fixed height so legend doesn't interfere */}
+      <div className="flex-shrink-0" style={{ height: `${chartHeight}px` }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={processedData} margin={{ top: 5, right: 30, left: 20, bottom: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <XAxis
+              dataKey="x"
+              tick={tickStyle}
+              axisLine={axisLineStyle}
+              tickLine={tickLineStyle}
+              interval={interval}
+              angle={shouldRotate ? -45 : 0}
+              textAnchor={shouldRotate ? "end" : "middle"}
+              height={bottomMargin}
+              tickMargin={shouldRotate ? 10 : 5}
+              label={
+                xAxisLabelWithUnit
+                  ? {
+                      value: xAxisLabelWithUnit,
+                      position: "insideBottom",
+                      offset: -10,
+                      style: {
+                        textAnchor: "middle",
+                        fontSize: fontSize,
+                        fill: "#6b7280",
+                      },
+                    }
+                  : undefined
+              }
             />
-          )}
-          {filteredSeries.length > 0 ? (
-            filteredSeries.map((seriesItem) => (
+            <YAxis
+              tick={{ fontSize: fontSize }}
+              axisLine={{ stroke: "#e0e0e0" }}
+              tickLine={{ stroke: "#e0e0e0" }}
+              tickFormatter={yAxisTickFormatter}
+              label={
+                yAxisLabelWithUnit
+                  ? {
+                      value: yAxisLabelWithUnit,
+                      angle: -90,
+                      position: "insideLeft",
+                      style: {
+                        textAnchor: "middle",
+                        fontSize: fontSize,
+                        fill: "#6b7280",
+                      },
+                    }
+                  : undefined
+              }
+            />
+            <Tooltip
+              content={tooltipContent}
+              animationDuration={0}
+              cursor={false}
+              allowEscapeViewBox={{ x: true, y: true }}
+              isAnimationActive={false}
+            />
+            {filteredSeries.length > 0 ? (
+              filteredSeries.map((seriesItem) => (
+                <Bar
+                  key={seriesItem.key}
+                  dataKey={seriesItem.key}
+                  name={seriesItem.name || seriesItem.key}
+                  fill={seriesItem.color}
+                  radius={[2, 2, 0, 0]}
+                  isAnimationActive={!disableAnimation}
+                  animationDuration={disableAnimation ? 0 : 400}
+                  stackId={stackedBars ? "stack" : undefined}
+                />
+              ))
+            ) : (
               <Bar
-                key={seriesItem.key}
-                dataKey={seriesItem.key}
-                name={seriesItem.name || seriesItem.key}
-                fill={seriesItem.color}
+                dataKey="y"
+                fill={barColor}
                 radius={[2, 2, 0, 0]}
                 isAnimationActive={!disableAnimation}
                 animationDuration={disableAnimation ? 0 : 400}
-                stackId={stackedBars ? "stack" : undefined}
               />
-            ))
-          ) : (
-            <Bar
-              dataKey="y"
-              fill={barColor}
-              radius={[2, 2, 0, 0]}
-              isAnimationActive={!disableAnimation}
-              animationDuration={disableAnimation ? 0 : 400}
-            />
-          )}
-        </BarChart>
-      </ResponsiveContainer>
+            )}
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Legend Below Bar Chart - Now adds bonus height */}
+      {showLegend && filteredSeries.length > 0 && (
+        <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 px-4 py-3 border-t border-gray-100">
+          {filteredSeries.map((seriesItem, index) => (
+            <div key={`legend-${index}`} className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: seriesItem.color }} />
+              <span className="text-gray-700 whitespace-nowrap" style={{ fontSize: `${fontSize}px` }}>
+                {seriesItem.name || seriesItem.key}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

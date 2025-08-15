@@ -14,12 +14,7 @@ export function AvailableTools({ tools }: AvailableToolsProps) {
       {tools && tools.length > 0 ? (
         <div className="space-y-2 px-2">
           {tools.map((tool, index) => (
-            <ToolEntry
-              key={index}
-              tool={tool}
-              index={index}
-              showSeparator={index < tools.length - 1}
-            />
+            <ToolEntry key={index} tool={tool} index={index} showSeparator={index < tools.length - 1} />
           ))}
         </div>
       ) : (

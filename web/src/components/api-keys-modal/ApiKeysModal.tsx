@@ -15,9 +15,7 @@ export function ApiKeysModal() {
   const closeModal = useCallback(() => {
     const params = new URLSearchParams(searchParams);
     params.delete("showManageKeysModal");
-    const newUrl = `${window.location.pathname}${
-      params.toString() ? `?${params.toString()}` : ""
-    }`;
+    const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
     router.replace(newUrl, { scroll: false });
   }, [searchParams, router]);
 

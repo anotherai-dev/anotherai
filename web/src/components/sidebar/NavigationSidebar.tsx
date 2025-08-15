@@ -11,27 +11,15 @@ interface NavigationSidebarProps {
   onOpenCommandPalette?: () => void;
 }
 
-export default function NavigationSidebar({
-  onOpenCommandPalette,
-}: NavigationSidebarProps = {}) {
+export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSidebarProps = {}) {
   const [isExpanded, setIsExpanded] = useState(true);
   const pathname = usePathname();
 
   if (!isExpanded) {
     return (
       <div className="w-16 bg-gray-50 border-r border-gray-200 flex flex-col items-center py-4">
-        <button
-          onClick={() => setIsExpanded(true)}
-          className="mb-4 cursor-pointer"
-          title="Expand sidebar"
-        >
-          <Image
-            src="/sidebar-logo.png"
-            alt="AnotherAI Logo"
-            width={32}
-            height={32}
-            className="w-8 h-8"
-          />
+        <button onClick={() => setIsExpanded(true)} className="mb-4 cursor-pointer" title="Expand sidebar">
+          <Image src="/sidebar-logo.png" alt="AnotherAI Logo" width={32} height={32} className="w-8 h-8" />
         </button>
       </div>
     );
@@ -43,13 +31,7 @@ export default function NavigationSidebar({
       <div className="p-4 border-b border-gray-200 flex items-center justify-between">
         <div className="flex items-center gap-2">
           {/* AnotherAI Logo */}
-          <Image
-            src="/sidebar-logo.png"
-            alt="AnotherAI Logo"
-            width={32}
-            height={32}
-            className="w-8 h-8"
-          />
+          <Image src="/sidebar-logo.png" alt="AnotherAI Logo" width={32} height={32} className="w-8 h-8" />
           <span className="font-semibold text-gray-900">AnotherAI</span>
         </div>
         <div className="flex items-center gap-1">
@@ -79,9 +61,7 @@ export default function NavigationSidebar({
           className="w-full flex items-center gap-3 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors group cursor-pointer"
         >
           <Search className="w-4 h-4 text-gray-400 group-hover:text-gray-500" />
-          <span className="text-sm text-gray-500 group-hover:text-gray-600">
-            Search
-          </span>
+          <span className="text-sm text-gray-500 group-hover:text-gray-600">Search</span>
           <div className="ml-auto flex items-center gap-1">
             <kbd className="px-1.5 py-0.5 text-xs font-semibold text-gray-500 bg-white border border-gray-300 rounded">
               ⌘
@@ -100,23 +80,11 @@ export default function NavigationSidebar({
           <Link
             href="/completions"
             className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors mb-1 ${
-              pathname === "/completions"
-                ? "bg-blue-100 text-blue-700"
-                : "text-gray-700 hover:bg-gray-100"
+              pathname === "/completions" ? "bg-blue-100 text-blue-700" : "text-gray-700 hover:bg-gray-100"
             }`}
           >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 12h14M12 5l7 7-7 7"
-              />
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
             </svg>
             Completions
           </Link>
@@ -124,17 +92,10 @@ export default function NavigationSidebar({
           <Link
             href="/experiments"
             className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors mb-1 ${
-              pathname === "/experiments"
-                ? "bg-blue-100 text-blue-700"
-                : "text-gray-700 hover:bg-gray-100"
+              pathname === "/experiments" ? "bg-blue-100 text-blue-700" : "text-gray-700 hover:bg-gray-100"
             }`}
           >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -148,17 +109,10 @@ export default function NavigationSidebar({
           <Link
             href="/agents"
             className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors mb-1 ${
-              pathname === "/agents"
-                ? "bg-blue-100 text-blue-700"
-                : "text-gray-700 hover:bg-gray-100"
+              pathname === "/agents" ? "bg-blue-100 text-blue-700" : "text-gray-700 hover:bg-gray-100"
             }`}
           >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -175,24 +129,14 @@ export default function NavigationSidebar({
             rel="noopener noreferrer"
             className="flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors mb-1 text-gray-700 hover:bg-gray-100"
           >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
                 d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
               />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-              />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
             MCP Set Up
           </a>

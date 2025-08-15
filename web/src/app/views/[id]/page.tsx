@@ -21,11 +21,7 @@ export default function ViewPage() {
   const { view, isLoading, error, update } = useOrFetchView(viewId);
 
   // Use completions query for table views
-  const {
-    data,
-    isLoading: isQueryLoading,
-    error: queryError,
-  } = useCompletionsQuery(view?.query || "");
+  const { data, isLoading: isQueryLoading, error: queryError } = useCompletionsQuery(view?.query || "");
 
   // Sync completions data with stored completions list for modal navigation
   useCompletionsListSync(data);
@@ -72,8 +68,7 @@ export default function ViewPage() {
         />
       </HoverPopover>
 
-      {view.graph &&
-      ["bar", "line", "pie", "scatter"].includes(view.graph.type) ? (
+      {view.graph && ["bar", "line", "pie", "scatter"].includes(view.graph.type) ? (
         <CompletionsGraph
           data={data ?? []}
           isLoading={isQueryLoading}
@@ -82,11 +77,7 @@ export default function ViewPage() {
           title={view.title}
         />
       ) : (
-        <CompletionsTable
-          data={data ?? []}
-          isLoading={isQueryLoading}
-          error={queryError}
-        />
+        <CompletionsTable data={data ?? []} isLoading={isQueryLoading} error={queryError} />
       )}
     </div>
   );

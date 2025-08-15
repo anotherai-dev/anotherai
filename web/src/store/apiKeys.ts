@@ -2,12 +2,7 @@ import { enableMapSet, produce } from "immer";
 import { useCallback, useEffect } from "react";
 import { create } from "zustand";
 import { apiFetch } from "@/lib/apiFetch";
-import {
-  APIKey,
-  APIKeyListResponse,
-  CompleteAPIKey,
-  CreateAPIKeyRequest,
-} from "@/types/models";
+import { APIKey, APIKeyListResponse, CompleteAPIKey, CreateAPIKeyRequest } from "@/types/models";
 
 enableMapSet();
 
@@ -19,9 +14,7 @@ interface APIKeysState {
   hasLoaded: boolean;
 
   fetchAPIKeys: () => Promise<void>;
-  createAPIKey: (
-    request: CreateAPIKeyRequest
-  ) => Promise<CompleteAPIKey | undefined>;
+  createAPIKey: (request: CreateAPIKeyRequest) => Promise<CompleteAPIKey | undefined>;
   deleteAPIKey: (keyId: string) => Promise<void>;
   clearError: () => void;
 }
@@ -50,9 +43,7 @@ export const useAPIKeys = create<APIKeysState>((set, get) => ({
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.detail || `HTTP ${response.status}: ${response.statusText}`
-        );
+        throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
       }
 
       const data: APIKeyListResponse = await response.json();
@@ -70,10 +61,7 @@ export const useAPIKeys = create<APIKeysState>((set, get) => ({
       set(
         produce((state: APIKeysState) => {
           state.isLoading = false;
-          state.error =
-            error instanceof Error
-              ? error
-              : new Error("Unknown error occurred");
+          state.error = error instanceof Error ? error : new Error("Unknown error occurred");
         })
       );
     }
@@ -95,9 +83,7 @@ export const useAPIKeys = create<APIKeysState>((set, get) => ({
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.detail || `HTTP ${response.status}: ${response.statusText}`
-        );
+        throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
       }
 
       const newAPIKey: CompleteAPIKey = await response.json();
@@ -125,10 +111,7 @@ export const useAPIKeys = create<APIKeysState>((set, get) => ({
       set(
         produce((state: APIKeysState) => {
           state.isLoading = false;
-          state.error =
-            error instanceof Error
-              ? error
-              : new Error("Unknown error occurred");
+          state.error = error instanceof Error ? error : new Error("Unknown error occurred");
         })
       );
       return undefined;
@@ -150,9 +133,7 @@ export const useAPIKeys = create<APIKeysState>((set, get) => ({
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.detail || `HTTP ${response.status}: ${response.statusText}`
-        );
+        throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
       }
 
       set(
@@ -167,10 +148,7 @@ export const useAPIKeys = create<APIKeysState>((set, get) => ({
       set(
         produce((state: APIKeysState) => {
           state.isLoading = false;
-          state.error =
-            error instanceof Error
-              ? error
-              : new Error("Unknown error occurred");
+          state.error = error instanceof Error ? error : new Error("Unknown error occurred");
         })
       );
     }

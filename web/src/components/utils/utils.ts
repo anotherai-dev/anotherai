@@ -9,35 +9,25 @@ import {
 } from "@/types/models";
 import { findCommonSubstrings } from "./stringMatchingUtils";
 
-export function getMetricBadgeColor(
-  value: number,
-  values: number[],
-  isHigherBetter: boolean = false
-) {
-  if (!values || values.length === 0)
-    return "bg-transparent border border-gray-200 text-gray-700";
+export function getMetricBadgeColor(value: number, values: number[], isHigherBetter: boolean = false) {
+  if (!values || values.length === 0) return "bg-transparent border border-gray-200 text-gray-700";
 
   const sortedValues = [...values].sort((a, b) => a - b);
   const min = sortedValues[0];
   const max = sortedValues[sortedValues.length - 1];
 
   if (isHigherBetter) {
-    if (value === max)
-      return "bg-green-200 border border-green-400 text-green-900";
+    if (value === max) return "bg-green-200 border border-green-400 text-green-900";
     if (value === min) return "bg-red-200 border border-red-300 text-red-900";
   } else {
-    if (value === min)
-      return "bg-green-200 border border-green-400 text-green-900";
+    if (value === min) return "bg-green-200 border border-green-400 text-green-900";
     if (value === max) return "bg-red-200 border border-red-300 text-red-900";
   }
 
   return "bg-transparent border border-gray-200 text-gray-700";
 }
 
-export function formatCurrency(
-  value: number,
-  multiplier: number = 1000
-): string {
+export function formatCurrency(value: number, multiplier: number = 1000): string {
   // Convert using multiplier for better readability
   const adjustedValue = value * multiplier;
   return `$${adjustedValue.toFixed(2)}`;
@@ -72,14 +62,8 @@ export function calculateAverageMetrics(completions: ExperimentCompletion[]): {
 } {
   if (completions.length === 0) return { avgCost: 0, avgDuration: 0 };
 
-  const totalCost = completions.reduce(
-    (sum, completion) => sum + (completion.cost_usd || 0),
-    0
-  );
-  const totalDuration = completions.reduce(
-    (sum, completion) => sum + (completion.duration_seconds || 0),
-    0
-  );
+  const totalCost = completions.reduce((sum, completion) => sum + (completion.cost_usd || 0), 0);
+  const totalDuration = completions.reduce((sum, completion) => sum + (completion.duration_seconds || 0), 0);
 
   return {
     avgCost: totalCost / completions.length,
@@ -87,9 +71,7 @@ export function calculateAverageMetrics(completions: ExperimentCompletion[]): {
   };
 }
 
-export function getCompletionsPerVersion(
-  experiment: ExperimentWithLookups
-): Array<{
+export function getCompletionsPerVersion(experiment: ExperimentWithLookups): Array<{
   versionId: string;
   completions: ExperimentCompletion[];
 }> {
@@ -103,9 +85,7 @@ export function getCompletionsPerVersion(
   }> = [];
 
   experiment.versions.forEach((version) => {
-    const completionsForVersion = experiment.completions!.filter(
-      (completion) => completion.version.id === version.id
-    );
+    const completionsForVersion = experiment.completions!.filter((completion) => completion.version.id === version.id);
 
     if (completionsForVersion.length > 0) {
       groupedArray.push({
@@ -159,11 +139,7 @@ export function getDifferingVersionKeys(versions: Version[]): string[] {
         return "null";
       }
 
-      if (
-        typeof value === "string" ||
-        typeof value === "number" ||
-        typeof value === "boolean"
-      ) {
+      if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
         return String(value);
       }
 
@@ -252,33 +228,14 @@ export function getVersionWithDefaults(version: Version): ExtendedVersion {
     temperature: version.temperature !== undefined ? version.temperature : 1.0,
     top_p: version.top_p !== undefined ? version.top_p : 1.0,
     tools: version.tools !== undefined ? version.tools : [],
-    use_cache:
-      extendedVersion.use_cache !== undefined
-        ? extendedVersion.use_cache
-        : "auto",
-    max_tokens:
-      extendedVersion.max_tokens !== undefined
-        ? extendedVersion.max_tokens
-        : "unlimited",
-    stream:
-      extendedVersion.stream !== undefined ? extendedVersion.stream : false,
-    include_usage:
-      extendedVersion.include_usage !== undefined
-        ? extendedVersion.include_usage
-        : false,
-    presence_penalty:
-      extendedVersion.presence_penalty !== undefined
-        ? extendedVersion.presence_penalty
-        : 0,
-    frequency_penalty:
-      extendedVersion.frequency_penalty !== undefined
-        ? extendedVersion.frequency_penalty
-        : 0,
+    use_cache: extendedVersion.use_cache !== undefined ? extendedVersion.use_cache : "auto",
+    max_tokens: extendedVersion.max_tokens !== undefined ? extendedVersion.max_tokens : "unlimited",
+    stream: extendedVersion.stream !== undefined ? extendedVersion.stream : false,
+    include_usage: extendedVersion.include_usage !== undefined ? extendedVersion.include_usage : false,
+    presence_penalty: extendedVersion.presence_penalty !== undefined ? extendedVersion.presence_penalty : 0,
+    frequency_penalty: extendedVersion.frequency_penalty !== undefined ? extendedVersion.frequency_penalty : 0,
     stop: extendedVersion.stop !== undefined ? extendedVersion.stop : "none",
-    tool_choice:
-      extendedVersion.tool_choice !== undefined
-        ? extendedVersion.tool_choice
-        : "auto",
+    tool_choice: extendedVersion.tool_choice !== undefined ? extendedVersion.tool_choice : "auto",
   };
 }
 
@@ -305,9 +262,7 @@ export function getMatchingVersionKeys(versions: Version[]): string[] {
   if (versions.length === 1) {
     const blackListedKeys: string[] = ["id"];
     const versionWithDefaults = getVersionWithDefaults(versions[0]);
-    const allKeys = Object.keys(
-      versionWithDefaults as unknown as Record<string, unknown>
-    );
+    const allKeys = Object.keys(versionWithDefaults as unknown as Record<string, unknown>);
     return allKeys.filter((key) => !blackListedKeys.includes(key));
   }
 
@@ -324,9 +279,7 @@ export function getMatchingVersionKeys(versions: Version[]): string[] {
     Object.keys(version).forEach((key) => allKeys.add(key));
   });
 
-  const filteredKeys = Array.from(allKeys).filter(
-    (key) => !blackListedKeys.includes(key)
-  );
+  const filteredKeys = Array.from(allKeys).filter((key) => !blackListedKeys.includes(key));
 
   // Check which keys have matching values across all versions
   const matchingKeys: string[] = [];
@@ -340,11 +293,7 @@ export function getMatchingVersionKeys(versions: Version[]): string[] {
         return "null";
       }
 
-      if (
-        typeof value === "string" ||
-        typeof value === "number" ||
-        typeof value === "boolean"
-      ) {
+      if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
         return String(value);
       }
 
@@ -374,10 +323,7 @@ export function findCompletionForInputAndVersion(
   inputId: string,
   versionId: string
 ): ExperimentCompletion | undefined {
-  return completions.find(
-    (completion) =>
-      completion.input.id === inputId && completion.version.id === versionId
-  );
+  return completions.find((completion) => completion.input.id === inputId && completion.version.id === versionId);
 }
 
 export function findIndexOfVersionThatFirstUsedThosePromptAndSchema(
@@ -385,12 +331,10 @@ export function findIndexOfVersionThatFirstUsedThosePromptAndSchema(
   currentVersion: Version
 ): number | undefined {
   // Helper function to check if prompt is empty/undefined
-  const isPromptEmpty = (prompt: Message[] | undefined | null) =>
-    !prompt || prompt.length === 0;
+  const isPromptEmpty = (prompt: Message[] | undefined | null) => !prompt || prompt.length === 0;
 
   // Helper function to check if schema is empty/undefined
-  const isSchemaEmpty = (schema: object | undefined | null) =>
-    !schema || Object.keys(schema).length === 0;
+  const isSchemaEmpty = (schema: object | undefined | null) => !schema || Object.keys(schema).length === 0;
 
   // Check if current version has both prompt and output schema (or both are empty)
   const currentPromptEmpty = isPromptEmpty(currentVersion.prompt);
@@ -415,10 +359,63 @@ export function findIndexOfVersionThatFirstUsedThosePromptAndSchema(
 
     // Both prompt and schema must match (including empty matching empty)
     const promptsMatch = JSON.stringify(v.prompt) === currentPromptString;
-    const schemasMatch =
-      JSON.stringify(v.output_schema) === currentSchemaString;
+    const schemasMatch = JSON.stringify(v.output_schema) === currentSchemaString;
 
     return promptsMatch && schemasMatch;
+  });
+
+  return foundIndex === -1 ? undefined : foundIndex;
+}
+
+export function findIndexOfVersionThatFirstUsedThosePrompt(
+  versions: Version[],
+  currentVersion: Version
+): number | undefined {
+  // Helper function to check if prompt is empty/undefined
+  const isPromptEmpty = (prompt: Message[] | undefined | null) => !prompt || prompt.length === 0;
+
+  // Check if current version has prompt
+  if (isPromptEmpty(currentVersion.prompt)) {
+    return undefined;
+  }
+
+  const currentPromptString = JSON.stringify(currentVersion.prompt);
+
+  const foundIndex = versions.findIndex((v) => {
+    // Skip empty prompts
+    if (isPromptEmpty(v.prompt)) {
+      return false;
+    }
+
+    // Prompt must match
+    return JSON.stringify(v.prompt) === currentPromptString;
+  });
+
+  return foundIndex === -1 ? undefined : foundIndex;
+}
+
+export function findIndexOfVersionThatFirstUsedThoseSchema(
+  versions: Version[],
+  currentVersion: Version
+): number | undefined {
+  // Helper function to check if schema is empty/undefined
+  const isSchemaEmpty = (schema: object | undefined | null) => !schema || Object.keys(schema).length === 0;
+
+  // Check if current version has schema
+  if (isSchemaEmpty(currentVersion.output_schema)) {
+    return undefined;
+  }
+
+  const currentSchemaString = JSON.stringify(currentVersion.output_schema);
+
+  const foundIndex = versions.findIndex((v) => {
+    // Skip empty schemas
+    if (isSchemaEmpty(v.output_schema)) {
+      return false;
+    }
+
+    // Schema must match
+    return JSON.stringify(v.output_schema) === currentSchemaString;
   });
 
   return foundIndex === -1 ? undefined : foundIndex;
@@ -430,9 +427,7 @@ export function getSharedPartsOfPrompts(versions: Version[]): Message[] {
   }
 
   // Filter versions that have prompts
-  const versionsWithPrompts = versions.filter(
-    (v) => v.prompt && v.prompt.length > 0
-  );
+  const versionsWithPrompts = versions.filter((v) => v.prompt && v.prompt.length > 0);
 
   if (versionsWithPrompts.length === 0) {
     return [];
@@ -444,9 +439,7 @@ export function getSharedPartsOfPrompts(versions: Version[]): Message[] {
   }
 
   // Get the maximum number of messages across all prompts
-  const maxMessages = Math.max(
-    ...versionsWithPrompts.map((v) => (v.prompt || []).length)
-  );
+  const maxMessages = Math.max(...versionsWithPrompts.map((v) => (v.prompt || []).length));
   const sharedMessages: Message[] = [];
 
   // For each message position
@@ -497,12 +490,7 @@ export function getSharedPartsOfPrompts(versions: Version[]): Message[] {
         if (sharedContent.trim().length > 0) {
           // Create a message with the shared content
           sharedMessages.push({
-            role: role as
-              | "system"
-              | "user"
-              | "assistant"
-              | "developer"
-              | "tool",
+            role: role as "system" | "user" | "assistant" | "developer" | "tool",
             content: sharedContent,
           });
         }
@@ -531,10 +519,7 @@ export function getRoleDisplay(role: string): string {
 }
 
 // Helper function to extract all key paths from a schema object
-function extractKeyPaths(
-  obj: Record<string, unknown>,
-  prefix: string = ""
-): string[] {
+function extractKeyPaths(obj: Record<string, unknown>, prefix: string = ""): string[] {
   if (!obj || typeof obj !== "object") {
     return [];
   }
@@ -551,24 +536,14 @@ function extractKeyPaths(
 
       // Handle JSON Schema properties
       if (valueObj.properties) {
-        paths.push(
-          ...extractKeyPaths(
-            valueObj.properties as Record<string, unknown>,
-            currentPath
-          )
-        );
+        paths.push(...extractKeyPaths(valueObj.properties as Record<string, unknown>, currentPath));
       }
 
       // Handle JSON Schema array items - properties go directly under the array path
       if (valueObj.items && typeof valueObj.items === "object") {
         const itemsObj = valueObj.items as Record<string, unknown>;
         if (itemsObj.properties) {
-          paths.push(
-            ...extractKeyPaths(
-              itemsObj.properties as Record<string, unknown>,
-              currentPath
-            )
-          );
+          paths.push(...extractKeyPaths(itemsObj.properties as Record<string, unknown>, currentPath));
         }
       }
 
@@ -589,10 +564,7 @@ export function getSharedKeypathsOfSchemas(versions: Version[]): string[] {
 
   // Filter versions that have output schemas
   const versionsWithSchemas = versions.filter(
-    (v) =>
-      v.output_schema &&
-      typeof v.output_schema === "object" &&
-      Object.keys(v.output_schema).length > 0
+    (v) => v.output_schema && typeof v.output_schema === "object" && Object.keys(v.output_schema).length > 0
   );
 
   if (versionsWithSchemas.length === 0) {
@@ -601,10 +573,7 @@ export function getSharedKeypathsOfSchemas(versions: Version[]): string[] {
 
   // If only one version has a schema, return all its key paths
   if (versionsWithSchemas.length === 1) {
-    const schema = versionsWithSchemas[0].output_schema as unknown as Record<
-      string,
-      unknown
-    >;
+    const schema = versionsWithSchemas[0].output_schema as unknown as Record<string, unknown>;
     const jsonSchema = schema?.json_schema as Record<string, unknown>;
     const properties = jsonSchema?.properties as Record<string, unknown>;
     if (!properties) return [];
@@ -623,9 +592,7 @@ export function getSharedKeypathsOfSchemas(versions: Version[]): string[] {
 
   // Find paths that exist in all schemas
   const firstSchemaPaths = allKeyPaths[0];
-  const sharedPaths = firstSchemaPaths.filter((path) =>
-    allKeyPaths.every((schemaPaths) => schemaPaths.includes(path))
-  );
+  const sharedPaths = firstSchemaPaths.filter((path) => allKeyPaths.every((schemaPaths) => schemaPaths.includes(path)));
 
   return sharedPaths.sort();
 }
@@ -651,17 +618,13 @@ export function isDateValue(value: unknown): boolean {
     // Check for ISO date format or other common date formats
     const date = new Date(value);
     return (
-      !isNaN(date.getTime()) &&
-      (value.includes("T") || value.includes("-") || value.includes("/")) &&
-      value.length >= 8
+      !isNaN(date.getTime()) && (value.includes("T") || value.includes("-") || value.includes("/")) && value.length >= 8
     ); // Minimum reasonable date string length
   }
   return false;
 }
 
-export function transformCompletionsData(
-  data: Record<string, unknown>[]
-): Record<string, unknown>[] {
+export function transformCompletionsData(data: Record<string, unknown>[]): Record<string, unknown>[] {
   return data.map((row) => {
     const newRow: Record<string, unknown> = {};
 
@@ -789,10 +752,7 @@ export interface AnnotationFilters {
   keyPathPrefix?: string;
 }
 
-export function filterAnnotations(
-  annotations: Annotation[] | undefined,
-  filters: AnnotationFilters
-): Annotation[] {
+export function filterAnnotations(annotations: Annotation[] | undefined, filters: AnnotationFilters): Annotation[] {
   if (!annotations) return [];
 
   const { completionId, experimentId, keyPath, keyPathPrefix } = filters;
@@ -806,8 +766,7 @@ export function filterAnnotations(
     // Filter by experiment ID (either in target or context)
     if (experimentId) {
       const hasExperimentId =
-        annotation.target?.experiment_id === experimentId ||
-        annotation.context?.experiment_id === experimentId;
+        annotation.target?.experiment_id === experimentId || annotation.context?.experiment_id === experimentId;
       if (!hasExperimentId) {
         return false;
       }
@@ -819,10 +778,7 @@ export function filterAnnotations(
     }
 
     // Filter by key path prefix
-    if (
-      keyPathPrefix &&
-      !annotation.target?.key_path?.startsWith(keyPathPrefix)
-    ) {
+    if (keyPathPrefix && !annotation.target?.key_path?.startsWith(keyPathPrefix)) {
       return false;
     }
 
