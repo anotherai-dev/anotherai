@@ -785,3 +785,48 @@ export function filterAnnotations(annotations: Annotation[] | undefined, filters
     return true;
   });
 }
+
+// JSON Schema utilities
+export type JsonSchemaNode = {
+  type?: string | string[];
+  properties?: Record<string, JsonSchemaNode>;
+  items?: JsonSchemaNode;
+  required?: string[];
+  description?: string;
+  enum?: unknown[];
+  default?: unknown;
+  $ref?: string;
+  $defs?: Record<string, JsonSchemaNode>;
+};
+
+/**
+ * Resolves JSON Schema $ref references
+ * @param node - The schema node that may contain a $ref
+ * @param rootSchema - The root schema containing definitions
+ * @returns The resolved schema node
+ */
+export function resolveRef(node: JsonSchemaNode, rootSchema: JsonSchemaNode): JsonSchemaNode {
+  if (!node.$ref) return node;
+
+  // Handle internal references like "#/$defs/DayMeals"
+  if (node.$ref.startsWith("#/")) {
+    const path = node.$ref.substring(2); // Remove "#/"
+    const pathParts = path.split("/");
+
+    let current: unknown = rootSchema;
+    for (const part of pathParts) {
+      if (current && typeof current === "object" && current !== null && part in current) {
+        current = (current as Record<string, unknown>)[part];
+      } else {
+        console.warn(`Could not resolve $ref: ${node.$ref}`);
+        return node; // Return original node if resolution fails
+      }
+    }
+
+    return current as JsonSchemaNode;
+  }
+
+  // Handle other types of references if needed in the future
+  console.warn(`Unsupported $ref format: ${node.$ref}`);
+  return node;
+}

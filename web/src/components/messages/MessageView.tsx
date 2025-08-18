@@ -11,10 +11,11 @@ type MessageViewProps = {
   sharedPartsOfPrompts?: Message[];
   annotations?: Annotation[];
   onKeypathSelect?: (keyPath: string) => void;
+  maxVariablesHeight?: string;
 };
 
 export function MessageView(props: MessageViewProps) {
-  const { message, index, sharedPartsOfPrompts, annotations, onKeypathSelect } = props;
+  const { message, index, sharedPartsOfPrompts, annotations, onKeypathSelect, maxVariablesHeight } = props;
   const [isHovered, setIsHovered] = useState(false);
   const { showToast } = useToast();
 
@@ -74,6 +75,7 @@ export function MessageView(props: MessageViewProps) {
           compareMode={sharedPartsOfPrompts !== undefined}
           annotations={annotations}
           onKeypathSelect={onKeypathSelect}
+          maxVariablesHeight={maxVariablesHeight}
         />
       </div>
       {(hasCostOrDuration || hasMetrics) && (

@@ -9,10 +9,11 @@ type MessagesViewerProps = {
   sharedPartsOfPrompts?: Message[];
   annotations?: Annotation[];
   onKeypathSelect?: (keyPath: string) => void;
+  maxVariablesHeight?: string;
 };
 
 export function MessagesViewer(props: MessagesViewerProps) {
-  const { messages, className = "", sharedPartsOfPrompts, annotations, onKeypathSelect } = props;
+  const { messages, className = "", sharedPartsOfPrompts, annotations, onKeypathSelect, maxVariablesHeight } = props;
 
   // Filter out messages with empty content
   const filteredMessages = messages.filter((message) => {
@@ -50,6 +51,7 @@ export function MessagesViewer(props: MessagesViewerProps) {
           sharedPartsOfPrompts={sharedPartsOfPrompts}
           annotations={annotations}
           onKeypathSelect={onKeypathSelect}
+          maxVariablesHeight={maxVariablesHeight}
         />
       ))}
     </div>
