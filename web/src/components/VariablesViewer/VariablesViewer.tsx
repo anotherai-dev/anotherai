@@ -340,15 +340,7 @@ export function VariablesViewer(props: VariablesViewerProps) {
       >
         <div className="space-y-1">
           {Object.entries(variables).map(([key, value]) =>
-            renderProperty(
-              key,
-              value,
-              textSize,
-              annotations,
-              key,
-              onKeypathSelect,
-              showSeeMore
-            )
+            renderProperty(key, value, textSize, annotations, key, onKeypathSelect, showSeeMore)
           )}
         </div>
       </div>

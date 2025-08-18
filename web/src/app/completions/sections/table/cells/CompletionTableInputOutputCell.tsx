@@ -52,7 +52,11 @@ export function CompletionTableInputOutputCell({
             />
           </div>
           <div>
-            <MessagesViewer messages={messages as Message[]} sharedPartsOfPrompts={sharedPartsOfPrompts} maxVariablesHeight="max" />
+            <MessagesViewer
+              messages={messages as Message[]}
+              sharedPartsOfPrompts={sharedPartsOfPrompts}
+              maxVariablesHeight="max"
+            />
           </div>
         </div>
       );
@@ -78,7 +82,11 @@ export function CompletionTableInputOutputCell({
       const messages = hasMessages ? obj.messages : obj.internal_anotherai_messages;
       return (
         <div className={cx("max-h-full overflow-y-auto", maxWidth)}>
-          <MessagesViewer messages={messages as Message[]} sharedPartsOfPrompts={sharedPartsOfPrompts} maxVariablesHeight="max" />
+          <MessagesViewer
+            messages={messages as Message[]}
+            sharedPartsOfPrompts={sharedPartsOfPrompts}
+            maxVariablesHeight="max"
+          />
         </div>
       );
     }
