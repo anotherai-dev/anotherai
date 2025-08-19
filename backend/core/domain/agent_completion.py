@@ -34,7 +34,7 @@ class AgentCompletion(BaseModel):
 
     duration_seconds: float | None = None
     cost_usd: float | None = None
-    
+
     # Total reasoning tokens used across all LLM traces in this completion.
     # Populated by summing reasoning_token_count from InferenceUsage.prompt of each LLMTrace.
     # None indicates no reasoning tokens were used (either no reasoning model or no traces with reasoning).
