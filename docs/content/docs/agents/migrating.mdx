@@ -17,8 +17,8 @@ import { BarChart3, UploadCloud, Eye, PlugZap, ListChecks, Globe, ShieldCheck } 
 
 The only change you need to make is updating the `base_url`. 
 
-<Tabs>
-<Tab title="Python">
+<Tabs items={['Python', 'JavaScript/TypeScript']}>
+<Tab value="Python">
 
 ```python
 from openai import OpenAI
@@ -38,7 +38,7 @@ response = client.chat.completions.create(
 ```
 
 </Tab>
-<Tab title="JavaScript/TypeScript">
+<Tab value="JavaScript/TypeScript">
 
 ```javascript
 import OpenAI from 'openai';
