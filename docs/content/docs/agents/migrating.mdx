@@ -1,0 +1,94 @@
+---
+title: Migrating an Existing Agent
+summary: Guide for migrating agents from other platforms or updating existing AnotherAI agents
+description: Learn how to migrate agents from other platforms or upgrade existing agents with new features and configurations
+---
+
+## Migrating From OpenAI to AnotherAI
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+import { BarChart3, UploadCloud, Eye, PlugZap, ListChecks, Globe, ShieldCheck } from 'lucide-react';
+
+<Steps>
+<Step>
+
+### Update your base URL
+
+The only change you need to make is updating the `base_url`. 
+
+<Tabs>
+<Tab title="Python">
+
+```python
+from openai import OpenAI
+
+# Just update the base_url
+client = OpenAI(
+    base_url="https://api.anotherai.com/v1",
+)
+
+# Your existing code works as-is
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "user", "content": "Hello, world!"}
+    ]
+)
+```
+
+</Tab>
+<Tab title="JavaScript/TypeScript">
+
+```javascript
+import OpenAI from 'openai';
+
+// Just update the baseURL 
+const client = new OpenAI({
+  baseURL: 'https://api.anotherai.com/v1',
+});
+
+// Your existing code works as-is
+const response = await client.chat.completions.create({
+  model: 'gpt-4o',
+  messages: [
+    { role: 'user', content: 'Hello, world!' }
+  ],
+});
+```
+
+</Tab>
+</Tabs>
+
+</Step>
+
+<Step>
+
+### Verify your agent is working
+
+Test your agent by running it once. If everything is set up correctly, you should see the completion appear at anotherai.dev/completions.
+
+</Step>
+
+<Step>
+
+### You're done!
+
+Your agent is now integrated with AnotherAI, giving you access to:
+
+- **100+ AI Models**: Access models from OpenAI, Anthropic, Google, and more
+- **Real-time Observability**: Monitor costs, performance, and errors
+- **Prompt Deployments**: Update prompts without code changes
+
+</Step>
+</Steps>
+
+## Next Steps
+
+- [Evaluating Agents](/agents/evaluating) - Test and compare agent performance
+- [Improving Agents](/agents/improving) - Optimize prompts and model selection
+- [Deployments](/deployments/index) - Update prompts without changing code
+
+## Migrating from WorkflowAI to AnotherAI
+
+TODO once migration path work is complete
