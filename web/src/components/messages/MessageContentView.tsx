@@ -73,7 +73,7 @@ export function MessageContentView(props: MessageContentViewProps) {
         return (
           <div key={index} className="text-[12.5px] text-gray-900">
             {item.text && (
-              <div className="whitespace-pre-wrap">
+              <div className="whitespace-pre-wrap break-words">
                 <MessageTextView text={item.text} sharedText={sharedText} compareMode={compareMode} />
               </div>
             )}
