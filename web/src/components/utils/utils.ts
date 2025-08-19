@@ -37,6 +37,13 @@ export function formatDuration(seconds: number): string {
   return `${seconds.toFixed(2)}s`;
 }
 
+export function formatTokens(tokens: number): string {
+  if (tokens >= 1000) {
+    return `${(tokens / 1000).toFixed(1)}k`;
+  }
+  return tokens.toString();
+}
+
 export function formatRelativeDate(value: unknown): string {
   if (value === null || value === undefined) return "N/A";
 

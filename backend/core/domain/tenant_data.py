@@ -29,6 +29,7 @@ class PublicOrganizationData(BaseModel):
     def is_anonymous(self) -> bool:
         return not self.org_id and not self.owner_id
 
+
 class TenantData(PublicOrganizationData):
     stripe_customer_id: str | None = None
     providers: list[ProviderSettings] = Field(default_factory=list, description="List of provider configurations")

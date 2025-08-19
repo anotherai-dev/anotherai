@@ -1,7 +1,7 @@
 import { Copy } from "lucide-react";
 import React, { useCallback, useState } from "react";
 import { MessageContentView } from "@/components/messages/MessageContentView";
-import { formatDuration, getRoleDisplay } from "@/components/utils/utils";
+import { formatDuration, formatTokens, getRoleDisplay } from "@/components/utils/utils";
 import { Annotation, Message } from "@/types/models";
 import { useToast } from "../ToastProvider";
 
@@ -20,6 +20,8 @@ export function MessageView(props: MessageViewProps) {
   const { showToast } = useToast();
 
   const hasCostOrDuration = message.cost_usd || message.duration_seconds;
+  const hasReasoningTokens = message.reasoning_token_count != null && message.reasoning_token_count > 0;
+  const hasCostDurationOrTokens = hasCostOrDuration || hasReasoningTokens;
   const hasMetrics = message.metrics && message.metrics.length > 0;
 
   const copyMessageContent = useCallback(async () => {
@@ -78,10 +80,10 @@ export function MessageView(props: MessageViewProps) {
           maxVariablesHeight={maxVariablesHeight}
         />
       </div>
-      {(hasCostOrDuration || hasMetrics) && (
+      {(hasCostDurationOrTokens || hasMetrics) && (
         <div className="border-t border-gray-200">
-          {hasCostOrDuration && (
-            <div className="grid grid-cols-2 gap-0">
+          {hasCostDurationOrTokens && (
+            <div className={`grid gap-0 ${hasReasoningTokens ? "grid-cols-3" : "grid-cols-2"}`}>
               <div className="px-3 py-3 text-xs bg-gray-50 flex justify-between items-center">
                 <span className="font-medium text-gray-600">Cost</span>
                 <span className="text-gray-800">${(message.cost_usd || 0).toFixed(5)}</span>
@@ -90,10 +92,16 @@ export function MessageView(props: MessageViewProps) {
                 <span className="font-medium text-gray-600">Duration</span>
                 <span className="text-gray-800">{formatDuration(message.duration_seconds || 0)}</span>
               </div>
+              {hasReasoningTokens && (
+                <div className="px-3 py-3 text-xs bg-gray-50 border-l border-gray-200 flex justify-between items-center">
+                  <span className="font-medium text-gray-600">Reasoning</span>
+                  <span className="text-gray-800">{formatTokens(message.reasoning_token_count!)}</span>
+                </div>
+              )}
             </div>
           )}
           {hasMetrics && (
-            <div className={`${hasCostOrDuration ? "border-t border-gray-200" : ""}`}>
+            <div className={`${hasCostDurationOrTokens ? "border-t border-gray-200" : ""}`}>
               {message.metrics?.map(({ key, average }) => (
                 <div
                   key={key}

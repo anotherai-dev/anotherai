@@ -276,6 +276,7 @@ def completion_from_domain(completion: DomainCompletion) -> Completion:
         metadata=completion.metadata or {},
         cost_usd=completion.cost_usd or 0.0,
         duration_seconds=completion.duration_seconds or 0.0,
+        reasoning_token_count=completion.reasoning_token_count,
     )
 
 
@@ -299,6 +300,7 @@ def experiment_from_domain(
                 output=output_from_domain(completion.agent_output),
                 cost_usd=completion.cost_usd or 0.0,
                 duration_seconds=completion.duration_seconds or 0.0,
+                reasoning_token_count=completion.reasoning_token_count,
             ),
         )
 

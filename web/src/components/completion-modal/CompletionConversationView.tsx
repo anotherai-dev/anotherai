@@ -32,13 +32,14 @@ export function CompletionConversationView(props: Props) {
           )
         : [];
 
-      // Add cost, duration, and metrics to the last output message
+      // Add cost, duration, reasoning tokens, and metrics to the last output message
       if (outputMessages.length > 0) {
         const lastIndex = outputMessages.length - 1;
         outputMessages[lastIndex] = {
           ...outputMessages[lastIndex],
           cost_usd: completion.cost_usd,
           duration_seconds: completion.duration_seconds,
+          reasoning_token_count: completion.reasoning_token_count,
           metrics: completionMetrics,
         };
       }
@@ -52,6 +53,7 @@ export function CompletionConversationView(props: Props) {
     completion.output?.messages,
     completion.cost_usd,
     completion.duration_seconds,
+    completion.reasoning_token_count,
     annotations,
     completion.id,
   ]);

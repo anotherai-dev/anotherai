@@ -51,6 +51,16 @@ class AgentCompletionBuilder(BaseModel):
         output_messages = output.to_messages()
         traces: list[Trace] = [llm_completion.to_domain() for llm_completion in self.llm_completions]
 
+        # Calculate reasoning token count from LLM traces
+        reasoning_tokens = 0
+        found_reasoning = False
+        for trace in traces:
+            from core.domain.inference import LLMTrace
+
+            if isinstance(trace, LLMTrace) and trace.usage and trace.usage.prompt.reasoning_token_count is not None:
+                reasoning_tokens += int(trace.usage.prompt.reasoning_token_count)
+                found_reasoning = True
+
         self._built_completion = AgentCompletion(
             id=self.id,
             agent=self.agent,
@@ -61,6 +71,7 @@ class AgentCompletionBuilder(BaseModel):
             messages=self.messages,
             cost_usd=sum(trace.cost_usd for trace in traces),
             duration_seconds=sum(trace.duration_seconds for trace in traces),
+            reasoning_token_count=reasoning_tokens if found_reasoning else None,
             metadata=self.metadata,
         )
         return self._built_completion

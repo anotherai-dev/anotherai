@@ -130,6 +130,7 @@ export function TableComponent({
                       width: `${columnWidth}px`,
                       minWidth: `${columnWidth}px`,
                       maxWidth: `${columnWidth}px`,
+                      height: "300px",
                     }}
                   >
                     <div className="h-full">{cellContent}</div>
