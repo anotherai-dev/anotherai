@@ -86,6 +86,7 @@ export function CompletionCell(props: CompletionCellProps) {
             <PriceAndLatencyDisplay
               cost={completion.cost_usd}
               duration={completion.duration_seconds}
+              reasoningTokens={completion.reasoning_token_count}
               allCosts={allCosts}
               allDurations={allDurations}
             />

@@ -34,6 +34,7 @@ class AgentCompletion(BaseModel):
 
     duration_seconds: float | None = None
     cost_usd: float | None = None
+    reasoning_token_count: int | None = None
 
     created_at: datetime = Field(default_factory=datetime_zero)
 

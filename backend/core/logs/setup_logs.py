@@ -36,7 +36,9 @@ def _renderer(json: bool | None = None):
 
 
 def setup_logs(
-    logger_factory: Callable[[], "WrappedLogger"] | None = None, json: bool | None = None, *processors: Processor,
+    logger_factory: Callable[[], "WrappedLogger"] | None = None,
+    json: bool | None = None,
+    *processors: Processor,
 ):
     setup_sentry()
 

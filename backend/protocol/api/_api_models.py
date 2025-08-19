@@ -317,6 +317,10 @@ class Completion(BaseModel):
     duration_seconds: float | None = Field(
         description="The duration of the inference in seconds.",
     )
+    reasoning_token_count: int | None = Field(
+        default=None,
+        description="The number of reasoning tokens used in the completion for reasoning models.",
+    )
 
 
 class ExperimentItem(BaseModel):
@@ -352,6 +356,10 @@ class Experiment(BaseModel):
         output: Output
         cost_usd: float
         duration_seconds: float
+        reasoning_token_count: int | None = Field(
+            default=None,
+            description="The number of reasoning tokens used in the completion for reasoning models.",
+        )
 
     completions: list[Completion] = Field(description="The completions of the experiment.")
 

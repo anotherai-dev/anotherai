@@ -113,6 +113,7 @@ class ClickhouseCompletion(BaseModel):
     # Metrics
     duration_ds: Annotated[int, validate_int(MAX_UINT_16, "duration_ds")] = 0
     cost_millionth_usd: Annotated[int, validate_int(MAX_UINT_32, "cost_millionth_usd")] = 0
+    reasoning_token_count: int | None = None
 
     # Metadata
     metadata: dict[str, str] = Field(default_factory=dict)
@@ -164,6 +165,7 @@ class ClickhouseCompletion(BaseModel):
             # Metrics
             duration_ds=_duration_ds(completion.duration_seconds),
             cost_millionth_usd=_cost_millionth_usd(completion.cost_usd),
+            reasoning_token_count=completion.reasoning_token_count,
             metadata=_sanitize_metadata(completion.metadata),
             source=completion.source,
             # Traces
@@ -197,6 +199,7 @@ class ClickhouseCompletion(BaseModel):
             status="success" if not self.output_error else "failure",
             duration_seconds=_from_duration_ds(self.duration_ds),
             cost_usd=_from_cost_millionth_usd(self.cost_millionth_usd),
+            reasoning_token_count=self.reasoning_token_count,
             traces=[_Trace.to_domain(trace) for trace in self.traces],
             metadata=from_sanitized_metadata(self.metadata),
             source=self.source,

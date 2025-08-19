@@ -35,6 +35,7 @@ export interface Message {
   content: MessageContent[] | string | Record<string, unknown>;
   cost_usd?: number;
   duration_seconds?: number;
+  reasoning_token_count?: number;
   metrics?: Array<{ key: string; average: number }>;
 }
 
@@ -109,6 +110,7 @@ export interface ExperimentCompletion {
   output: Output;
   cost_usd: number;
   duration_seconds: number;
+  reasoning_token_count?: number;
 }
 
 export interface Completion {
@@ -123,6 +125,7 @@ export interface Completion {
   metadata: Record<string, unknown>;
   cost_usd: number;
   duration_seconds?: number;
+  reasoning_token_count?: number;
 }
 
 export interface Experiment {

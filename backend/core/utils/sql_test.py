@@ -326,7 +326,11 @@ def test_sanitize_query_multiple_statements():
                 table="completions",
                 select=[
                     SQLSelectField(column="agent_id"),
-                    SQLSelectField(column="CASE WHEN created_at >= datetime('now', '-7 days') THEN 1 END", function="count", alias="completions_last_7_days"),
+                    SQLSelectField(
+                        column="CASE WHEN created_at >= datetime('now', '-7 days') THEN 1 END",
+                        function="count",
+                        alias="completions_last_7_days",
+                    ),
                     SQLSelectField(column="cost_usd", function="sum", alias="total_cost"),
                 ],
                 group_by=SQLGroupBy(fields=[SQLField(column="agent_id")]),
