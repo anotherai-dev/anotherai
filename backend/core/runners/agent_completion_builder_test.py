@@ -1,4 +1,6 @@
 
+from core.domain.models.models import Model
+from core.domain.models.providers import Provider
 from core.providers._base.llm_completion import LLMCompletion
 from core.providers._base.llm_usage import LLMUsage
 from core.runners.agent_completion_builder import AgentCompletionBuilder
@@ -28,15 +30,16 @@ class TestAgentCompletionBuilder:
         # Add LLM completion with reasoning tokens
         builder.llm_completions.append(
             LLMCompletion(
-                model="gpt-4o-2024-05-13",
-                provider="openai",
+                model=Model.GPT_4O_2024_05_13,
+                provider=Provider.OPEN_AI,
                 usage=LLMUsage(
                     prompt_token_count=100,
                     completion_token_count=50,
                     reasoning_token_count=150,  # Key field to test
+                    prompt_cost_usd=0.005,
+                    completion_cost_usd=0.005,
                 ),
                 duration_seconds=1.0,
-                cost_usd=0.01,
             ),
         )
 
@@ -53,26 +56,28 @@ class TestAgentCompletionBuilder:
         # Add multiple LLM completions with reasoning tokens
         builder.llm_completions.extend([
             LLMCompletion(
-                model="gpt-4o-2024-05-13",
-                provider="openai",
+                model=Model.GPT_4O_2024_05_13,
+                provider=Provider.OPEN_AI,
                 usage=LLMUsage(
                     prompt_token_count=100,
                     completion_token_count=50,
                     reasoning_token_count=100,
+                    prompt_cost_usd=0.005,
+                    completion_cost_usd=0.005,
                 ),
                 duration_seconds=1.0,
-                cost_usd=0.01,
             ),
             LLMCompletion(
-                model="gpt-4o-2024-05-13",
-                provider="openai",
+                model=Model.GPT_4O_2024_05_13,
+                provider=Provider.OPEN_AI,
                 usage=LLMUsage(
                     prompt_token_count=80,
                     completion_token_count=30,
                     reasoning_token_count=75,
+                    prompt_cost_usd=0.004,
+                    completion_cost_usd=0.004,
                 ),
                 duration_seconds=0.5,
-                cost_usd=0.008,
             ),
         ])
 
@@ -89,15 +94,16 @@ class TestAgentCompletionBuilder:
         # Add LLM completion without reasoning tokens
         builder.llm_completions.append(
             LLMCompletion(
-                model="gpt-3.5-turbo-0125",
-                provider="openai",
+                model=Model.GPT_3_5_TURBO_0125,
+                provider=Provider.OPEN_AI,
                 usage=LLMUsage(
                     prompt_token_count=100,
                     completion_token_count=50,
                     reasoning_token_count=None,  # No reasoning tokens
+                    prompt_cost_usd=0.005,
+                    completion_cost_usd=0.005,
                 ),
                 duration_seconds=1.0,
-                cost_usd=0.01,
             ),
         )
 
@@ -114,26 +120,28 @@ class TestAgentCompletionBuilder:
         # Add mixed LLM completions
         builder.llm_completions.extend([
             LLMCompletion(
-                model="gpt-4o-2024-05-13",
-                provider="openai",
+                model=Model.GPT_4O_2024_05_13,
+                provider=Provider.OPEN_AI,
                 usage=LLMUsage(
                     prompt_token_count=100,
                     completion_token_count=50,
                     reasoning_token_count=100,  # Has reasoning tokens
+                    prompt_cost_usd=0.005,
+                    completion_cost_usd=0.005,
                 ),
                 duration_seconds=1.0,
-                cost_usd=0.01,
             ),
             LLMCompletion(
-                model="gpt-3.5-turbo-0125",
-                provider="openai",
+                model=Model.GPT_3_5_TURBO_0125,
+                provider=Provider.OPEN_AI,
                 usage=LLMUsage(
                     prompt_token_count=80,
                     completion_token_count=30,
                     reasoning_token_count=None,  # No reasoning tokens
+                    prompt_cost_usd=0.004,
+                    completion_cost_usd=0.004,
                 ),
                 duration_seconds=0.5,
-                cost_usd=0.008,
             ),
         ])
 
@@ -150,15 +158,16 @@ class TestAgentCompletionBuilder:
         # Add LLM completion with explicitly zero reasoning tokens
         builder.llm_completions.append(
             LLMCompletion(
-                model="gpt-4o-2024-05-13",
-                provider="openai",
+                model=Model.GPT_4O_2024_05_13,
+                provider=Provider.OPEN_AI,
                 usage=LLMUsage(
                     prompt_token_count=100,
                     completion_token_count=50,
                     reasoning_token_count=0,  # Explicitly zero
+                    prompt_cost_usd=0.005,
+                    completion_cost_usd=0.005,
                 ),
                 duration_seconds=1.0,
-                cost_usd=0.01,
             ),
         )
 
