@@ -4,16 +4,27 @@ summary: Guide for improving agents utilizing annotations and debugging processe
 description: Learn how to improve your agents using annotations and debuging processes 
 ---
 
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
 # Experiments
 
 Experiments allow you to systematically compare different configurations of your agent to find the optimal setup for your use case across one or more inputs. By testing variations of prompts, models, and other parameters, you can make data-driven decisions to improve your agent's performance.
 
 ## Creating Experiments
 
+To create an experiment:
 
-To create an experiment, 
-1. Make sure you have the AnotherAI MCP configured and enabled
-2. Then just ask Claude Code to set up experiments for you. 
+<Steps>
+<Step>
+### Configure MCP
+Make sure you have the AnotherAI MCP configured and enabled
+</Step>
+
+<Step>
+### Create Experiment
+Then just ask Claude Code to set up experiments for you
+</Step>
+</Steps>
 
 The most common parameters to experiment with are prompts and models, however you can also experiment with changes to other parameters like temperature. 
 
@@ -21,7 +32,7 @@ The most common parameters to experiment with are prompts and models, however yo
 
 Comparing different prompts is one of the most effective ways to improve your agent's performance. Small changes in wording, structure, or examples can lead to significant improvements. If you notice an issue with an existing prompt, you can even ask Claude to generate prompt variations to use in the experiment. 
 
-You can ask Claude some like as follows:
+Example:
 
 ```
 Look at the prompt of @email-rewriter.py and create an experiment in AnotherAI 
@@ -31,9 +42,7 @@ the tone lists in the input
 
 ## Models
 
-Different models excel at different tasks. Experiments help you find the right balance between intelligence, cost, and speed.
-
-AnotherAI supports over 100 different models, and Claude Code can help you choose the right model for your task, based on what you're looking for.
+Different models excel at different tasks. AnotherAI supports over 100 different models, and experiments can help you choose the right model for your agent, depending on its needs.
 
 For example:
 
@@ -42,12 +51,13 @@ Create an AnotherAI experiment to help me find a faster model for @email-rewrite
 but still maintains the same tone and verbosity considerations as my current model.
 ```
 
-If you have a specific model in mind that you want to try (for example, a newly release models), you can ask Claude directly to help you test that model. You can always request that Claude use inputs from existing completions, to ensure that you're testing with real, production data. 
+If you have a specific model in mind that you want to try - **for example, a newly released model** - you can ask Claude to help you test that model against your existing agent version. You can always request that Claude use inputs from existing completions, to ensure that you're testing with real, production data. 
 
 For example:
 
 ```
-Can you retry the last 5 completions of @email-rewriter.py and compare the outputs with GPT 5 mini?
+Can you retry the last 5 completions of @email-rewriter.py and compare the outputs with 
+GPT 5 mini?
 ```
 
 ## Other Parameters
@@ -75,8 +85,8 @@ Temperature is the most important parameter to experiment with after prompts and
   - Generating diverse options
 
 ```
-Test my email-rewriter agent with temperatures 0.2, 0.5, and 0.8
-to find the right balance between creativity and professionalism
+Test my email-rewriter agent with temperatures 0.2, 0.5, and 0.8 to find 
+the right balance between creativity and professionalism
 ```
 
 ## Analyzing Experiment Results
