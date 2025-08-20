@@ -17,12 +17,12 @@ To create an experiment:
 <Steps>
 <Step>
 ### Configure MCP
-Make sure you have the AnotherAI MCP configured and enabled
+Make sure you have the AnotherAI MCP configured and enabled. You can view the set up steps [here](/docs).
 </Step>
 
 <Step>
 ### Create Experiment
-Then just ask Claude Code to set up experiments for you
+Then just ask Claude Code (or the AI coding agent you're using) to set up experiments for you
 </Step>
 </Steps>
 
@@ -104,6 +104,7 @@ and recommend which configuration performs best specifically for both accuracy a
 
 
 # Annotations
+
 ## What are Annotations?
 
 Simply put: annotations are the tool that allows you to add comments to your completions and experiments. The idea behind annotations is to give you  a way to provide clear, specific feedback on completions that your AI Coding agent can access and use to improve your agents on your behalf.
@@ -132,13 +133,18 @@ Scores can be added to annotations to provide quantitative evaluations. There ar
 - Clarity (does the output make sense?)
 - Formatting (is markdown used appropriately and is the markdown correct?)
 
+<Callout type="info">
+Currently, scores can only be added:
+- **Via the API** - programmatically through the AnotherAI API
+- **Via MCP tools** - using Claude Code or other AI agents with MCP access
+</Callout>
+
 ## How to Add Annotations
 
 ### In AnotherAI Web App
 
 You can add text-based annotations directly in AnotherAI on both the experiments screen and in individual completion detail views. Annotations can be added for both entire completions and individual fields within the output (when the output is structured).
 
-anyacherniss marked this conversation as resolved.
 #### Annotations on Experiments Screen
 - To annotate entire completions: locate the "Add Annotation" button under each completion's output. Select the button to open a text box where you can add your feedback about the content of that specific completion. 
 - To annotate individual fields within the output, hover over the field you want to annotate and select the "Add Annotation" button.
@@ -190,3 +196,6 @@ Provide a report on the accuracy scores for all completions of calendar-event-ex
 ```
 Which model has the best tone overall, based on annotations?
 ```
+# End-User Feedback
+
+TODO: Add end-user feedback documentation here.
