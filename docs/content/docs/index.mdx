@@ -17,9 +17,13 @@ By using AnotherAI, you won't pay more than your current inference costs. We pri
 
 ## Get Started
 
-### Self Host Set UP
+### Hosted Version Set Up
 
-First, you'll need to self-host your own instance of AnotherAI. Ask Claude Code to do the setup for you by sending the following prompt:
+If you're using AnotherAI's hosted service: sign up at anotherai.dev/signup [TODO: add link and/or additional steps once we have hosted set up]
+
+### Self Host Set Up
+
+To self-host your own instance of AnotherAI, ask Claude Code to do the setup for you by sending the following prompt:
 
 ```
 claude "Please follow instructions in https://raw.githubusercontent.com/anotherai-dev/anotherai/refs/heads/main/examples/quickstart/INSTRUCTIONS.md"
@@ -29,9 +33,49 @@ claude "Please follow instructions in https://raw.githubusercontent.com/anothera
 
 AnotherAI is available as a MCP server in the IDEs below.
 
-<Tabs items={['Cursor', 'Claude Code', 'Windsurf']}>
+<Tabs items={['Cursor (Hosted)', 'Cursor (Self-hosted)', 'Claude Code (Hosted)', 'Claude Code (Self-hosted)']}>
 
-<Tab value="Cursor">
+<Tab value="Cursor (Hosted)">
+
+Quick setup  (recommended):
+1. Complete the Hosted set up above
+2. Tap on the button below 
+
+TODO: confirm if this quick setup will work as is for hosted version as well.
+
+<a href="cursor://anysphere.cursor-deeplink/mcp/install?name=anotherai&config=eyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjgwMDAvbWNwLyJ9"><img src="https://cursor.com/deeplink/mcp-install-dark.svg" alt="Add anotherai MCP server to Cursor" height="32" /></a>
+
+Manual installation:
+
+1. Open Cursor
+2. Go to `Settings...`
+3. Navigate to `Cursor Settings`
+4. Select `Tools and Integrations`
+5. Select `+ New MCP Server`
+
+Add the following configuration to your MCP servers config:
+
+```json
+{
+  "mcpServers": {
+    "anotherai": {
+      "url": "https://api.anotherai.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer <your_api_key_here>"
+      }
+    }
+  }
+}
+```
+You can get your API key on anotherai.dev [TODO: add link and/or additional steps once we have hosted set up]
+
+Cursor UI should now look like this (note the green indicator and the number of tools enabled displayed):
+
+![Successful Cursor MCP Server Setup](/images/mcp/cursor-setup-ok.png)
+
+</Tab>
+
+<Tab value="Cursor (Self-hosted)">
 
 Quick setup  (recommended):
 1. Complete the Self Host set up above and make sure the AnotherAI MCP server is running.
@@ -49,15 +93,15 @@ Manual installation:
 
 Add the following configuration to your MCP servers config:
 
-   ```json
+```json
 {
   "mcpServers": {
     "anotherai": {
-      "url": "{{API_URL}}/mcp/"
+      "url": "http://127.0.0.1:8000/mcp/"
     }
   }
 }
-   ```
+```
 
 Cursor UI should now look like this (note the green indicator and the number of tools enabled displayed):
 
@@ -65,22 +109,24 @@ Cursor UI should now look like this (note the green indicator and the number of 
 
 </Tab>
 
-<Tab value="Claude Code">
+<Tab value="Claude Code (Hosted)">
 
-1. Open Claude Code in your preferred terminal (standalone or within your IDE).
-2. Type the following to install:
+  1. Open Claude Code in your preferred terminal (standalone or within your IDE).
+  2. Type the following to install:
 
-```bash
-claude mcp add --scope user --transport http anotherai {{API_URL}}/mcp/
-```
+TODO: confirm actual claude command for hosted version.
 
-<Callout type="info">
-**Installation Scopes**: The `--scope user` flag installs AnotherAI for your personal use across all projects. For team projects, you can use `--scope project` instead to create a shared `.mcp.json` file that can be committed to version control and shared with your team members. Learn more about MCP scopes in the [Anthropic documentation](https://docs.anthropic.com/en/docs/claude-code/mcp#user-scope).
-</Callout>
+  ```bash
+  claude mcp add --scope user https://api.anotherai.dev/mcp/ --transport http -H "Authorization: Bearer YOUR_API_KEY_HERE"
+  ```
 
-3. Type the following to verify the server is properly connected:
+  <Callout type="info">
+  **Installation Scopes**: The `--scope user` flag installs AnotherAI for your personal use across all projects. For team projects, you can use `--scope project` instead to create a shared `.mcp.json` file that can be committed to version control and shared with your team members. Learn more about MCP scopes in the [Anthropic documentation](https://docs.anthropic.com/en/docs/claude-code/mcp#user-scope).
+  </Callout>
 
-```bash
+  3. Type the following to verify the server is properly connected:
+
+  ```bash
 claude
 ```
 
@@ -91,23 +137,55 @@ Then type:
 
 You should see the AnotherAI server listed as "connected".
 
+</Tab>
+
+<Tab value="Claude Code (Self-hosted)">
+
+  1. Open Claude Code in your preferred terminal (standalone or within your IDE).
+  2. Type the following to install:
+
+  **For self-hosted version:**
+  ```bash
+  claude mcp add --scope user --transport http anotherai http://127.0.0.1:8000/mcp/
+  ```
+
+  <Callout type="info">
+  **Installation Scopes**: The `--scope user` flag installs AnotherAI for your personal use across all projects. For team projects, you can use `--scope project` instead to create a shared `.mcp.json` file that can be committed to version control and shared with your team members. Learn more about MCP scopes in the [Anthropic documentation](https://docs.anthropic.com/en/docs/claude-code/mcp#user-scope).
+  </Callout>
+
+  3. Type the following to verify the server is properly connected:
+
+  ```bash
+claude
+```
+
+Then type:
+```bash
+/mcp 
+```
+
+You should see the AnotherAI server listed as "connected".
 
 </Tab>
 
 </Tabs>
 
-### Try out some prompts
+### Try it out
 
-After you have the above self-hosting configuration and MCP set up, now you can try it. Here are some sample prompts you can send to Claude Code to get you started:
+After you have the above set up completed, AnotherAI is ready to use!
+
+- If you have agents already created, check out how to migrate them to AnotherAI. [TODO: link to applicable page once https://github.com/anotherai-dev/anotherai/pull/29 is merged]
+
+- If you don't have any agents built yet, check out [TODO: link to applicable page once https://github.com/anotherai-dev/anotherai/pull/29 is merged] to learn about building a new AnotherAI-compatible agent.
+
+
+Here are some examples of prompts you can send to Claude Code to test how AnotherAI works:
 
 ```
-Create an experiment in AnotherAI that compares how GPT-5 mini and GPT-4 mini extract the sentiment from an input product review.
+Create an experiment in AnotherAI that compares how GPT-5 mini and GPT-4 mini perform on @[your-agent-name-here].
 ```
 ```
-Use AnotherAI to help me find the model that can summarize a long article the fastest.
-```
-```
-Use AnotherAI to test how clearly and accurately 5 different models can answer complex STEM questions.
+Use AnotherAI to help me find a faster model for @[your-agent-name-here] while still maintaining acurracy.
 ```
 
 ### Build a new agent 
