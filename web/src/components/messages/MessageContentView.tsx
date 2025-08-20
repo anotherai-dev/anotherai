@@ -10,10 +10,11 @@ type MessageContentViewProps = {
   compareMode?: boolean;
   annotations?: Annotation[];
   onKeypathSelect?: (keyPath: string) => void;
+  maxVariablesHeight?: string;
 };
 
 export function MessageContentView(props: MessageContentViewProps) {
-  const { content, contentToCompareTo, compareMode, annotations, onKeypathSelect } = props;
+  const { content, contentToCompareTo, compareMode, annotations, onKeypathSelect, maxVariablesHeight } = props;
 
   // Handle direct object content (structured output)
   if (content && typeof content === "object" && !Array.isArray(content)) {
@@ -24,6 +25,7 @@ export function MessageContentView(props: MessageContentViewProps) {
           hideBorderForFirstLevel={true}
           annotations={annotations}
           onKeypathSelect={onKeypathSelect}
+          maxHeight={maxVariablesHeight}
         />
       </div>
     );
@@ -43,6 +45,7 @@ export function MessageContentView(props: MessageContentViewProps) {
               hideBorderForFirstLevel={true}
               annotations={annotations}
               onKeypathSelect={onKeypathSelect}
+              maxHeight={maxVariablesHeight}
             />
           </div>
         );
@@ -70,7 +73,7 @@ export function MessageContentView(props: MessageContentViewProps) {
         return (
           <div key={index} className="text-[12.5px] text-gray-900">
             {item.text && (
-              <div className="whitespace-pre-wrap">
+              <div className="whitespace-pre-wrap break-words">
                 <MessageTextView text={item.text} sharedText={sharedText} compareMode={compareMode} />
               </div>
             )}
@@ -82,6 +85,7 @@ export function MessageContentView(props: MessageContentViewProps) {
                     hideBorderForFirstLevel={true}
                     annotations={annotations}
                     onKeypathSelect={onKeypathSelect}
+                    maxHeight={maxVariablesHeight}
                   />
                 ) : (
                   <VariablesViewer
@@ -89,6 +93,7 @@ export function MessageContentView(props: MessageContentViewProps) {
                     hideBorderForFirstLevel={true}
                     annotations={annotations}
                     onKeypathSelect={onKeypathSelect}
+                    maxHeight={maxVariablesHeight}
                   />
                 )}
               </div>
