@@ -1,6 +1,5 @@
 "use client";
 
-import { authLogger } from "@/lib/logger";
 import { useAuthToken } from "@/store/authToken";
 
 /**
@@ -17,6 +16,38 @@ function isTokenExpired(token: string): boolean {
 }
 
 /**
+ * Wait for auth token to be available when Clerk is enabled
+ */
+async function waitForAuthToken(maxWaitMs = 5000): Promise<string | null> {
+  const clerkEnabled = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+
+  if (!clerkEnabled) {
+    return null;
+  }
+
+  const startTime = Date.now();
+  const checkInterval = 100; // Check every 100ms
+
+  return new Promise((resolve) => {
+    const checkToken = () => {
+      const token = useAuthToken.getState().token;
+      const elapsed = Date.now() - startTime;
+
+      // If we have a valid, non-expired token or timeout exceeded, resolve
+      if ((token && !isTokenExpired(token)) || elapsed >= maxWaitMs) {
+        resolve(token);
+        return;
+      }
+
+      // Continue waiting for valid token
+      setTimeout(checkToken, checkInterval);
+    };
+
+    checkToken();
+  });
+}
+
+/**
  * Client-side fetch function that calls a relative endpoint
  * Automatically includes Clerk authentication tokens from the Zustand auth store.
  *
@@ -25,8 +56,8 @@ function isTokenExpired(token: string): boolean {
  * @returns Promise<Response>
  */
 export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
-  // Get token from Zustand store
-  const token = useAuthToken.getState().token;
+  // Wait for token to be synced if Clerk is enabled
+  const token = await waitForAuthToken();
 
   // Prepare headers
   const headers: Record<string, string> = {
@@ -35,10 +66,8 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   };
 
   // Add Authorization header if we have a valid, non-expired token
-  if (token && !isTokenExpired(token)) {
+  if (token) {
     headers["Authorization"] = `Bearer ${token}`;
-  } else if (token && isTokenExpired(token)) {
-    authLogger.warn("JWT token is expired, making request without Authorization header");
   }
 
   // Make the request through Next.js API proxy
