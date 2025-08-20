@@ -4,6 +4,10 @@ FROM node:22.8.0-alpine3.20 AS base
 RUN apk upgrade libssl3 libcrypto3 libxml2
 RUN npm install -g npm@10.9.2 && npm cache clean --force
 
+# Accept build arguments
+ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+
 FROM base AS deps
 
 WORKDIR /app
@@ -24,12 +28,20 @@ COPY --from=deps /app/web/package.json ./web
 
 FROM sources AS dev
 
+# Copy node_modules from deps stage
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/web/node_modules ./web/node_modules
+
 EXPOSE 3000
 WORKDIR /app/web
 
 CMD ["npx", "next", "dev"]
 
 FROM sources AS builder
+
+# Copy node_modules from deps stage for build
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/web/node_modules ./web/node_modules
 
 WORKDIR /app/web
 
