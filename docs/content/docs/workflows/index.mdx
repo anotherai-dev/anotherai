@@ -15,24 +15,30 @@ A **workflow** is a sequence of two or more AI agents working together to accomp
 
 ## Setting up Workflows
 
-AnotherAI does not automatically chain agents together for you. But you can use agent metadata to add the key value pairs you'd like to create connections between agents.
+You can use agent metadata to add the key value pairs you'd like to connect agents as workflows.
 
-You need to select the key that you want to use to connect the agents and then make sure your code supports setting the correct values for that key for each user.
+We recommend using these metadata fields for workflows:
+- `trace_id`: A generated UUID that uniquely identifies each workflow execution
+- `workflow_name`: A string that identifies the type of workflow being executed
 
 Here's the process of setting metadata for workflow tracking:
 
 <Tabs items={['Python', 'TypeScript', 'curl']}>
 <Tab value="Python">
 ```python
-# 1. Determine workflow identifier (user_id, session_id, etc.)
-workflow_key = get_user_session_id()
+import uuid
+
+# 1. Set workflow identifiers
+trace_id = str(uuid.uuid4())  # Unique identifier for this workflow instance
+workflow_name = "meeting-analysis"  # Type of workflow being executed
 
 # 2. Add the metadata when making agent calls
 response = client.chat.completions.create(
     model="gpt-4o-mini",
     messages=[{"role": "system", "content": "Summarize this meeting transcript"}],
     metadata={
-        "user_id": workflow_key,  # Key that connects agents
+        "trace_id": trace_id,
+        "workflow_name": workflow_name,
         "agent_id": "meeting-summarizer"
     }
 )
@@ -40,15 +46,19 @@ response = client.chat.completions.create(
 </Tab>
 <Tab value="TypeScript">
 ```typescript
-// 1. Determine workflow identifier (user_id, session_id, etc.)
-const workflowKey = getUserSessionId();
+import { v4 as uuidv4 } from 'uuid';
+
+// 1. Set workflow identifiers
+const traceId = uuidv4();  // Unique identifier for this workflow instance
+const workflowName = 'meeting-analysis';  // Type of workflow being executed
 
 // 2. Add the metadata when making agent calls
 const response = await client.chat.completions.create({
   model: 'gpt-4o-mini',
   messages: [{role: 'system', content: 'Summarize this meeting transcript'}],
   metadata: {
-    user_id: workflowKey,  // Key that connects agents
+    trace_id: traceId,
+    workflow_name: workflowName,
     agent_id: 'meeting-summarizer'
   }
 });
@@ -56,8 +66,9 @@ const response = await client.chat.completions.create({
 </Tab>
 <Tab value="curl">
 ```bash
-# Get user ID from your application context
-USER_ID=$(get_current_user_id)  # Your application logic
+# Set workflow identifiers
+TRACE_ID=$(uuidgen)  # Unique identifier for this workflow instance
+WORKFLOW_NAME="meeting-analysis"  # Type of workflow being executed
 
 # Agent call with workflow metadata
 curl -X POST http://localhost:8000/v1/chat/completions \
@@ -67,34 +78,118 @@ curl -X POST http://localhost:8000/v1/chat/completions \
     "model": "gpt-4o-mini",
     "messages": [{"role": "system", "content": "Summarize this meeting transcript"}],
     "metadata": {
-      "agent_id": "meeting-summarizer",
-      "user_id": "'$USER_ID'",
+      "trace_id": "'$TRACE_ID'",
+      "workflow_name": "'$WORKFLOW_NAME'",
+      "agent_id": "meeting-summarizer"
     }
   }'
 ```
 </Tab>
 </Tabs>
 
-Then set the same `user_id` value across all agents in your workflow:
+Then set the same `trace_id` value across all agents in your workflow:
 
+<Tabs items={['Python', 'TypeScript', 'curl']}>
+<Tab value="Python">
 ```python
-# Example workflow script showing consistent user_id setting
-user_id = get_current_user_id()  # Get from your app context
+import uuid
+
+# Example workflow script showing consistent trace_id and workflow_name usage
+trace_id = str(uuid.uuid4())  # Generate once per workflow instance
+workflow_name = "meeting-analysis"  # Same for all agents in this workflow type
 
 # Agent 1: Document processor
 response1 = client.chat.completions.create(
     model="gpt-4o-mini", 
     messages=[{"role": "system", "content": "Summarize this meeting transcript"}],
-    metadata={"user_id": user_id, "agent_id": "meeting-summarizer"}
+    metadata={
+        "trace_id": trace_id, 
+        "workflow_name": workflow_name,
+        "agent_id": "meeting-summarizer"
+    }
 )
 
-# Agent 2: Content analyzer (same user_id)
+# Agent 2: Content analyzer (same trace_id and workflow_name)
 response2 = client.chat.completions.create(
     model="gpt-4o-mini",
-    messages=[{"role": "system", "content": "Extact todos from this meeting transcript"}], 
-    metadata={"user_id": user_id, "agent_id": "meeting-todo-extractor"}
+    messages=[{"role": "system", "content": "Extract todos from this meeting transcript"}], 
+    metadata={
+        "trace_id": trace_id, 
+        "workflow_name": workflow_name,
+        "agent_id": "meeting-todo-extractor"
+    }
 )
 ```
+</Tab>
+
+<Tab value="TypeScript">
+```typescript
+import { v4 as uuidv4 } from 'uuid';
+
+// Example workflow script showing consistent trace_id and workflow_name usage
+const traceId = uuidv4();  // Generate once per workflow instance
+const workflowName = 'meeting-analysis';  // Same for all agents in this workflow type
+
+// Agent 1: Document processor
+const response1 = await client.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [{role: 'system', content: 'Summarize this meeting transcript'}],
+    metadata: {
+        trace_id: traceId,
+        workflow_name: workflowName,
+        agent_id: 'meeting-summarizer'
+    }
+});
+
+// Agent 2: Content analyzer (same trace_id and workflow_name)
+const response2 = await client.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [{role: 'system', content: 'Extract todos from this meeting transcript'}],
+    metadata: {
+        trace_id: traceId,
+        workflow_name: workflowName,
+        agent_id: 'meeting-todo-extractor'
+    }
+});
+```
+</Tab>
+
+<Tab value="curl">
+```bash
+# Example workflow script showing consistent trace_id and workflow_name usage
+TRACE_ID=$(uuidgen)  # Generate once per workflow instance
+WORKFLOW_NAME="meeting-analysis"  # Same for all agents in this workflow type
+
+# Agent 1: Document processor
+curl -X POST http://localhost:8000/v1/chat/completions \
+  -H "Authorization: Bearer aai-***" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o-mini",
+    "messages": [{"role": "system", "content": "Summarize this meeting transcript"}],
+    "metadata": {
+      "trace_id": "'$TRACE_ID'",
+      "workflow_name": "'$WORKFLOW_NAME'",
+      "agent_id": "meeting-summarizer"
+    }
+  }'
+
+# Agent 2: Content analyzer (same trace_id and workflow_name)
+curl -X POST http://localhost:8000/v1/chat/completions \
+  -H "Authorization: Bearer aai-***" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o-mini",
+    "messages": [{"role": "system", "content": "Extract todos from this meeting transcript"}],
+    "metadata": {
+      "trace_id": "'$TRACE_ID'",
+      "workflow_name": "'$WORKFLOW_NAME'",
+      "agent_id": "meeting-todo-extractor"
+    }
+  }'
+```
+</Tab>
+</Tabs>
 
 ## Monitoring Workflows
 
@@ -106,23 +201,15 @@ Here are some examples of views that could be useful:
 See all completions across all agents in the workflow, organized by the metadata values
 
 ```
-Create a view showing all completions that have a user_id in their metadata, 
-grouped by user ID so I can see all completions for each user together.
+Show me all the completions for the workflow [workflow_name], order by trace_id so 
+I can see all agent calls for each workflow instance together.
 ```
 
-### User-based workflow tracking
-
-Monitor all workflows for a specific user:
-
-```
-Create a view showing all workflow completions for user_id "user_12345" 
-grouped by workflow_id with total cost and duration per workflow
-```
 ### Workflow performance analytics
 
 Create comprehensive workflow analytics:
 
 ```
-Create a view showing daily workflow performance metrics including average cost, 
-duration, and success rate by workflow step
+Create a view showing daily [workflow_name] performance metrics including average cost, 
+duration, and success rate by each agent in the workflow.
 ```
