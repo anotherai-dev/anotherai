@@ -7,6 +7,7 @@ import { LoadingIndicator } from "@/components/LoadingIndicator";
 import { PageError } from "@/components/PageError";
 import { PageHeader } from "@/components/PageHeader";
 import { useToast } from "@/components/ToastProvider";
+import { useCompletionsListSync } from "@/hooks/useCompletionsListSync";
 import { useCompletionsQuery } from "@/store/completions";
 import { useMockedDeployments, useOrFetchMockedDeployment } from "@/store/mocked_deployments";
 import { DeleteDeploymentModal } from "./components/DeleteDeploymentModal";
@@ -31,6 +32,9 @@ export default function DeploymentDetailPage() {
     isLoading: isLoadingCompletions,
     error: completionsError,
   } = useCompletionsQuery(completionsQuery);
+
+  // Sync completions data with stored completions list for modal navigation
+  useCompletionsListSync(completionsData);
 
   const handleDeleteClick = () => {
     setIsDeleteModalOpen(true);
