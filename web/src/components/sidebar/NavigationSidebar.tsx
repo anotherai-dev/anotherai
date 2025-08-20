@@ -126,7 +126,7 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
           {isClerkEnabled() && (
             <button
               onClick={handleOpenApiKeysModal}
-              className="flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-[2px] text-gray-700 hover:bg-gray-100 w-full text-left"
+              className="flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-[2px] text-gray-700 hover:bg-gray-100 w-full text-left cursor-pointer"
             >
               <KeyRound className="w-4 h-4" />
               API Keys
