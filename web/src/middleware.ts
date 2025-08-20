@@ -1,8 +1,9 @@
 import { NextFetchEvent, NextRequest, NextResponse } from "next/server";
+import { isClerkEnabled } from "@/lib/utils";
 
 export default function middleware(request: NextRequest, event: NextFetchEvent) {
   // Only apply Clerk middleware if the publishable key is set
-  if (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+  if (isClerkEnabled()) {
     try {
       // Import Clerk middleware conditionally
       // eslint-disable-next-line @typescript-eslint/no-require-imports

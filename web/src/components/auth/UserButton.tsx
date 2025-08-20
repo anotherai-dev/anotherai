@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
+import { isClerkEnabled } from "@/lib/utils";
 
 interface ClerkUserComponents {
   UserButton: React.ComponentType<{ afterSignOutUrl?: string }>;
@@ -64,12 +65,11 @@ const UserButtonWithClerk = React.memo<UserButtonWithClerkProps>(function UserBu
 });
 
 export const UserButton = React.memo<{ className?: string }>(function UserButton({ className } = {}) {
-  const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
   const [clerkComponents, setClerkComponents] = useState<ClerkUserComponents | null>(null);
-  const [loading, setLoading] = useState(Boolean(clerkPublishableKey));
+  const [loading, setLoading] = useState(isClerkEnabled());
 
   useEffect(() => {
-    if (clerkPublishableKey) {
+    if (isClerkEnabled()) {
       import("@clerk/nextjs")
         .then((clerk) => {
           setClerkComponents({
@@ -85,7 +85,7 @@ export const UserButton = React.memo<{ className?: string }>(function UserButton
     } else {
       setLoading(false);
     }
-  }, [clerkPublishableKey]);
+  }, []);
 
   // Show nothing while loading to prevent layout shifts
   if (loading) {
@@ -98,7 +98,7 @@ export const UserButton = React.memo<{ className?: string }>(function UserButton
     );
   }
 
-  if (!clerkPublishableKey || !clerkComponents) {
+  if (!isClerkEnabled() || !clerkComponents) {
     return null;
   }
 

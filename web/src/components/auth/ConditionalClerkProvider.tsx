@@ -5,6 +5,7 @@ import { ReactNode, useEffect, useMemo, useState } from "react";
 import { getAuthStrategy } from "@/lib/authStrategy";
 import { authLogger } from "@/lib/logger";
 import { calculateRefreshInterval } from "@/lib/tokenUtils";
+import { getClerkPublishableKey } from "@/lib/utils";
 import { useAuthToken } from "@/store/authToken";
 
 interface ClerkComponents {
@@ -76,7 +77,7 @@ export function ConditionalClerkProvider({ children }: { children: ReactNode }) 
   // Render with Clerk functionality
   return (
     <ClerkProvider
-      publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!}
+      publishableKey={getClerkPublishableKey()}
       signInFallbackRedirectUrl="/"
       afterSignOutUrl="/"
       signInUrl="/sign-in"

@@ -1,5 +1,6 @@
 "use client";
 
+import { isClerkEnabled } from "@/lib/utils";
 import { useAuthToken } from "@/store/authToken";
 
 /**
@@ -19,9 +20,7 @@ function isTokenExpired(token: string): boolean {
  * Wait for auth token to be available when Clerk is enabled
  */
 async function waitForAuthToken(maxWaitMs = 5000): Promise<string | null> {
-  const clerkEnabled = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
-
-  if (!clerkEnabled) {
+  if (!isClerkEnabled()) {
     return null;
   }
 

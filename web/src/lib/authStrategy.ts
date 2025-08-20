@@ -1,6 +1,7 @@
 "use client";
 
 import React, { ReactNode } from "react";
+import { isClerkEnabled } from "@/lib/utils";
 
 export interface AuthStrategy {
   name: string;
@@ -16,7 +17,7 @@ export class ClerkAuthStrategy implements AuthStrategy {
   name = "clerk";
 
   isEnabled(): boolean {
-    return Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+    return isClerkEnabled();
   }
 
   async loadComponents() {
