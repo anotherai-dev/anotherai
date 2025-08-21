@@ -1,11 +1,11 @@
-import { useStripe } from '@stripe/react-stripe-js';
-import { StripeElements } from '@stripe/stripe-js';
-import { useCallback } from 'react';
-import { usePayments } from '@/store/mocked_payments';
-import { STRIPE_PUBLISHABLE_KEY } from '@/lib/constants';
+import { useStripe } from "@stripe/react-stripe-js";
+import { StripeElements } from "@stripe/stripe-js";
+import { useCallback } from "react";
+import { STRIPE_PUBLISHABLE_KEY } from "@/lib/constants";
+import { usePayments } from "@/store/mocked_payments";
 
 function errorMessage(error: unknown, defaultPrefix?: string): string {
-  if (error && typeof error === 'object' && 'message' in error) {
+  if (error && typeof error === "object" && "message" in error) {
     return error.message as string;
   }
 
@@ -32,14 +32,14 @@ export function useStripePayments() {
       if (error) throw error;
 
       switch (paymentIntent.status) {
-        case 'succeeded':
+        case "succeeded":
           break;
 
-        case 'requires_action':
-        case 'requires_confirmation':
+        case "requires_action":
+        case "requires_confirmation":
           const result = await stripe.confirmPayment({
             clientSecret,
-            redirect: 'if_required',
+            redirect: "if_required",
           });
 
           if (result.error) {
@@ -49,8 +49,8 @@ export function useStripePayments() {
           await handlePaymentStatus(clientSecret, amount);
           break;
 
-        case 'requires_payment_method':
-          throw new Error('Payment failed. Error: Your payment method was declined.');
+        case "requires_payment_method":
+          throw new Error("Payment failed. Error: Your payment method was declined.");
 
         default:
           throw new Error(`Payment failed. Error: [${paymentIntent.status}]`);
@@ -67,18 +67,18 @@ export function useStripePayments() {
 
       try {
         const result = await createPaymentIntent(amountToAdd);
-        if (!result) throw new Error('Failed to create payment intent');
-        
+        if (!result) throw new Error("Failed to create payment intent");
+
         // If Stripe is available, use it for payment confirmation
         if (stripe) {
           await handlePaymentStatus(result.client_secret, amountToAdd);
         }
-        
+
         await fetchOrganizationSettings();
         console.log(`$${amountToAdd} in Credits Added Successfully`);
         return true;
       } catch (error) {
-        console.error(errorMessage(error, 'Payment failed'));
+        console.error(errorMessage(error, "Payment failed"));
         return false;
       }
     },
@@ -93,7 +93,7 @@ export function useStripePayments() {
           // Mock payment method creation when Stripe is not configured
           const mockPaymentMethodId = `pm_mock_${Date.now()}`;
           await addPaymentMethod(mockPaymentMethodId);
-          console.log('Payment Method Successfully Added (Mock)');
+          console.log("Payment Method Successfully Added (Mock)");
           return;
         }
         return;
@@ -103,15 +103,15 @@ export function useStripePayments() {
         const { paymentMethod, error } = await stripe.createPaymentMethod({
           elements,
           params: {
-            type: 'card',
+            type: "card",
           },
         });
 
         if (error) throw error;
-        if (!paymentMethod) throw new Error('No payment method created');
+        if (!paymentMethod) throw new Error("No payment method created");
 
         await addPaymentMethod(paymentMethod.id);
-        console.log('Payment Method Successfully Added');
+        console.log("Payment Method Successfully Added");
       } catch (error) {
         console.error(errorMessage(error));
         throw error;

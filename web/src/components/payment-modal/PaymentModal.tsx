@@ -10,7 +10,6 @@ interface PaymentModalProps {
 }
 
 export function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
-
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <StripeWrapper>

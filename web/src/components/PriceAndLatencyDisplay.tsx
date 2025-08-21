@@ -1,5 +1,5 @@
 import { cx } from "class-variance-authority";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { formatCurrency, formatDuration, getMetricBadgeColor } from "@/components/utils/utils";
 import { HoverPopover } from "./HoverPopover";
 

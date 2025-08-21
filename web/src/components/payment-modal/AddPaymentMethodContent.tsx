@@ -1,6 +1,6 @@
 "use client";
 
-import { AddressElement, CardElement, useElements, useStripe } from '@stripe/react-stripe-js';
+import { AddressElement, CardElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { useCallback, useState } from "react";
 import { BottomButtonBar } from "./BottomButtonBar";
 import { useStripePayments } from "./hooks/useStripePayments";
@@ -57,7 +57,7 @@ export function AddPaymentMethodContent({ onClose }: AddPaymentMethodContentProp
 
         <div className="flex flex-col px-4 pb-4 pt-2 gap-2">
           <div className="text-gray-900 font-medium text-[13px]">Billing Address</div>
-          <AddressElement options={{ mode: 'billing' }} className="text-[13px]" />
+          <AddressElement options={{ mode: "billing" }} className="text-[13px]" />
         </div>
 
         <BottomButtonBar

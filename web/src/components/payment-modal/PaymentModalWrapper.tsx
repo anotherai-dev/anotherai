@@ -13,7 +13,7 @@ export function PaymentModalWrapper({ onClose }: PaymentModalWrapperProps) {
   const { organizationSettings } = useOrFetchOrganizationSettings();
   const { paymentMethod } = useOrFetchPaymentMethod();
   const deletePaymentMethod = usePayments((state) => state.deletePaymentMethod);
-  
+
   const { addCredits } = useStripePayments();
 
   const [showAddPaymentMethod, setShowAddPaymentMethod] = useState(false);
