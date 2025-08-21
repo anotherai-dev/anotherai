@@ -361,18 +361,29 @@ Production data evaluation uses recent completions from your live agent to test 
 
 ### Example Implementation
 
-To evaluate production data, modify the code from Step 3 (Run the Evaluation Pipeline) to create an experiment with a completions query instead of loading a static dataset:
+To evaluate production data, you have two options:
+
+**Option 1: Use the playground MCP tool (Recommended)**
+
+Ask Claude to create an experiment with recent completions:
+
+```
+Create an experiment using the playground tool that tests gpt-4o-mini on the last 50 
+completions from my email-summarizer agent. Use this completion query:
+SELECT * FROM completions WHERE metadata.agent_id = 'email-summarizer' 
+AND created_at > now() - INTERVAL 1 DAY ORDER BY created_at DESC LIMIT 50
+```
+
+**Option 2: Query and evaluate manually**
+
+Modify the code from Step 3 to query recent completions first:
 
 ```python
-# Create experiment using recent production completions
-experiment_response = await client.post(
-    "/v1/experiments",
+# Query recent completions
+response = await client.post(
+    "/v1/query/completions",
     json={
-        "title": "Production Email Summary Evaluation",
-        "description": "Evaluate recent production summaries",
-        "agent_id": "email-summarizer",
-        "models": ["gpt-4o-mini", "claude-3.5-sonnet"],
-        "completions_query": """
+        "query": """
             SELECT * FROM completions 
             WHERE metadata.agent_id = 'email-summarizer' 
             AND created_at > now() - INTERVAL 1 DAY 
@@ -382,20 +393,33 @@ experiment_response = await client.post(
     }
 )
 
+completions = response.json()['results']
+
+# Extract inputs from completions
+emails = []
+for completion in completions:
+    # Extract the original email from the input
+    emails.append({
+        "id": completion['id'],
+        "content": completion['input']['email_content']
+    })
+
+# Now run the evaluation pipeline from Step 3
+# Create experiment first
+experiment_response = await client.post(
+    "/v1/experiments",
+    json={
+        "title": "Production Email Summary Evaluation",
+        "description": "Evaluate recent production summaries",
+        "agent_id": "email-summarizer",
+        "author_name": "evaluation_pipeline"
+    }
+)
+
 experiment_id = experiment_response.json()['id']
 
-# The experiment now contains recent completions
-# Run the judge on these completions
-for completion in experiment_response.json()['completions']:
-    # Extract the email content and summary
-    email_content = completion['input']['email_content']
-    summary = completion['output']
-    
-    # Run judge evaluation
-    eval_response = await create_summary_judge(client, email_content, summary)
-    evaluation = json.loads(eval_response.choices[0].message.content)
-    
-    # Store evaluation as annotations...
+# Run evaluation on the production data
+results = await evaluate_email_summaries(emails, ["gpt-4o-mini"], client)
 ```
 
 ### Choosing Your Approach
