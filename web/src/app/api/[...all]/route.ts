@@ -21,11 +21,23 @@ const proxyHandler = async (req: NextRequest) => {
         options.body = bodyData;
       }
     }
-    if (req.headers.get("Content-Type")) {
-      options.headers = {
-        "Content-Type": req.headers.get("Content-Type") ?? "application/json",
-        ...(options.headers ?? {}),
-      };
+    // Forward important headers
+    const headers: Record<string, string> = {};
+
+    // Forward Content-Type
+    const contentType = req.headers.get("Content-Type");
+    if (contentType) {
+      headers["Content-Type"] = contentType;
+    }
+
+    // Forward Authorization header for authentication
+    const authorization = req.headers.get("Authorization");
+    if (authorization) {
+      headers["Authorization"] = authorization;
+    }
+
+    if (Object.keys(headers).length > 0) {
+      options.headers = headers;
     }
 
     const apiResponse = await fetch(`${API_URL}${targetUrl}`, options);
