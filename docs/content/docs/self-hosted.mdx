@@ -1,30 +1,21 @@
 ---
-title: Overview
-summary: Introduction to the AnotherAI documentation. Provides information on what AnotherAI is and how to get started with building, deploying, and improving AI agents.
+title: Self-Hosted Setup Guide
+summary: Guide for setting up and using AnotherAI on your own infrastructure
 ---
 
 import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
 import { Step, Steps } from 'fumadocs-ui/components/steps';
 import { Code2, BookOpen, Wand2, Eye, Network, FileCode, Shield } from 'lucide-react';
 
-## What is AnotherAI?
+### Self Host Set Up
 
-AnotherAI is an open-source, OpenAI-compatible proxy and MCP server for AI agents. It provides the developer tools and cloud infrastructure to build, deploy, monitor, evaluate, and improve agentic systems.
+To self-host your own instance of AnotherAI, ask Claude Code to do the setup for you by sending the following prompt:
 
-<Callout type="info" href="/pricing">
-By using AnotherAI, you won't pay more than your current inference costs. We price match the providers and make our margin through volume discounts. [Learn more about our pricing](/pricing).
-</Callout>
+```
+claude "Please follow instructions in https://raw.githubusercontent.com/anotherai-dev/anotherai/refs/heads/main/examples/quickstart/INSTRUCTIONS.md"
+```
 
-## Get Started
-
-### Set Up
-
-To use AnotherAI's hosted service: sign up at anotherai.dev/signup [TODO: add link and/or additional steps once we have hosted set up]
-<Callout>
-Are you interested in a self-hosted, [open-source](https://github.com/anotherai-dev/anotherai) set up? We have that too! You can learn how to get set up [here](/self-hosted). 
-</Callout>
-
-### MCP 
+### MCP Configuration
 
 AnotherAI is available as an MCP server in the IDEs below.
 
@@ -33,10 +24,8 @@ AnotherAI is available as an MCP server in the IDEs below.
 <Tab value="Cursor">
 
 Quick setup (recommended):
-1. Complete the Hosted set up above
-2. Tap on the button below 
-
-TODO: confirm if this quick setup will work as is for hosted version as well.
+1. Complete the Self Host set up above and make sure the AnotherAI MCP server is running.
+2. Tap on this button below
 
 <a href="cursor://anysphere.cursor-deeplink/mcp/install?name=anotherai&config=eyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjgwMDAvbWNwLyJ9"><img src="https://cursor.com/deeplink/mcp-install-dark.svg" alt="Add anotherai MCP server to Cursor" height="32" /></a>
 
@@ -54,10 +43,7 @@ Add the following configuration to your MCP servers config:
 {
   "mcpServers": {
     "anotherai": {
-      "url": "{{API_URL}}/mcp/",
-      "headers": {
-        "Authorization": "Bearer <your_api_key_here>"
-      }
+      "url": "http://127.0.0.1:8000/mcp/"
     }
   }
 }
@@ -71,22 +57,18 @@ Cursor UI should now look like this (note the green indicator and the number of 
 
 <Tab value="Claude Code">
 
-  1. Complete the set up above
-  2. Get your API key at anotherai.dev/... [TODO: add link and/or additional steps once we have hosted set up] 
-  3. Open Claude Code in your preferred terminal (standalone or within your IDE).
-  4. Type the following to install:
-
-TODO: confirm actual claude command for hosted version.
+  1. Open Claude Code in your preferred terminal (standalone or within your IDE).
+  2. Type the following to install:
 
   ```bash
-  claude mcp add --scope user https://api.anotherai.dev/mcp/ --transport http -H "Authorization: Bearer YOUR_API_KEY_HERE"
+  claude mcp add --scope user --transport http anotherai http://127.0.0.1:8000/mcp/
   ```
 
   <Callout type="info">
   **Installation Scopes**: The `--scope user` flag installs AnotherAI for your personal use across all projects. For team projects, you can use `--scope project` instead to create a shared `.mcp.json` file that can be committed to version control and shared with your team members. Learn more about MCP scopes in the [Anthropic documentation](https://docs.anthropic.com/en/docs/claude-code/mcp#user-scope).
   </Callout>
 
-  5. Type the following to verify the server is properly connected:
+  3. Type the following to verify the server is properly connected:
 
   ```bash
 claude
