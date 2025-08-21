@@ -1,5 +1,7 @@
-import { useMemo } from "react";
+import { Copy } from "lucide-react";
+import { useMemo, useState } from "react";
 import { HoverPopover } from "@/components/HoverPopover";
+import { useToast } from "@/components/ToastProvider";
 import {
   findIndexOfVersionThatFirstUsedThosePrompt,
   findIndexOfVersionThatFirstUsedThosePromptAndSchema,
@@ -24,6 +26,8 @@ type VersionHeaderProps = {
     avgDuration: number;
     allCosts: number[];
     allDurations: number[];
+    versionCosts: number[];
+    versionDurations: number[];
   };
   versions?: Version[];
   sharedPartsOfPrompts?: Message[];
@@ -54,6 +58,20 @@ export function VersionHeader(props: VersionHeaderProps) {
     showAvgPrefix = true,
     agentId,
   } = props;
+
+  const [isHovered, setIsHovered] = useState(false);
+  const { showToast } = useToast();
+
+  const handleCopyVersion = async () => {
+    const versionPath = `anotherai/version/${version.id}`;
+    try {
+      await navigator.clipboard.writeText(versionPath);
+      showToast("Copied to clipboard");
+    } catch (err) {
+      console.error("Failed to copy: ", err);
+      showToast("Failed to copy");
+    }
+  };
 
   const optionalKeysToShowWithoutPromptAndOutputSchema = useMemo(() => {
     return optionalKeysToShow.filter((key) => key !== "prompt" && key !== "output_schema");
@@ -102,14 +120,25 @@ export function VersionHeader(props: VersionHeaderProps) {
   return (
     <div className="flex flex-col h-full text-xs">
       <div className="flex-1 space-y-2">
-        <div>
+        <div onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
           <HoverPopover
             content={<VersionDetailsView version={version} showPrompt={false} />}
             position="bottom"
             popoverClassName="rounded bg-white border border-gray-200 w-80"
           >
-            <div className="text-gray-800 font-semibold mb-2 text-sm cursor-pointer hover:text-gray-600">
-              Version {index + 1}
+            <div className="flex items-center gap-2 mb-2">
+              <div className="text-gray-800 font-semibold text-sm cursor-pointer hover:text-gray-600">
+                Version {index + 1}
+              </div>
+              {isHovered && (
+                <button
+                  onClick={handleCopyVersion}
+                  className="bg-white border border-gray-200 text-gray-900 hover:bg-gray-100 cursor-pointer h-5 w-5 rounded-[2px] flex items-center justify-center"
+                  title="Copy version ID"
+                >
+                  <Copy size={12} />
+                </button>
+              )}
             </div>
           </HoverPopover>
           <VersionHeaderModel
