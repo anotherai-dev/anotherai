@@ -1,7 +1,414 @@
 ---
 title: Evaluating an Agent
-summary: TBD
-description: TBD
+summary: Learn how to systematically evaluate your AI agents through dataset testing and LLM-as-a-judge techniques to ensure quality and performance.
+description: Learn how to use LLMs and datasets to create a robust evaluation system for your AI agents.
 ---
 
-TODO: Add LLM as a judge and dataset evaluation documentation here.
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+Evaluating your AI agents is important for ensuring they meet quality standards and perform reliably in production. However there is no one-size-fits-all evaluation criteria: some agents need to be evaluated only on accuracy, while others have additional criteria: tone, clarity, verbosity, etc. 
+
+Because of these differences, AnotherAI does not provide a single rigid evaluation tool, but instead gives you the tools to create a custom evaluation system.
+
+# Using LLMs as a Judge
+
+LLM-as-a-judge style evaluation uses one AI model to evaluate the outputs of another. This approach enables scalable, consistent evaluation of your agents' responses across multiple criteria. Setting up an LLM-as-a-judge evaluation system is especially useful if you want to evaluate most - or all - completions as they are created in your product.
+
+### Key Benefits
+
+- **Scalability**: Evaluate hundreds or thousands of outputs automatically
+- **Consistency**: Apply the same evaluation criteria uniformly using a single judge model
+- **Structured Feedback**: Get detailed scores and explanations for each criterion
+- **Continuous Monitoring**: Track quality over time as you iterate
+
+### Example: Email Summarizer Evaluation
+
+Let's walk through evaluating an email summarization agent. In this example, our agent:
+- Takes an email as input
+- Returns a summary
+
+```python
+# Example agent usage
+async def summarize_email(email_content, model="gpt-4o-mini"):
+    """Summarize an email using the specified model"""
+    response = await client.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": "Summarize this email concisely."},
+            {"role": "user", "content": email_content}
+        ]
+    )
+    return response.choices[0].message.content
+```
+
+<Steps>
+
+<Step>
+### Decide on Your Dataset
+
+Before evaluating, you need to determine the test data for your agent. You have two options:
+
+- **Static Dataset**: Pre-defined test cases for consistent, reproducible testing
+- **Production Data**: Recent completions from your live agent for real-world evaluation
+
+To learn more about both approaches, see [Static Dataset Evaluation](#static-dataset-evaluation) and [Production Data Evaluation](#production-data-evaluation) below. 
+
+</Step>
+
+<Step>
+### Create the Judge Agent
+
+Define evaluation criteria and scoring structure:
+
+```python
+class CriterionScore(BaseModel):
+    """Score for a single evaluation criterion"""
+    score: int = Field(ge=1, le=10, description="Score from 1-10")
+    explanation: str = Field(description="Detailed explanation for the score")
+
+class SummaryEvaluation(BaseModel):
+    """Complete evaluation of an email summary"""
+    completeness: CriterionScore
+    accuracy: CriterionScore
+    clarity: CriterionScore
+    conciseness: CriterionScore
+    overall_score: float = Field(ge=1, le=10)
+    overall_feedback: str
+
+async def create_summary_judge(client, original_email, summary):
+    """Judge the quality of an email summary"""
+    return await client.chat.completions.create(
+        model="gpt-4o-mini",  # Use consistent model for fair evaluation
+        messages=[{
+            "role": "system",
+            "content": """You are an expert evaluator of email summaries.
+            
+            Evaluate the summary on these criteria:
+            1. Completeness (1-10): Does it capture the key information?
+            2. Accuracy (1-10): Is the information correctly represented?
+            3. Clarity (1-10): Is it clear and well-structured?
+            4. Conciseness (1-10): Is it appropriately brief?
+            
+            Provide detailed explanations for each score."""
+        }, {
+            "role": "user",
+            "content": f"""Original email:\n{original_email}\n\nSummary to evaluate:\n{summary}"""
+        }],
+        response_format={
+            "type": "json_schema",
+            "json_schema": {
+                "name": "summary_evaluation",
+                "schema": SummaryEvaluation.model_json_schema()
+            }
+        }
+    )
+```
+</Step>
+
+<Step>
+### Run the Evaluation Pipeline
+
+Evaluate your agent across multiple models:
+
+```python
+import asyncio
+import json
+from datetime import datetime
+
+async def evaluate_email_summaries(emails, models, client):
+    """Run complete evaluation pipeline"""
+    
+    # Create an experiment to group results
+    experiment_id = f"email-eval-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+    
+    async def process_email(email, model):
+        """Process a single email with a specific model"""
+        try:
+            # Generate summary using the model
+            summary_response = await client.chat.completions.create(
+                model=model,
+                messages=[{
+                    "role": "system",
+                    "content": "Summarize this email concisely."
+                }, {
+                    "role": "user",
+                    "content": email['content']
+                }],
+                extra_body={
+                    "metadata": {
+                        "experiment_id": experiment_id,
+                        "agent_id": "email-summarizer"
+                    }
+                }
+            )
+            
+            summary = summary_response.choices[0].message.content
+            completion_id = summary_response.id
+            
+            # Evaluate the summary
+            eval_response = await create_summary_judge(client, email['content'], summary)
+            evaluation = json.loads(eval_response.choices[0].message.content)
+            
+            # Send annotations to AnotherAI
+            annotations = []
+            
+            # Individual criterion scores
+            for criterion in ['completeness', 'accuracy', 'clarity', 
+                            'conciseness', 'actionability']:
+                score_data = evaluation[criterion]
+                annotations.append({
+                    "target": {
+                        "completion_id": completion_id,
+                        "key_path": f"{criterion}"
+                    },
+                    "metric": {
+                        "name": criterion,
+                        "value": score_data['score']
+                    },
+                    "text": score_data['explanation'],
+                    "metadata": {
+                        "model": model,
+                        "email_id": email['id'],
+                        "experiment_id": experiment_id
+                    },
+                    "author_name": "summary-judge"
+                })
+            
+            # Overall score
+            annotations.append({
+                "target": {"completion_id": completion_id},
+                "metric": {
+                    "name": "overall_score",
+                    "value": evaluation['overall_score']
+                },
+                "text": evaluation['overall_feedback'],
+                "metadata": {
+                    "model": model,
+                    "experiment_id": experiment_id
+                },
+                "author_name": "summary-judge"
+            })
+            
+            # Send annotations
+            await client.post("/v1/annotations", 
+                            json={"annotations": annotations})
+            
+            return {
+                "email_id": email['id'],
+                "model": model,
+                "success": True,
+                "evaluation": evaluation
+            }
+            
+        except Exception as e:
+            return {
+                "email_id": email['id'],
+                "model": model,
+                "success": False,
+                "error": str(e)
+            }
+    
+    # Process all combinations concurrently
+    tasks = [
+        process_email(email, model) 
+        for email in emails 
+        for model in models
+    ]
+    
+    results = await asyncio.gather(*tasks)
+    
+    # Calculate statistics
+    model_stats = {}
+    for model in models:
+        model_results = [r for r in results if r['model'] == model and r['success']]
+        if model_results:
+            avg_score = sum(r['evaluation']['overall_score'] for r in model_results) / len(model_results)
+            model_stats[model] = {
+                "average_score": avg_score,
+                "success_count": len(model_results),
+                "total_count": len([r for r in results if r['model'] == model])
+            }
+    
+    return {
+        "experiment_id": experiment_id,
+        "model_stats": model_stats,
+        "detailed_results": results
+    }
+```
+</Step>
+
+<Step>
+### Analyze Results
+
+After running your evaluation, review the results and use Claude to help analyze them:
+
+```python
+# Example usage
+async def main():
+    # Load test dataset
+    with open('dataset.json', 'r') as f:
+        emails = json.load(f)['emails']
+    
+    # Compare models
+    models = ["gpt-4o-mini", "gpt-4.1-nano-latest"]
+    
+    # Run evaluation
+    results = await evaluate_email_summaries(emails, models, client)
+    
+    # Print summary
+    print(f"\nExperiment ID: {results['experiment_id']}")
+    print("\nModel Performance:")
+    for model, stats in results['model_stats'].items():
+        print(f"  {model}:")
+        print(f"    Average Score: {stats['average_score']:.2f}/10")
+        print(f"    Success Rate: {stats['success_count']}/{stats['total_count']}")
+
+# Run the evaluation
+asyncio.run(main())
+```
+
+This code:
+1. Runs your email summarizer agent to create completions (summaries)
+2. Runs the judge agent to evaluate each summary
+3. Stores the evaluation scores as annotations on the summarizer's completions in AnotherAI
+
+You can then ask Claude to analyze these evaluation results by querying the annotations:
+
+```
+Which model configuration of email-summarizer performed best overall according to the judge?
+```
+
+```
+What were the most common issues the judge found in the email summaries?
+```
+</Step>
+
+<Step>
+
+### Track Performance Over Time
+
+If you want to run your evaluation regularly and monitor the results over time, you can set up continuous monitoring by asking Claude to create custom views that show the evaluation results:
+
+```
+Create a view that shows all completions of @[your-agent-name] with annotations. 
+The view should display the completion ID, input, outputs, and the annotation left on the completion.
+```
+</Step>
+</Steps>
+
+# Dataset Options:
+
+## Static Dataset Evaluation
+
+Static dataset evaluation uses pre-defined test cases stored in files (JSON, CSV, etc.) to test your agent consistently. We recommend datasets have at least initial 20 test cases, however the exact number may be lower or much higher for you, depending on the complexity of your agent.
+
+### Benefits
+- **Reproducibility**: Run the exact same tests across different agent versions
+- **Edge Case Coverage**: Include specific scenarios you know are challenging
+- **Regression Testing**: Ensure updates don't break existing functionality
+
+### Drawbacks
+- **Maintenance**: Test cases can become outdated as requirements change
+- **Limited Coverage**: May not reflect actual production usage patterns
+- **Artificial Examples**: Test cases might not capture real-world complexity
+
+### Example Implementation
+
+Create a JSON file with diverse test cases. For example:
+
+```json
+{
+  "emails": [
+    {
+      "id": "budget-meeting-001",
+      "content": "Subject: Q4 Budget Review Meeting\n\nHi team,\n\nI'd like to schedule our Q4 budget review for next Friday at 2 PM. Please come prepared with your department's spending reports and projections for next quarter.\n\nThe meeting will cover:\n- Current quarter spending analysis\n- Next quarter budget allocations\n- Cost-saving initiatives\n\nPlease confirm your attendance by Wednesday.\n\nBest,\nSarah",
+      "category": "meeting-request"
+    },
+    {
+      "id": "urgent-support-002",
+      "content": "Subject: URGENT: Production Server Down\n\nTeam,\n\nOur main production server went down at 3:47 AM. Customer transactions are failing.\n\nImmediate actions needed:\n1. All hands on deck - cancel morning meetings\n2. DevOps team investigate root cause\n3. Customer Success prepare communications\n\nJoin emergency call: meet.company.com/emergency\n\n- Mark (CTO)",
+      "category": "urgent-technical"
+    }
+  ]
+}
+```
+
+Then load and use it in your evaluation:
+
+```python
+# Load static dataset
+with open('test_emails.json', 'r') as f:
+    emails = json.load(f)['emails']
+
+# Run evaluation
+results = await evaluate_email_summaries(emails, models, client)
+```
+
+## Production Data Evaluation
+
+Production data evaluation uses recent completions from your live agent to test performance on real-world data.
+
+### Benefits
+- **Real-World Testing**: Evaluate on actual data your users are submitting
+- **Current Relevance**: Always testing on the latest usage patterns
+- **No Maintenance**: No need to update test cases manually
+
+### Drawbacks
+- **Inconsistency**: Different data each time makes comparison harder
+- **No Edge Cases**: Might miss rare but important scenarios
+- **Privacy Concerns**: May need to filter sensitive production data
+- **Availability**: Requires existing completions to evaluate
+
+### Example Implementation
+
+To evaluate production data, modify the code from Step 3 (Run the Evaluation Pipeline) to create an experiment with a completions query instead of loading a static dataset:
+
+```python
+# Create experiment using recent production completions
+experiment_response = await client.post(
+    "/v1/experiments",
+    json={
+        "title": "Production Email Summary Evaluation",
+        "description": "Evaluate recent production summaries",
+        "agent_id": "email-summarizer",
+        "models": ["gpt-4o-mini", "claude-3.5-sonnet"],
+        "completions_query": """
+            SELECT * FROM completions 
+            WHERE metadata.agent_id = 'email-summarizer' 
+            AND created_at > now() - INTERVAL 1 DAY 
+            ORDER BY created_at DESC 
+            LIMIT 50
+        """
+    }
+)
+
+experiment_id = experiment_response.json()['id']
+
+# The experiment now contains recent completions
+# Run the judge on these completions
+for completion in experiment_response.json()['completions']:
+    # Extract the email content and summary
+    email_content = completion['input']['email_content']
+    summary = completion['output']
+    
+    # Run judge evaluation
+    eval_response = await create_summary_judge(client, email_content, summary)
+    evaluation = json.loads(eval_response.choices[0].message.content)
+    
+    # Store evaluation as annotations...
+```
+
+### Choosing Your Approach
+
+**Use Static Datasets when:**
+- You need consistent benchmarks across versions
+- You have specific edge cases to test
+- You're comparing model performance
+- You need reproducible results for stakeholders
+
+**Use Production Data when:**
+- You want to understand current performance
+- You're monitoring quality over time
+- You have sufficient production volume
+- You want to catch real-world issues
+
