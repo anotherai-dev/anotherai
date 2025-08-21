@@ -51,7 +51,7 @@ const UserButtonWithClerk = React.memo<UserButtonWithClerkProps>(function UserBu
       <div
         ref={userButtonRef}
         onClick={handleContainerClick}
-        className="flex gap-3 mx-2 px-3 py-2 mt-1.5 justify-between items-center hover:bg-gray-100 rounded-[4px] cursor-pointer transition-colors duration-200"
+        className="flex gap-3 px-5 py-2.5 justify-between items-center hover:bg-gray-100 rounded-[4px] cursor-pointer transition-colors duration-200"
       >
         <ClerkUserButton afterSignOutUrl="/" />
 

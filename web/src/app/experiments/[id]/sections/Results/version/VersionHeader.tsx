@@ -105,7 +105,7 @@ export function VersionHeader(props: VersionHeaderProps) {
         <div>
           <HoverPopover
             content={<VersionDetailsView version={version} showPrompt={false} />}
-            position="bottom"
+            position="bottomLeft"
             popoverClassName="rounded bg-white border border-gray-200 w-80"
           >
             <div className="text-gray-800 font-semibold mb-2 text-sm cursor-pointer hover:text-gray-600">

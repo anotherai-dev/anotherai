@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { HoverPopover } from "@/components/HoverPopover";
 import { useOrFetchViewFolders, useViews } from "@/store/views";
 import { View } from "@/types/models";
-import { UserButton } from "../auth/UserButton";
 import { EditableFolderNameRef } from "./EditableFolderName";
 import FolderCell from "./FolderCell";
 
@@ -314,11 +313,9 @@ export default function ViewsSection() {
       </div>
 
       {/* Auto-refresh indicator */}
-      <div className="px-3 pt-3 pb-2 border-t border-gray-200 mt-3">
+      <div className="px-3 pt-3 pb-1 border-t border-gray-200 mt-3">
         <p className="text-xs text-gray-400 text-center">Views update automatically</p>
       </div>
-
-      <UserButton className="border-t border-gray-200 mt-1" />
     </div>
   );
 }
