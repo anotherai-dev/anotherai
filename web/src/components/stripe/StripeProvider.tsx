@@ -19,7 +19,7 @@ export function StripeProvider({ children }: { children: ReactNode }) {
             fontFamily: "system-ui, sans-serif",
             borderRadius: "4px",
             colorBackground: "white",
-            fontSize: "13px",
+            fontSizeSm: "13px",
             focusBoxShadow: "0",
             focusOutline: "0",
             colorPrimary: "black",

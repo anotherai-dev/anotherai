@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useOrFetchOrganizationSettings, useOrFetchPaymentMethod, usePayments } from "@/store/mocked_payments";
 import { PaymentModalContent } from "./PaymentModalContent";
 import { useStripePayments } from "./hooks/useStripePayments";
