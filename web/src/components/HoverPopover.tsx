@@ -26,7 +26,7 @@ export function HoverPopover({
   content,
   className = "inline-block",
   popoverClassName = "",
-  delay = 100,
+  delay = 50,
   position = "top",
 }: HoverPopoverProps) {
   const [isVisible, setIsVisible] = useState(false);

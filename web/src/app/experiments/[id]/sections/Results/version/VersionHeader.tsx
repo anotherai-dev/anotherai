@@ -131,13 +131,18 @@ export function VersionHeader(props: VersionHeaderProps) {
                 Version {index + 1}
               </div>
               {isHovered && (
-                <button
-                  onClick={handleCopyVersion}
-                  className="bg-white border border-gray-200 text-gray-900 hover:bg-gray-100 cursor-pointer h-5 w-5 rounded-[2px] flex items-center justify-center"
-                  title="Copy version ID"
+                <HoverPopover
+                  content={<div className="text-xs">Copy Version ID</div>}
+                  position="top"
+                  popoverClassName="bg-gray-800 text-white rounded-[4px] px-2 py-1"
                 >
-                  <Copy size={12} />
-                </button>
+                  <button
+                    onClick={handleCopyVersion}
+                    className="bg-white border border-gray-200 text-gray-900 hover:bg-gray-100 cursor-pointer h-5 w-5 rounded-[2px] flex items-center justify-center"
+                  >
+                    <Copy size={12} />
+                  </button>
+                </HoverPopover>
               )}
             </div>
           </HoverPopover>

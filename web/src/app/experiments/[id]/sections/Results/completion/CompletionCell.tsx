@@ -1,6 +1,7 @@
 import { Copy } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
+import { HoverPopover } from "@/components/HoverPopover";
 import { PageError } from "@/components/PageError";
 import { PriceAndLatencyDisplay } from "@/components/PriceAndLatencyDisplay";
 import { useToast } from "@/components/ToastProvider";
@@ -125,13 +126,18 @@ export function CompletionCell(props: CompletionCellProps) {
           View Details
         </button>
         {isHovered && (
-          <button
-            onClick={handleCopyCompletion}
-            className="bg-white border border-gray-200 text-gray-900 hover:bg-gray-100 cursor-pointer h-8 w-8 rounded flex items-center justify-center"
-            title="Copy completion ID"
+          <HoverPopover
+            content={<div className="text-xs">Copy Completion ID</div>}
+            position="top"
+            popoverClassName="bg-gray-800 text-white rounded-[4px] px-2 py-1"
           >
-            <Copy size={12} />
-          </button>
+            <button
+              onClick={handleCopyCompletion}
+              className="bg-white border border-gray-200 text-gray-900 hover:bg-gray-100 cursor-pointer h-8 w-8 rounded flex items-center justify-center"
+            >
+              <Copy size={12} />
+            </button>
+          </HoverPopover>
         )}
       </div>
     </div>
