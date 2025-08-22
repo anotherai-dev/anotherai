@@ -1,0 +1,61 @@
+---
+title: Debugging Agent Issues
+summary: Learn how to systematically debug problems with agent completions using Claude Code's investigation capabilities
+description: Step-by-step guide to identifying, analyzing, and resolving issues with your AI agents by leveraging completion IDs and Claude Code's debugging features
+---
+
+# Debugging Agent Issues
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+If you noticed issues with your agent, the easiest way to debug is to use Claude Code (or your preferred AI coding agent) to investigate the issue.
+
+<Steps>
+<Step>
+
+### Describe the Issue to Claude Code
+
+Open Claude Code (or your preferred AI coding agent) and describe the issue you're experiencing. Depending on the nature of the issue, your description can contain different information. 
+
+**Using Specific Completion Links:**
+If you've identified a specific problematic completion, you can copy the completion ID from the completions detail view (button in the top right of the modal) and share it:
+
+```
+This completion anotherai/completion/0198c34b-ff24-73cb-57d8-a67851e0cf10 
+input tone was enthusiastic, but the rewritten email isn't very enthusiastic. 
+Help me understand what's going wrong.
+```
+
+**Using Metadata (Especially Useful for Customer Issues):**
+If you receive a report of an issue from a user and utilize metadata - like user emails or ids - to tie completions to a specific user, you can debug more generally without needing specific completion IDs. 
+
+```
+john@example.com reported that their email was not rewritten in the correct tone by 
+@email_reimaginer. Find why the agent did not work well for customer john@example.com 
+and help me understand how to fix the issue.
+```
+
+</Step>
+
+<Step>
+
+### Claude Does the Rest!
+
+Claude Code will debug for you by examining the completion and agent details and input variables. After the issue is identified, you can use the Claude Code to help you rewrite your agent's code to fix the issue.
+
+<Callout type="tip">
+Based on our experience: for complex debugging tasks, we strongly recommend switching from your default model to Claude Opus using the `/model` command in Claude Code. 
+</Callout>
+
+
+</Step>
+</Steps>
+
+
+## Common Issues Claude Can Help Debug
+
+- **Prompt engineering problems** - Suboptimal prompts leading to poor outputs
+- **Input validation issues** - Malformed or unexpected input data
+- **Model selection problems** - Wrong model chosen for the task
+- **Cost optimization** - Identifying expensive patterns or inefficient configurations
+- **Performance bottlenecks** - Slow completions or timeout issues
