@@ -66,18 +66,16 @@ export function CompletionModal() {
             <CompletionNavigationButtons completionId={completionId} />
           </div>
 
-            <button
-              onClick={copyCompletionId}
-              className="bg-white border border-gray-200 text-gray-900 hover:bg-gray-100 cursor-pointer px-2 py-1 rounded-[2px] h-8 flex items-center justify-center shadow-sm shadow-black/5"
-              title="Copy to clipboard"
-            >
-              <div className="flex items-center gap-2 px-0.5">
+          <button
+            onClick={copyCompletionId}
+            className="bg-white border border-gray-200 text-gray-900 hover:bg-gray-100 cursor-pointer px-2 py-1 rounded-[2px] h-8 flex items-center justify-center shadow-sm shadow-black/5"
+            title="Copy to clipboard"
+          >
+            <div className="flex items-center gap-2 px-0.5">
               <Copy size={12} />
-            <span className="text-xs text-gray-700 font-mono items-center">
-              anotherai/completion/{completionId}
-            </span>
-              </div>
-            </button>
+              <span className="text-xs text-gray-700 font-mono items-center">anotherai/completion/{completionId}</span>
+            </div>
+          </button>
         </div>
 
         {!completion ? (
