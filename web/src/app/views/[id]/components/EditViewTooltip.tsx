@@ -23,7 +23,7 @@ export function EditViewTooltip({ viewId }: EditViewTooltipProps) {
   };
 
   return (
-    <div className="max-w-xs py-1.5 px-1">
+    <div className="w-xs py-1.5 px-1">
       <div className="text-xs font-medium text-white">
         <div>To edit this view:</div>
         <div className="ml-2 mt-1">

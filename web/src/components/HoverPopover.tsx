@@ -35,7 +35,7 @@ export function HoverPopover({
 
     switch (position) {
       case "top":
-        top = rect.top - 32;
+        top = rect.top - 8;
         left = rect.left + rect.width / 2;
         break;
       case "bottom":
@@ -160,15 +160,17 @@ export function HoverPopover({
         top: popoverPosition.top,
         left: popoverPosition.left,
         transform:
-          position === "top" || position === "bottom"
-            ? "translateX(-50%)"
-            : position === "left" || position === "right"
-              ? "translateY(-50%)"
-              : position === "topRight"
-                ? "translateX(-50%) translateY(-100%)"
-                : position === "bottomLeft"
-                  ? "translateX(0)"
-                  : "translateX(-50%)",
+          position === "top"
+            ? "translateX(-50%) translateY(-100%)"
+            : position === "bottom"
+              ? "translateX(-50%)"
+              : position === "left" || position === "right"
+                ? "translateY(-50%)"
+                : position === "topRight"
+                  ? "translateX(-50%) translateY(-100%)"
+                  : position === "bottomLeft"
+                    ? "translateX(0)"
+                    : "translateX(-50%)",
       }}
     >
       {content}
@@ -179,7 +181,7 @@ export function HoverPopover({
     <>
       <div
         ref={triggerRef}
-        className={cx("relative inline-block", className)}
+        className={cx("relative", className)}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >

@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { UserButton } from "@/components/auth/UserButton";
+import { CreditsSection } from "@/components/sidebar/CreditsSection";
 import ViewsSection from "@/components/sidebar/ViewsSection";
 import { isClerkEnabled } from "@/lib/utils";
 
@@ -145,6 +147,15 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
         </div>
 
         <ViewsSection />
+
+        <UserButton className="border-t border-gray-200" />
+
+        {/* Credits Section - Only show when Clerk is enabled */}
+        {isClerkEnabled() && (
+          <div className="mt-auto">
+            <CreditsSection />
+          </div>
+        )}
       </div>
     </div>
   );
