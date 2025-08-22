@@ -146,7 +146,7 @@ export function SchemaViewer(props: SchemaViewerProps) {
             {renderTypeBadge(resolvedNode.type)}
 
             {resolvedNode.enum && (
-              <span className="text-xs text-gray-500 font-normal">({resolvedNode.enum.length} values)</span>
+              <span className="text-xs text-gray-500 font-normal">({resolvedNode.enum.join(", ")})</span>
             )}
           </div>
 
