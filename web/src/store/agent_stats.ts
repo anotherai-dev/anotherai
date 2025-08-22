@@ -97,21 +97,21 @@ export const useAgentStats = create<AgentStatsState>((set, get) => ({
       const [completionsData, summaryData, dailyCostData] = await Promise.all([
         // 1. Fetch last 20 completions for display
         executeQuery(`
-          SELECT id, agent_id, created_at, cost_usd, duration_seconds, version_model, input_messages, output_messages, output_error
-          FROM completions 
-          WHERE agent_id = '${agentId}' 
-          ORDER BY created_at DESC 
+          SELECT id, agent_id, created_at, cost_usd, duration_seconds, version_model, input_messages, input_variables, output_messages, output_error
+          FROM completions
+          WHERE agent_id = '${agentId}'
+          ORDER BY created_at DESC
           LIMIT 20
         `) as Promise<Completion[]>,
 
         // 2. Fetch summary statistics with proper aliases
         executeQuery(`
-          SELECT 
+          SELECT
             COUNT(*) as total_runs,
             COALESCE(SUM(cost_usd), 0) as total_cost,
             COALESCE(AVG(cost_usd), 0) as avg_cost_per_run,
             COALESCE(AVG(duration_seconds), 0) as avg_duration
-          FROM completions 
+          FROM completions
           WHERE agent_id = '${agentId}'
         `) as Promise<Array<AgentSummary>>,
 
@@ -122,8 +122,8 @@ export const useAgentStats = create<AgentStatsState>((set, get) => ({
           const dateString = thirtyDaysAgo.toISOString().split("T")[0];
           return executeQuery(`
             SELECT created_at, cost_usd
-            FROM completions 
-            WHERE agent_id = '${agentId}' 
+            FROM completions
+            WHERE agent_id = '${agentId}'
               AND created_at >= '${dateString}'
             ORDER BY created_at ASC
           `);
