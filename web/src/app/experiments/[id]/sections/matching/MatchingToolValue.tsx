@@ -53,7 +53,6 @@ export function MatchingToolValue({ tools, annotations, experimentId, completion
             </span>
           }
           position="topRightAligned"
-          delay={0}
           popoverClassName="bg-white border border-gray-200"
           className="w-full block"
         >

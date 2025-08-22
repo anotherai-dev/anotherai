@@ -68,7 +68,6 @@ export function VersionOptionalKeysView(props: VersionOptionalKeysViewProps) {
                   </span>
                 }
                 position="rightOverlap"
-                delay={0}
                 popoverClassName="bg-white border border-gray-200"
                 className="w-full block"
               >

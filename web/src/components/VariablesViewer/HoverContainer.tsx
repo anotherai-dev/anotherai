@@ -84,7 +84,6 @@ export const HoverContainer = (props: HoverContainerProps) => {
           </span>
         }
         position="topRight"
-        delay={0}
         popoverClassName="bg-white border border-gray-200"
       >
         {content}
