@@ -6,6 +6,8 @@ type VersionHeaderPriceAndLatencyProps = {
     avgDuration: number;
     allCosts: number[];
     allDurations: number[];
+    versionCosts: number[];
+    versionDurations: number[];
   };
   showAvgPrefix?: boolean;
 };
@@ -23,6 +25,8 @@ export function VersionHeaderPriceAndLatency(props: VersionHeaderPriceAndLatency
       duration={priceAndLatency.avgDuration}
       allCosts={priceAndLatency.allCosts}
       allDurations={priceAndLatency.allDurations}
+      versionCosts={priceAndLatency.versionCosts}
+      versionDurations={priceAndLatency.versionDurations}
       showAvgPrefix={showAvgPrefix}
     />
   );

@@ -38,7 +38,6 @@ export function VersionHeaderModel(props: VersionHeaderModelProps) {
             </span>
           }
           position="rightOverlap"
-          delay={0}
           popoverClassName="bg-white border border-gray-200"
         >
           <div
