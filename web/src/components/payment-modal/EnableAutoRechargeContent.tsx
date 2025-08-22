@@ -1,6 +1,50 @@
 "use client";
 
+import { useCallback, useState } from "react";
 import { OrganizationSettings } from "@/types/models";
+
+interface CurrencyInputProps {
+  amount: number | undefined;
+  setAmount: (amount: number | undefined) => void;
+  placeholder?: string;
+}
+
+function CurrencyInput({ amount, setAmount, placeholder = "0.00" }: CurrencyInputProps) {
+  const [isFocused, setIsFocused] = useState(false);
+
+  const updateAmount = useCallback(
+    (text: string) => {
+      if (!text) {
+        setAmount(undefined);
+        return;
+      }
+      const parsedAmount = Number(text);
+      setAmount(Number.isNaN(parsedAmount) ? undefined : parsedAmount);
+    },
+    [setAmount]
+  );
+
+  return (
+    <div className="relative">
+      <span
+        className={`absolute left-3 top-1/2 -translate-y-1/2 text-[13px] font-normal ${
+          isFocused || !!amount ? "text-gray-900" : "text-gray-400"
+        }`}
+      >
+        $
+      </span>
+      <input
+        type="number"
+        value={amount ?? ""}
+        onChange={(e) => updateAmount(e.target.value)}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
+        className="w-full pl-6 pr-3 py-2 border border-gray-200 rounded-[4px] text-[13px] font-normal text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-transparent"
+        placeholder={placeholder}
+      />
+    </div>
+  );
+}
 
 interface EnableAutoRechargeContentProps {
   organizationSettings: OrganizationSettings | null;
@@ -8,6 +52,13 @@ interface EnableAutoRechargeContentProps {
 }
 
 export function EnableAutoRechargeContent({ organizationSettings, onClose }: EnableAutoRechargeContentProps) {
+  const [triggerThreshold, setTriggerThreshold] = useState<number | undefined>(
+    organizationSettings?.automatic_payment_threshold ?? 10
+  );
+  const [targetBalance, setTargetBalance] = useState<number | undefined>(
+    organizationSettings?.automatic_payment_balance_to_maintain ?? 50
+  );
+
   return (
     <div className="flex flex-col h-full w-full">
       <div className="text-[15px] font-semibold text-gray-900 mb-4 border-b border-gray-200 border-dashed px-4 py-3">
@@ -20,24 +71,15 @@ export function EnableAutoRechargeContent({ organizationSettings, onClose }: Ena
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Trigger threshold (recharge when balance reaches)
             </label>
-            <input
-              type="number"
-              defaultValue={organizationSettings?.automatic_payment_threshold ?? 10}
-              className="w-full px-3 py-2 border border-gray-200 rounded-[4px] text-[13px] focus:outline-none focus:ring-1 focus:ring-gray-900"
-              placeholder="10"
-            />
+            <CurrencyInput amount={triggerThreshold} setAmount={setTriggerThreshold} placeholder="10.00" />
           </div>
 
           <div>
             <label className="block text-[13px] font-medium text-gray-700 mb-1">
               Target balance (recharge to this amount)
             </label>
-            <input
-              type="number"
-              defaultValue={organizationSettings?.automatic_payment_balance_to_maintain ?? 50}
-              className="w-full px-3 py-2 border border-gray-200 rounded-[4px] text-[13px] focus:outline-none focus:ring-1 focus:ring-gray-900"
-              placeholder="50"
-            />
+            <CurrencyInput amount={targetBalance} setAmount={setTargetBalance} placeholder="50.00" />
+            <div className="text-[12px] text-gray-500 mt-1">Enter an amount between $5 and $5000</div>
           </div>
 
           <div className="text-[12px] text-gray-500 pb-4">
