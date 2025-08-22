@@ -2,6 +2,7 @@ import { Copy } from "lucide-react";
 import { useMemo, useState } from "react";
 import { HoverPopover } from "@/components/HoverPopover";
 import { useToast } from "@/components/ToastProvider";
+import { DeployVersionInstructions } from "@/components/experiment/DeployVersionInstructions";
 import {
   findIndexOfVersionThatFirstUsedThosePrompt,
   findIndexOfVersionThatFirstUsedThosePromptAndSchema,
@@ -210,13 +211,19 @@ export function VersionHeader(props: VersionHeaderProps) {
         )}
       </div>
 
-      {(priceAndLatency || metrics) && (
-        <div className="mt-auto">
-          <div className="mt-3 pt-2 border-t border-gray-200" />
-          <VersionHeaderPriceAndLatency priceAndLatency={priceAndLatency} showAvgPrefix={showAvgPrefix} />
-          <VersionHeaderMetrics metrics={metrics} allMetricsPerKey={allMetricsPerKey} showAvgPrefix={showAvgPrefix} />
+      <div className="mt-auto">
+        <div className="mt-3">
+          <DeployVersionInstructions versionId={version.id} agentId={agentId} />
         </div>
-      )}
+
+        {(priceAndLatency || metrics) && (
+          <>
+            <div className="mt-3 pt-2 border-t border-gray-200" />
+            <VersionHeaderPriceAndLatency priceAndLatency={priceAndLatency} showAvgPrefix={showAvgPrefix} />
+            <VersionHeaderMetrics metrics={metrics} allMetricsPerKey={allMetricsPerKey} showAvgPrefix={showAvgPrefix} />
+          </>
+        )}
+      </div>
     </div>
   );
 }
