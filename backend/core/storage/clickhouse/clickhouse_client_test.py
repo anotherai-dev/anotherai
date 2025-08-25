@@ -2,6 +2,7 @@
 
 import json
 from collections.abc import Awaitable, Callable
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -10,10 +11,13 @@ from clickhouse_connect.driver.asyncclient import AsyncClient
 from clickhouse_connect.driver.exceptions import DatabaseError
 from pydantic import BaseModel
 
+from core.domain.agent import Agent
 from core.domain.agent_completion import AgentCompletion
 from core.domain.annotation import Annotation
 from core.domain.exceptions import BadRequestError, ObjectNotFoundError
 from core.domain.experiment import Experiment
+from core.domain.message import Message
+from core.domain.version import Version
 from core.storage.clickhouse._models._ch_annotation import ClickhouseAnnotation
 from core.storage.clickhouse._models._ch_completion import ClickhouseCompletion
 from core.storage.clickhouse._models._ch_experiment import ClickhouseExperiment
@@ -800,3 +804,109 @@ class TestAddCompletionToExperiment:
         """Test that providing an invalid UUID raises BadRequestError."""
         with pytest.raises(BadRequestError, match="Invalid completion UUID"):
             await client.add_completion_to_experiment("test-experiment", "invalid-uuid")
+
+
+class TestGetVersionById:
+    async def test_get_version_by_id_success(self, client: ClickhouseClient):
+        """Test successful retrieval of version by ID"""
+        # Create and store a completion with a version
+        completion = fake_completion(id_rand=1)
+        await client.store_completion(completion, _insert_settings)
+
+        # Retrieve the version by completion ID and agent ID
+        result_version, completion_id = await client.get_version_by_id(completion.agent.id, completion.id)
+
+        # Verify the returned version matches the original
+        assert completion_id == completion.id
+        assert result_version.model == completion.version.model
+        assert result_version.provider == completion.version.provider
+        assert result_version.temperature == completion.version.temperature
+        assert result_version.max_output_tokens == completion.version.max_output_tokens
+        assert result_version.use_structured_generation == completion.version.use_structured_generation
+        assert result_version.tool_choice == completion.version.tool_choice
+        assert result_version.prompt == completion.version.prompt
+
+    async def test_get_version_by_id_not_found(self, client: ClickhouseClient):
+        """Test ObjectNotFoundError when version/completion doesn't exist"""
+        # Use a valid UUID that doesn't exist in the database
+        nonexistent_id = str(UUID(int=12345))
+        agent_id = "test-agent"
+
+        with pytest.raises(ObjectNotFoundError, match="version"):
+            await client.get_version_by_id(agent_id, nonexistent_id)
+
+    async def test_get_version_by_id_with_complex_version(self, client: ClickhouseClient):
+        """Test retrieval with complex version object (tools, output schema, etc.)"""
+        from core.domain.tool import Tool
+
+        # Create a completion with a more complex version
+        complex_version = Version(
+            model="gpt-4",
+            provider="openai",
+            temperature=0.8,
+            max_output_tokens=2000,
+            use_structured_generation=True,
+            tool_choice="auto",
+            enabled_tools=[
+                Tool(
+                    name="calculator",
+                    description="A calculator tool",
+                    input_schema={"type": "object", "properties": {"expression": {"type": "string"}}},
+                    output_schema={"type": "object", "properties": {"result": {"type": "number"}}},
+                ),
+            ],
+            top_p=0.9,
+            presence_penalty=0.1,
+            frequency_penalty=0.2,
+            parallel_tool_calls=True,
+            prompt=[
+                Message.with_text("You are an assistant", role="system"),
+                Message.with_text("Calculate 2+2", role="user"),
+            ],
+            output_schema=Version.OutputSchema(
+                json_schema={
+                    "type": "object",
+                    "properties": {
+                        "result": {"type": "number"},
+                    },
+                    "required": ["result"],
+                },
+            ),
+        )
+
+        completion = fake_completion(id_rand=2)
+        # Replace the version with our complex version
+        completion = completion.model_copy(update={"version": complex_version})
+        await client.store_completion(completion, _insert_settings)
+
+        # Retrieve the version
+        result_version, completion_id = await client.get_version_by_id(completion.agent.id, completion.id)
+        assert completion_id == completion.id
+
+        # Verify all complex fields are preserved
+        assert result_version.model == complex_version.model
+        assert result_version.provider == complex_version.provider
+        assert result_version.temperature == complex_version.temperature
+        assert result_version.max_output_tokens == complex_version.max_output_tokens
+        assert result_version.use_structured_generation == complex_version.use_structured_generation
+        assert result_version.tool_choice == complex_version.tool_choice
+        assert result_version.enabled_tools == complex_version.enabled_tools
+        assert result_version.top_p == complex_version.top_p
+        assert result_version.presence_penalty == complex_version.presence_penalty
+        assert result_version.frequency_penalty == complex_version.frequency_penalty
+        assert result_version.parallel_tool_calls == complex_version.parallel_tool_calls
+        assert result_version.prompt == complex_version.prompt
+        assert result_version.output_schema == complex_version.output_schema
+
+    async def test_get_version_by_id_different_agent(self, client: ClickhouseClient):
+        """Test filtering by agent_id - ensure can't access other agent's versions"""
+        # Create completion for agent1
+        agent1 = Agent(uid=1, id="agent-1", name="Agent 1", created_at=datetime(2025, 1, 1, 1, 1, 1, tzinfo=UTC))
+        completion1 = fake_completion(agent=agent1, id_rand=1)
+        await client.store_completion(completion1, _insert_settings)
+
+        # Try to access agent1's version with a different agent ID
+        wrong_agent_id = "agent-2"
+
+        with pytest.raises(ObjectNotFoundError, match="version"):
+            await client.get_version_by_id(wrong_agent_id, completion1.id)
