@@ -5,6 +5,7 @@ description: Learn how to use LLMs and datasets to create a robust evaluation sy
 ---
 
 import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Accordions, Accordion } from 'fumadocs-ui/components/accordion';
 
 Evaluating your AI agents is important for ensuring they meet quality standards and perform reliably in production. However there is no one-size-fits-all evaluation criteria: some agents need to be evaluated only on accuracy, while others have additional criteria: tone, clarity, verbosity, etc. 
 
@@ -301,6 +302,32 @@ The view should display the completion ID, input, outputs, and the annotation le
 ## Static Dataset Evaluation
 
 Static dataset evaluation uses pre-defined test cases stored in files (JSON, CSV, etc.) to test your agent consistently. We recommend datasets have at least initial 20 test cases, however the exact number may be lower or much higher for you, depending on the complexity of your agent.
+
+<Accordions>
+<Accordion title="A Note on Static Dataset Types" id="static-dataset-types">
+
+When creating static datasets for agent evaluation, you can choose between two main approaches depending on your use case:
+
+**Input and Expected Output Datasets**
+
+These datasets include both the input and the correct output for each test case. In this case your evaluation process simply consists of comparing a completion's output to the correct output to determine the quality of a given version. This approach works well for agents that would only have one correct output for a given input.
+
+Examples of good use cases:
+- Solving math problems
+- Data extraction tasks
+- Classification tasks
+
+**Input-Only Datasets**
+
+These datasets contain only inputs without predefined expected outputs. Evaluation relies on LLM-as-a-judge or human reviewers to assess quality as there is no single correct output. This approach is much better for agents that can have multiple valid outputs for a given input.
+
+Examples of good use cases:
+- Creative writing 
+- Content summarization 
+- Analysis tasks
+
+</Accordion>
+</Accordions>
 
 ### Benefits
 - **Reproducibility**: Run the exact same tests across different agent versions
