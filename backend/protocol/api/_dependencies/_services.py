@@ -85,7 +85,10 @@ OrganizationServiceDep = Annotated[OrganizationService, Depends(organization_ser
 
 
 def deployment_service(tenant: TenantDep, dependencies: LifecycleDependenciesDep) -> DeploymentService:
-    return DeploymentService(dependencies.storage_builder.deployments(tenant.uid))
+    return DeploymentService(
+        dependencies.storage_builder.deployments(tenant.uid),
+        dependencies.storage_builder.completions(tenant.uid),
+    )
 
 
 DeploymentServiceDep = Annotated[DeploymentService, Depends(deployment_service)]

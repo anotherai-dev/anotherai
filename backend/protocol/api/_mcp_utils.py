@@ -133,4 +133,4 @@ async def organization_service() -> OrganizationService:
 async def deployment_service() -> DeploymentService:
     deps = lifecyle_dependencies()
     tenant = await _authenticated_tenant()
-    return DeploymentService(deps.storage_builder.deployments(tenant.uid))
+    return DeploymentService(deps.storage_builder.deployments(tenant.uid), deps.storage_builder.completions(tenant.uid))
