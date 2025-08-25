@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from tests.utils import fixtures_json
 
 from .schemas import (
+    IncompatibleSchemaError,
     JsonSchema,
     clean_json_string,
     make_optional,
@@ -1309,3 +1310,137 @@ class TestRemoveFromParent:
             "type": "object",
             "properties": {},
         }
+
+
+class TestCheckCompatible:
+    @pytest.mark.parametrize(
+        ("schema_a", "schema_b"),
+        [
+            # Ignore top-level and nested metadata keys
+            pytest.param(
+                {
+                    "type": "object",
+                    "title": "A",
+                    "description": "desc",
+                    "properties": {
+                        "name": {"type": "string", "description": "n"},
+                        "age": {"type": "integer", "examples": [1, 2]},
+                    },
+                    "required": ["name"],
+                },
+                {
+                    "type": "object",
+                    "properties": {
+                        "name": {"type": "string"},
+                        "age": {"type": "integer"},
+                    },
+                },
+                id="metadata_ignored",
+            ),
+            # Ignore format differences
+            pytest.param(
+                {
+                    "type": "object",
+                    "properties": {"date": {"type": "string", "format": "date"}},
+                },
+                {
+                    "type": "object",
+                    "properties": {"date": {"type": "string"}},
+                },
+                id="format_ignored",
+            ),
+            # additionalProperties differences are ignored for compatibility
+            pytest.param(
+                {
+                    "type": "object",
+                    "properties": {"id": {"type": "string"}},
+                    "additionalProperties": True,
+                },
+                {
+                    "type": "object",
+                    "properties": {"id": {"type": "string"}},
+                },
+                id="additionalProperties_ignored",
+            ),
+            # Compatible through refs vs inline
+            pytest.param(
+                {
+                    "type": "object",
+                    "properties": {"person": {"$ref": "#/$defs/Person"}},
+                    "$defs": {"Person": {"type": "object", "properties": {"first": {"type": "string"}}}},
+                },
+                {
+                    "type": "object",
+                    "properties": {
+                        "person": {
+                            "type": "object",
+                            "properties": {"first": {"type": "string"}},
+                        },
+                    },
+                },
+                id="ref_vs_inline_object",
+            ),
+            # Arrays with identical item types (metadata ignored on items)
+            pytest.param(
+                {
+                    "type": "object",
+                    "properties": {
+                        "tags": {"type": "array", "items": {"type": "string", "description": "tag"}},
+                    },
+                },
+                {
+                    "type": "object",
+                    "properties": {"tags": {"type": "array", "items": {"type": "string"}}},
+                },
+                id="array_item_metadata_ignored",
+            ),
+        ],
+    )
+    def test_compatible(self, schema_a: dict[str, Any], schema_b: dict[str, Any]):
+        a = JsonSchema(schema_a)
+        b = JsonSchema(schema_b)
+        a.check_compatible(b)
+        b.check_compatible(a)
+
+    @pytest.mark.parametrize(
+        ("schema_a", "schema_b"),
+        [
+            # Different primitive types
+            pytest.param(
+                {"type": "object", "properties": {"age": {"type": "integer"}}},
+                {"type": "object", "properties": {"age": {"type": "string"}}},
+                id="primitive_type_mismatch",
+            ),
+            # Missing property in one schema
+            pytest.param(
+                {"type": "object", "properties": {"name": {"type": "string"}, "age": {"type": "integer"}}},
+                {"type": "object", "properties": {"name": {"type": "string"}}},
+                id="missing_property",
+            ),
+            # Extra property in one schema
+            pytest.param(
+                {"type": "object", "properties": {"name": {"type": "string"}}},
+                {"type": "object", "properties": {"name": {"type": "string"}, "age": {"type": "integer"}}},
+                id="extra_property",
+            ),
+            # Arrays with different item types
+            pytest.param(
+                {"type": "object", "properties": {"items": {"type": "array", "items": {"type": "string"}}}},
+                {"type": "object", "properties": {"items": {"type": "array", "items": {"type": "number"}}}},
+                id="array_item_type_mismatch",
+            ),
+            # Root type mismatch
+            pytest.param(
+                {"type": "array", "items": {"type": "string"}},
+                {"type": "object", "properties": {"items": {"type": "string"}}},
+                id="root_type_mismatch",
+            ),
+        ],
+    )
+    def test_incompatible(self, schema_a: dict[str, Any], schema_b: dict[str, Any]):
+        a = JsonSchema(schema_a)
+        b = JsonSchema(schema_b)
+        with pytest.raises(IncompatibleSchemaError):
+            a.check_compatible(b)
+        with pytest.raises(IncompatibleSchemaError):
+            b.check_compatible(a)

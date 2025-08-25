@@ -3,6 +3,7 @@ from typing import Any, Literal, Protocol
 from core.domain.agent_completion import AgentCompletion
 from core.domain.annotation import Annotation
 from core.domain.experiment import Experiment
+from core.domain.version import Version
 
 type CompletionField = Literal["traces", "agent_id"]
 
@@ -29,3 +30,5 @@ class CompletionStorage(Protocol):
     ) -> AgentCompletion: ...
 
     async def raw_query(self, query: str) -> list[dict[str, Any]]: ...
+
+    async def get_version_by_id(self, agent_id: str, version_id: str) -> tuple[Version, str]: ...

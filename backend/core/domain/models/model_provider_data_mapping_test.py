@@ -6,6 +6,7 @@ from core.domain.models import Model, Provider
 
 from .model_provider_data import (
     LifecycleData,
+    ModelIsMissingReplacementModelError,
     ModelProviderData,
     TextPricePerToken,
 )
@@ -111,9 +112,10 @@ class TestSunsetModels:
         for provider_data in MODEL_PROVIDER_DATAS.values():
             for model, model_data in provider_data.items():
                 if model_data.lifecycle_data and model_data.lifecycle_data.is_sunset(one_month_from_now):
-                    assert model_data.replacement_model(one_month_from_now), (
-                        f"Model {model} should have a replacement model"
-                    )
+                    try:
+                        model_data.replacement_model(one_month_from_now)
+                    except ModelIsMissingReplacementModelError:
+                        pytest.fail(f"Model {model} should have a replacement model")
 
     @pytest.mark.parametrize("provider_data", MODEL_PROVIDER_DATAS.values())
     def test_sunset_models_are_not_sunset(

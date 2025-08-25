@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import { LoadingIndicator } from "@/components/LoadingIndicator";
 import { PageError } from "@/components/PageError";
 import { SimpleTableComponent } from "@/components/SimpleTableComponent";
-import { formatRelativeDate } from "@/components/utils/utils";
+import { formatRelativeDate, formatTotalCost } from "@/components/utils/utils";
 import { AgentsBaseCell } from "./AgentsBaseCell";
 import { AgentsTableAgentCell } from "./AgentsTableAgentCell";
 
@@ -136,13 +136,7 @@ export function AgentsTable(props: AgentsTableProps) {
               return <AgentsBaseCell key={header} value={value} />;
 
             case AGENTS_COLUMNS.TOTAL_COST:
-              return (
-                <AgentsBaseCell
-                  key={header}
-                  value={value}
-                  formatter={(val) => (val ? `$${Math.max(Number(val), 0.01).toFixed(2)}` : "-")}
-                />
-              );
+              return <AgentsBaseCell key={header} value={value} formatter={formatTotalCost} />;
 
             case AGENTS_COLUMNS.CREATED_AT:
               return <AgentsBaseCell key={header} value={value} formatter={formatRelativeDate} />;

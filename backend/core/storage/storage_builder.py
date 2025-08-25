@@ -3,6 +3,7 @@ from typing import Protocol
 from core.storage.agent_storage import AgentStorage
 from core.storage.annotation_storage import AnnotationStorage
 from core.storage.completion_storage import CompletionStorage
+from core.storage.deployment_storage import DeploymentStorage
 from core.storage.experiment_storage import ExperimentStorage
 from core.storage.file_storage import FileStorage
 from core.storage.tenant_storage import TenantStorage
@@ -23,6 +24,8 @@ class StorageBuilder(Protocol):
     def annotations(self, tenant_uid: int) -> AnnotationStorage: ...
 
     def views(self, tenant_uid: int) -> ViewStorage: ...
+
+    def deployments(self, tenant_uid: int) -> DeploymentStorage: ...
 
     async def close(self): ...
 

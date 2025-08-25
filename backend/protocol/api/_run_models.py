@@ -175,20 +175,6 @@ class _OpenAIProxyExtraFields(BaseModel):
         validation_alias=_alias_generator("agent_id"),
     )
 
-    environment: str | None = Field(
-        default=None,
-        description="A reference to an environment where the agent is deployed. It can also be provided in the model "
-        "with the format `agent_id/#schema_id/environment`",
-        validation_alias=_alias_generator("environment"),
-    )
-
-    schema_id: int | None = Field(
-        default=None,
-        description="The agent schema id. Required when using a deployment. It can also be provided in the model "
-        "with the format `agent_id/#schema_id/environment`",
-        validation_alias=_alias_generator("schema_id"),
-    )
-
     use_cache: CacheUsage | None = Field(
         default=None,
         validation_alias=_alias_generator("use_cache"),
@@ -206,6 +192,14 @@ class _OpenAIProxyExtraFields(BaseModel):
         "match the message history to an existing conversation. If no conversation is found, a new "
         "conversation will be created.",
         validation_alias=_alias_generator("conversation_id"),
+    )
+
+    deployment_id: str | None = Field(
+        default=None,
+        # TODO: describe if the values in the code override the deployment or if the deployment is the priority
+        # We could also have the deployment id in the model: `deployments/<deployment_id>` which would clarify
+        # that the deployment is a priority
+        description="The deployment id to use for the request",
     )
 
 

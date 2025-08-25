@@ -327,3 +327,24 @@ export interface APIKeyListResponse {
   next_page_token?: string;
   previous_page_token?: string;
 }
+
+// Deployments
+export interface Deployment {
+  id: string;
+  agent_id: string;
+  version: Version;
+  created_at: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface DeploymentUpdate {
+  version?: Version;
+  metadata?: Record<string, unknown>;
+}
+
+export interface DeploymentListResponse {
+  items: Deployment[];
+  total: number;
+  next_page_token?: string;
+  previous_page_token?: string;
+}
