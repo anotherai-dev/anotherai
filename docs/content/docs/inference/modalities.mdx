@@ -8,7 +8,7 @@ summary: Explanation on how different modalities are supported by AnotherAI
 Just like OpenAI, AnotherAI supports passing images and audio to the completion endpoint.
 
 <Tabs>
-<TabItem value="OpenAI SDK (js)">
+<Tab value="OpenAI SDK (js)">
 ```js
 const response = await openai.chat.completions.create({
   model: "gpt-4o-mini",
@@ -20,7 +20,7 @@ const response = await openai.chat.completions.create({
   ]
 });
 ```
-</TabItem>
+</Tab>
 </Tabs>
 
 ### Handling Audio URLs
@@ -28,7 +28,7 @@ const response = await openai.chat.completions.create({
 AnotherAI supports passing audio URLs as opposed to base64 encoded audio data. Simp
 
 <Tabs>
-<TabItem value="OpenAI SDK (js)">
+<Tab value="OpenAI SDK (js)">
 ```js
 const response = await openai.chat.completions.create({
   model: "gpt-4o-mini",
@@ -43,7 +43,7 @@ const response = await openai.chat.completions.create({
   ]
 });
 ```
-</TabItem>
+</Tab>
 </Tabs>
 
 ### Usage in templates
@@ -53,7 +53,7 @@ As described in the [Input Variables](/observability/input-variables) section, i
 However it is not currently possible to use input variables to represent image or audio data or URLs. Image and audio payloads should always be passed in the content of messages, in their respective fields.
 
 <Tabs>
-<TabItem value="OpenAI SDK (js)">
+<Tab value="OpenAI SDK (js)">
 ```js
 // ✅ Do: Pass the image URL as a image URL content
 const response = await openai.chat.completions.create({
@@ -93,7 +93,7 @@ const response = await openai.chat.completions.create({
 });
 
 ```
-</TabItem>
+</Tab>
 </Tabs>
 
 
