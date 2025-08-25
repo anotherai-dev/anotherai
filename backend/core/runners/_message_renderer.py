@@ -1,8 +1,9 @@
 import asyncio
 from typing import Any
 
+from core.domain.exceptions import BadRequestError
 from core.domain.message import Message, MessageContent
-from core.utils.templates import TemplateManager
+from core.utils.templates import TemplateManager, TemplateRenderingError
 
 
 class MessageRenderer:
@@ -19,8 +20,10 @@ class MessageRenderer:
     async def _render_text(self, text: str | None):
         if not text:
             return None
-
-        return await self._template_manager.render_template(text, self._variables)
+        try:
+            return await self._template_manager.render_template(text, self._variables)
+        except TemplateRenderingError as e:
+            raise BadRequestError(str(e)) from e
 
     async def render_content(self, content: MessageContent):
         update: dict[str, Any] = {}

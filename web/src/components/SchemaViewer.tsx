@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Annotation, OutputSchema } from "@/types/models";
 import { HoverContainer } from "./VariablesViewer/HoverContainer";
+import { JsonSchemaNode, resolveRef } from "./utils/utils";
 
 type SchemaViewerProps = {
   schema: OutputSchema;
@@ -10,16 +11,6 @@ type SchemaViewerProps = {
   annotations?: Annotation[];
   annotationPrefix?: string;
   onKeypathSelect?: (keyPath: string) => void;
-};
-
-type JsonSchemaNode = {
-  type?: string | string[];
-  properties?: Record<string, JsonSchemaNode>;
-  items?: JsonSchemaNode;
-  required?: string[];
-  description?: string;
-  enum?: unknown[];
-  default?: unknown;
 };
 
 export function SchemaViewer(props: SchemaViewerProps) {
@@ -33,6 +24,24 @@ export function SchemaViewer(props: SchemaViewerProps) {
     onKeypathSelect,
   } = props;
 
+  const jsonSchema = schema.json_schema as JsonSchemaNode;
+
+  // Memoized resolver function to cache resolved references
+  const memoizedResolveRef = useMemo(() => {
+    const cache = new Map<string, JsonSchemaNode>();
+    return (node: JsonSchemaNode): JsonSchemaNode => {
+      if (!node.$ref) return node;
+
+      if (cache.has(node.$ref)) {
+        return cache.get(node.$ref)!;
+      }
+
+      const resolved = resolveRef(node, jsonSchema);
+      cache.set(node.$ref, resolved);
+      return resolved;
+    };
+  }, [jsonSchema]);
+
   const renderTypeBadge = (type: string | string[] | undefined) => {
     if (!type) return null;
 
@@ -45,6 +54,9 @@ export function SchemaViewer(props: SchemaViewerProps) {
   };
 
   const renderProperty = (key: string, node: JsonSchemaNode, path: string): React.ReactElement => {
+    // Resolve $ref if present using memoized resolver
+    const resolvedNode = memoizedResolveRef(node);
+
     // Clean up path to avoid double dots
     const cleanPath = path.replace(/\.$/, ""); // Remove trailing dot
     const currentPath = cleanPath === "" ? key : `${cleanPath}.${key}`;
@@ -64,20 +76,20 @@ export function SchemaViewer(props: SchemaViewerProps) {
     };
 
     // For objects, wrap the whole object and its properties in a rectangle
-    if ((node.type === "object" || node.properties) && node.properties) {
+    if ((resolvedNode.type === "object" || resolvedNode.properties) && resolvedNode.properties) {
       // For object headers, always show without badge since we're showing the structure, not the content
       const objectHeaderName = key || "Object";
       return (
         <div key={key} className="border border-gray-200 rounded-[2px] mb-3 w-fit">
           <div className="px-3 py-2 bg-gray-100 rounded-t-[2px] border-b border-gray-200">
             <span className="text-xs font-medium text-gray-900">{objectHeaderName}</span>
-            {showDescriptions && node.description && (
-              <div className="text-xs text-gray-500 italic font-normal mt-1">{node.description}</div>
+            {showDescriptions && resolvedNode.description && (
+              <div className="text-xs text-gray-500 italic font-normal mt-1">{resolvedNode.description}</div>
             )}
           </div>
 
           <div className="bg-transparent">
-            {Object.entries(node.properties).map(([childKey, childNode], index) => (
+            {Object.entries(resolvedNode.properties).map(([childKey, childNode], index) => (
               <div key={childKey}>
                 {index > 0 && <div className="border-t border-dashed border-gray-200 -mx-px"></div>}
                 <div className="p-3">{renderProperty(childKey, childNode, currentPath)}</div>
@@ -89,7 +101,7 @@ export function SchemaViewer(props: SchemaViewerProps) {
     }
 
     // For arrays, simple inline display like primitives
-    if ((node.type === "array" || node.items) && node.items) {
+    if ((resolvedNode.type === "array" || resolvedNode.items) && resolvedNode.items) {
       const fullKeyPath = annotationPrefix ? `${annotationPrefix}.${currentPath}` : currentPath;
       return (
         <div key={key}>
@@ -104,15 +116,15 @@ export function SchemaViewer(props: SchemaViewerProps) {
                 {renderPropertyName(`${key}:`)}
                 {renderTypeBadge("array")}
               </div>
-              {showDescriptions && node.description && (
-                <div className="text-xs text-gray-500 italic font-normal mt-1">{node.description}</div>
+              {showDescriptions && resolvedNode.description && (
+                <div className="text-xs text-gray-500 italic font-normal mt-1">{resolvedNode.description}</div>
               )}
             </HoverContainer>
           </div>
 
           <div className="ml-4 mt-2 relative">
             <div className="absolute left-0 top-2 w-3 h-3 border-l border-b border-gray-200"></div>
-            <div className="ml-3 mt-2">{renderProperty("", node.items, currentPath)}</div>
+            <div className="ml-3 mt-2">{renderProperty("", resolvedNode.items, currentPath)}</div>
           </div>
         </div>
       );
@@ -131,20 +143,20 @@ export function SchemaViewer(props: SchemaViewerProps) {
           <div className="flex items-center gap-3">
             {key && renderPropertyName(`${key}:`)}
 
-            {renderTypeBadge(node.type)}
+            {renderTypeBadge(resolvedNode.type)}
 
-            {node.enum && <span className="text-xs text-gray-500 font-normal">({node.enum.length} values)</span>}
+            {resolvedNode.enum && (
+              <span className="text-xs text-gray-500 font-normal">({resolvedNode.enum.join(", ")})</span>
+            )}
           </div>
 
-          {showDescriptions && node.description && (
-            <div className="text-xs text-gray-500 italic font-normal mt-1">{node.description}</div>
+          {showDescriptions && resolvedNode.description && (
+            <div className="text-xs text-gray-500 italic font-normal mt-1">{resolvedNode.description}</div>
           )}
         </HoverContainer>
       </div>
     );
   };
-
-  const jsonSchema = schema.json_schema as JsonSchemaNode;
 
   return (
     <div className={`border border-gray-200 rounded-[2px] bg-white ${className}`}>

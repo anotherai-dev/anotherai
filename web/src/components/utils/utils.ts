@@ -27,6 +27,79 @@ export function getMetricBadgeColor(value: number, values: number[], isHigherBet
   return "bg-transparent border border-gray-200 text-gray-700";
 }
 
+export function getMetricBadgeWithRelative(value: number, values: number[], isHigherBetter: boolean = false) {
+  if (!values || values.length === 0) {
+    return {
+      color: "bg-transparent border border-gray-200 text-gray-700",
+      relativeText: undefined,
+      isBest: false,
+      isWorst: false,
+    };
+  }
+
+  const sortedValues = [...values].sort((a, b) => a - b);
+  const min = sortedValues[0];
+  const max = sortedValues[sortedValues.length - 1];
+
+  // If all values are the same, no relative comparison needed
+  if (min === max) {
+    return {
+      color: "bg-transparent border border-gray-200 text-gray-700",
+      relativeText: undefined,
+      isBest: false,
+      isWorst: false,
+    };
+  }
+
+  let color: string;
+  let isBest = false;
+  let isWorst = false;
+  let relativeText: string | undefined;
+
+  if (isHigherBetter) {
+    isBest = value === max;
+    isWorst = value === min;
+
+    if (isBest) {
+      color = "bg-green-200 border border-green-400 text-green-900";
+      relativeText = `${(max / min).toFixed(1)}x better`;
+    } else if (isWorst) {
+      color = "bg-red-200 border border-red-300 text-red-900";
+    } else {
+      color = "bg-transparent border border-gray-200 text-gray-700";
+    }
+
+    // For non-best values, show how much worse they are
+    if (!isBest && max > 0) {
+      relativeText = `${(max / value).toFixed(1)}x`;
+    }
+  } else {
+    isBest = value === min;
+    isWorst = value === max;
+
+    if (isBest) {
+      color = "bg-green-200 border border-green-400 text-green-900";
+      relativeText = `${(max / min).toFixed(1)}x better`;
+    } else if (isWorst) {
+      color = "bg-red-200 border border-red-300 text-red-900";
+    } else {
+      color = "bg-transparent border border-gray-200 text-gray-700";
+    }
+
+    // For non-best values, show how much worse they are
+    if (!isBest && min > 0) {
+      relativeText = `${(value / min).toFixed(1)}x`;
+    }
+  }
+
+  return {
+    color,
+    relativeText,
+    isBest,
+    isWorst,
+  };
+}
+
 export function formatCurrency(value: number, multiplier: number = 1000): string {
   // Convert using multiplier for better readability
   const adjustedValue = value * multiplier;
@@ -59,15 +132,22 @@ export function formatRelativeDate(value: unknown): string {
 export function calculateAverageMetrics(completions: ExperimentCompletion[]): {
   avgCost: number;
   avgDuration: number;
+  costs: number[];
+  durations: number[];
 } {
-  if (completions.length === 0) return { avgCost: 0, avgDuration: 0 };
+  if (completions.length === 0) return { avgCost: 0, avgDuration: 0, costs: [], durations: [] };
 
-  const totalCost = completions.reduce((sum, completion) => sum + (completion.cost_usd || 0), 0);
-  const totalDuration = completions.reduce((sum, completion) => sum + (completion.duration_seconds || 0), 0);
+  const costs = completions.map((completion) => completion.cost_usd || 0);
+  const durations = completions.map((completion) => completion.duration_seconds || 0);
+
+  const totalCost = costs.reduce((sum, cost) => sum + cost, 0);
+  const totalDuration = durations.reduce((sum, duration) => sum + duration, 0);
 
   return {
     avgCost: totalCost / completions.length,
     avgDuration: totalDuration / completions.length,
+    costs,
+    durations,
   };
 }
 
@@ -105,7 +185,7 @@ export function getPriceAndLatencyPerVersion(
   }>
 ): Array<{
   versionId: string;
-  metrics: { avgCost: number; avgDuration: number };
+  metrics: { avgCost: number; avgDuration: number; costs: number[]; durations: number[] };
 }> {
   return completionsPerVersion.map(({ versionId, completions }) => ({
     versionId,
@@ -784,4 +864,49 @@ export function filterAnnotations(annotations: Annotation[] | undefined, filters
 
     return true;
   });
+}
+
+// JSON Schema utilities
+export type JsonSchemaNode = {
+  type?: string | string[];
+  properties?: Record<string, JsonSchemaNode>;
+  items?: JsonSchemaNode;
+  required?: string[];
+  description?: string;
+  enum?: unknown[];
+  default?: unknown;
+  $ref?: string;
+  $defs?: Record<string, JsonSchemaNode>;
+};
+
+/**
+ * Resolves JSON Schema $ref references
+ * @param node - The schema node that may contain a $ref
+ * @param rootSchema - The root schema containing definitions
+ * @returns The resolved schema node
+ */
+export function resolveRef(node: JsonSchemaNode, rootSchema: JsonSchemaNode): JsonSchemaNode {
+  if (!node.$ref) return node;
+
+  // Handle internal references like "#/$defs/DayMeals"
+  if (node.$ref.startsWith("#/")) {
+    const path = node.$ref.substring(2); // Remove "#/"
+    const pathParts = path.split("/");
+
+    let current: unknown = rootSchema;
+    for (const part of pathParts) {
+      if (current && typeof current === "object" && current !== null && part in current) {
+        current = (current as Record<string, unknown>)[part];
+      } else {
+        console.warn(`Could not resolve $ref: ${node.$ref}`);
+        return node; // Return original node if resolution fails
+      }
+    }
+
+    return current as JsonSchemaNode;
+  }
+
+  // Handle other types of references if needed in the future
+  console.warn(`Unsupported $ref format: ${node.$ref}`);
+  return node;
 }

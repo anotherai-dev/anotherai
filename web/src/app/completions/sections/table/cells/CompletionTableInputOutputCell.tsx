@@ -48,10 +48,15 @@ export function CompletionTableInputOutputCell({
               variables={variables as Record<string, unknown>}
               hideBorderForFirstLevel={true}
               textSize="xs"
+              maxHeight="max"
             />
           </div>
           <div>
-            <MessagesViewer messages={messages as Message[]} sharedPartsOfPrompts={sharedPartsOfPrompts} />
+            <MessagesViewer
+              messages={messages as Message[]}
+              sharedPartsOfPrompts={sharedPartsOfPrompts}
+              maxVariablesHeight="max"
+            />
           </div>
         </div>
       );
@@ -66,6 +71,7 @@ export function CompletionTableInputOutputCell({
             variables={variables as Record<string, unknown>}
             hideBorderForFirstLevel={true}
             textSize="xs"
+            maxHeight="max"
           />
         </div>
       );
@@ -76,7 +82,11 @@ export function CompletionTableInputOutputCell({
       const messages = hasMessages ? obj.messages : obj.internal_anotherai_messages;
       return (
         <div className={cx("max-h-full overflow-y-auto", maxWidth)}>
-          <MessagesViewer messages={messages as Message[]} sharedPartsOfPrompts={sharedPartsOfPrompts} />
+          <MessagesViewer
+            messages={messages as Message[]}
+            sharedPartsOfPrompts={sharedPartsOfPrompts}
+            maxVariablesHeight="max"
+          />
         </div>
       );
     }
