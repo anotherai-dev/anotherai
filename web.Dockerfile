@@ -12,7 +12,7 @@ COPY web/package.json ./web/
 
 # Install all dependencies
 # Next JS needs dev dependencies 
-RUN npm ci --include=dev --include=prod 
+RUN npm ci --include=dev --include=prod --legacy-peer-deps 
 
 FROM deps AS sources
 
