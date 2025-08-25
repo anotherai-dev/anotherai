@@ -257,7 +257,7 @@ async def patch_deployment(deployment_id: str, deployment: Deployment) -> Deploy
     raise NotImplementedError
 
 
-@router.delete("/v1/deployments/{deployment_id}")
+@router.post("/v1/deployments/{deployment_id}/archive")
 async def archive_deployment(deployment_id: str) -> None:
     """Archives a deployment. The deployment can still be used if referred to by ID but no longer
     appears in the list of deployments."""
