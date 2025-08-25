@@ -10,6 +10,10 @@ from protocol.api._services._run_service import RunService
 router = APIRouter(prefix="")
 
 
+# We alias the completion route to account for trailing slashes in the openai
+# base URL. It seems that some SDKs require the trailing slash, and some don't...
+@router.post("/v1chat/completions", include_in_schema=False)
+@router.post("/v1//chat/completions", include_in_schema=False)
 @router.post("/v1/chat/completions")
 async def chat_completions(
     request: OpenAIProxyChatCompletionRequest,

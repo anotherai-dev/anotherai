@@ -1,6 +1,8 @@
 import { isDateValue, parseJSONValue } from "@/components/utils/utils";
+import { Message } from "@/types/models";
 import { CompletionBaseTableCell } from "./CompletionBaseTableCell";
 import { CompletionObjectTableCell } from "./CompletionObjectTableCell";
+import { CompletionOutputSchemaCell } from "./CompletionOutputSchemaCell";
 import { CompletionTableBadgeCell } from "./CompletionTableBadgeCell";
 import { CompletionTableDateCell } from "./CompletionTableDateCell";
 import { CompletionTableMetadataCell } from "./CompletionTableMetadataCell";
@@ -9,10 +11,13 @@ import { CompletionTableVersionCell } from "./CompletionTableVersionCell";
 interface Props {
   columnKey: string;
   value: unknown;
+  maxWidth?: string;
+  sharedPartsOfPrompts?: Message[];
+  sharedKeypathsOfSchemas?: string[];
 }
 
 export function CompletionTableCell(props: Props) {
-  const { columnKey, value } = props;
+  const { columnKey, value, maxWidth, sharedPartsOfPrompts, sharedKeypathsOfSchemas } = props;
 
   const parsedJSON = parseJSONValue(value);
 
@@ -22,8 +27,22 @@ export function CompletionTableCell(props: Props) {
         return <CompletionTableVersionCell value={parsedJSON} />;
       case "metadata":
         return <CompletionTableMetadataCell value={parsedJSON} />;
+      case "output_schema":
+        return (
+          <CompletionOutputSchemaCell
+            value={parsedJSON}
+            maxWidth={maxWidth}
+            sharedKeypathsOfSchemas={sharedKeypathsOfSchemas}
+          />
+        );
       default:
-        return <CompletionObjectTableCell value={parsedJSON} />;
+        return (
+          <CompletionObjectTableCell
+            value={parsedJSON}
+            maxWidth={maxWidth}
+            sharedPartsOfPrompts={sharedPartsOfPrompts}
+          />
+        );
     }
   }
 

@@ -4,8 +4,10 @@ import re
 from collections.abc import Mapping, Sequence
 from typing import Any, cast
 
+import structlog
 from cachetools import LRUCache
-from jinja2 import Environment, Template, TemplateError, nodes
+from jinja2 import Environment, Template, TemplateError, TemplateRuntimeError, nodes
+from jinja2.exceptions import UndefinedError
 from jinja2.meta import find_undeclared_variables
 from jinja2.visitor import NodeVisitor
 
@@ -16,6 +18,8 @@ from core.utils.schemas import JsonSchema
 # Jinja templates use  {%%} for expressions {{}} for variables and {# ... #} for comments
 
 _template_regex = re.compile(rf"({re.escape('{%')}|{re.escape('{{')}|{re.escape('{#')})")
+
+_log = structlog.get_logger(__name__)
 
 
 class InvalidTemplateError(Exception):
@@ -57,6 +61,10 @@ class InvalidTemplateError(Exception):
             "unexpected_char": self.unexpected_char,
             "source": self.source,
         }
+
+
+class TemplateRenderingError(Exception):
+    pass
 
 
 class TemplateManager:
@@ -104,14 +112,34 @@ class TemplateManager:
 
     @classmethod
     async def render_compiled(cls, template: Template, data: dict[str, Any]):
-        return await template.render_async(data)
+        try:
+            return await template.render_async(data)
+        except UndefinedError as e:
+            raise TemplateRenderingError(str(e)) from e
+        except TemplateRuntimeError as e:
+            # Just making sure we don't miss anything
+            _log.warning("Unexpected template runtime error", exc_info=e)
+            raise InvalidTemplateError(str(e)) from e
 
     async def render_template(self, template: str, data: dict[str, Any]):
         """Render the template. Returns the variables that were used in the template"""
         compiled, variables = await self.add_template(template)
 
-        rendered = await self.render_compiled(compiled, data)
-        return rendered, variables
+        try:
+            rendered = await self.render_compiled(compiled, data)
+            return rendered, variables
+        except TemplateRenderingError as e:
+            provided_keys = set(data)
+            missing_keys = variables - provided_keys
+            extra_keys = provided_keys - variables
+
+            msg = f"Rendering the template failed: {e}"
+            if missing_keys:
+                msg += f"\n- Missing variables: {missing_keys}"
+            if extra_keys:
+                msg += f"\n- Extra variables: {extra_keys}"
+
+            raise TemplateRenderingError(msg) from e
 
 
 class _SchemaBuilder(NodeVisitor):

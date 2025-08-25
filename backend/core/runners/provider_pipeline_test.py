@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
+from core.domain.exceptions import NoProviderSupportingModelError
 from core.domain.models import Model, Provider
 from core.domain.models.model_data import FinalModelData, ModelData, ModelFallback
 from core.domain.models.model_provider_data import ModelProviderData
@@ -129,6 +130,7 @@ def _build_pipeline(
         return_value=model_data,
     ):
         return ProviderPipeline(
+            agent_id="123",
             version=Version(
                 model=model,
                 provider=forced_provider,
@@ -146,6 +148,7 @@ def _build_pipeline(
 class TestProviderIterator:
     def test_claude_ordering_and_support(self, provider_builder: Mock):
         pipeline = ProviderPipeline(
+            agent_id="",
             version=Version(
                 model=Model.CLAUDE_3_5_SONNET_20241022,
                 provider=None,
@@ -182,6 +185,7 @@ class TestProviderIterator:
         """Check that the providers are iterated correctly when a forced provider is set"""
         # Create a model that has multiple providers of the same type
         pipeline = ProviderPipeline(
+            agent_id="",
             version=Version(
                 model=Model.GPT_4O_MINI_2024_07_18,
                 provider=Provider.OPEN_AI,
@@ -231,6 +235,7 @@ class TestProviderIterator:
             return_value=_final_model_data(providers=[Provider.FIREWORKS]),
         ):
             pipeline = ProviderPipeline(
+                agent_id="",
                 version=Version(
                     model=Model.DEEPSEEK_R1_2501,
                     provider=None,
@@ -270,6 +275,7 @@ class TestProviderIterator:
             return_value=_final_model_data(providers=[Provider.OPEN_AI, Provider.AZURE_OPEN_AI]),
         ):
             pipeline = ProviderPipeline(
+                agent_id="",
                 version=Version(
                     model=Model.GPT_4O_MINI_2024_07_18,
                     provider=None,  # So we will be using Azure and OpenAI
@@ -329,6 +335,7 @@ class TestProviderIterator:
         mock_provider_factory.get_providers.side_effect = lambda provider: [_mock_provider(provider)]  # type: ignore
 
         pipeline = ProviderPipeline(
+            agent_id="",
             version=Version(
                 model=Model.GPT_4O_MINI_2024_07_18,
                 provider=None,
@@ -399,6 +406,7 @@ class TestProviderIterator:
             ),
         ):
             pipeline = ProviderPipeline(
+                agent_id="",
                 version=Version(
                     model=Model.GPT_4O_MINI_2024_07_18,
                     provider=None,
@@ -463,6 +471,7 @@ class TestProviderIterator:
             ),
         ):
             pipeline = ProviderPipeline(
+                agent_id="",
                 version=Version(
                     model=Model.GPT_4O_MINI_2024_07_18,
                     provider=None,
@@ -576,3 +585,26 @@ class TestProviderIterator:
         # Verify each provider was only called once
         mock_openai.complete.assert_called_once()
         mock_anthropic.complete.assert_called_once()
+
+    async def test_no_provider_supporting_model(
+        self,
+        provider_builder: Mock,
+        mock_provider_factory: Mock,
+    ):
+        """Test that we raise a NoProviderSupportingModelError when no provider supports the model"""
+        pipeline = _build_pipeline(provider_builder, mock_provider_factory)
+        mock_provider_factory.get_providers.return_value = []
+        mock_provider_factory.available_providers.return_value = []
+        mock_provider_factory.provider_type.side_effect = lambda provider: LocalProviderFactory.PROVIDER_TYPES[provider]  # type: ignore
+
+        with pytest.raises(NoProviderSupportingModelError) as e:
+            await self._run_pipeline(pipeline, raise_at_end=True)
+        assert (
+            str(e.value)
+            == """There are no configured provider supporting model 'gpt-4o-mini-2024-07-18'.
+You can either configure them through the UI at `http://localhost:3000/providers` or by setting
+the correct environment variables.
+The possible providers and their associated environment variables are:
+- openai (OPENAI_API_KEY)
+- azure_openai (AZURE_OPENAI_CONFIG)"""
+        )

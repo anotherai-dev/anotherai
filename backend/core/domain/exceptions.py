@@ -152,11 +152,29 @@ class NoProviderSupportingModelError(DefaultError):
     default_message = "No configured providers support model"
     code = "no_provider_supporting_model"
 
-    def __init__(self, model: str, available_providers: list[str] | None = None):
-        super().__init__(details={"model": model, "available_providers": available_providers})
+    def __init__(
+        self,
+        model: str,
+        configured_providers: list[Provider],
+        possible_providers: list[tuple[Provider, list[str]]],
+    ):
+        message = f"""There are no configured provider supporting model '{model}'.
+You can either configure them through the UI at `{ANOTHERAI_APP_URL}/providers` or by setting
+the correct environment variables.
+The possible providers and their associated environment variables are:
+- {"\n- ".join(f"{p.value} ({', '.join(env_vars)})" for p, env_vars in possible_providers)}"""
+        super().__init__(
+            message,
+            details={
+                "model": model,
+                "configured_providers": configured_providers,
+                "possible_providers": possible_providers,
+            },
+        )
 
         self.model = model
-        self.available_providers = available_providers
+        self.configured_providers = configured_providers
+        self.possible_providers = possible_providers
 
 
 class SunsetModelWithoutReplacementError(Exception):

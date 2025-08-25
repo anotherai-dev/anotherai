@@ -37,8 +37,6 @@ const renderValueBadge = (
 const renderProperty = (
   key: string,
   value: unknown,
-  isFirstLevel: boolean = false,
-  hideBorderForFirstLevel: boolean = false,
   textSize: "xs" | "sm" | "base" | string = "xs",
   annotations?: Annotation[],
   keyPath: string = "",
@@ -48,7 +46,7 @@ const renderProperty = (
   // For objects, wrap the whole object and its properties in a rectangle
   if (value && typeof value === "object" && !Array.isArray(value)) {
     const entries = Object.entries(value);
-    const shouldHideBorder = isFirstLevel && hideBorderForFirstLevel;
+    const shouldHideBorder = false;
     const { className: textSizeClass, style: textSizeStyle } = getTextSizeStyle(textSize);
 
     if (shouldHideBorder) {
@@ -71,8 +69,6 @@ const renderProperty = (
                     {renderProperty(
                       childKey,
                       childValue,
-                      false,
-                      hideBorderForFirstLevel,
                       textSize,
                       annotations,
                       childKeyPath,
@@ -106,8 +102,6 @@ const renderProperty = (
                   {renderProperty(
                     childKey,
                     childValue,
-                    false,
-                    hideBorderForFirstLevel,
                     textSize,
                     annotations,
                     childKeyPath,
@@ -130,7 +124,6 @@ const renderProperty = (
         key={key}
         arrayKey={key}
         arrayValue={value}
-        hideBorderForFirstLevel={hideBorderForFirstLevel}
         textSize={textSize}
         annotations={annotations}
         keyPath={keyPath}
@@ -170,7 +163,6 @@ const renderProperty = (
 function CollapsibleArray({
   arrayKey,
   arrayValue,
-  hideBorderForFirstLevel = false,
   textSize = "xs",
   keyPath = "",
   annotations,
@@ -179,7 +171,6 @@ function CollapsibleArray({
 }: {
   arrayKey: string;
   arrayValue: unknown[];
-  hideBorderForFirstLevel?: boolean;
   textSize?: "xs" | "sm" | "base" | string;
   keyPath?: string;
   annotations?: Annotation[];
@@ -254,8 +245,6 @@ function CollapsibleArray({
                                     {renderProperty(
                                       childKey,
                                       childValue,
-                                      false,
-                                      hideBorderForFirstLevel,
                                       textSize,
                                       annotations,
                                       childKeyPath,
@@ -351,17 +340,7 @@ export function VariablesViewer(props: VariablesViewerProps) {
       >
         <div className="space-y-1">
           {Object.entries(variables).map(([key, value]) =>
-            renderProperty(
-              key,
-              value,
-              true,
-              hideBorderForFirstLevel,
-              textSize,
-              annotations,
-              key,
-              onKeypathSelect,
-              showSeeMore
-            )
+            renderProperty(key, value, textSize, annotations, key, onKeypathSelect, showSeeMore)
           )}
         </div>
       </div>

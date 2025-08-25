@@ -53,6 +53,7 @@ _logger = logging.getLogger("ProviderPipeline")
 class ProviderPipeline:
     def __init__(
         self,
+        agent_id: str,
         version: Version,
         custom_configs: list[ProviderSettings] | None,
         factory: AbstractProviderFactory,
@@ -77,6 +78,9 @@ class ProviderPipeline:
         self._model_fallback_disabled = use_fallback == "never"
         self._fallback_models = use_fallback if isinstance(use_fallback, list) else None
 
+        self._found_a_provider = False
+        self._agent_id = agent_id
+
     @property
     def _retry_on_same_provider(self) -> bool:
         """Whether we should retry on the same provider"""
@@ -91,14 +95,33 @@ class ProviderPipeline:
             return True
         return self.errors[-1].should_try_next_provider
 
-    def raise_on_end(self, task_id: str) -> NoReturn:
+    def _raise_no_provider_supporting_model(self) -> NoReturn:
+        possible_providers_and_env_vars = [
+            (p, self._factory.provider_type(p).required_env_vars()) for p, _ in self._original_model_data.providers
+        ]
+        if not possible_providers_and_env_vars:
+            # That should never happen, it would mean that there is a hole in our model data mapping
+            raise InternalError(
+                "No provider found for model",
+                extras={"agent_id": self._agent_id, "options": self._version},
+            )
+
+        raise NoProviderSupportingModelError(
+            model=self._original_model_data.model,
+            configured_providers=list(self._factory.available_providers()),
+            possible_providers=possible_providers_and_env_vars,
+        )
+
+    def raise_on_end(self) -> NoReturn:
+        if not self.errors and not self._found_a_provider:
+            return self._raise_no_provider_supporting_model()
         # TODO: metric
         raise (
             self.errors[0]
             if self.errors
             else InternalError(
                 "No provider found",
-                extras={"task_id": task_id, "options": self._version},
+                extras={"agent_id": self._agent_id, "options": self._version},
             )
         )
 
@@ -206,6 +229,7 @@ class ProviderPipeline:
         provider: AbstractProvider[Any, Any],
         model_data: FinalModelData,
     ) -> Iterator[PipelineProviderData]:
+        self._found_a_provider = True
         yield self._build(provider, model_data)
 
         if self._should_retry_without_structured_generation():
@@ -223,7 +247,7 @@ class ProviderPipeline:
             try:
                 provider = next(providers)
             except StopIteration:
-                raise NoProviderSupportingModelError(model=self._original_model_data.model) from None
+                return self._raise_no_provider_supporting_model()
             yield from self._iter_with_structured_gen(provider, model_data)
 
             # No point in retrying on the same provider if the last error code was not a rate limit
@@ -332,4 +356,4 @@ class ProviderPipeline:
         # If we have reached here we should just raise the first error since it would mean that there is no more
         # provider to try
         if raise_at_end:
-            raise self.errors[0]
+            return self.raise_on_end()

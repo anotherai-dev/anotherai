@@ -50,8 +50,13 @@ export function ValueDisplay({ value, textSize, showSeeMore }: ValueDisplayProps
   // Check height-based truncation - must be at top level
   useEffect(() => {
     if (contentRef.current && !isExpanded && showSeeMore && typeof value === "string") {
-      const height = contentRef.current.scrollHeight;
-      setShouldTruncateByHeight(height > MAX_HEIGHT_PX);
+      // Use requestAnimationFrame to ensure layout is complete after break-all wrapping
+      requestAnimationFrame(() => {
+        if (contentRef.current) {
+          const height = contentRef.current.scrollHeight;
+          setShouldTruncateByHeight(height > MAX_HEIGHT_PX);
+        }
+      });
     }
   }, [value, isExpanded, showSeeMore]);
 
@@ -95,7 +100,7 @@ export function ValueDisplay({ value, textSize, showSeeMore }: ValueDisplayProps
       <span
         ref={contentRef}
         className={cx(
-          "inline-block px-3 py-1.5 font-medium bg-white border border-gray-200 text-gray-800 rounded-[2px] relative",
+          "inline-block px-3 py-1.5 font-medium bg-white border border-gray-200 text-gray-800 rounded-[2px] relative break-all",
           textSizeClass
         )}
         style={textSizeStyle}
@@ -103,7 +108,7 @@ export function ValueDisplay({ value, textSize, showSeeMore }: ValueDisplayProps
         onMouseLeave={() => setIsHovered(false)}
       >
         <div
-          className={cx("py-1", shouldTruncateByHeight && !isExpanded ? "overflow-hidden" : "")}
+          className={cx("py-1 break-all", shouldTruncateByHeight && !isExpanded ? "overflow-hidden" : "")}
           style={shouldTruncateByHeight && !isExpanded ? { maxHeight: `${MAX_HEIGHT_PX - 30}px` } : {}}
         >
           {'"'}
@@ -153,7 +158,7 @@ export function ValueDisplay({ value, textSize, showSeeMore }: ValueDisplayProps
   return (
     <span
       className={cx(
-        "inline-block px-3 py-1.5 font-medium bg-white border border-gray-200 text-gray-800 rounded-[2px] relative",
+        "inline-block px-3 py-1.5 font-medium bg-white border border-gray-200 text-gray-800 rounded-[2px] relative break-all",
         textSizeClass
       )}
       style={textSizeStyle}

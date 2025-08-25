@@ -2,7 +2,8 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { HeaderSection } from "@/components/HeaderSection";
+import { PageHeader } from "@/components/PageHeader";
+import { FilterCompletionsInstructions } from "@/components/completion-modal/FilterCompletionsInstructions";
 import { useCompletionsListSync } from "@/hooks/useCompletionsListSync";
 import { useCompletionsQuery } from "@/store/completions";
 import { defaultQuery } from "@/utils/queries";
@@ -55,9 +56,11 @@ function CompletionsPageContent() {
 
   return (
     <div className="flex flex-col w-full h-full mx-auto px-4 py-8 gap-6 bg-gray-50">
-      <HeaderSection
+      <PageHeader
+        breadcrumbs={[{ label: "Completions" }]}
         title="Completions"
         description="Search through completions using SQL queries, view detailed completion lists, and open individual completion details for analysis"
+        descriptionRightContent={<FilterCompletionsInstructions />}
       />
 
       <SearchSection
