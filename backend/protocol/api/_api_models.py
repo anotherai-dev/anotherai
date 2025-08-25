@@ -703,7 +703,7 @@ class Deployment(BaseModel):
 
     id: str = Field(
         description="A unique user provided ID for the deployment",
-        examples=["my-agent:production#1"],
+        examples=["my-agent-id:production#1"],
     )
 
     agent_id: str
