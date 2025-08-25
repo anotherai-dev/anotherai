@@ -14,7 +14,7 @@ from core.providers._base.provider_error import MissingModelError
 from core.services.completion_runner import CompletionRunner
 from core.services.messages.messages_utils import json_schema_for_template
 from core.services.models_service import suggest_model
-from core.storage.deployment_storage import DeploymentsStorage
+from core.storage.deployment_storage import DeploymentStorage
 from core.utils.schema_gen import schema_from_data
 from core.utils.schema_sanitation import streamline_schema, validate_schema
 from core.utils.schemas import IncompatibleSchemaError, JsonSchema
@@ -53,7 +53,7 @@ class RunService:
         self,
         tenant: TenantData,
         completion_runner: CompletionRunner,
-        deployments_storage: DeploymentsStorage,
+        deployments_storage: DeploymentStorage,
     ):
         self._tenant = tenant
         self._completion_runner = completion_runner
