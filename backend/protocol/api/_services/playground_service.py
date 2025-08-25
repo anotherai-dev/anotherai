@@ -89,6 +89,7 @@ class PlaygroundService:
         input: Input,
         start_time: float,
         completion_id: str | None,
+        metadata: dict[str, Any] | None = None,
     ) -> PlaygroundOutput.Completion:
         try:
             completion = await self._completion_runner.run(
@@ -96,7 +97,7 @@ class PlaygroundService:
                 version=version,
                 input=input_to_domain(input),
                 start_time=start_time,
-                metadata={},
+                metadata=metadata or {},
                 timeout=None,
                 use_cache="always",
                 use_fallback="never",
@@ -198,7 +199,7 @@ class PlaygroundService:
             for i in inputs:
                 completion_id = str(uuid7())
                 tasks.append(
-                    self._run_version(agent_id, version, i, start_time, completion_id=completion_id),
+                    self._run_version(agent_id, version, i, start_time, completion_id=completion_id, metadata=metadata),
                 )
                 run_ids.append(completion_id)
 

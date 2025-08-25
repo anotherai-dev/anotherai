@@ -3,6 +3,7 @@
 import { Copy, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
+import { useTraceCompletions } from "@/hooks/useTraceCompletions";
 import { useOrFetchAnnotations } from "@/store/annotations";
 import { useOrFetchCompletion } from "@/store/completion";
 import { LoadingIndicator } from "../LoadingIndicator";
@@ -14,6 +15,7 @@ import { CompletionConversationView } from "./CompletionConversationView";
 import { CompletionDetailsView } from "./CompletionDetailsView";
 import { CompletionNavigationButtons } from "./CompletionNavigationButtons";
 import { ImproveCompletionInstructions } from "./ImproveCompletionInstructions";
+import { CompletionTraceView } from "./completion-trace/CompletionTraceView";
 
 export function CompletionModal() {
   const searchParams = useSearchParams();
@@ -28,11 +30,29 @@ export function CompletionModal() {
     completion_id: completionId,
   });
 
+  // Fetch trace completions based on trace_id and conversation_id
+  const { groupedTraceCompletions } = useTraceCompletions(completion);
+
+  const hasTraceCompletions = groupedTraceCompletions && Object.keys(groupedTraceCompletions).length > 0;
+
   const [keypathSelected, setKeypathSelected] = useState<string | null>(null);
 
   const hasInputVariables = useMemo(() => {
     return completion?.input?.variables && Object.keys(completion.input.variables).length > 0;
   }, [completion?.input?.variables]);
+
+  const allotmentInitialSize = useMemo(() => {
+    if (hasTraceCompletions && hasInputVariables) {
+      return [100, 100, 100, 100]; // Trace + Input + Conversation + Details
+    }
+    if (hasTraceCompletions) {
+      return [100, 100, 100]; // Trace + Conversation + Details
+    }
+    if (hasInputVariables) {
+      return [100, 100, 100]; // Input + Conversation + Details
+    }
+    return [200, 100]; // Conversation + Details
+  }, [hasTraceCompletions, hasInputVariables]);
 
   const closeModal = useCallback(() => {
     const params = new URLSearchParams(searchParams);
@@ -40,6 +60,16 @@ export function CompletionModal() {
     const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
     router.replace(newUrl, { scroll: false });
   }, [searchParams, router]);
+
+  const navigateToCompletion = useCallback(
+    (targetId: string) => {
+      const params = new URLSearchParams(searchParams);
+      params.set("showCompletionModal", targetId);
+      const newUrl = `${window.location.pathname}?${params.toString()}`;
+      router.replace(newUrl, { scroll: false });
+    },
+    [searchParams, router]
+  );
 
   const copyCompletionId = useCallback(() => {
     if (completionId) {
@@ -90,11 +120,20 @@ export function CompletionModal() {
           </div>
         ) : (
           <PersistantAllotment
-            key={`ProxyRunView-PersistantAllotment-${hasInputVariables}`}
-            name={`ProxyRunView-PersistantAllotment-${hasInputVariables}`}
-            initialSize={hasInputVariables ? [100, 100, 100] : [200, 100]}
+            key={`ProxyRunView-PersistantAllotment-${hasInputVariables}-${hasTraceCompletions}`}
+            name={`ProxyRunView-PersistantAllotment-${hasInputVariables}-${hasTraceCompletions}`}
+            initialSize={allotmentInitialSize}
             className="flex w-full h-full"
           >
+            {hasTraceCompletions && (
+              <div className="flex flex-col h-full border-r border-dashed border-gray-200 overflow-hidden">
+                <CompletionTraceView
+                  groupedTraceCompletions={groupedTraceCompletions}
+                  currentCompletionId={completionId}
+                  onNavigateToCompletion={navigateToCompletion}
+                />
+              </div>
+            )}
             {hasInputVariables && (
               <div className="flex flex-col h-full border-r border-dashed border-gray-200 overflow-hidden">
                 <CompletionContextView completion={completion} />
