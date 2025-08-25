@@ -568,6 +568,11 @@ async def create_or_update_deployment(
     version_id: str = Field(
         description="The version id to deploy. Can be found in an experiment or a completion.",
     ),
+    deployment_id: str = Field(
+        # TODO: update description and examples based on tests. Make sure field in _api_models.py is updated too.
+        description="The id of the deployment",
+        examples=["my-agent-id:production#1"],
+    ),
 ) -> Deployment | str:
     """Create a new deployment or update an existing deployment if id matches.
 
