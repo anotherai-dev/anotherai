@@ -47,7 +47,7 @@ class DeploymentService:
         try:
             total = await self._deployments_storage.count_deployments(agent_id, include_archived)
         except Exception as e:  # noqa: BLE001
-            _log.warning("Failed to count deployments: %s", e)
+            _log.warning("Failed to count deployments", exc_info=e)
             total = 0
 
         return Page(
@@ -143,10 +143,10 @@ def _check_output_schema_compatibility(deployment: DomainDeployment, version: Ve
         JsonSchema(deployment.version.output_schema.json_schema).check_compatible(
             JsonSchema(version.output_schema.json_schema),
         )
-    except IncompatibleSchemaError:
+    except IncompatibleSchemaError as e:
         raise BadRequestError(
             "The version you are trying to deploy has an output schema that is not compatible with the existing "
-            "deployment. Please create a new deployment.\n{e}",
+            f"deployment. Please create a new deployment.\n{e}",
         ) from None
     return
 
@@ -169,9 +169,9 @@ def _check_input_schema_compatibility(deployment: DomainDeployment, version: Ver
         JsonSchema(deployment.version.input_variables_schema).check_compatible(
             JsonSchema(version.input_variables_schema),
         )
-    except IncompatibleSchemaError:
+    except IncompatibleSchemaError as e:
         raise BadRequestError(
             "The version you are trying to deploy uses input variables that are not compatible with the ones used by "
-            "the existing deployment. Please create a new deployment.\n{e}",
+            f"the existing deployment. Please create a new deployment.\n{e}",
         ) from None
     return
