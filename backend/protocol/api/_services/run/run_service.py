@@ -4,7 +4,7 @@ import structlog
 
 from core.domain.agent import Agent
 from core.domain.agent_input import AgentInput
-from core.domain.exceptions import BadRequestError
+from core.domain.exceptions import BadRequestError, JSONSchemaValidationError, ObjectNotFoundError
 from core.domain.message import Message
 from core.domain.models.model_data_mapping import MODEL_COUNT, get_model_id
 from core.domain.models.models import Model
@@ -14,8 +14,10 @@ from core.providers._base.provider_error import MissingModelError
 from core.services.completion_runner import CompletionRunner
 from core.services.messages.messages_utils import json_schema_for_template
 from core.services.models_service import suggest_model
+from core.storage.deployment_storage import DeploymentsStorage
 from core.utils.schema_gen import schema_from_data
 from core.utils.schema_sanitation import streamline_schema, validate_schema
+from core.utils.schemas import IncompatibleSchemaError, JsonSchema
 from protocol.api._run_models import (
     CHAT_COMPLETION_REQUEST_UNSUPPORTED_FIELDS,
     OpenAIProxyChatCompletionRequest,
@@ -47,9 +49,15 @@ class _ModelRef(NamedTuple):
 
 
 class RunService:
-    def __init__(self, tenant: TenantData, completion_runner: CompletionRunner):
+    def __init__(
+        self,
+        tenant: TenantData,
+        completion_runner: CompletionRunner,
+        deployments_storage: DeploymentsStorage,
+    ):
         self._tenant = tenant
         self._completion_runner = completion_runner
+        self._deployments_storage = deployments_storage
 
     @classmethod
     async def missing_model_error(cls, model: str | None, prefix: str = ""):
@@ -93,8 +101,10 @@ To list all models programmatically: Use the list_models tool""",
             )
 
     class PreparedRun(NamedTuple):
+        agent_id: str
         version: Version
         agent_input: AgentInput
+        metadata: dict[str, Any]
 
     async def run(self, request: OpenAIProxyChatCompletionRequest, start_time: float):
         # First we need to locate the agent
@@ -106,13 +116,19 @@ To list all models programmatically: Use the list_models tool""",
         messages = list(request_messages_to_domain(request))
 
         if isinstance(agent_ref, _EnvironmentRef):
-            raise BadRequestError("Deployments are not supported yet")
-        prepared_run = await self._prepare_for_model(
-            agent_ref=agent_ref,
-            messages=messages,
-            variables=request.input,
-            response_format=request.response_format,
-        )
+            prepared_run = await self._prepare_for_deployment(
+                deployment_id=agent_ref.deployment_id,
+                messages=messages,
+                variables=request.input,
+                response_format=request.response_format,
+            )
+        else:
+            prepared_run = await self._prepare_for_model(
+                agent_ref=agent_ref,
+                messages=messages,
+                variables=request.input,
+                response_format=request.response_format,
+            )
         request_apply_to_version(request, prepared_run.version)
 
         try:
@@ -121,12 +137,15 @@ To list all models programmatically: Use the list_models tool""",
             final_error = await self.missing_model_error(e.extras.get("model"), prefix="fallback ")
             raise final_error from None
 
+        if request.metadata:
+            prepared_run.metadata.update(request.metadata)
+
         completion = await self._completion_runner.run(
-            agent=Agent(id=agent_ref.agent_id or "default", uid=0),  # agent will be automatically created
+            agent=Agent(id=prepared_run.agent_id, uid=0),  # agent will be automatically created
             version=prepared_run.version,
             input=prepared_run.agent_input,
             start_time=start_time,
-            metadata=request.metadata or {},
+            metadata=prepared_run.metadata,
             timeout=None,
             use_cache=request.use_cache or "auto",
             use_fallback=use_fallback,
@@ -137,6 +156,43 @@ To list all models programmatically: Use the list_models tool""",
             completion=completion,
             deprecated_function=request.function_call is not None,
             org=self._tenant,
+        )
+
+    async def _prepare_for_deployment(
+        self,
+        deployment_id: str,
+        messages: list[Message],
+        variables: dict[str, Any] | None,
+        response_format: OpenAIProxyResponseFormat | None,
+    ) -> PreparedRun:
+        try:
+            deployment = await self._deployments_storage.get_deployment(deployment_id)
+        except ObjectNotFoundError:
+            raise BadRequestError(
+                f"Deployment {deployment_id} does not exist. Please check the deployment id and try again.",
+                capture=True,
+            ) from None
+
+        # Check compatibility of response_format:
+        output_schema = _extract_output_schema(response_format)
+        output_schema = _check_output_schema_compatibility(deployment.version.output_schema, output_schema)
+
+        # Check compatibility of input_variables
+        try:
+            deployment.version.validate_input(variables)
+        except JSONSchemaValidationError as e:
+            raise BadRequestError(f"Deployment expected a different input:\n{e}", capture=True) from None
+
+        return self.PreparedRun(
+            agent_id=deployment.agent_id,
+            version=deployment.version,
+            agent_input=AgentInput(
+                messages=messages,
+                variables=variables,
+            ),
+            metadata={
+                "anotherai/deployment_id": deployment_id,
+            },
         )
 
     async def _prepare_for_model(
@@ -169,11 +225,13 @@ To list all models programmatically: Use the list_models tool""",
         )
 
         return self.PreparedRun(
+            agent_id=agent_ref.agent_id or "default",
             version=version,
             agent_input=AgentInput(
                 messages=messages[cutoff_index:],
                 variables=variables,
             ),
+            metadata={},
         )
 
 
@@ -233,12 +291,13 @@ def _extract_references(request: OpenAIProxyChatCompletionRequest) -> _Environme
         if len(splits) > 2:
             # This is very likely an invalid environment error so we should raise an explicit BadRequestError
             raise BadRequestError(
-                f"'{request.model}' does not refer to a valid model or deployment. Use either the "
-                "'<agent-id>/#<schema-id>/<environment>' format to target a deployed environment or "
-                "<agent-id>/<model> to target a specific model. If the model cannot be changed, it is also "
-                "possible to pass the agent_id, schema_id and environment at the root of the completion request. "
-                "See https://run.workflowai.com/docs#/openai/chat_completions_v1_chat_completions_post for more "
-                "information.",
+                f"""'{request.model}' does not refer to a valid model or deployment. The accepted formats are:
+                - <model>: a valid model name or alias
+                - <agent_id>/<model>: passing an agent_id as a prefix
+                - {_DEPLOYMENT_PREFIX}/<deployment_id>: passing a deployment id
+
+                If the model cannot be changed, it is also possible to pass the agent_id or deployment_id in the
+                body of the request.""",
                 capture=True,
                 extras={"model": request.model},
             )
@@ -269,6 +328,29 @@ def _extract_output_schema(response_format: OpenAIProxyResponseFormat | None) ->
         return Version.OutputSchema(json_schema={})
 
     return None
+
+
+def _check_output_schema_compatibility(
+    deployment_schema: Version.OutputSchema | None,
+    requested_schema: Version.OutputSchema | None,
+):
+    if requested_schema is None:
+        # The requested schema was not provided so here we take whatever was in the deployment
+        return deployment_schema
+
+    if deployment_schema is None:
+        raise BadRequestError(
+            "You requested a response format but the deployment did not refer to one. "
+            "Please create a new deployment with the response format you want to use.",
+        )
+
+    try:
+        JsonSchema(deployment_schema.json_schema).check_compatible(JsonSchema(requested_schema.json_schema))
+    except IncompatibleSchemaError as e:
+        raise BadRequestError(
+            f"The requested response format is not compatible with the deployment's response format.\n{e}",
+        ) from None
+    return requested_schema
 
 
 def _json_schema_from_input(
