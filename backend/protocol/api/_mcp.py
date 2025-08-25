@@ -555,7 +555,12 @@ async def create_api_key(name: str) -> CompleteAPIKey:
 
 
 @mcp.tool()
-async def list_deployments() -> Page[Deployment]:
+async def list_deployments(
+    agent_id: str | None = Field(
+        default=None,
+        description="The agent id to filter deployments by",
+    ),
+) -> Page[Deployment]:
     """List all deployments"""
     raise NotImplementedError
 
