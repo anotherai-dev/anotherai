@@ -11,11 +11,13 @@ from core.storage.annotation_storage import AnnotationStorage
 from core.storage.clickhouse.clickhouse_client import ClickhouseClient
 from core.storage.clickhouse.migrations.migrate import migrate as migrate_clickhouse
 from core.storage.completion_storage import CompletionStorage
+from core.storage.deployment_storage import DeploymentStorage
 from core.storage.experiment_storage import ExperimentStorage
 from core.storage.file_storage import FileStorage
 from core.storage.psql.migrations.migrate import migrate
 from core.storage.psql.psql_agent_storage import PsqlAgentsStorage
 from core.storage.psql.psql_annotation_storage import PsqlAnnotationStorage
+from core.storage.psql.psql_deployment_storage import PsqlDeploymentStorage
 from core.storage.psql.psql_experiment_storage import PsqlExperimentStorage
 from core.storage.psql.psql_tenant_storage import PsqlTenantStorage
 from core.storage.psql.psql_view_storage import PsqlViewStorage
@@ -63,6 +65,10 @@ class DefaultStorageBuilder(StorageBuilder):
     @override
     def tenants(self, tenant_uid: int) -> TenantStorage:
         return PsqlTenantStorage(tenant_uid=tenant_uid, pool=self._psql_pool)
+
+    @override
+    def deployments(self, tenant_uid: int) -> DeploymentStorage:
+        return PsqlDeploymentStorage(tenant_uid, self._psql_pool)
 
     @classmethod
     async def create(cls):

@@ -15,3 +15,4 @@ class Deployment(BaseModel):
     created_by: str
     updated_at: datetime | None = None
     metadata: dict[str, Any] | None
+    archived_at: datetime | None = None

@@ -7,6 +7,7 @@ from core.domain.agent_completion import AgentCompletion
 from core.domain.agent_input import AgentInput
 from core.domain.agent_output import AgentOutput
 from core.domain.annotation import Annotation
+from core.domain.deployment import Deployment
 from core.domain.experiment import Experiment
 from core.domain.inference import LLMTrace
 from core.domain.inference_usage import InferenceUsage, PromptUsage, Usage
@@ -20,6 +21,19 @@ from core.domain.view import Graph, View, ViewFolder
 from core.providers._base.llm_completion import LLMCompletion
 from core.providers._base.llm_usage import LLMUsage
 from core.utils.uuid import uuid7
+
+
+def fake_version(**kwargs: Any):
+    version = Version(
+        model="gpt-4o-mini",
+        provider="openai",
+        temperature=0.5,
+        max_output_tokens=100,
+        use_structured_generation=False,
+        tool_choice=None,
+        prompt=[Message.with_text("Your name is {{name}}", role="system")],
+    )
+    return version.model_copy(update=kwargs)
 
 
 def fake_completion(agent: Agent | None = None, id_rand: int = 1, **kwargs: Any):
@@ -74,15 +88,7 @@ def fake_completion(agent: Agent | None = None, id_rand: int = 1, **kwargs: Any)
             Message.with_text("Your name is John", role="system"),
             Message.with_text("hello, who are you?", role="user"),
         ],
-        version=Version(
-            model="gpt-4o-mini",
-            provider="openai",
-            temperature=0.5,
-            max_output_tokens=100,
-            use_structured_generation=False,
-            tool_choice=None,
-            prompt=[Message.with_text("Your name is {{name}}", role="system")],
-        ),
+        version=fake_version(),
     )
 
     return base.model_copy(update=kwargs)
@@ -176,3 +182,15 @@ def fake_view_folder(**kwargs: Any):
         name="Test View Folder",
         views=[fake_view()],
     )
+
+
+def fake_deployment(**kwargs: Any):
+    base = Deployment(
+        id="test-deployment",
+        agent_id="test-agent",
+        version=fake_version(),
+        created_by="test-user",
+        created_at=datetime.now(UTC),
+        metadata={},
+    )
+    return base.model_copy(update=kwargs)
