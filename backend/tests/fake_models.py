@@ -191,6 +191,6 @@ def fake_deployment(**kwargs: Any):
         version=fake_version(),
         created_by="test-user",
         created_at=datetime.now(UTC),
-        metadata={},
+        metadata=None,
     )
     return base.model_copy(update=kwargs)

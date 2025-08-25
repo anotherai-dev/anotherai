@@ -31,7 +31,7 @@ class TestDeploymentRowFromDomain:
         dep = fake_deployment()
         converted = _DeploymentRow.from_domain(1, dep)
         expected_fields = set(_DeploymentRow.model_fields)
-        expected_fields -= {"tenant_uid", "uid", "deleted_at"}
+        expected_fields -= {"tenant_uid", "uid", "deleted_at", "agent_slug"}
 
         assert converted.model_fields_set == expected_fields
 
@@ -280,14 +280,14 @@ class TestListDeployments:
         agent_storage: PsqlAgentsStorage,
     ):
         # Create two agents
-        agent1 = Agent(uid=0, id=f"agent-1-{uuid.uuid4().hex[:8]}", name="Agent 1")
-        agent2 = Agent(uid=0, id=f"agent-2-{uuid.uuid4().hex[:8]}", name="Agent 2")
+        agent1 = Agent(uid=0, id="agent-1", name="Agent 1")
+        agent2 = Agent(uid=0, id="agent-2", name="Agent 2")
         await agent_storage.store_agent(agent1)
         await agent_storage.store_agent(agent2)
 
         # Create deployments for each agent
-        dep1 = fake_deployment(id=f"dep-1-{uuid.uuid4().hex[:8]}", agent_id=agent1.id)
-        dep2 = fake_deployment(id=f"dep-2-{uuid.uuid4().hex[:8]}", agent_id=agent2.id)
+        dep1 = fake_deployment(id="dep-1", agent_id=agent1.id)
+        dep2 = fake_deployment(id="dep-2", agent_id=agent2.id)
 
         await deployment_storage.create_deployment(dep1)
         await deployment_storage.create_deployment(dep2)

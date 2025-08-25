@@ -82,12 +82,12 @@ class PsqlDeploymentStorage(PsqlBaseStorage, DeploymentStorage):
         where: list[str] = []
         arguments: list[Any] = []
         if agent_uid is not None:
-            where.append(f"agent_uid = ${len(arguments) + arg_idx}")
+            where.append(f"deployments.agent_uid = ${len(arguments) + arg_idx}")
             arguments.append(agent_uid)
         if include_archived is False:
-            where.append("deleted_at IS NULL")
+            where.append("deployments.deleted_at IS NULL")
         if created_before is not None:
-            where.append(f"created_at < ${len(arguments) + arg_idx}")
+            where.append(f"deployments.created_at < ${len(arguments) + arg_idx}")
             arguments.append(map_value(created_before))
         return " AND ".join(where), arguments
 
@@ -112,11 +112,16 @@ class PsqlDeploymentStorage(PsqlBaseStorage, DeploymentStorage):
     ) -> AsyncIterable[Deployment]:
         async with self._connect() as connection:
             agent_uid = await self._agent_uid(connection, agent_id) if agent_id else None
-            where, arguments = self._where_deployments(connection, 1, agent_uid, include_archived, created_before)
+            where, arguments = self._where_deployments(connection, 2, agent_uid, include_archived, created_before)
             rows = await connection.fetch(
                 f"""
-                SELECT * FROM deployments WHERE {where}
+                SELECT deployments.*, agents.slug AS agent_slug FROM deployments
+                JOIN agents ON deployments.agent_uid = agents.uid
+                WHERE {where}
+                ORDER BY deployments.created_at DESC
+                LIMIT $1
                 """,  # noqa: S608 # OK here since where is defined above
+                limit,
                 *arguments,
             )
             for row in rows:
@@ -126,7 +131,9 @@ class PsqlDeploymentStorage(PsqlBaseStorage, DeploymentStorage):
         async with self._connect() as connection:
             row = await connection.fetchrow(
                 """
-                SELECT * FROM deployments WHERE slug = $1
+                SELECT deployments.*, agents.slug AS agent_slug FROM deployments
+                JOIN agents ON deployments.agent_uid = agents.uid
+                WHERE deployments.slug = $1
                 """,
                 deployment_id,
             )
@@ -160,11 +167,10 @@ class _DeploymentRow(AgentLinkedRow):
         return cls(
             slug=deployment.id,
             agent_uid=agent_uid,
-            agent_slug=deployment.agent_id,
             version_id=deployment.version.id,
             version=deployment.version.model_dump(exclude_none=True),
             author_name=deployment.created_by,
             created_at=deployment.created_at,
             updated_at=deployment.updated_at,
-            metadata=deployment.metadata,
+            metadata=deployment.metadata or None,
         )
