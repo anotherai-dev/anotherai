@@ -1,11 +1,9 @@
-import re
 from typing import Any, NamedTuple
 
 import structlog
 
 from core.domain.agent import Agent
 from core.domain.agent_input import AgentInput
-from core.domain.deployment import DeploymentName
 from core.domain.exceptions import BadRequestError
 from core.domain.message import Message
 from core.domain.models.model_data_mapping import MODEL_COUNT, get_model_id
@@ -16,7 +14,6 @@ from core.providers._base.provider_error import MissingModelError
 from core.services.completion_runner import CompletionRunner
 from core.services.messages.messages_utils import json_schema_for_template
 from core.services.models_service import suggest_model
-from core.utils.coroutines import capture_errors
 from core.utils.schema_gen import schema_from_data
 from core.utils.schema_sanitation import streamline_schema, validate_schema
 from protocol.api._run_models import (
@@ -24,7 +21,7 @@ from protocol.api._run_models import (
     OpenAIProxyChatCompletionRequest,
     OpenAIProxyResponseFormat,
 )
-from protocol.api._services._run_conversions import (
+from protocol.api._services.run._run_conversions import (
     completion_response_from_domain,
     request_apply_to_version,
     request_messages_to_domain,
@@ -33,13 +30,13 @@ from protocol.api._services._run_conversions import (
 
 _log = structlog.get_logger(__name__)
 
+_DEPLOYMENT_PREFIX = "anotherai/deployments/"
+
 
 class _EnvironmentRef(NamedTuple):
     """A reference to a deployed environment"""
 
-    agent_id: str
-    schema_id: int
-    environment: DeploymentName
+    deployment_id: str
 
 
 class _ModelRef(NamedTuple):
@@ -180,75 +177,23 @@ To list all models programmatically: Use the list_models tool""",
         )
 
 
-_environment_aliases = {
-    "prod": DeploymentName.PRODUCTION,
-    "development": DeploymentName.DEV,
-}
-_agent_schema_env_regex = re.compile(
-    rf"^([^/]+)/#(\d+)/({'|'.join([*DeploymentName, *_environment_aliases.keys()])})$",
-)
-_metadata_env_regex = re.compile(
-    rf"^#(\d+)/({'|'.join([*DeploymentName, *_environment_aliases.keys()])})$",
-)
-
-
-def _env_from_model_str(model: str) -> _EnvironmentRef | None:
-    if match := _agent_schema_env_regex.match(model):
-        with capture_errors(_log, f"Model {model} matched regexp but we failed to parse the values"):
-            return _EnvironmentRef(
-                agent_id=match.group(1),
-                schema_id=int(match.group(2)),
-                environment=DeploymentName(_environment_aliases.get(match.group(3), match.group(3))),
-            )
-
-    return None
-
-
-def _env_from_fields(
-    request: OpenAIProxyChatCompletionRequest,
-    agent_id: str | None,
-    model: Model | None,
-) -> _EnvironmentRef | None:
-    if not (request.environment or request.schema_id):
-        return None
-    if not (request.environment and request.schema_id and agent_id):
-        raise BadRequestError(
-            "When an environment or schema_id is provided, agent_id, environment and schema_id must be provided",
-            capture=True,
-            extras={"model": request.model, "environment": request.environment, "schema_id": request.schema_id},
+def _env_from_fields(request: OpenAIProxyChatCompletionRequest) -> _EnvironmentRef | None:
+    if request.deployment_id:
+        return _EnvironmentRef(
+            deployment_id=request.deployment_id.removeprefix(_DEPLOYMENT_PREFIX),
         )
-
-    try:
-        environment = DeploymentName(request.environment)
-    except Exception:  # noqa: BLE001
-        if model:
-            # That's ok. It could mean that someone passed an extra body parameter that's also called
-            # environment. We can probably ignore it.
-            _log.warning(
-                "Received an invalid environment",
-                environment=request.environment,
-                model=request.model,
-            )
-            return None
-        # We don't have a model. Meaning that it's likely a user error
-        raise BadRequestError(
-            f"Environment {request.environment} is not a valid environment. Valid environments are: "
-            f"{', '.join(DeploymentName)}",
-            capture=True,
-            extras={"model": request.model, "environment": request.environment, "schema_id": request.schema_id},
-        ) from None
-    return _EnvironmentRef(
-        agent_id=agent_id,
-        schema_id=request.schema_id,
-        environment=environment,
-    )
+    if request.model.startswith(_DEPLOYMENT_PREFIX):
+        return _EnvironmentRef(
+            deployment_id=request.model[len(_DEPLOYMENT_PREFIX) :],
+        )
+    return None
 
 
 def _reference_from_metadata(
     request: OpenAIProxyChatCompletionRequest,
     model: Model,
     agent_id: str | None,
-) -> _EnvironmentRef | _ModelRef | None:
+) -> _ModelRef | None:
     if not request.metadata or "agent_id" not in request.metadata:
         return None
 
@@ -257,19 +202,6 @@ def _reference_from_metadata(
         agent_id = request.metadata.get("agent_id")
     if not agent_id:
         return None
-
-    if "environment" in request.metadata:
-        match = _metadata_env_regex.match(request.metadata["environment"])
-        if match:
-            try:
-                return _EnvironmentRef(
-                    agent_id=request.metadata["agent_id"],
-                    schema_id=int(match.group(1)),
-                    environment=DeploymentName(_environment_aliases.get(match.group(2), match.group(2))),
-                )
-            except Exception:  # noqa: BLE001
-                _log.exception("Failed to parse environment from metadata", metadata=request.metadata)
-                return None
 
     return _ModelRef(
         model=model,
@@ -285,7 +217,7 @@ def _extract_references(request: OpenAIProxyChatCompletionRequest) -> _Environme
     - the body parameters environment, schema_id and agent_id
     """
 
-    if env := _env_from_model_str(request.model):
+    if env := _env_from_fields(request):
         return env
 
     splits = request.model.split("/")
@@ -296,9 +228,6 @@ def _extract_references(request: OpenAIProxyChatCompletionRequest) -> _Environme
         model = get_model_id(splits[-1])
     except ValueError:
         model = None
-
-    if env := _env_from_fields(request, agent_id, model):
-        return env
 
     if not model:
         if len(splits) > 2:
