@@ -12,6 +12,8 @@ from protocol.api._api_models import (
     CreateExperimentRequest,
     CreateViewRequest,
     Deployment,
+    DeploymentCreate,
+    DeploymentUpdate,
     Experiment,
     Model,
     Page,
@@ -24,6 +26,7 @@ from protocol.api._dependencies._services import (
     AgentServiceDep,
     AnnotationServiceDep,
     CompletionServiceDep,
+    DeploymentServiceDep,
     ExperimentServiceDep,
     OrganizationServiceDep,
     ViewServiceDep,
@@ -243,22 +246,43 @@ async def delete_api_key(
 
 
 @router.get("/v1/deployments", response_model_exclude_none=True)
-async def list_deployments() -> Page[Deployment]:
-    raise NotImplementedError
+async def list_deployments(
+    deployment_service: DeploymentServiceDep,
+    include_archived: Annotated[bool, Query(description="Include archived deployments")] = False,
+    agent_id: Annotated[str | None, Query(description="Filter by agent ID")] = None,
+    limit: Annotated[int, Query(description="Maximum number of deployments to return", ge=1, le=100)] = 10,
+    page_token: Annotated[str | None, Query(description="Token to get the next page of deployments")] = None,
+) -> Page[Deployment]:
+    return await deployment_service.list_deployments(
+        agent_id=agent_id,
+        limit=limit,
+        include_archived=include_archived,
+        page_token=page_token,
+    )
 
 
 @router.post("/v1/deployments", response_model_exclude_none=True)
-async def create_deployment(deployment: Deployment) -> Deployment:
-    raise NotImplementedError
+async def create_deployment(
+    deployment_service: DeploymentServiceDep,
+    deployment: DeploymentCreate,
+) -> Deployment:
+    return await deployment_service.create_deployment(deployment)
 
 
 @router.patch("/v1/deployments/{deployment_id}", response_model_exclude_none=True)
-async def patch_deployment(deployment_id: str, deployment: Deployment) -> Deployment:
-    raise NotImplementedError
+async def patch_deployment(
+    deployment_service: DeploymentServiceDep,
+    deployment_id: str,
+    deployment: DeploymentUpdate,
+) -> Deployment:
+    return await deployment_service.update_deployment(deployment_id, deployment)
 
 
 @router.post("/v1/deployments/{deployment_id}/archive")
-async def archive_deployment(deployment_id: str) -> None:
+async def archive_deployment(
+    deployment_service: DeploymentServiceDep,
+    deployment_id: str,
+) -> None:
     """Archives a deployment. The deployment can still be used if referred to by ID but no longer
     appears in the list of deployments."""
-    raise NotImplementedError
+    return await deployment_service.archive_deployment(deployment_id)

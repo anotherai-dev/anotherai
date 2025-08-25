@@ -12,6 +12,7 @@ from core.domain.agent_output import AgentOutput as DomainOutput
 from core.domain.annotation import Annotation as DomainAnnotation
 from core.domain.api_key import APIKey as DomainAPIKey
 from core.domain.api_key import CompleteAPIKey as DomainCompleteAPIKey
+from core.domain.deployment import Deployment as DomainDeployment
 from core.domain.exceptions import BadRequestError
 from core.domain.experiment import Experiment as DomainExperiment
 from core.domain.file import File
@@ -40,6 +41,7 @@ from protocol.api._api_models import (
     CreateAgentRequest,
     CreateExperimentRequest,
     CreateViewResponse,
+    Deployment,
     Error,
     Experiment,
     Graph,
@@ -61,7 +63,7 @@ from protocol.api._api_models import (
     View,
     ViewFolder,
 )
-from protocol.api._services._urls import experiments_url, view_url
+from protocol.api._services._urls import deployment_url, experiments_url, view_url
 
 _log = get_logger(__name__)
 
@@ -579,3 +581,30 @@ def api_key_from_domain_complete(api_key: DomainCompleteAPIKey) -> CompleteAPIKe
         created_by=api_key.created_by,
         key=api_key.api_key,
     )
+
+
+def deployment_from_domain(deployment: DomainDeployment) -> Deployment:
+    return Deployment(
+        id=deployment.id,
+        agent_id=deployment.agent_id,
+        version=version_from_domain(deployment.version),
+        metadata=deployment.metadata or {},
+        created_at=_sanitize_datetime(deployment.created_at),
+        updated_at=_sanitize_datetime(deployment.updated_at) if deployment.updated_at else None,
+        url=deployment_url(deployment.id),
+        created_by=deployment.created_by,
+    )
+
+
+def page_token_to_datetime(token: str | None):
+    if not token:
+        return None
+    try:
+        int_value = int(token)
+    except ValueError as e:
+        raise BadRequestError("Invalid page token") from e
+    return datetime.fromtimestamp(int_value, UTC)
+
+
+def page_token_from_datetime(dt: datetime) -> str:
+    return str(int(dt.timestamp()))

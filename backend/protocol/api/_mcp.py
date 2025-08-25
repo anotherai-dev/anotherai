@@ -560,9 +560,22 @@ async def list_deployments(
         default=None,
         description="The agent id to filter deployments by",
     ),
+    limit: int = Field(
+        default=10,
+        description="The number of deployments to return",
+    ),
+    page_token: str | None = Field(
+        default=None,
+        description="The page token to use for pagination",
+    ),
 ) -> Page[Deployment]:
     """List all deployments"""
-    raise NotImplementedError
+    return await (await _mcp_utils.deployment_service()).list_deployments(
+        agent_id=agent_id,
+        limit=limit,
+        page_token=page_token,
+        include_archived=False,
+    )
 
 
 @mcp.tool()
@@ -578,6 +591,9 @@ async def create_or_update_deployment(
         description="The id of the deployment",
         examples=["my-agent-id:production#1"],
     ),
+    author_name: str = Field(
+        description="The name of the author of the deployment",
+    ),
 ) -> Deployment | str:
     """Create a new deployment or update an existing deployment if id matches.
 
@@ -589,4 +605,9 @@ async def create_or_update_deployment(
     Updating an existing deployment needs user confirmation. You will be provided the URL where a user can
     confirm the update.
     """
-    raise NotImplementedError
+    return await (await _mcp_utils.deployment_service()).upsert_deployment(
+        agent_id=agent_id,
+        version_id=version_id,
+        deployment_id=deployment_id,
+        author_name=author_name,
+    )

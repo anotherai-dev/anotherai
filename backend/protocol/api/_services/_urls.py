@@ -11,3 +11,7 @@ def view_url(view_id: str) -> str:
 
 def completion_url(run_id: str) -> str:
     return f"{ANOTHERAI_APP_URL}/completions/{run_id}"
+
+
+def deployment_url(deployment_id: str) -> str:
+    return f"{ANOTHERAI_APP_URL}/deployments/{deployment_id}"

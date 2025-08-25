@@ -722,6 +722,16 @@ class Deployment(BaseModel):
 
     metadata: dict[str, Any] | None = None
 
+    url: str
+
+
+class DeploymentCreate(BaseModel):
+    version: Version
+    metadata: dict[str, Any] | None = None
+    created_by: str
+    agent_id: str
+    id: str
+
 
 class DeploymentUpdate(BaseModel):
     version: Annotated[

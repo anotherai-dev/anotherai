@@ -12,5 +12,6 @@ class Deployment(BaseModel):
     agent_id: str
     version: Version
     created_at: datetime = Field(default_factory=datetime_factory)
+    created_by: str
     updated_at: datetime | None = None
     metadata: dict[str, Any] | None
