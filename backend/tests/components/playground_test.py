@@ -223,3 +223,61 @@ async def test_completion_query(test_api_client: IntegrationTestClient):
         },
     )
     assert len(res3["completions"]) == 1
+
+
+async def test_use_cache(test_api_client: IntegrationTestClient):
+    test_api_client.mock_provider_call(
+        Provider.ANTHROPIC,
+        Model.CLAUDE_4_SONNET_20250514,
+        "anthropic/completion.json",
+        is_reusable=True,
+    )
+    test_api_client.mock_provider_call(
+        Provider.OPEN_AI,
+        Model.GPT_41_MINI_2025_04_14,
+        "openai/completion.json",
+        is_reusable=True,
+    )
+    playground_payload = {
+        "models": f"{Model.CLAUDE_4_SONNET_20250514},{Model.GPT_41_MINI_2025_04_14}",
+        "author_name": "user",
+        "agent_id": "test-agent",
+        "inputs": [
+            {
+                "variables": {"name": "Toulouse"},
+            },
+            {
+                "variables": {"name": "Pittsburgh"},
+            },
+        ],
+        "prompts": [
+            [
+                {"role": "user", "content": "What is the capital of the country that has {{ name }}?"},
+            ],
+        ],
+        "temperatures": "0,1.0",  # default cache setting is always
+        "experiment_title": "Capital Extractor Test Experiment",
+    }
+    res = await test_api_client.call_tool("playground", playground_payload)
+    assert len(res["completions"]) == 8
+    assert len(test_api_client.get_provider_requests(Provider.ANTHROPIC, Model.CLAUDE_4_SONNET_20250514)) == 4
+    assert len(test_api_client.get_provider_requests(Provider.OPEN_AI, Model.GPT_41_MINI_2025_04_14)) == 4
+
+    # Reset the mocks
+    assert len(test_api_client.httpx_mock.get_requests()) == 8
+
+    await test_api_client.wait_for_background()
+    # Try it again, the cache should be used and  no run should go through
+    res = await test_api_client.call_tool("playground", playground_payload)
+    assert len(res["completions"]) == 8
+    assert len(test_api_client.httpx_mock.get_requests()) == 8
+
+    # If I do the same but switch to auto, the cache is used for 4 out of 8 calls
+    res = await test_api_client.call_tool("playground", {**playground_payload, "use_cache": "auto"})
+    assert len(res["completions"]) == 8
+    assert len(test_api_client.httpx_mock.get_requests()) == 12  # 8 + 4
+
+    # If I do the same but switch to never, the cache is not used and 8 runs go through
+    res = await test_api_client.call_tool("playground", {**playground_payload, "use_cache": "never"})
+    assert len(res["completions"]) == 8
+    assert len(test_api_client.httpx_mock.get_requests()) == 20  # 8 + 8

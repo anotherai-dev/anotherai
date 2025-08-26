@@ -48,7 +48,7 @@ class CompletionRunner:
         input: AgentInput,
     ) -> AgentCompletion | None:
         async with asyncio.timeout(0.150):  # 150 ms, cached output clickhouse query should exit after 100ms
-            agent_output = await self._completion_storage.cached_output(version.id, input.id)
+            agent_output = await self._completion_storage.cached_output(version_id=version.id, input_id=input.id)
             if not agent_output:
                 return None
             return AgentCompletion(
