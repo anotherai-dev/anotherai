@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, KeyRound, Search, Settings } from "lucide-react";
+import { ChevronLeft, Cloud, KeyRound, Search, Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -104,6 +104,16 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
               />
             </svg>
             Experiments
+          </Link>
+
+          <Link
+            href="/deployments"
+            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors mb-1 ${
+              pathname.startsWith("/deployments") ? "bg-blue-100 text-blue-700" : "text-gray-700 hover:bg-gray-100"
+            }`}
+          >
+            <Cloud className="w-4 h-4" />
+            Deployments
           </Link>
 
           <Link

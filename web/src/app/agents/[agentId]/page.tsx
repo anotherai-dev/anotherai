@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { LoadingIndicator } from "@/components/LoadingIndicator";
 import { PageError } from "@/components/PageError";
 import { PageHeader } from "@/components/PageHeader";
+import { ExperimentInstructions } from "@/components/experiment/ExperimentInstructions";
 import { useOrFetchAgentDetails } from "@/store/agent_stats";
 import { buildQuery } from "@/utils/queries";
 import { CompletionsTable } from "../../completions/sections/table/CompletionsTable";
@@ -29,6 +30,7 @@ export default function AgentDetailPage() {
         title="Agent Details"
         description="View agent performance metrics and completions"
         copyablePrefixAndId={`anotherai/agent/${agentId}`}
+        descriptionRightContent={<ExperimentInstructions agentName={agentId} />}
       />
 
       {error && <PageError error={error.message} />}

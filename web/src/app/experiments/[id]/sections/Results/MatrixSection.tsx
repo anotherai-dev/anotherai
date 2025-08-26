@@ -68,9 +68,12 @@ export function MatrixSection(props: Props) {
           priceAndLatency={
             priceAndLatency?.metrics
               ? {
-                  ...priceAndLatency.metrics,
+                  avgCost: priceAndLatency.metrics.avgCost,
+                  avgDuration: priceAndLatency.metrics.avgDuration,
                   allCosts: allAvgCosts,
                   allDurations: allAvgDurations,
+                  versionCosts: priceAndLatency.metrics.costs,
+                  versionDurations: priceAndLatency.metrics.durations,
                 }
               : undefined
           }

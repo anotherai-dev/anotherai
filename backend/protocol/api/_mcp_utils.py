@@ -18,6 +18,7 @@ from protocol.api._dependencies._tenant import authenticated_tenant
 from protocol.api._services.agent_service import AgentService
 from protocol.api._services.annotation_service import AnnotationService
 from protocol.api._services.completion_service import CompletionService
+from protocol.api._services.deployment_service import DeploymentService
 from protocol.api._services.documentation_service import DocumentationService
 from protocol.api._services.experiment_service import ExperimentService
 from protocol.api._services.organization_service import OrganizationService
@@ -127,3 +128,9 @@ async def organization_service() -> OrganizationService:
     deps = lifecyle_dependencies()
     tenant = await _authenticated_tenant()
     return OrganizationService(deps.storage_builder.tenants(tenant.uid))
+
+
+async def deployment_service() -> DeploymentService:
+    deps = lifecyle_dependencies()
+    tenant = await _authenticated_tenant()
+    return DeploymentService(deps.storage_builder.deployments(tenant.uid), deps.storage_builder.completions(tenant.uid))
