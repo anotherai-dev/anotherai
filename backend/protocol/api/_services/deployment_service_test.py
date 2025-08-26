@@ -328,7 +328,7 @@ class TestUpsertDeployment:
         # Arrange
         agent_id = "agent-123"
         version_id = "version-456"
-        deployment_id = "deployment-789"
+        deployment_id = "deployment-789:Hello#/bla"
         author_name = "test-author"
         completion_id = "completion-abc"
 
@@ -358,5 +358,5 @@ class TestUpsertDeployment:
         # Result should be a confirmation URL
         assert isinstance(result, str)
         assert "http://localhost:3000/deploy" in result
-        assert f"deployment_id={deployment_id}" in result
+        assert "deployment_id=deployment-789%3AHello%23%2Fbla" in result
         assert f"completion_id={completion_id}" in result

@@ -2,7 +2,6 @@ from datetime import UTC, datetime
 
 from structlog import get_logger
 
-from core.consts import ANOTHERAI_APP_URL
 from core.domain.deployment import Deployment as DomainDeployment
 from core.domain.exceptions import BadRequestError, ObjectNotFoundError
 from core.domain.version import Version
@@ -10,6 +9,7 @@ from core.storage.completion_storage import CompletionStorage
 from core.storage.deployment_storage import DeploymentStorage
 from core.utils.schemas import IncompatibleSchemaError, JsonSchema
 from protocol.api._api_models import Deployment, DeploymentCreate, DeploymentUpdate, Page
+from protocol.api._services._urls import deploy_url
 from protocol.api._services.conversions import (
     deployment_from_domain,
     page_token_from_datetime,
@@ -119,7 +119,7 @@ class DeploymentService:
         _check_input_schema_compatibility(deployment, version)
         _check_output_schema_compatibility(deployment, version)
 
-        return f"An existing deployment already exists for this ID. Go to {ANOTHERAI_APP_URL}/deploy?deployment_id={deployment_id}&completion_id={completion_id}"
+        return f"An existing deployment already exists for this ID. Go to {deploy_url(deployment_id=deployment_id, completion_id=completion_id)}"
 
     async def archive_deployment(self, deployment_id: str):
         return await self._deployments_storage.archive_deployment(deployment_id)
