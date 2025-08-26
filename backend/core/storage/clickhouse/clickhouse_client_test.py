@@ -13,7 +13,10 @@ from pydantic import BaseModel
 
 from core.domain.agent import Agent
 from core.domain.agent_completion import AgentCompletion
+from core.domain.agent_input import AgentInput
+from core.domain.agent_output import AgentOutput
 from core.domain.annotation import Annotation
+from core.domain.error import Error
 from core.domain.exceptions import BadRequestError, ObjectNotFoundError
 from core.domain.experiment import Experiment
 from core.domain.message import Message
@@ -22,7 +25,7 @@ from core.storage.clickhouse._models._ch_annotation import ClickhouseAnnotation
 from core.storage.clickhouse._models._ch_completion import ClickhouseCompletion
 from core.storage.clickhouse._models._ch_experiment import ClickhouseExperiment
 from core.storage.clickhouse._models._ch_field_utils import data_and_columns
-from core.storage.clickhouse.clickhouse_client import ClickhouseClient
+from core.storage.clickhouse.clickhouse_client import _CACHED_OUTPUT_QUERY, ClickhouseClient
 from core.utils.uuid import uuid7
 from tests.fake_models import fake_annotation, fake_completion, fake_experiment
 from tests.utils import fixtures_json
@@ -421,7 +424,7 @@ class TestRawQuery:
         query_fn: Callable[[str], Awaitable[list[dict[str, Any]]]],
     ):
         """Check that the agent_id is mapped to the agent_uid both ways"""
-        query_str = "SELECT id, agent_id FROM completions LIMIT 10"
+        query_str = "SELECT id, agent_id FROM completions ORDER BY id DESC LIMIT 10"
 
         result = await query_fn(query_str)
         assert result == [
@@ -454,7 +457,7 @@ class TestRawQuery:
         ]
 
     async def test_select_star(self, query_fn: Callable[[str], Awaitable[list[dict[str, Any]]]]):
-        query_str = "SELECT * FROM completions LIMIT 10"
+        query_str = "SELECT * FROM completions ORDER BY id DESC LIMIT 10"
         result = await query_fn(query_str)
         assert len(result) == 3
         assert [r["id"] for r in result] == [
@@ -910,3 +913,53 @@ class TestGetVersionById:
 
         with pytest.raises(ObjectNotFoundError, match="version"):
             await client.get_version_by_id(wrong_agent_id, completion1.id)
+
+
+class TestCachedOutput:
+    async def test_cached_output_basic(self, client: ClickhouseClient):
+        """Test basic retrieval of cached output"""
+        # Create a completion with a version and input
+        completion = fake_completion()
+        await client.store_completion(completion, _insert_settings)
+
+        # Retrieve the cached output
+        output = await client.cached_output(version_id=completion.version.id, input_id=completion.agent_input.id)
+        assert output
+        assert output.model_dump(exclude={"preview"}) == completion.agent_output.model_dump(exclude={"preview"})
+
+    async def test_cached_output_none(self, client: ClickhouseClient):
+        """Test that None is returned when there is no cached output"""
+        # Create a completion with a version and input
+        completion = fake_completion()
+        await client.store_completion(completion, _insert_settings)
+
+        # Retrieve the cached output
+        output = await client.cached_output(version_id="invalid-version-id", input_id=completion.agent_input.id)
+        assert output is None
+
+    async def test_error_output_is_not_returned(self, client: ClickhouseClient):
+        """Test that error output is not returned"""
+        # Create a completion with a version and input
+        completion = fake_completion(
+            agent_output=AgentOutput(messages=[Message.with_text("whatever")], error=Error(message="error")),
+        )
+        await client.store_completion(completion, _insert_settings)
+
+        # Retrieve the cached output
+        output = await client.cached_output(version_id=completion.version.id, input_id=completion.agent_input.id)
+        assert output is None
+
+    async def test_skipping_indices(self, client: ClickhouseClient):
+        """Test that the bloom filter is used"""
+
+        await client.store_completion(fake_completion(), _insert_settings)
+        completion = fake_completion(agent_input=AgentInput(variables={"name": "James"}))
+        await client.store_completion(completion, _insert_settings)
+
+        clt = await client._readonly_client()
+        res = await clt.query(
+            f"EXPLAIN indexes=1 {_CACHED_OUTPUT_QUERY}",
+            {"input_id": completion.agent_input.id, "version_id": completion.version.id},
+        )
+        explain_res = " ".join(r[0].strip() for r in res.result_rows)
+        assert "Skip Name: input_id_index Description: bloom_filter GRANULARITY 1 Parts: 1/2" in explain_res
