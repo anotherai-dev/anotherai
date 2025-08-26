@@ -43,6 +43,7 @@ async def test_string_completion(test_case: ProviderTestCase, test_api_client: I
             },
         ],
     }
+    assert run["version"]["id"] == response.version_id  # pyright: ignore [reportAttributeAccessIssue]
     assert run["output"] == {
         "messages": [
             {

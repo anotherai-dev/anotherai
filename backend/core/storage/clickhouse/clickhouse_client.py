@@ -12,6 +12,7 @@ from core.domain.agent_completion import AgentCompletion
 from core.domain.annotation import Annotation
 from core.domain.exceptions import BadRequestError, ObjectNotFoundError
 from core.domain.experiment import Experiment
+from core.domain.version import Version
 from core.storage.clickhouse._models._ch_annotation import ClickhouseAnnotation
 from core.storage.clickhouse._models._ch_completion import ClickhouseCompletion
 from core.storage.clickhouse._models._ch_experiment import ClickhouseExperiment
@@ -182,6 +183,18 @@ class ClickhouseClient(CompletionStorage):
         column_names = cast(tuple[str, ...], result.column_names)
 
         return [dict(zip(column_names, row, strict=False)) for row in result.result_rows]
+
+    @override
+    async def get_version_by_id(self, agent_id: str, version_id: str) -> tuple[Version, str]:
+        result = await self._client.query(
+            """
+            SELECT id, version FROM completions WHERE version_id = {version_id:String} and agent_id = {agent_id:String} LIMIT 1
+            """,
+            parameters={"version_id": version_id, "agent_id": agent_id},
+        )
+        if not result.result_rows:
+            raise ObjectNotFoundError(object_type="version")
+        return Version.model_validate_json(result.result_rows[0][1]), str(result.result_rows[0][0])
 
 
 def _map_field(field: CompletionField) -> str:
