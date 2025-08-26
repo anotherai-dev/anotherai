@@ -2,18 +2,18 @@
 
 import { useMemo } from "react";
 import { HeaderSection } from "@/components/HeaderSection";
-import { useOrFetchMultipleAgentStats } from "@/store/agents_stats";
-import { useOrFetchMockedDeployments } from "@/store/mocked_deployments";
+import { useOrFetchMultipleDeploymentStats } from "@/store/deployment_stats";
+import { useOrFetchDeployments } from "@/store/deployments";
 import { DeploymentsTable } from "./sections/table/DeploymentsTable";
 
 export default function DeploymentsPage() {
-  const { deployments, isLoading, error } = useOrFetchMockedDeployments();
+  const { deployments, isLoading, error } = useOrFetchDeployments();
 
-  // Get agent IDs from deployments for stats fetching
-  const agentIds = useMemo(() => deployments.map((deployment) => deployment.agent_id), [deployments]);
+  // Get deployment IDs for stats fetching
+  const deploymentIds = useMemo(() => deployments.map((deployment) => deployment.id), [deployments]);
 
-  // Fetch stats for all agents used in deployments
-  const { allStats, isLoading: isLoadingStats } = useOrFetchMultipleAgentStats(agentIds);
+  // Fetch stats for all deployments
+  const { allStats, isLoading: isLoadingStats } = useOrFetchMultipleDeploymentStats(deploymentIds);
 
   return (
     <div className="flex flex-col w-full h-full mx-auto px-4 py-8 gap-6 bg-gray-50">
@@ -24,7 +24,7 @@ export default function DeploymentsPage() {
 
       <DeploymentsTable
         deployments={deployments}
-        agentsStats={allStats}
+        deploymentStats={allStats}
         isLoading={isLoading || isLoadingStats}
         error={error ?? undefined}
       />

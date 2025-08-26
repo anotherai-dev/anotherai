@@ -9,24 +9,27 @@ import { PageHeader } from "@/components/PageHeader";
 import { useToast } from "@/components/ToastProvider";
 import { useCompletionsListSync } from "@/hooks/useCompletionsListSync";
 import { useCompletionsQuery } from "@/store/completions";
-import { useMockedDeployments, useOrFetchMockedDeployment } from "@/store/mocked_deployments";
-import { DeleteDeploymentModal } from "./components/DeleteDeploymentModal";
+import { useDeployments, useOrFetchDeployment } from "@/store/deployments";
+import { ArchiveDeploymentModal } from "./components/DeleteDeploymentModal";
 import { DeploymentInfoSection } from "./components/DeploymentInfoSection";
+import { DeploymentInfoTooltip } from "./components/DeploymentInfoTooltip";
 
 export default function DeploymentDetailPage() {
   const params = useParams();
-  const deploymentId = params.id as string;
+  // URL decode the deployment ID to handle special characters like : and #
+  // e.g., "politician-qa%3Aproduction%231" becomes "politician-qa:production#1"
+  const deploymentId = decodeURIComponent(params.id as string);
 
   const router = useRouter();
   const { showToast } = useToast();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const { deployment, isLoading, error } = useOrFetchMockedDeployment(deploymentId);
-  const deleteDeployment = useMockedDeployments((state) => state.deleteDeployment);
+  const { deployment, isLoading, error } = useOrFetchDeployment(deploymentId);
+  const archiveDeployment = useDeployments((state) => state.archiveDeployment);
 
-  // Fetch completions with only id, input, output, and date fields
-  const completionsQuery = `SELECT id, input_messages, input_variables, output_messages, output_error, updated_at as date FROM completions ORDER BY created_at DESC LIMIT 100`;
+  // Fetch completions for this specific deployment
+  const completionsQuery = `SELECT id, input_messages, input_variables, output_messages, output_error, updated_at as date FROM completions WHERE metadata['anotherai/deployment_id'] = '${deploymentId}' ORDER BY created_at DESC LIMIT 100`;
   const {
     data: completionsData,
     isLoading: isLoadingCompletions,
@@ -43,12 +46,12 @@ export default function DeploymentDetailPage() {
   const handleDeleteConfirm = async () => {
     setIsDeleting(true);
     try {
-      await deleteDeployment(deploymentId);
-      showToast("Deployment deleted successfully");
+      await archiveDeployment(deploymentId);
+      showToast("Deployment archived successfully");
       router.push("/deployments");
     } catch (error) {
       console.error("Failed to delete deployment:", error);
-      showToast("Failed to delete deployment");
+      showToast("Failed to archive deployment");
     } finally {
       setIsDeleting(false);
       setIsDeleteModalOpen(false);
@@ -93,16 +96,17 @@ export default function DeploymentDetailPage() {
             onClick={handleDeleteClick}
             className="px-3 py-1.5 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-[2px] transition-colors cursor-pointer"
           >
-            Delete Deployment
+            Archive Deployment
           </button>
         }
+        descriptionBottomContent={<DeploymentInfoTooltip deploymentId={deploymentId} agentId={deployment.agent_id} />}
       />
       <DeploymentInfoSection deployment={deployment} />
       <div className="flex-1 flex flex-col min-h-0">
         <CompletionsTable data={completionsData ?? []} isLoading={isLoadingCompletions} error={completionsError} />
       </div>
 
-      <DeleteDeploymentModal
+      <ArchiveDeploymentModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         deploymentId={deploymentId}

@@ -93,7 +93,7 @@ export function CompletionDetailsView(props: Props) {
           <InfoRow
             title="Version ID"
             value={completion.version.id}
-            copyValue={`anotherai/version/${completion.version.id}`}
+            copyValue={`anotherai/agents/${completion.agent_id}/versions/${completion.version.id}`}
             copyable={true}
           />
 

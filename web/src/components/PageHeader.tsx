@@ -80,12 +80,14 @@ export function PageHeader(props: PageHeaderProps) {
         </div>
       )}
 
-      {description && (
+      {(description || descriptionRightContent || descriptionBottomContent) && (
         <div>
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-600 flex-1">{description}</p>
-            {descriptionRightContent && <div className="flex-shrink-0 ml-4">{descriptionRightContent}</div>}
-          </div>
+          {(description || descriptionRightContent) && (
+            <div className="flex items-center justify-between">
+              {description && <p className="text-sm text-gray-600 flex-1">{description}</p>}
+              {descriptionRightContent && <div className="flex-shrink-0 ml-4">{descriptionRightContent}</div>}
+            </div>
+          )}
           {descriptionBottomContent && <div className="mt-3">{descriptionBottomContent}</div>}
         </div>
       )}
