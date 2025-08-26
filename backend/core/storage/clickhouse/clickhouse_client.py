@@ -188,7 +188,7 @@ class ClickhouseClient(CompletionStorage):
     async def get_version_by_id(self, agent_id: str, version_id: str) -> tuple[Version, str]:
         result = await self._client.query(
             """
-            SELECT id, version FROM completions WHERE id = {version_id:String} and agent_id = {agent_id:String} LIMIT 1
+            SELECT id, version FROM completions WHERE version_id = {version_id:String} and agent_id = {agent_id:String} LIMIT 1
             """,
             parameters={"version_id": version_id, "agent_id": agent_id},
         )

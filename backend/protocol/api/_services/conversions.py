@@ -229,6 +229,16 @@ def version_to_domain(version: Version) -> DomainVersion:
         enabled_tools=[tool_to_domain(t) for t in version.tools] if version.tools else None,
         prompt=[message_to_domain(m) for m in version.prompt] if version.prompt else None,
         output_schema=output_schema_to_domain(version.output_schema) if version.output_schema else None,
+        input_variables_schema=version.input_variables_schema,
+        max_output_tokens=version.max_output_tokens,
+        tool_choice=version.tool_choice,
+        parallel_tool_calls=version.parallel_tool_calls,
+        reasoning_effort=version.reasoning_effort,
+        reasoning_budget=version.reasoning_budget,
+        presence_penalty=version.presence_penalty,
+        frequency_penalty=version.frequency_penalty,
+        use_structured_generation=version.use_structured_generation,
+        provider=version.provider,
     )
 
 
@@ -236,11 +246,21 @@ def version_from_domain(version: DomainVersion) -> Version:
     return Version(
         id=version.id,
         model=version.model or "",
-        temperature=version.temperature or 1.0,
-        top_p=version.top_p or 1.0,
+        temperature=version.temperature,
+        top_p=version.top_p,
         tools=[tool_from_domain(t) for t in version.enabled_tools] if version.enabled_tools else None,
         prompt=[message_from_domain(m) for m in version.prompt] if version.prompt else None,
         output_schema=output_schema_from_domain(version.output_schema) if version.output_schema else None,
+        input_variables_schema=version.input_variables_schema,
+        max_output_tokens=version.max_output_tokens,
+        tool_choice=version.tool_choice,
+        parallel_tool_calls=version.parallel_tool_calls,
+        reasoning_effort=version.reasoning_effort,
+        reasoning_budget=version.reasoning_budget,
+        presence_penalty=version.presence_penalty,
+        frequency_penalty=version.frequency_penalty,
+        use_structured_generation=version.use_structured_generation,
+        provider=version.provider,
     )
 
 
@@ -275,7 +295,7 @@ def completion_from_domain(completion: DomainCompletion) -> Completion:
         output=output_from_domain(completion.agent_output),
         messages=[message_from_domain(m) for m in completion.messages] if completion.messages else [],
         annotations=None,  # TODO:
-        metadata=completion.metadata or {},
+        metadata=completion.metadata or None,
         cost_usd=completion.cost_usd or 0.0,
         duration_seconds=completion.duration_seconds or 0.0,
     )

@@ -814,7 +814,7 @@ class TestGetVersionById:
         await client.store_completion(completion, _insert_settings)
 
         # Retrieve the version by completion ID and agent ID
-        result_version, completion_id = await client.get_version_by_id(completion.agent.id, completion.id)
+        result_version, completion_id = await client.get_version_by_id(completion.agent.id, completion.version.id)
 
         # Verify the returned version matches the original
         assert completion_id == completion.id
@@ -880,7 +880,7 @@ class TestGetVersionById:
         await client.store_completion(completion, _insert_settings)
 
         # Retrieve the version
-        result_version, completion_id = await client.get_version_by_id(completion.agent.id, completion.id)
+        result_version, completion_id = await client.get_version_by_id(completion.agent.id, completion.version.id)
         assert completion_id == completion.id
 
         # Verify all complex fields are preserved

@@ -130,6 +130,7 @@ To list all models programmatically: Use the list_models tool""",
                 response_format=request.response_format,
             )
         request_apply_to_version(request, prepared_run.version)
+        prepared_run.version.reset_id()
 
         try:
             use_fallback = use_fallback_to_domain(request.use_fallback)

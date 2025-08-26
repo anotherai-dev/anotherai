@@ -5,9 +5,11 @@ import json
 from core.domain.agent_output import AgentOutput
 from core.domain.error import Error
 from core.domain.message import Message, MessageContent
+from core.domain.tenant_data import PublicOrganizationData
 from core.domain.tool_call import ToolCallRequest
+from tests.fake_models import fake_completion
 
-from ._run_conversions import _extract_completion_from_output
+from ._run_conversions import _extract_completion_from_output, completion_response_from_domain
 
 
 class TestExtractCompletionFromOutput:
@@ -268,3 +270,46 @@ class TestExtractCompletionFromOutput:
 
         assert text == "Valid text"
         assert tool_calls == []
+
+
+class TestCompletionResponseFromDomain:
+    def test_completion_response_from_domain_basic(self):
+        """Test conversion from domain AgentCompletion to OpenAI proxy response"""
+        # Create a fake completion using fake_models
+        completion = fake_completion()
+
+        # Create a fake organization
+        org = PublicOrganizationData(
+            uid=123,
+            slug="test-org",
+            org_id="org_123",
+            owner_id="owner_123",
+        )
+
+        # Call the function
+        response = completion_response_from_domain(completion, deprecated_function=False, org=org)
+
+        # Verify the response structure
+        assert response.id == completion.id
+        assert response.model == (completion.final_model if completion.final_model else "unknown")
+        assert response.created == int(completion.created_at.timestamp())
+        assert response.version_id == completion.version.id
+        assert response.metadata == completion.metadata
+
+        # Verify choices
+        assert len(response.choices) == 1
+        choice = response.choices[0]
+        assert choice.index == 0
+        assert choice.message.role == "assistant"
+        assert choice.message.content == "Hello my name is John"
+        assert choice.finish_reason == "stop"
+        assert choice.duration_seconds == completion.duration_seconds
+        assert choice.cost_usd == completion.cost_usd
+
+        # Verify usage is calculated from traces
+        # Note: fake_completion has no text_token_count for prompt, only cached/reasoning tokens
+        # So prompt_tokens will be 0, but completion_tokens will be 100
+        assert response.usage is not None
+        assert response.usage.prompt_tokens == 0  # fake_completion has no prompt text_token_count
+        assert response.usage.completion_tokens == 100
+        assert response.usage.total_tokens == 100

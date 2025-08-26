@@ -9,11 +9,13 @@ from protocol.api._services.conversions import (
     graph_from_domain,
     graph_to_domain,
     message_to_domain,
+    version_from_domain,
+    version_to_domain,
     view_from_domain,
     view_to_domain,
     view_url,
 )
-from tests.fake_models import fake_graph, fake_view
+from tests.fake_models import fake_graph, fake_version, fake_view
 
 
 @pytest.fixture(autouse=True)
@@ -257,3 +259,22 @@ class TestMessageToDomain:
         assert domain_message.content[0].tool_call_request is None
         assert domain_message.content[0].tool_call_result is None
         assert domain_message.content[0].reasoning is None
+
+
+class TestVersionConversion:
+    def test_exhaustive(self):
+        domain_version = fake_version()
+        converted = version_from_domain(domain_version)
+        assert converted.model_fields_set == set(converted.__class__.model_fields), (
+            "version_from_domain is not exhaustive"
+        )
+
+        domain_converted = version_to_domain(converted)
+        assert domain_converted.model_fields_set == set(domain_converted.__class__.model_fields), (
+            "version_to_domain is not exhaustive"
+        )
+
+        assert domain_converted.model_dump(exclude_unset=True, exclude_none=True) == domain_version.model_dump(
+            exclude_unset=True,
+            exclude_none=True,
+        ), "version_from_domain and version_to_domain are not inverses"

@@ -6,7 +6,10 @@ from datetime import date, datetime
 from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
+from pydantic.json_schema import SkipJsonSchema
 
+from core.domain.reasoning_effort import ReasoningEffort
+from core.domain.tool_choice import ToolChoice
 from core.utils.fields import datetime_factory
 
 
@@ -88,9 +91,8 @@ class OutputSchema(BaseModel):
 class Version(BaseModel):
     id: str = Field(description="The id of the version. Auto generated.", default="")
     model: str
-    # Default values match OpenAI API defaults (temperature=1.0, top_p=1.0)
-    temperature: float = 1.0
-    top_p: float = 1.0
+    temperature: float | None = None
+    top_p: float | None = None
     tools: list[Tool] | None = Field(
         default=None,
         description="A list of tools that the model can use. If empty, no tools are used.",
@@ -113,6 +115,27 @@ class Version(BaseModel):
         default=None,
         description="A JSON schema for the output of the model, aka the schema in the response format",
     )
+
+    max_output_tokens: int | None = Field(
+        default=None,
+        description="The maximum number of tokens to generate in the prompt",
+    )
+
+    tool_choice: ToolChoice | None = None
+
+    presence_penalty: float | None = None
+
+    frequency_penalty: float | None = None
+
+    parallel_tool_calls: bool | None = None
+
+    reasoning_effort: ReasoningEffort | None = None
+
+    reasoning_budget: int | None = None
+
+    use_structured_generation: SkipJsonSchema[bool | None] = None
+
+    provider: SkipJsonSchema[str | None] = None
 
 
 class Error(BaseModel):
@@ -309,7 +332,7 @@ class Completion(BaseModel):
         description="Annotations associated with the completion and the completion only. Annotations added within the scope of an experiment are not included here.",
     )
 
-    metadata: dict[str, Any] = Field(
+    metadata: dict[str, Any] | None = Field(
         description="Metadata associated with the completion. Can be used to store additional information about the completion.",
     )
 

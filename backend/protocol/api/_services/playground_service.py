@@ -89,6 +89,7 @@ class PlaygroundService:
         input: Input,
         start_time: float,
         completion_id: str | None,
+        metadata: dict[str, Any],
     ) -> PlaygroundOutput.Completion:
         try:
             completion = await self._completion_runner.run(
@@ -96,7 +97,7 @@ class PlaygroundService:
                 version=version,
                 input=input_to_domain(input),
                 start_time=start_time,
-                metadata={},
+                metadata=metadata,
                 timeout=None,
                 use_cache="always",
                 use_fallback="never",
@@ -179,6 +180,19 @@ class PlaygroundService:
         if not agent_id:
             agent_id = "default"
 
+        if not experiment_id:
+            if not experiment_title:
+                raise BadRequestError(
+                    "Experiment title is required if experiment_id is not provided",
+                )
+            experiment_id = str(uuid7())
+
+        base_metadata = {
+            "anotherai/experiment_id": experiment_id,
+        }
+        if metadata:
+            base_metadata.update(metadata)
+
         try:
             agent = await self._agent_storage.get_agent(agent_id)
         except ObjectNotFoundError:
@@ -198,16 +212,16 @@ class PlaygroundService:
             for i in inputs:
                 completion_id = str(uuid7())
                 tasks.append(
-                    self._run_version(agent_id, version, i, start_time, completion_id=completion_id),
+                    self._run_version(
+                        agent_id,
+                        version,
+                        i,
+                        start_time,
+                        completion_id=completion_id,
+                        metadata=base_metadata,
+                    ),
                 )
                 run_ids.append(completion_id)
-
-        if not experiment_id:
-            if not experiment_title:
-                raise BadRequestError(
-                    "Experiment title is required if experiment_id is not provided",
-                )
-            experiment_id = str(uuid7())
 
         experiment = Experiment(
             id=experiment_id,
