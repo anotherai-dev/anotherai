@@ -5,6 +5,7 @@ from typing import Annotated, Any
 
 from pydantic import Field
 
+from core.domain.cache_usage import CacheUsage
 from core.services.documentation_search import DocumentationSearch
 from protocol.api import _mcp_utils
 from protocol.api._api_models import (
@@ -92,6 +93,10 @@ async def playground(
         None,
         description="Title of the experiment. Required if experiment_id is not provided",
     ),
+    use_cache: CacheUsage = Field(
+        default="always",
+        description="Whether to use the cache for the playground. If 'auto', the cache will be used if the temperature is 0 and no tools are enabled.",
+    ),
 ) -> PlaygroundOutput:
     """
     Agent Reuse Policy:
@@ -162,6 +167,7 @@ async def playground(
         experiment_id=experiment_id,
         experiment_description=experiment_description,
         experiment_title=experiment_title,
+        use_cache=use_cache,
     )
 
 

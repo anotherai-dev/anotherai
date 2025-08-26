@@ -35,7 +35,6 @@ from core.runners.utils import cleanup_provider_json
 from core.utils.json_utils import parse_tolerant_json
 from core.utils.schemas import clean_json_string
 from core.utils.templates import TemplateManager
-from core.utils.uuid import uuid7
 
 _log = get_logger(__name__)
 _template_manager = TemplateManager()
@@ -101,7 +100,7 @@ class Runner:
         self,
         agent_input: AgentInput,
         start_time: float,
-        completion_id: str | None = None,
+        completion_id: str,
         metadata: dict[str, Any] | None = None,
         conversation_id: str | None = None,
     ) -> AgentCompletionBuilder:
@@ -110,7 +109,7 @@ class Runner:
         messages = await self._build_messages(agent_input)
 
         return AgentCompletionBuilder(
-            id=completion_id or str(uuid7()),
+            id=completion_id,
             agent=self._agent,
             agent_input=agent_input,
             version=self._version,

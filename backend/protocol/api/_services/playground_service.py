@@ -5,6 +5,7 @@ from collections.abc import Coroutine
 from typing import Any, final
 
 from core.domain.agent import Agent
+from core.domain.cache_usage import CacheUsage
 from core.domain.exceptions import BadRequestError, ObjectNotFoundError
 from core.domain.experiment import Experiment
 from core.domain.models.model_data_mapping import get_model_id
@@ -90,6 +91,7 @@ class PlaygroundService:
         start_time: float,
         completion_id: str | None,
         metadata: dict[str, Any],
+        use_cache: CacheUsage,
     ) -> PlaygroundOutput.Completion:
         try:
             completion = await self._completion_runner.run(
@@ -99,7 +101,7 @@ class PlaygroundService:
                 start_time=start_time,
                 metadata=metadata,
                 timeout=None,
-                use_cache="always",
+                use_cache=use_cache,
                 use_fallback="never",
                 conversation_id=None,
                 completion_id=completion_id,
@@ -164,6 +166,7 @@ class PlaygroundService:
         experiment_description: str | None,
         experiment_title: str | None,
         metadata: dict[str, Any] | None,
+        use_cache: CacheUsage,
     ) -> PlaygroundOutput:
         # Validate that we have inputs
         if completion_query:
@@ -219,6 +222,7 @@ class PlaygroundService:
                         start_time,
                         completion_id=completion_id,
                         metadata=base_metadata,
+                        use_cache=use_cache,
                     ),
                 )
                 run_ids.append(completion_id)

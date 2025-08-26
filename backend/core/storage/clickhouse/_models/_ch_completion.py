@@ -192,7 +192,7 @@ class ClickhouseCompletion(BaseModel):
                 self.output_preview,
                 self.output_id,
             ),
-            messages=_parse_messages(self.messages) or [],
+            messages=parse_messages(self.messages) or [],
             version=self._domain_version(),
             status="success" if not self.output_error else "failure",
             duration_seconds=_from_duration_ds(self.duration_ds),
@@ -327,7 +327,7 @@ def _dump_messages(messages: list[Message] | None) -> str:
     return _Messages.dump_json(messages, exclude_none=True).decode()
 
 
-def _parse_messages(messages: str) -> list[Message] | None:
+def parse_messages(messages: str) -> list[Message] | None:
     if not messages:
         return None
     return _Messages.validate_json(messages)
@@ -339,7 +339,7 @@ def _input_to_domain(input_variables: str, input_messages: str, preview: str, id
         "preview": preview,
     }
     payload["variables"] = _from_stringified_json(input_variables)
-    payload["messages"] = _parse_messages(input_messages)
+    payload["messages"] = parse_messages(input_messages)
     return AgentInput.model_validate(payload)
 
 
@@ -348,6 +348,6 @@ def _output_to_domain(output_messages: str, output_error: str, preview: str, id:
         "id": id,
         "preview": preview,
     }
-    payload["messages"] = _parse_messages(output_messages)
+    payload["messages"] = parse_messages(output_messages)
     payload["error"] = _from_stringified_json(output_error)
     return AgentOutput.model_validate(payload)
