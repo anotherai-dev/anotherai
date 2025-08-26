@@ -269,6 +269,14 @@ async def create_deployment(
     return await deployment_service.create_deployment(deployment)
 
 
+@router.get("/v1/deployments/{deployment_id}", response_model_exclude_none=True)
+async def get_deployment(
+    deployment_service: DeploymentServiceDep,
+    deployment_id: str,
+) -> Deployment:
+    return await deployment_service.get_deployment(deployment_id)
+
+
 @router.patch("/v1/deployments/{deployment_id}", response_model_exclude_none=True)
 async def patch_deployment(
     deployment_service: DeploymentServiceDep,
