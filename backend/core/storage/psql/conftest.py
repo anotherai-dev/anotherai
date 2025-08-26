@@ -36,3 +36,10 @@ def annotation_storage(inserted_tenant: int, purged_psql: asyncpg.Pool):
     from core.storage.psql.psql_annotation_storage import PsqlAnnotationStorage
 
     return PsqlAnnotationStorage(tenant_uid=inserted_tenant, pool=purged_psql)
+
+
+@pytest.fixture
+def deployment_storage(inserted_tenant: int, purged_psql: asyncpg.Pool):
+    from core.storage.psql.psql_deployment_storage import PsqlDeploymentStorage
+
+    return PsqlDeploymentStorage(tenant_uid=inserted_tenant, pool=purged_psql)
