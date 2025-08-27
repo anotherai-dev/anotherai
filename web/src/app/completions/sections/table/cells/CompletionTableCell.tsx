@@ -52,7 +52,7 @@ export function CompletionTableCell(props: Props) {
       return <CompletionTableDateCell value={value} format="relative" />;
     case "model":
     case "version_model":
-      return <CompletionTableBadgeCell value={value} variant="default" rounded="2px" />;
+      return <CompletionTableVersionCell value={{ model: value }} />;
     case "cost_millionth_usd":
       return <CompletionTableBadgeCell value={Number(value)} variant="white" rounded="2px" />;
     case "cost_usd":

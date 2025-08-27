@@ -1,5 +1,5 @@
+import { ModelIconWithName } from "@/components/ModelIcon";
 import { CompletionBaseTableCell } from "./CompletionBaseTableCell";
-import { CompletionTableBadgeCell } from "./CompletionTableBadgeCell";
 
 interface CompletionTableVersionCellProps {
   value: unknown;
@@ -92,7 +92,13 @@ export function CompletionTableVersionCell({ value }: CompletionTableVersionCell
 
       return (
         <div className="space-y-1">
-          <CompletionTableBadgeCell value={obj.model} variant="default" rounded="2px" />
+          <div className="px-2 py-1 text-xs rounded-[2px] font-medium bg-gray-200 border border-gray-300 text-gray-900 w-fit">
+            <ModelIconWithName
+              modelId={String(obj.model)}
+              size={12}
+              nameClassName="text-xs text-gray-900 font-medium"
+            />
+          </div>
           {nonDefaultEntries.map(({ key, value }, index) => (
             <div
               key={index}
