@@ -138,7 +138,7 @@ class TestUpsertDeployment:
         )
         new_version = fake_version(input_variables_schema=None)
 
-        existing_deployment = fake_deployment(version=existing_version)
+        existing_deployment = fake_deployment(version=existing_version, agent_id=agent_id)
 
         mock_completions_storage.get_version_by_id.return_value = (new_version, completion_id)
         mock_deployments_storage.get_deployment.return_value = existing_deployment
@@ -169,7 +169,7 @@ class TestUpsertDeployment:
             input_variables_schema={"type": "object", "properties": {"name": {"type": "string"}}},
         )
 
-        existing_deployment = fake_deployment(version=existing_version)
+        existing_deployment = fake_deployment(version=existing_version, agent_id=agent_id)
 
         mock_completions_storage.get_version_by_id.return_value = (new_version, completion_id)
         mock_deployments_storage.get_deployment.return_value = existing_deployment
@@ -204,7 +204,7 @@ class TestUpsertDeployment:
         )
         new_version = fake_version(output_schema=None)
 
-        existing_deployment = fake_deployment(version=existing_version)
+        existing_deployment = fake_deployment(version=existing_version, agent_id=agent_id)
 
         mock_completions_storage.get_version_by_id.return_value = (new_version, completion_id)
         mock_deployments_storage.get_deployment.return_value = existing_deployment
@@ -239,7 +239,7 @@ class TestUpsertDeployment:
             output_schema=output_schema_obj,
         )
 
-        existing_deployment = fake_deployment(version=existing_version)
+        existing_deployment = fake_deployment(version=existing_version, agent_id=agent_id)
 
         mock_completions_storage.get_version_by_id.return_value = (new_version, completion_id)
         mock_deployments_storage.get_deployment.return_value = existing_deployment
@@ -272,7 +272,7 @@ class TestUpsertDeployment:
         existing_version = fake_version(input_variables_schema=existing_schema)
         new_version = fake_version(input_variables_schema=new_schema)
 
-        existing_deployment = fake_deployment(version=existing_version)
+        existing_deployment = fake_deployment(version=existing_version, agent_id=agent_id)
 
         mock_completions_storage.get_version_by_id.return_value = (new_version, completion_id)
         mock_deployments_storage.get_deployment.return_value = existing_deployment
@@ -307,7 +307,7 @@ class TestUpsertDeployment:
         existing_version = fake_version(output_schema=existing_output_schema)
         new_version = fake_version(output_schema=new_output_schema)
 
-        existing_deployment = fake_deployment(version=existing_version)
+        existing_deployment = fake_deployment(version=existing_version, agent_id=agent_id)
 
         mock_completions_storage.get_version_by_id.return_value = (new_version, completion_id)
         mock_deployments_storage.get_deployment.return_value = existing_deployment
@@ -342,7 +342,7 @@ class TestUpsertDeployment:
             output_schema=None,
         )
 
-        existing_deployment = fake_deployment(version=existing_version)
+        existing_deployment = fake_deployment(version=existing_version, agent_id=agent_id)
 
         mock_completions_storage.get_version_by_id.return_value = (new_version, completion_id)
         mock_deployments_storage.get_deployment.return_value = existing_deployment
