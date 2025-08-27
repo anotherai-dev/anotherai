@@ -747,6 +747,8 @@ class Deployment(BaseModel):
 
     url: str
 
+    archived_at: datetime | None = None
+
 
 class DeploymentCreate(BaseModel):
     version: Version
