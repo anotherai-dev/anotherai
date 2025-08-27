@@ -4,6 +4,10 @@ FROM node:22.8.0-alpine3.20 AS base
 RUN apk upgrade libssl3 libcrypto3 libxml2
 RUN npm install -g npm@10.9.2 && npm cache clean --force
 
+# Accept build arguments
+ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=''
+ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+
 FROM base AS deps
 
 WORKDIR /app
@@ -12,7 +16,7 @@ COPY web/package.json ./web/
 
 # Install all dependencies
 # Next JS needs dev dependencies 
-RUN npm ci --include=dev --include=prod 
+RUN npm ci --include=dev --include=prod --legacy-peer-deps 
 
 FROM deps AS sources
 
