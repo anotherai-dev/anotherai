@@ -334,6 +334,17 @@ export interface Deployment {
   agent_id: string;
   version: Version;
   created_at: string;
+  created_by: string;
+  updated_at?: string;
+  metadata?: Record<string, unknown>;
+  url: string;
+}
+
+export interface DeploymentCreate {
+  id: string;
+  agent_id: string;
+  version: Version;
+  created_by: string;
   metadata?: Record<string, unknown>;
 }
 

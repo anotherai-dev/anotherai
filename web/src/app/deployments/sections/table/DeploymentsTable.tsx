@@ -18,7 +18,7 @@ export const DEPLOYMENTS_COLUMNS = {
   CREATED_AT: "Created at",
 } as const;
 
-interface AgentStats {
+interface DeploymentStats {
   completions_last_7_days: number;
   total_cost: number;
   active: boolean;
@@ -27,13 +27,13 @@ interface AgentStats {
 
 interface DeploymentsTableProps {
   deployments: Deployment[];
-  agentsStats?: Map<string, AgentStats>;
+  deploymentStats?: Map<string, DeploymentStats>;
   isLoading: boolean;
   error?: Error;
 }
 
 export function DeploymentsTable(props: DeploymentsTableProps) {
-  const { deployments, agentsStats, isLoading, error } = props;
+  const { deployments, deploymentStats, isLoading, error } = props;
   const router = useRouter();
 
   // Define display columns
@@ -50,7 +50,7 @@ export function DeploymentsTable(props: DeploymentsTableProps) {
   // Convert deployments to data (2D array for SimpleTableComponent)
   const data = useMemo(() => {
     return deployments.map((deployment) => {
-      const agentStats = agentsStats?.get(deployment.agent_id);
+      const stats = deploymentStats?.get(deployment.id);
 
       return [
         <DeploymentsBaseCell key="agent_id" className="text-gray-900">
@@ -60,22 +60,24 @@ export function DeploymentsTable(props: DeploymentsTableProps) {
           {deployment.id}
         </DeploymentsBaseCell>,
         <DeploymentsBaseCell key="runs" className="text-gray-500">
-          {agentStats?.completions_last_7_days ?? 0}
+          {stats?.completions_last_7_days ?? 0}
         </DeploymentsBaseCell>,
         <DeploymentsBaseCell key="cost" className="text-gray-900">
-          {formatTotalCost(agentStats?.total_cost)}
+          {formatTotalCost(stats?.total_cost)}
         </DeploymentsBaseCell>,
         <DeploymentsBaseCell key="created_at" className="text-gray-500">
           {formatRelativeDateWithTime(deployment.created_at)}
         </DeploymentsBaseCell>,
       ];
     });
-  }, [deployments, agentsStats]);
+  }, [deployments, deploymentStats]);
 
   // Handle click on row
   const handleRowClick = (index: number) => {
     const deployment = deployments[index];
-    router.push(`/deployments/${deployment.id}`);
+    // URL encode the deployment ID to handle special characters like : and #
+    // e.g., "politician-qa:production#1" becomes "politician-qa%3Aproduction%231"
+    router.push(`/deployments/${encodeURIComponent(deployment.id)}`);
   };
 
   // Loading state
