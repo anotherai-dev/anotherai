@@ -31,7 +31,7 @@ Here's the process of setting metadata for workflow tracking:
 import uuid
 
 # 1. Set workflow identifiers
-trace_id = str(uuid.uuid4())  # Unique identifier for this workflow instance
+trace_id = str(uuid.uuid7())  # Unique identifier for this workflow instance (time-ordered)
 workflow_name = "meeting-analysis"  # Type of workflow being executed
 
 # 2. Add the metadata when making agent calls
@@ -48,10 +48,10 @@ response = client.chat.completions.create(
 </Tab>
 <Tab value="TypeScript">
 ```typescript
-import { v4 as uuidv4 } from 'uuid';
+import { v7 as uuidv7 } from 'uuid';
 
 // 1. Set workflow identifiers
-const traceId = uuidv4();  // Unique identifier for this workflow instance
+const traceId = uuidv7();  // Unique identifier for this workflow instance (time-ordered)
 const workflowName = 'meeting-analysis';  // Type of workflow being executed
 
 // 2. Add the metadata when making agent calls
@@ -69,7 +69,7 @@ const response = await client.chat.completions.create({
 <Tab value="curl">
 ```bash
 # Set workflow identifiers
-TRACE_ID=$(uuidgen)  # Unique identifier for this workflow instance
+TRACE_ID=$(python3 -c "import uuid; print(uuid.uuid7())")  # Unique identifier for this workflow instance
 WORKFLOW_NAME="meeting-analysis"  # Type of workflow being executed
 
 # Agent call with workflow metadata
@@ -97,7 +97,7 @@ Then set the same `trace_id` value across all agents in your workflow:
 import uuid
 
 # Example workflow script showing consistent trace_id and workflow_name usage
-trace_id = str(uuid.uuid4())  # Generate once per workflow instance
+trace_id = str(uuid.uuid7())  # Generate once per workflow instance
 workflow_name = "meeting-analysis"  # Same for all agents in this workflow type
 
 # Agent 1: Document processor
@@ -126,10 +126,10 @@ response2 = client.chat.completions.create(
 
 <Tab value="TypeScript">
 ```typescript
-import { v4 as uuidv4 } from 'uuid';
+import { v7 as uuidv7 } from 'uuid';
 
 // Example workflow script showing consistent trace_id and workflow_name usage
-const traceId = uuidv4();  // Generate once per workflow instance
+const traceId = uuidv7();  // Generate once per workflow instance
 const workflowName = 'meeting-analysis';  // Same for all agents in this workflow type
 
 // Agent 1: Document processor
@@ -159,7 +159,7 @@ const response2 = await client.chat.completions.create({
 <Tab value="curl">
 ```bash
 # Example workflow script showing consistent trace_id and workflow_name usage
-TRACE_ID=$(uuidgen)  # Generate once per workflow instance
+TRACE_ID=$(python3 -c "import uuid; print(uuid.uuid7())")  # Generate once per workflow instance
 WORKFLOW_NAME="meeting-analysis"  # Same for all agents in this workflow type
 
 # Agent 1: Document processor
@@ -200,11 +200,20 @@ Here are some examples of views that could be useful:
 
 ### General workflow monitoring
 
-See all completions across all agents in the workflow. 
+To see all completions across all agents in the workflow. 
+
+You can ask Claude to create a custom view, like this:
 
 ```
-Show me all the completions for the workflow 'meeting-analysis', order by trace_id so 
-I can see all agent calls for each workflow instance together.
+Show me all the completions for the workflow 'meeting-analysis', ordered by trace_id, created_at 
+so I can see each workflow instance with its agents in chronological order.
+```
+
+The equivalent SQL query would be:
+```sql
+SELECT * FROM completions 
+WHERE metadata['workflow_name'] = 'meeting-analysis' 
+ORDER BY metadata['trace_id'], created_at
 ```
 
 ### Workflow performance analytics
@@ -213,4 +222,15 @@ See daily cost for a specific workflow across all agents involved.
 
 ```
 Create a graph showing daily cost for workflow_name='meeting-analysis'
+```
+
+The equivalent SQL query would be:
+```sql
+SELECT 
+  DATE(created_at) as date,
+  SUM(cost_usd) as daily_cost
+FROM completions 
+WHERE metadata['workflow_name'] = 'meeting-analysis' 
+GROUP BY DATE(created_at)
+ORDER BY date
 ```
