@@ -1,11 +1,12 @@
 from fastapi import APIRouter
 
 from core.domain.exceptions import BadRequestError
+from protocol.api._dependencies._lifecycle import LifecycleDependenciesDep
 from protocol.api._dependencies._misc import RequestStartDep
 from protocol.api._dependencies._services import CompletionRunnerDep
 from protocol.api._dependencies._tenant import TenantDep
 from protocol.api._run_models import OpenAIProxyChatCompletionRequest
-from protocol.api._services._run_service import RunService
+from protocol.api._services.run.run_service import RunService
 
 router = APIRouter(prefix="")
 
@@ -18,10 +19,11 @@ router = APIRouter(prefix="")
 async def chat_completions(
     request: OpenAIProxyChatCompletionRequest,
     completion_runner: CompletionRunnerDep,
+    dependencies: LifecycleDependenciesDep,
     start_time: RequestStartDep,
     tenant: TenantDep,
 ):
     if request.stream:
         raise BadRequestError("Streaming is not yet supported")
-    run_service = RunService(tenant, completion_runner)
+    run_service = RunService(tenant, completion_runner, dependencies.storage_builder.deployments(tenant.uid))
     return await run_service.run(request, start_time)

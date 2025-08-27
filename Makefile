@@ -20,3 +20,7 @@ local_reset:
 
 .PHONY: local_setup
 local_setup: local_reset migrate
+
+.PHONY: web
+web:
+	cd web && PYTHONPATH=. uv run dotenv -f ../.env run -- npm run dev

@@ -10,8 +10,10 @@
     "prettier-format": "prettier --write .",
     "prettier-check": "prettier --check ."
   },
+  "optionalDependencies": {
+    "@clerk/nextjs": "^6.31.1"
+  },
   "dependencies": {
-    "@clerk/nextjs": "^6.31.1",
     "@radix-ui/react-context-menu": "^2.2.15",
     "@radix-ui/react-dropdown-menu": "^2.1.15",
     "@radix-ui/react-slot": "^1.2.3",

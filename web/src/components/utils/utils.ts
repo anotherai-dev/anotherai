@@ -27,10 +27,87 @@ export function getMetricBadgeColor(value: number, values: number[], isHigherBet
   return "bg-transparent border border-gray-200 text-gray-700";
 }
 
+export function getMetricBadgeWithRelative(value: number, values: number[], isHigherBetter: boolean = false) {
+  if (!values || values.length === 0) {
+    return {
+      color: "bg-transparent border border-gray-200 text-gray-700",
+      relativeText: undefined,
+      isBest: false,
+      isWorst: false,
+    };
+  }
+
+  const sortedValues = [...values].sort((a, b) => a - b);
+  const min = sortedValues[0];
+  const max = sortedValues[sortedValues.length - 1];
+
+  // If all values are the same, no relative comparison needed
+  if (min === max) {
+    return {
+      color: "bg-transparent border border-gray-200 text-gray-700",
+      relativeText: undefined,
+      isBest: false,
+      isWorst: false,
+    };
+  }
+
+  let color: string;
+  let isBest = false;
+  let isWorst = false;
+  let relativeText: string | undefined;
+
+  if (isHigherBetter) {
+    isBest = value === max;
+    isWorst = value === min;
+
+    if (isBest) {
+      color = "bg-green-200 border border-green-400 text-green-900";
+      relativeText = `${(max / min).toFixed(1)}x better`;
+    } else if (isWorst) {
+      color = "bg-red-200 border border-red-300 text-red-900";
+    } else {
+      color = "bg-transparent border border-gray-200 text-gray-700";
+    }
+
+    // For non-best values, show how much worse they are
+    if (!isBest && max > 0) {
+      relativeText = `${(max / value).toFixed(1)}x`;
+    }
+  } else {
+    isBest = value === min;
+    isWorst = value === max;
+
+    if (isBest) {
+      color = "bg-green-200 border border-green-400 text-green-900";
+      relativeText = `${(max / min).toFixed(1)}x better`;
+    } else if (isWorst) {
+      color = "bg-red-200 border border-red-300 text-red-900";
+    } else {
+      color = "bg-transparent border border-gray-200 text-gray-700";
+    }
+
+    // For non-best values, show how much worse they are
+    if (!isBest && min > 0) {
+      relativeText = `${(value / min).toFixed(1)}x`;
+    }
+  }
+
+  return {
+    color,
+    relativeText,
+    isBest,
+    isWorst,
+  };
+}
+
 export function formatCurrency(value: number, multiplier: number = 1000): string {
   // Convert using multiplier for better readability
   const adjustedValue = value * multiplier;
   return `$${adjustedValue.toFixed(2)}`;
+}
+
+export function formatTotalCost(value: unknown): string {
+  return value ? `$${Math.max(Number(value), 0.01).toFixed(2)}` : "-";
 }
 
 export function formatDuration(seconds: number): string {
@@ -56,18 +133,46 @@ export function formatRelativeDate(value: unknown): string {
   return date.toLocaleDateString();
 }
 
+export function formatRelativeDateWithTime(value: unknown): string {
+  if (value === null || value === undefined) return "N/A";
+
+  const date = new Date(String(value));
+  if (isNaN(date.getTime())) return "Invalid Date";
+
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+
+  // For older dates, show both date and time
+  return `${date.toLocaleDateString()}, ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+}
+
 export function calculateAverageMetrics(completions: ExperimentCompletion[]): {
   avgCost: number;
   avgDuration: number;
+  costs: number[];
+  durations: number[];
 } {
-  if (completions.length === 0) return { avgCost: 0, avgDuration: 0 };
+  if (completions.length === 0) return { avgCost: 0, avgDuration: 0, costs: [], durations: [] };
 
-  const totalCost = completions.reduce((sum, completion) => sum + (completion.cost_usd || 0), 0);
-  const totalDuration = completions.reduce((sum, completion) => sum + (completion.duration_seconds || 0), 0);
+  const costs = completions.map((completion) => completion.cost_usd || 0);
+  const durations = completions.map((completion) => completion.duration_seconds || 0);
+
+  const totalCost = costs.reduce((sum, cost) => sum + cost, 0);
+  const totalDuration = durations.reduce((sum, duration) => sum + duration, 0);
 
   return {
     avgCost: totalCost / completions.length,
     avgDuration: totalDuration / completions.length,
+    costs,
+    durations,
   };
 }
 
@@ -105,7 +210,7 @@ export function getPriceAndLatencyPerVersion(
   }>
 ): Array<{
   versionId: string;
-  metrics: { avgCost: number; avgDuration: number };
+  metrics: { avgCost: number; avgDuration: number; costs: number[]; durations: number[] };
 }> {
   return completionsPerVersion.map(({ versionId, completions }) => ({
     versionId,
