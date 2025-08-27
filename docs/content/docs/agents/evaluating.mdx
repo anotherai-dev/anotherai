@@ -78,7 +78,7 @@ class SummaryEvaluation(BaseModel):
 
 async def create_summary_judge(client, original_email, summary):
     """Judge the quality of an email summary"""
-    return await client.chat.completions.create(
+    return await client.beta.chat.completions.parse(
         model="gpt-4o-mini",  # Use consistent model for fair evaluation
         messages=[{
             "role": "system",
@@ -95,13 +95,7 @@ async def create_summary_judge(client, original_email, summary):
             "role": "user",
             "content": f"""Original email:\n{original_email}\n\nSummary to evaluate:\n{summary}"""
         }],
-        response_format={
-            "type": "json_schema",
-            "json_schema": {
-                "name": "summary_evaluation",
-                "schema": SummaryEvaluation.model_json_schema()
-            }
-        }
+        response_format=SummaryEvaluation
     )
 ```
 </Step>
@@ -113,8 +107,85 @@ Evaluate your agent across multiple models:
 
 ```python
 import asyncio
-import json
 from datetime import datetime
+
+async def process_email(email, model, client, experiment_id):
+    """Process a single email with a specific model"""
+    # Generate summary using the model
+    summary_response = await client.chat.completions.create(
+        model=model,
+        messages=[{
+            "role": "system",
+            "content": "Summarize this email concisely."
+        }, {
+            "role": "user",
+            "content": email['content']
+        }],
+        extra_body={
+            "metadata": {
+                "experiment_id": experiment_id,
+                "agent_id": "email-summarizer"
+            }
+        }
+    )
+    
+    summary = summary_response.choices[0].message.content
+    completion_id = summary_response.id
+    
+    # Evaluate the summary
+    eval_response = await create_summary_judge(client, email['content'], summary)
+    evaluation = eval_response.choices[0].message.parsed
+    
+    # Send annotations to AnotherAI
+    annotations = []
+    
+    # Individual criterion scores
+    for criterion in ['completeness', 'accuracy', 'clarity', 
+                    'conciseness']:
+        score_data = evaluation.__dict__[criterion]
+        annotations.append({
+            "target": {
+                "completion_id": completion_id,
+                "key_path": f"{criterion}"
+            },
+            "metric": {
+                "name": criterion,
+                "value": score_data.score
+            },
+            "text": score_data.explanation,
+            "metadata": {
+                "model": model,
+                "email_id": email['id'],
+                "experiment_id": experiment_id
+            },
+            "author_name": "summary-judge"
+        })
+    
+    # Overall score
+    annotations.append({
+        "target": {"completion_id": completion_id},
+        "metric": {
+            "name": "overall_score",
+            "value": evaluation.overall_score
+        },
+        "text": evaluation.overall_feedback,
+        "metadata": {
+            "model": model,
+            "experiment_id": experiment_id
+        },
+        "author_name": "summary-judge"
+    })
+    
+    # Send annotations
+    await client.post("/v1/annotations", 
+                    json={"annotations": annotations})
+    
+    return {
+        "email_id": email['id'],
+        "model": model,
+        "success": True,
+        "evaluation": evaluation
+    }
 
 async def evaluate_email_summaries(emails, models, client):
     """Run complete evaluation pipeline"""
@@ -122,96 +193,9 @@ async def evaluate_email_summaries(emails, models, client):
     # Create an experiment to group results
     experiment_id = f"email-eval-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
     
-    async def process_email(email, model):
-        """Process a single email with a specific model"""
-        try:
-            # Generate summary using the model
-            summary_response = await client.chat.completions.create(
-                model=model,
-                messages=[{
-                    "role": "system",
-                    "content": "Summarize this email concisely."
-                }, {
-                    "role": "user",
-                    "content": email['content']
-                }],
-                extra_body={
-                    "metadata": {
-                        "experiment_id": experiment_id,
-                        "agent_id": "email-summarizer"
-                    }
-                }
-            )
-            
-            summary = summary_response.choices[0].message.content
-            completion_id = summary_response.id
-            
-            # Evaluate the summary
-            eval_response = await create_summary_judge(client, email['content'], summary)
-            evaluation = json.loads(eval_response.choices[0].message.content)
-            
-            # Send annotations to AnotherAI
-            annotations = []
-            
-            # Individual criterion scores
-            for criterion in ['completeness', 'accuracy', 'clarity', 
-                            'conciseness', 'actionability']:
-                score_data = evaluation[criterion]
-                annotations.append({
-                    "target": {
-                        "completion_id": completion_id,
-                        "key_path": f"{criterion}"
-                    },
-                    "metric": {
-                        "name": criterion,
-                        "value": score_data['score']
-                    },
-                    "text": score_data['explanation'],
-                    "metadata": {
-                        "model": model,
-                        "email_id": email['id'],
-                        "experiment_id": experiment_id
-                    },
-                    "author_name": "summary-judge"
-                })
-            
-            # Overall score
-            annotations.append({
-                "target": {"completion_id": completion_id},
-                "metric": {
-                    "name": "overall_score",
-                    "value": evaluation['overall_score']
-                },
-                "text": evaluation['overall_feedback'],
-                "metadata": {
-                    "model": model,
-                    "experiment_id": experiment_id
-                },
-                "author_name": "summary-judge"
-            })
-            
-            # Send annotations
-            await client.post("/v1/annotations", 
-                            json={"annotations": annotations})
-            
-            return {
-                "email_id": email['id'],
-                "model": model,
-                "success": True,
-                "evaluation": evaluation
-            }
-            
-        except Exception as e:
-            return {
-                "email_id": email['id'],
-                "model": model,
-                "success": False,
-                "error": str(e)
-            }
-    
     # Process all combinations concurrently
     tasks = [
-        process_email(email, model) 
+        process_email(email, model, client, experiment_id) 
         for email in emails 
         for model in models
     ]
@@ -223,7 +207,7 @@ async def evaluate_email_summaries(emails, models, client):
     for model in models:
         model_results = [r for r in results if r['model'] == model and r['success']]
         if model_results:
-            avg_score = sum(r['evaluation']['overall_score'] for r in model_results) / len(model_results)
+            avg_score = sum(r['evaluation'].overall_score for r in model_results) / len(model_results)
             model_stats[model] = {
                 "average_score": avg_score,
                 "success_count": len(model_results),

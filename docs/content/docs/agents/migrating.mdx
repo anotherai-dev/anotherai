@@ -36,8 +36,8 @@ There are three main steps to migrating your agent to AnotherAI:
 3. (For cloud-hosted AnotherAI only) Replace your provider API keys with an AnotherAI API key to allow easy access to 100+ different models. (Recommended)
 
 
-<Tabs items={['Python', 'JavaScript/TypeScript']}>
-<Tab value="Python">
+<Tabs items={['Python / OpenAI SDK', 'Node (OpenAI SDK)']}>
+<Tab value="Python / OpenAI SDK">
 
 ```python
 from openai import OpenAI
@@ -60,7 +60,7 @@ response = client.chat.completions.create(
 ```
 
 </Tab>
-<Tab value="JavaScript/TypeScript">
+<Tab value="Node (OpenAI SDK)">
 
 ```javascript
 import OpenAI from 'openai';

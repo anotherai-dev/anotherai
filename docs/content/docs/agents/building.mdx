@@ -8,48 +8,18 @@ description: Step-by-step guide to creating, configuring, and deploying AI agent
 
 Because AnotherAI is an OpenAI-compatible proxy, building an agent has minimal configuration changes from standard OpenAI implementations. However there are a few things you need to know to get started.
 
-### Base URL and API Key Setup
+### Base URL and AnotherAI API Key Setup
 
 AnotherAI provides a unified API that routes requests to various AI providers. To use AnotherAI instead of calling OpenAI directly, you need to:
 
 1. **Change the base URL** - This redirects API calls from OpenAI's servers to AnotherAI, which then routes them to the appropriate provider while adding observability features
-2. **Configure API keys** - Either your own provider keys (self-hosted) or an AnotherAI key (cloud-hosted)
+2. **Configure your AnotherAI API key** - This enables access to AnotherAI's features
 
-The setup differs between deployments:
-- **Self-hosted**: You manage provider API keys, AnotherAI runs on your infrastructure
-- **Cloud-hosted**: AnotherAI manages provider keys, you only need an AnotherAI API key
-
-<Tabs defaultValue="self-hosted" items={['Self-Hosted', 'Cloud-Hosted']}>
-
-<Tab value="self-hosted">
-
-Configure provider API keys in your `.env` file:
-
-```bash
-# .env file
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
-```
-
-Then point the OpenAI client to your local AnotherAI instance:
-
-```python
-import openai
-import os
-
-# Configure OpenAI client for AnotherAI
-openai.api_key = os.environ.get("OPENAI_API_KEY")
-openai.base_url = "http://localhost:8000/v1"  # Local AnotherAI instance
-
-# Create client instance
-client = openai.OpenAI()
-```
-
-</Tab>
+<Tabs defaultValue="cloud-hosted" items={['Cloud-Hosted', 'Self-Hosted']}>
 
 <Tab value="cloud-hosted">
 
-Use your AnotherAI API key (no provider keys needed):
+For cloud-hosted AnotherAI, use your AnotherAI API key:
 
 ```python
 import openai
@@ -62,7 +32,37 @@ client = openai.OpenAI(
 
 </Tab>
 
+<Tab value="self-hosted">
+
+For self-hosted AnotherAI, point to your local instance with your AnotherAI API key:
+
+```python
+import openai
+
+client = openai.OpenAI(
+    base_url="http://localhost:8000/v1",  # Local AnotherAI instance
+    api_key="aai-***",  # Your AnotherAI API key
+)
+```
+
+</Tab>
+
 </Tabs>
+
+### Setting up Provider Keys
+
+Provider keys determine which AI provider credentials AnotherAI uses to make requests to models.
+
+**For self-hosted users**: Provider keys are required and must be configured via environment variables:
+
+```bash
+# .env file
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+GOOGLE_API_KEY=...
+```
+
+**For cloud users**: AnotherAI provides default provider access, but you can optionally bring your own keys for cost control or quota management through the web interface.
 
 
 ### Metadata
