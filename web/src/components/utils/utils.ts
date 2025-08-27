@@ -935,3 +935,20 @@ export function resolveRef(node: JsonSchemaNode, rootSchema: JsonSchemaNode): Js
   console.warn(`Unsupported $ref format: ${node.$ref}`);
   return node;
 }
+
+/**
+ * Simple function to strip markdown formatting
+ */
+export function stripMarkdown(markdown: string): string {
+  return markdown
+    .replace(/#{1,6}\s/g, '') // Remove headers
+    .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold
+    .replace(/\*(.*?)\*/g, '$1') // Remove italic
+    .replace(/`(.*?)`/g, '$1') // Remove inline code
+    .replace(/\[(.*?)\]\(.*?\)/g, '$1') // Remove links, keep text
+    .replace(/>\s/g, '') // Remove blockquotes
+    .replace(/^\s*[-*+]\s/gm, '') // Remove list markers
+    .replace(/^\s*\d+\.\s/gm, '') // Remove numbered list markers
+    .replace(/\n+/g, ' ') // Replace newlines with spaces
+    .trim();
+}
