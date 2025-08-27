@@ -10,6 +10,9 @@
     "prettier-format": "prettier --write .",
     "prettier-check": "prettier --check ."
   },
+  "optionalDependencies": {
+    "@clerk/nextjs": "^6.31.1"
+  },
   "dependencies": {
     "@fluentui/react-icons": "^2.0.306",
     "@radix-ui/react-context-menu": "^2.2.15",

@@ -5,6 +5,7 @@ from structlog import get_logger
 from core.domain.deployment import Deployment as DomainDeployment
 from core.domain.exceptions import BadRequestError, ObjectNotFoundError
 from core.domain.version import Version
+from core.domain.version import Version as DomainVersion
 from core.storage.completion_storage import CompletionStorage
 from core.storage.deployment_storage import DeploymentStorage
 from core.utils.schemas import IncompatibleSchemaError, JsonSchema
@@ -21,7 +22,11 @@ _log = get_logger(__name__)
 
 
 class DeploymentService:
-    def __init__(self, deployments_storage: DeploymentStorage, completions_storage: CompletionStorage):
+    def __init__(
+        self,
+        deployments_storage: DeploymentStorage,
+        completions_storage: CompletionStorage,
+    ):
         self._deployments_storage = deployments_storage
         self._completions_storage = completions_storage
 
@@ -65,23 +70,44 @@ class DeploymentService:
             created_at=datetime.now(UTC),
             metadata=deployment.metadata,
         )
-        await self._deployments_storage.create_deployment(inserted)
+        try:
+            await self._deployments_storage.create_deployment(inserted)
+        except ObjectNotFoundError as e:
+            if e.object_type == "agent":
+                raise BadRequestError(f"Agent {deployment.agent_id} not found") from None
+
         return deployment_from_domain(inserted)
 
     async def update_deployment(self, deployment_id: str, deployment: DeploymentUpdate) -> Deployment:
+        new_version: DomainVersion | None = None
         if deployment.version:
+            existing = await self._deployments_storage.get_deployment(deployment_id)
+
+            if deployment.version.id:
+                new_version, _ = await self._get_version_by_id(existing.agent_id, deployment.version.id)
+            else:
+                new_version = version_to_domain(deployment.version)
+
             # We are ok with race conditions here (fetch then update)
             # Deployment compat should be transitive and we are just trying to check the new version is compatible
-            existing = await self._deployments_storage.get_deployment(deployment_id)
-            _check_input_schema_compatibility(existing, version_to_domain(deployment.version))
-            _check_output_schema_compatibility(existing, version_to_domain(deployment.version))
+            _check_input_schema_compatibility(existing, new_version)
+            _check_output_schema_compatibility(existing, new_version)
 
         updated = await self._deployments_storage.update_deployment(
             deployment_id,
-            version_to_domain(deployment.version) if deployment.version else None,
+            new_version,
             deployment.metadata,
         )
         return deployment_from_domain(updated)
+
+    async def _get_version_by_id(self, agent_id: str, version_id: str) -> tuple[Version, str]:
+        try:
+            return await self._completions_storage.get_version_by_id(agent_id, version_id)
+        except ObjectNotFoundError:
+            raise BadRequestError(
+                f"Version {version_id} not found for agent {agent_id}. "
+                "Check that the version exists and is associated with the agent.",
+            ) from None
 
     async def upsert_deployment(
         self,
@@ -91,7 +117,8 @@ class DeploymentService:
         author_name: str,
     ) -> Deployment | str:
         # First we fetch the version from the completions
-        version, completion_id = await self._completions_storage.get_version_by_id(agent_id, version_id)
+        version, completion_id = await self._get_version_by_id(agent_id, version_id)
+
         # We are going to fetch and update
         # We could have race conditions here, but that would be a massive edge case so we should just throw
         # if someone else deploys a version with the same id in between the fetch and the update
@@ -115,6 +142,11 @@ class DeploymentService:
         # A deployment already exists
         # We won't update anything here since it would be too dangerous to update a deployment via MCP
         # Instead we check compatibility and either raise and return a confirm URL
+
+        if deployment.agent_id != agent_id:
+            raise BadRequestError(
+                f"The deployment {deployment_id} is not associated with the agent {agent_id}. Please create a new deployment.",
+            )
 
         _check_input_schema_compatibility(deployment, version)
         _check_output_schema_compatibility(deployment, version)

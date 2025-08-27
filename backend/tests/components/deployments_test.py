@@ -194,3 +194,72 @@ async def test_create_and_use_deployment(test_api_client: IntegrationTestClient)
         {"role": "system", "content": "You are a helpful story teller to James"},
         {"role": "user", "content": "Byeeeee"},
     ]
+
+
+async def test_deployment_archive(test_api_client: IntegrationTestClient):
+    test_api_client.mock_provider_call("openai", "gpt-4.1", "openai/completion.json", is_reusable=True)
+    client = test_api_client.openai_client()
+
+    response = await client.chat.completions.create(
+        model="gpt-4.1",
+        messages=[{"role": "user", "content": "Hello, world!"}],
+        extra_body={"agent_id": "test-agent"},
+    )
+    await test_api_client.wait_for_background()
+    version_id = response.version_id  # pyright: ignore[reportAttributeAccessIssue]
+
+    # Try and deploy the version but for a different agent
+    with pytest.raises(ToolError) as e:
+        await _create_deployment_via_mcp(test_api_client, version_id, agent_id="test-agent-2")
+    assert f"Version {version_id} not found for agent test-agent-2" in str(e.value)
+
+    # Now deploy for real
+    await _create_deployment_via_mcp(test_api_client, version_id, agent_id="test-agent")
+
+    # Make sure we can retrieve it
+    dep = await test_api_client.get(f"/v1/deployments/{quote('test-agent:production#1')}")
+    assert "archived_at" not in dep
+
+    # Now archive the deployment
+    await test_api_client.post(f"/v1/deployments/{quote('test-agent:production#1')}/archive")
+
+    # We can still retrieve it
+    dep = await test_api_client.get(f"/v1/deployments/{quote('test-agent:production#1')}")
+    assert "archived_at" in dep
+
+    # And use it
+    response = await client.chat.completions.create(
+        model="anotherai/deployments/test-agent:production#1",
+        messages=[{"role": "user", "content": "Hello, world!"}],
+    )
+    assert response.version_id == version_id  # pyright: ignore[reportAttributeAccessIssue]
+
+    # But it does not show in the list
+    deployments = await test_api_client.get("/v1/deployments")
+    assert len(deployments["items"]) == 0
+
+    # Now try and patch it
+    response2 = await client.chat.completions.create(
+        model="gpt-4.1",
+        messages=[{"role": "user", "content": "Hello, world!"}],
+        extra_body={"agent_id": "test-agent"},
+        temperature=0.5,
+    )
+    await test_api_client.wait_for_background()
+    version_id2 = response2.version_id  # pyright: ignore[reportAttributeAccessIssue]
+    assert version_id2 != version_id, "sanity check"
+
+    dep2 = await test_api_client.patch(
+        f"/v1/deployments/{quote('test-agent:production#1')}",
+        json={
+            # Since ID is provided it will be used to fetch an existing version
+            "version": {"id": version_id2, "model": "gpt-4.1"},
+        },
+    )
+    assert dep2["version"]["temperature"] == 0.5
+
+    # It should no longer be archived
+    deployments = await test_api_client.get("/v1/deployments")
+    assert len(deployments["items"]) == 1
+    dep = await test_api_client.get(f"/v1/deployments/{quote('test-agent:production#1')}")
+    assert "archived_at" not in dep

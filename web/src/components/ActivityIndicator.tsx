@@ -4,7 +4,7 @@ type Props = {
   isActive: boolean;
 };
 
-export function AgentActivityIndicator(props: Props) {
+export function ActivityIndicator(props: Props) {
   const { isActive } = props;
 
   return (
