@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import ViewsSection from "@/components/sidebar/ViewsSection";
-import { isClerkEnabled } from "@/lib/utils";
+import { UserButton } from "@/auth/components";
 
 interface NavigationSidebarProps {
   onOpenCommandPalette?: () => void;
@@ -88,7 +88,6 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
             </svg>
             Completions
           </Link>
-
           <Link
             href="/experiments"
             className={`flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-[2px] ${
@@ -105,7 +104,6 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
             </svg>
             Experiments
           </Link>
-
           <Link
             href="/deployments"
             className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors mb-1 ${
@@ -115,7 +113,6 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
             <Cloud className="w-4 h-4" />
             Deployments
           </Link>
-
           <Link
             href="/agents"
             className={`flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-[2px] ${
@@ -132,17 +129,15 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
             </svg>
             Agents
           </Link>
-
-          {isClerkEnabled() && (
-            <button
-              onClick={handleOpenApiKeysModal}
-              className="flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-[2px] text-gray-700 hover:bg-gray-100 w-full text-left cursor-pointer"
-            >
-              <KeyRound className="w-4 h-4" />
-              API Keys
-            </button>
-          )}
-
+          (
+          <button
+            onClick={handleOpenApiKeysModal}
+            className="flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-[2px] text-gray-700 hover:bg-gray-100 w-full text-left cursor-pointer"
+          >
+            <KeyRound className="w-4 h-4" />
+            API Keys
+          </button>
+          )
           <a
             href="https://github.com/anotherai-dev/anotherai"
             target="_blank"
@@ -155,6 +150,7 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
         </div>
 
         <ViewsSection />
+        <UserButton className="border-t border-gray-200 mt-1" />
       </div>
     </div>
   );
