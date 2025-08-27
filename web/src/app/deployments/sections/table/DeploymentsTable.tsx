@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
+import { ActivityIndicator } from "@/components/ActivityIndicator";
 import { LoadingIndicator } from "@/components/LoadingIndicator";
 import { PageError } from "@/components/PageError";
 import { SimpleTableComponent } from "@/components/SimpleTableComponent";
@@ -57,7 +58,14 @@ export function DeploymentsTable(props: DeploymentsTableProps) {
           {deployment.agent_id}
         </DeploymentsBaseCell>,
         <DeploymentsBaseCell key="name" className="font-bold text-gray-900">
-          {deployment.id}
+          <div className="flex items-baseline gap-2 min-w-0 break-words">
+            {stats?.active !== undefined && (
+              <div className="flex items-center h-[1em] -translate-y-px">
+                <ActivityIndicator isActive={stats.active} />
+              </div>
+            )}
+            <span className="flex-1 truncate">{deployment.id}</span>
+          </div>
         </DeploymentsBaseCell>,
         <DeploymentsBaseCell key="runs" className="text-gray-500">
           {stats?.completions_last_7_days ?? 0}
