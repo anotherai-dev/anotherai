@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { UserButton, ApiKeysButton } from "@/auth/components";
+import { ApiKeysButton, UserButton } from "@/auth/components";
 import ViewsSection from "@/components/sidebar/ViewsSection";
 
 interface NavigationSidebarProps {
@@ -144,9 +144,9 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
         <ViewsSection />
 
         {/* Auto-refresh indicator */}
-      <div className="px-3 py-3 border-t border-gray-200">
-        <p className="text-xs text-gray-400 text-center">Views update automatically</p>
-      </div>
+        <div className="px-3 py-3 border-t border-gray-200">
+          <p className="text-xs text-gray-400 text-center">Views update automatically</p>
+        </div>
 
         <UserButton className="border-t border-gray-200" />
       </div>
