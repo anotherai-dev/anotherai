@@ -2,7 +2,7 @@ import { enableMapSet, produce } from "immer";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { create } from "zustand";
 import { apiFetch } from "@/lib/apiFetch";
-import { Deployment, DeploymentListResponse, DeploymentUpdate } from "@/types/models";
+import { Deployment, DeploymentCreate, DeploymentListResponse, DeploymentUpdate } from "@/types/models";
 
 enableMapSet();
 
@@ -15,10 +15,10 @@ interface DeploymentsState {
   nextPageToken?: string;
   previousPageToken?: string;
 
-  fetchDeployments: (page?: number, pageSize?: number) => Promise<void>;
-  createDeployment: (deployment: Deployment) => Promise<void>;
+  fetchDeployments: (agentId?: string, includeArchived?: boolean, limit?: number, pageToken?: string) => Promise<void>;
+  createDeployment: (deployment: DeploymentCreate) => Promise<void>;
   updateDeployment: (deploymentId: string, update: DeploymentUpdate) => Promise<void>;
-  deleteDeployment: (deploymentId: string) => Promise<void>;
+  archiveDeployment: (deploymentId: string) => Promise<void>;
   getDeployment: (deploymentId: string) => Promise<Deployment | null>;
   reset: () => void;
 }
@@ -36,10 +36,8 @@ const initialState = {
 export const useDeployments = create<DeploymentsState>((set, get) => ({
   ...initialState,
 
-  fetchDeployments: async (page = 1, pageSize = 20) => {
+  fetchDeployments: async (agentId?: string, includeArchived = false, limit = 20, pageToken?: string) => {
     if (get().isLoading) return;
-
-    const offset = (page - 1) * pageSize;
 
     set(
       produce((state: DeploymentsState) => {
@@ -50,16 +48,31 @@ export const useDeployments = create<DeploymentsState>((set, get) => ({
 
     try {
       const params = new URLSearchParams({
-        limit: pageSize.toString(),
-        offset: offset.toString(),
+        limit: limit.toString(),
+        include_archived: includeArchived.toString(),
       });
+
+      if (agentId) {
+        params.set("agent_id", agentId);
+      }
+
+      if (pageToken) {
+        params.set("page_token", pageToken);
+      }
 
       const response = await apiFetch(`/v1/deployments?${params}`, {
         method: "GET",
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch deployments: ${response.status} ${response.statusText}`);
+        console.error(`Failed to fetch deployments: ${response.status} ${response.statusText}`);
+        set(
+          produce((state: DeploymentsState) => {
+            state.isLoading = false;
+            state.error = new Error(`Failed to fetch deployments: ${response.status} ${response.statusText}`);
+          })
+        );
+        return;
       }
 
       const data: DeploymentListResponse = await response.json();
@@ -86,7 +99,7 @@ export const useDeployments = create<DeploymentsState>((set, get) => ({
     }
   },
 
-  createDeployment: async (deployment: Deployment) => {
+  createDeployment: async (deployment: DeploymentCreate) => {
     set(
       produce((state: DeploymentsState) => {
         state.isLoading = true;
@@ -104,7 +117,14 @@ export const useDeployments = create<DeploymentsState>((set, get) => ({
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to create deployment: ${response.status} ${response.statusText}`);
+        console.error(`Failed to create deployment: ${response.status} ${response.statusText}`);
+        set(
+          produce((state: DeploymentsState) => {
+            state.isLoading = false;
+            state.error = new Error(`Failed to create deployment: ${response.status} ${response.statusText}`);
+          })
+        );
+        return;
       }
 
       const createdDeployment: Deployment = await response.json();
@@ -136,7 +156,11 @@ export const useDeployments = create<DeploymentsState>((set, get) => ({
     );
 
     try {
-      const response = await apiFetch(`/v1/deployments/${deploymentId}`, {
+      const patchUrl = `/v1/deployments/${encodeURIComponent(deploymentId)}`;
+      console.log(`Attempting PATCH to: ${patchUrl}`);
+      console.log(`PATCH payload:`, JSON.stringify(update, null, 2));
+
+      const response = await apiFetch(patchUrl, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -144,19 +168,33 @@ export const useDeployments = create<DeploymentsState>((set, get) => ({
         body: JSON.stringify(update),
       });
 
+      console.log(`PATCH response status: ${response.status}`);
       if (!response.ok) {
-        throw new Error(`Failed to update deployment: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        console.error(`PATCH request failed: ${errorText}`);
       }
 
-      const updatedDeployment: Deployment = await response.json();
+      if (response.ok) {
+        const updatedDeployment: Deployment = await response.json();
 
+        set(
+          produce((state: DeploymentsState) => {
+            const index = state.deployments.findIndex((d) => d.id === deploymentId);
+            if (index !== -1) {
+              state.deployments[index] = updatedDeployment;
+            }
+            state.isLoading = false;
+          })
+        );
+        return;
+      }
+
+      // If we get here, update failed
+      console.error(`Failed to update deployment: ${response.status} ${response.statusText}`);
       set(
         produce((state: DeploymentsState) => {
-          const index = state.deployments.findIndex((d) => d.id === deploymentId);
-          if (index !== -1) {
-            state.deployments[index] = updatedDeployment;
-          }
           state.isLoading = false;
+          state.error = new Error(`Failed to update deployment: ${response.status} ${response.statusText}`);
         })
       );
     } catch (error) {
@@ -170,7 +208,7 @@ export const useDeployments = create<DeploymentsState>((set, get) => ({
     }
   },
 
-  deleteDeployment: async (deploymentId: string) => {
+  archiveDeployment: async (deploymentId: string) => {
     set(
       produce((state: DeploymentsState) => {
         state.isLoading = true;
@@ -179,12 +217,19 @@ export const useDeployments = create<DeploymentsState>((set, get) => ({
     );
 
     try {
-      const response = await apiFetch(`/v1/deployments/${deploymentId}`, {
-        method: "DELETE",
+      const response = await apiFetch(`/v1/deployments/${encodeURIComponent(deploymentId)}/archive`, {
+        method: "POST",
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to delete deployment: ${response.status} ${response.statusText}`);
+        console.error(`Failed to archive deployment: ${response.status} ${response.statusText}`);
+        set(
+          produce((state: DeploymentsState) => {
+            state.isLoading = false;
+            state.error = new Error(`Failed to archive deployment: ${response.status} ${response.statusText}`);
+          })
+        );
+        return;
       }
 
       set(
@@ -195,7 +240,7 @@ export const useDeployments = create<DeploymentsState>((set, get) => ({
         })
       );
     } catch (error) {
-      console.error("Failed to delete deployment:", error);
+      console.error("Failed to archive deployment:", error);
       set(
         produce((state: DeploymentsState) => {
           state.isLoading = false;
@@ -207,7 +252,7 @@ export const useDeployments = create<DeploymentsState>((set, get) => ({
 
   getDeployment: async (deploymentId: string): Promise<Deployment | null> => {
     try {
-      const response = await apiFetch(`/v1/deployments/${deploymentId}`, {
+      const response = await apiFetch(`/v1/deployments/${encodeURIComponent(deploymentId)}`, {
         method: "GET",
       });
 
@@ -215,7 +260,8 @@ export const useDeployments = create<DeploymentsState>((set, get) => ({
         if (response.status === 404) {
           return null;
         }
-        throw new Error(`Failed to fetch deployment: ${response.status} ${response.statusText}`);
+        console.error(`Failed to fetch deployment: ${response.status} ${response.statusText}`);
+        return null;
       }
 
       return await response.json();
