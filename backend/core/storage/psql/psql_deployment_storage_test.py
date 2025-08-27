@@ -81,6 +81,17 @@ class TestCreateDeployment:
         with pytest.raises(ObjectNotFoundError):
             _ = await storage_tenant2.get_deployment(sample_deployment.id)
 
+    async def test_agent_does_not_exist(
+        self,
+        deployment_storage: PsqlDeploymentStorage,
+    ):
+        dep = fake_deployment(id=f"test-deployment-{uuid.uuid4().hex[:8]}", agent_id="whatever")
+        with pytest.raises(ObjectNotFoundError) as e:
+            await deployment_storage.create_deployment(dep)
+
+        assert "agent not found" in str(e.value)
+        assert e.value.object_type == "agent"
+
 
 class TestUpdateDeployment:
     async def test_update_deployment_version(
@@ -143,8 +154,14 @@ class TestUpdateDeployment:
         await deployment_storage.create_deployment(sample_deployment)
         await deployment_storage.archive_deployment(sample_deployment.id)
 
-        with pytest.raises(ObjectNotFoundError):
-            await deployment_storage.update_deployment(sample_deployment.id, fake_version(), {"test": True})
+        dep = await deployment_storage.get_deployment(sample_deployment.id)
+        assert dep.archived_at is not None
+
+        deployed = await deployment_storage.update_deployment(sample_deployment.id, fake_version(), None)
+        assert deployed.archived_at is None
+
+        dep2 = await deployment_storage.get_deployment(sample_deployment.id)
+        assert dep2.archived_at is None
 
 
 class TestArchiveDeployment:

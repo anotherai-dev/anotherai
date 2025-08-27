@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "@/auth/server";
 
 const API_URL = process.env.NEXT_PUBLIC_ANOTHERAI_API_URL ?? process.env.ANOTHERAI_API_URL ?? "http://localhost:8000";
 
@@ -21,12 +22,21 @@ const proxyHandler = async (req: NextRequest) => {
         options.body = bodyData;
       }
     }
-    if (req.headers.get("Content-Type")) {
-      options.headers = {
-        "Content-Type": req.headers.get("Content-Type") ?? "application/json",
-        ...(options.headers ?? {}),
-      };
+    // Forward important headers
+    const headers: Record<string, string> = {};
+
+    // Forward Content-Type
+    const contentType = req.headers.get("Content-Type");
+    if (contentType) {
+      headers["Content-Type"] = contentType;
     }
+
+    const token = await getToken();
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    options.headers = headers;
 
     const apiResponse = await fetch(`${API_URL}${targetUrl}`, options);
     const data = apiResponse.status === 204 ? null : await apiResponse.text();
