@@ -613,6 +613,7 @@ def deployment_from_domain(deployment: DomainDeployment) -> Deployment:
         updated_at=_sanitize_datetime(deployment.updated_at) if deployment.updated_at else None,
         url=deployment_url(deployment.id),
         created_by=deployment.created_by,
+        archived_at=_sanitize_datetime(deployment.archived_at) if deployment.archived_at else None,
     )
 
 

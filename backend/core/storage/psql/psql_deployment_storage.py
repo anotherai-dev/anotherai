@@ -46,8 +46,8 @@ class PsqlDeploymentStorage(PsqlBaseStorage, DeploymentStorage):
             id = await connection.fetchrow(
                 f"""
                 UPDATE deployments
-                SET {sets}
-                WHERE slug = $1 AND deleted_at IS NULL
+                SET {sets}, deleted_at = NULL
+                WHERE slug = $1
                 RETURNING *
                 """,  # noqa: S608 # we trust set_values function
                 deployment_id,
