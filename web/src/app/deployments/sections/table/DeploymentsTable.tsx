@@ -59,7 +59,11 @@ export function DeploymentsTable(props: DeploymentsTableProps) {
         </DeploymentsBaseCell>,
         <DeploymentsBaseCell key="name" className="font-bold text-gray-900">
           <div className="flex items-baseline gap-2 min-w-0 break-words">
-            {stats?.active !== undefined && <div className="flex items-center h-[1em] -translate-y-px"><ActivityIndicator isActive={stats.active} /></div>}
+            {stats?.active !== undefined && (
+              <div className="flex items-center h-[1em] -translate-y-px">
+                <ActivityIndicator isActive={stats.active} />
+              </div>
+            )}
             <span className="flex-1 truncate">{deployment.id}</span>
           </div>
         </DeploymentsBaseCell>,
