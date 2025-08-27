@@ -314,11 +314,6 @@ export default function ViewsSection() {
           </>
         )}
       </div>
-
-      {/* Auto-refresh indicator */}
-      <div className="px-3 pt-3 pb-2 border-t border-gray-200 mt-3">
-        <p className="text-xs text-gray-400 text-center">Views update automatically</p>
-      </div>
     </div>
   );
 }

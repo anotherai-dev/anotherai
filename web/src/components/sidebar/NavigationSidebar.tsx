@@ -1,11 +1,11 @@
 "use client";
 
-import { ChevronLeft, Cloud, KeyRound, Search, Settings } from "lucide-react";
+import { ChevronLeft, Cloud, Search, Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { UserButton } from "@/auth/components";
+import { UserButton, ApiKeysButton } from "@/auth/components";
 import ViewsSection from "@/components/sidebar/ViewsSection";
 
 interface NavigationSidebarProps {
@@ -129,15 +129,7 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
             </svg>
             Agents
           </Link>
-          (
-          <button
-            onClick={handleOpenApiKeysModal}
-            className="flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-[2px] text-gray-700 hover:bg-gray-100 w-full text-left cursor-pointer"
-          >
-            <KeyRound className="w-4 h-4" />
-            API Keys
-          </button>
-          )
+          <ApiKeysButton onClick={handleOpenApiKeysModal} />
           <a
             href="https://github.com/anotherai-dev/anotherai"
             target="_blank"
@@ -150,7 +142,13 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
         </div>
 
         <ViewsSection />
-        <UserButton className="border-t border-gray-200 mt-1" />
+
+        {/* Auto-refresh indicator */}
+      <div className="px-3 py-3 border-t border-gray-200">
+        <p className="text-xs text-gray-400 text-center">Views update automatically</p>
+      </div>
+
+        <UserButton className="border-t border-gray-200" />
       </div>
     </div>
   );

@@ -11,6 +11,8 @@ import type { AuthComponentProps } from "../base";
 export { SignedIn, SignedOut } from "@clerk/nextjs";
 export { UserButton } from "./UserButton";
 
+export { ApiKeysButton } from "@/components/auth/ApiKeysButton";
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <ClerkProvider signInFallbackRedirectUrl="/" afterSignOutUrl="/" signInUrl="/sign-in" signUpUrl="/sign-up">

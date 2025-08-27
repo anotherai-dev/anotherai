@@ -24,6 +24,10 @@ export function UserButton({}: { className?: string }) {
   return null;
 }
 
+export function ApiKeysButton({}: { onClick: () => void; className?: string }) {
+  return null;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   return children;
 }
