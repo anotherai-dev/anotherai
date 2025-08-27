@@ -5,8 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import ViewsSection from "@/components/sidebar/ViewsSection";
 import { UserButton } from "@/auth/components";
+import ViewsSection from "@/components/sidebar/ViewsSection";
 
 interface NavigationSidebarProps {
   onOpenCommandPalette?: () => void;
