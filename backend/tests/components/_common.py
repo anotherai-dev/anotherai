@@ -63,6 +63,11 @@ class IntegrationTestClient:
             **kwargs,
         )
 
+    def get_provider_requests(self, provider: str, model: str):
+        matchers = provider_matchers(provider, model)
+        reqs = self.httpx_mock.get_requests(**matchers)
+        return reqs
+
     @classmethod
     def result_or_raise(cls, res: Response) -> Any:
         try:

@@ -396,7 +396,7 @@ def completion_response_from_domain(
         created=int(completion.created_at.timestamp()),
         model=completion.final_model or "unknown",
         usage=completion_usage_from_domain(completion.traces),
-        version_id=completion.agent.id,
+        version_id=completion.version.id,
         metadata=completion.metadata,
     )
 

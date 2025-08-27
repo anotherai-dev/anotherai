@@ -9,7 +9,7 @@ import { Code2, BookOpen, Wand2, Eye, Network, FileCode, Shield } from 'lucide-r
 
 ## What is AnotherAI?
 
-AnotherAI is the [open-source](https://github.com/anotherai/anotherai) platform for AI agents. It provides the developer tools and cloud infrastructure to build, deploy, monitor, evaluate, and improve agentic systems.
+AnotherAI is an open-source, OpenAI-compatible proxy and MCP server for AI agents. It provides the developer tools and cloud infrastructure to build, deploy, monitor, evaluate, and improve agentic systems.
 
 <Callout type="info" href="/pricing">
 By using AnotherAI, you won't pay more than your current inference costs. We price match the providers and make our margin through volume discounts. [Learn more about our pricing](/pricing).
@@ -17,15 +17,30 @@ By using AnotherAI, you won't pay more than your current inference costs. We pri
 
 ## Get Started
 
+### Set Up
+
+To use AnotherAI's hosted service: sign up at anotherai.dev/signup [TODO: add link and/or additional steps once we have hosted set up]
+<Callout>
+Are you interested in a self-hosted, [open-source](https://github.com/anotherai-dev/anotherai) set up? We have that too! You can learn how to get set up [here](/self-hosted). 
+</Callout>
+
 ### MCP 
 
-AnotherAI is available as a MCP server in the IDEs below.
+AnotherAI is available as an MCP server in the IDEs below.
 
-<Tabs items={['Cursor', 'Claude Code', 'Windsurf']}>
+<Tabs items={['Cursor', 'Claude Code']}>
 
 <Tab value="Cursor">
 
-<Callout type="info">**TODO:** Add a direct link to install the MCP.</Callout>
+Quick setup (recommended):
+1. Complete the Hosted set up above
+2. Tap on the button below 
+
+TODO: confirm if this quick setup will work as is for hosted version as well.
+
+<a href="cursor://anysphere.cursor-deeplink/mcp/install?name=anotherai&config=eyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjgwMDAvbWNwLyJ9"><img src="https://cursor.com/deeplink/mcp-install-dark.svg" alt="Add anotherai MCP server to Cursor" height="32" /></a>
+
+Manual installation:
 
 1. Open Cursor
 2. Go to `Settings...`
@@ -35,19 +50,18 @@ AnotherAI is available as a MCP server in the IDEs below.
 
 Add the following configuration to your MCP servers config:
 
-   ```json
-   {
-     "mcpServers": {
-       "anotherai": {
-         "url": "{{API_URL}}/mcp/",
-         "headers": {
-           "Authorization": "Bearer <your_api_key_here>"
-         }
-       }
-     }
-   }
-   ```
-Replace `<your_api_key_here>` with your actual AnotherAI API token.
+```json
+{
+  "mcpServers": {
+    "anotherai": {
+      "url": "{{API_URL}}/mcp/",
+      "headers": {
+        "Authorization": "Bearer <your_api_key_here>"
+      }
+    }
+  }
+}
+```
 
 Cursor UI should now look like this (note the green indicator and the number of tools enabled displayed):
 
@@ -57,22 +71,24 @@ Cursor UI should now look like this (note the green indicator and the number of 
 
 <Tab value="Claude Code">
 
-1. Open Claude Code in your preferred terminal (standalone or within your IDE).
-2. Type the following to install:
+  1. Complete the set up above
+  2. Get your API key at anotherai.dev/... [TODO: add link and/or additional steps once we have hosted set up] 
+  3. Open Claude Code in your preferred terminal (standalone or within your IDE).
+  4. Type the following to install:
 
-```bash
-claude mcp add anotherai -s user {{API_URL}}/mcp/ --transport http -H "Authorization: Bearer YOUR_API_KEY_HERE"
-```
+TODO: confirm actual claude command for hosted version.
 
-Replace `YOUR_API_KEY_HERE` with your AnotherAI API key.
+  ```bash
+  claude mcp add --scope user https://api.anotherai.dev/mcp/ --transport http -H "Authorization: Bearer YOUR_API_KEY_HERE"
+  ```
 
-<Callout type="info">
-**Installation Scopes**: The `-s user` flag installs AnotherAI for your personal use across all projects. For team projects, you can use `-s project` instead to create a shared `.mcp.json` file that can be committed to version control and shared with your team members. Learn more about MCP scopes in the [Anthropic documentation](https://docs.anthropic.com/en/docs/claude-code/mcp#user-scope).
-</Callout>
+  <Callout type="info">
+  **Installation Scopes**: The `--scope user` flag installs AnotherAI for your personal use across all projects. For team projects, you can use `--scope project` instead to create a shared `.mcp.json` file that can be committed to version control and shared with your team members. Learn more about MCP scopes in the [Anthropic documentation](https://docs.anthropic.com/en/docs/claude-code/mcp#user-scope).
+  </Callout>
 
-3. Type the following to verify the server is properly connected:
+  5. Type the following to verify the server is properly connected:
 
-```bash
+  ```bash
 claude
 ```
 
@@ -83,73 +99,28 @@ Then type:
 
 You should see the AnotherAI server listed as "connected".
 
-
-</Tab>
-
-<Tab value="Windsurf">
-
-*Coming soon*
-
 </Tab>
 
 </Tabs>
 
-### Build a new agent 
+### Try it out
+
+After you have the above set up completed, AnotherAI is ready to use!
+
+- If you have agents already created, check out how to migrate them to AnotherAI. [TODO: link to applicable page once https://github.com/anotherai-dev/anotherai/pull/29 is merged]
+
+- If you don't have any agents built yet, check out [TODO: link to applicable page once https://github.com/anotherai-dev/anotherai/pull/29 is merged] to learn about building a new AnotherAI-compatible agent.
+
+
+Once you have an agent built or migrated, here are some examples of prompts you can send to Claude Code to test how AnotherAI works:
 
 ```bash
-Can you write a agent to classify emails as urgent or not?
+Create an experiment in AnotherAI that compares how GPT-5 mini and GPT-4 mini perform on @[your-agent-name-here].
 ```
-
-### Migrate an existing agent
-
 ```bash
-Can you migrate the following agent to AnotherAI?
+Use AnotherAI to help me find a faster model for @[your-agent-name-here] while still maintaining accuracy.
 ```
-
-## Products
-
-<Callout type="warning">
-**TODO:** 
-</Callout>
-{/* 
-### Playground
-
-![header](</images/overview/playground.png>)
-
-<Card
-  title="Playground"
-  description="Our goal is to build the best playground that supports all leading AI models."
-  href="/playground"
-/>
-
-### Inference
-
-![header](</images/overview/inference.png>)
-
-<Callout type="info">
-should we show all the sections from inference, or just the header?
-</Callout>
-
-### Observability
-
-![header](</images/overview/observability.png>)
-
-### Deployments
-
-![header](</images/overview/deployments.png>)
-
-### Agents
-
-![header](</images/overview/agents.png>)
-
-### Evaluations
-
-![header](</images/overview/evaluations.png>) */}
-
-<Callout type="info">
-**Enterprise Compliance**: SOC2 & GDPR compliant. No training on your data. [Learn more](/compliance).
-</Callout>
 
 ## Join the community
 
-If you have questions about AnotherAI, reach out to our team and community on our [Discord Server](https://discord.com/invite/auuf8DREZh).
+If you have questions about AnotherAI, reach out to our team and community on our community [Slack](https://join.slack.com/t/anotherai-dev/shared_invite/zt-3av2prezr-Lz10~8o~rSRQE72m_PyIJA).

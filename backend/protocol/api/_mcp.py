@@ -5,6 +5,7 @@ from typing import Annotated, Any
 
 from pydantic import Field
 
+from core.domain.cache_usage import CacheUsage
 from core.services.documentation_search import DocumentationSearch
 from protocol.api import _mcp_utils
 from protocol.api._api_models import (
@@ -13,6 +14,7 @@ from protocol.api._api_models import (
     CompleteAPIKey,
     CreateAPIKeyRequest,
     CreateViewResponse,
+    Deployment,
     Experiment,
     Input,
     Message,
@@ -91,6 +93,10 @@ async def playground(
         None,
         description="Title of the experiment. Required if experiment_id is not provided",
     ),
+    use_cache: CacheUsage = Field(
+        default="always",
+        description="Whether to use the cache for the playground. If 'auto', the cache will be used if the temperature is 0 and no tools are enabled.",
+    ),
 ) -> PlaygroundOutput:
     """
     Agent Reuse Policy:
@@ -161,6 +167,7 @@ async def playground(
         experiment_id=experiment_id,
         experiment_description=experiment_description,
         experiment_title=experiment_title,
+        use_cache=use_cache,
     )
 
 
@@ -547,3 +554,66 @@ async def create_or_update_view(
 async def create_api_key(name: str) -> CompleteAPIKey:
     """Create a new API key that can be used to authenticate with the Another AI MCP and API"""
     return await (await _mcp_utils.organization_service()).create_api_key(CreateAPIKeyRequest(name=name))
+
+
+# ------------------------------------------------------------
+# Deployments
+
+
+@mcp.tool()
+async def list_deployments(
+    agent_id: str | None = Field(
+        default=None,
+        description="The agent id to filter deployments by",
+    ),
+    limit: int = Field(
+        default=10,
+        description="The number of deployments to return",
+    ),
+    page_token: str | None = Field(
+        default=None,
+        description="The page token to use for pagination",
+    ),
+) -> Page[Deployment]:
+    """List all deployments"""
+    return await (await _mcp_utils.deployment_service()).list_deployments(
+        agent_id=agent_id,
+        limit=limit,
+        page_token=page_token,
+        include_archived=False,
+    )
+
+
+@mcp.tool()
+async def create_or_update_deployment(
+    agent_id: str = Field(
+        description="The agent id to deploy the version to",
+    ),
+    version_id: str = Field(
+        description="The version id to deploy. Can be found in an experiment or a completion.",
+    ),
+    deployment_id: str = Field(
+        # TODO: update description and examples based on tests. Make sure field in _api_models.py is updated too.
+        description="The id of the deployment",
+        examples=["my-agent-id:production#1"],
+    ),
+    author_name: str = Field(
+        description="The name of the author of the deployment",
+    ),
+) -> Deployment | str:
+    """Create a new deployment or update an existing deployment if id matches.
+
+    Note that overriding a deployment with a new id is only possible if the variable
+    (aka version.input_variables_schema) and response formats (version.output_schema) are compatible
+    between the deployments. Schemas are considered compatible if all their fields have the same name, type
+    and properties.
+
+    Updating an existing deployment needs user confirmation. You will be provided the URL where a user can
+    confirm the update.
+    """
+    return await (await _mcp_utils.deployment_service()).upsert_deployment(
+        agent_id=agent_id,
+        version_id=version_id,
+        deployment_id=deployment_id,
+        author_name=author_name,
+    )
