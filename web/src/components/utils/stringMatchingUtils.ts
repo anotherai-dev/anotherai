@@ -50,7 +50,7 @@ function removeContainedSubstrings(strings: string[]): string[] {
 
 // Helper function to find longest common substrings between multiple texts
 // Optimized for large datasets with consistent behavior across approaches
-export function findCommonSubstrings(texts: string[]): string {
+export function findCommonSubstrings(texts: (string | null | undefined)[] | null | undefined): string {
   // Input validation
   if (!texts || texts.length === 0) return "";
   // Filter out null, undefined, and very short texts

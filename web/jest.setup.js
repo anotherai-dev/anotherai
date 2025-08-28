@@ -1,7 +1,7 @@
-import '@testing-library/jest-dom'
+import "@testing-library/jest-dom";
 
 // Mock Next.js router
-jest.mock('next/navigation', () => ({
+jest.mock("next/navigation", () => ({
   useRouter() {
     return {
       push: jest.fn(),
@@ -10,59 +10,56 @@ jest.mock('next/navigation', () => ({
       forward: jest.fn(),
       refresh: jest.fn(),
       prefetch: jest.fn(),
-    }
+    };
   },
   useSearchParams() {
-    return new URLSearchParams()
+    return new URLSearchParams();
   },
   usePathname() {
-    return '/'
+    return "/";
   },
-}))
+}));
 
 // Mock Next.js Image component
-jest.mock('next/image', () => ({
+jest.mock("next/image", () => ({
   __esModule: true,
   default: (props) => {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img {...props} alt={props.alt} />
+    return <img {...props} alt={props.alt} />;
   },
-}))
+}));
 
 // Global test setup
 beforeEach(() => {
   // Reset all mocks before each test
-  jest.clearAllMocks()
-})
+  jest.clearAllMocks();
+});
 
 // Suppress console errors/warnings in tests unless explicitly needed
-const originalError = console.error
-const originalWarn = console.warn
+const originalError = console.error;
+const originalWarn = console.warn;
 
 beforeAll(() => {
   console.error = (...args) => {
     if (
-      typeof args[0] === 'string' &&
-      (args[0].includes('Warning: ReactDOM.render is deprecated') ||
-        args[0].includes('Warning: componentWillMount has been renamed'))
+      typeof args[0] === "string" &&
+      (args[0].includes("Warning: ReactDOM.render is deprecated") ||
+        args[0].includes("Warning: componentWillMount has been renamed"))
     ) {
-      return
+      return;
     }
-    originalError.call(console, ...args)
-  }
-  
+    originalError.call(console, ...args);
+  };
+
   console.warn = (...args) => {
-    if (
-      typeof args[0] === 'string' &&
-      args[0].includes('componentWillReceiveProps has been renamed')
-    ) {
-      return
+    if (typeof args[0] === "string" && args[0].includes("componentWillReceiveProps has been renamed")) {
+      return;
     }
-    originalWarn.call(console, ...args)
-  }
-})
+    originalWarn.call(console, ...args);
+  };
+});
 
 afterAll(() => {
-  console.error = originalError
-  console.warn = originalWarn
-})
+  console.error = originalError;
+  console.warn = originalWarn;
+});
