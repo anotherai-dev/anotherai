@@ -155,8 +155,9 @@ def setup_environment(test_jwk: dict[str, Any]):
         yield
 
 
+# Depend on existing sessions to make sure they are created before the broker is started
 @pytest.fixture(scope="session")
-async def patched_broker():
+async def patched_broker(migrated_database: None, test_blob_storage: None, clickhouse_client: None):
     with patch("taskiq.InMemoryBroker", new=PausableInMemoryBroker):
         from protocol.worker.worker import broker
 
