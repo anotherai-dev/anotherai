@@ -1,0 +1,293 @@
+---
+title: Improving an Agent
+summary: Guide for improving agents utilizing annotations and debugging processes
+description: Learn how to improve your agents using annotations and debuging processes 
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+# Experiments
+
+Experiments allow you to systematically compare different configurations of your agent to find the optimal setup for your use case across one or more inputs. By testing variations of prompts, models, and other parameters, you can make data-driven decisions to improve your agent's performance.
+
+### Creating Experiments
+
+To create an experiment:
+
+<Steps>
+<Step>
+### Configure MCP
+Make sure you have the AnotherAI MCP configured and enabled. You can view the set up steps [here](/docs).
+</Step>
+
+<Step>
+### Create Experiment
+Then just ask Claude Code (or the AI coding agent you're using) to set up experiments for you
+</Step>
+</Steps>
+
+The most common parameters to experiment with are prompts and models, however you can also experiment with changes to other parameters like temperature. 
+
+### Prompts
+
+Comparing different prompts is one of the most effective ways to improve your agent's performance. Small changes in wording, structure, or examples can lead to significant improvements. If you notice an issue with an existing prompt, you can even ask Claude to generate prompt variations to use in the experiment. 
+
+Example:
+
+```
+Look at the prompt of @email-rewriter.py and create an experiment in AnotherAI 
+that compares the current prompt with a new prompt that better emphasizes adopting 
+the tone lists in the input 
+```
+
+### Models
+
+Different models excel at different tasks. AnotherAI supports over 100 different models, and experiments can help you choose the right model for your agent, depending on its needs.
+
+For example:
+
+```
+Create an AnotherAI experiment to help me find a faster model for @email-rewriter.py,
+but still maintains the same tone and verbosity considerations as my current model.
+```
+
+If you have a specific model in mind that you want to try - **for example, a newly released model** - you can ask Claude to help you test that model against your existing agent version. You can always request that Claude use inputs from existing completions, to ensure that you're testing with real, production data. 
+
+For example:
+
+```
+Can you retry the last 5 completions of @email-rewriter.py and compare the outputs with 
+GPT 5 mini?
+```
+
+### Other Parameters
+
+Beyond prompts and models, fine-tuning other parameters can impact your agent's behavior and output quality. Temperature in particular can have a significant impact on the quality of the output.
+
+#### Temperature
+
+Temperature is the most important parameter to experiment with after prompts and models. It controls the randomness of the model's output:
+
+- **Low temperature (0.0 - 0.3)**: More deterministic, consistent outputs. Best for:
+  - Data extraction tasks
+  - Classification
+  - Structured output generation
+  - Tasks requiring high accuracy and repeatability
+
+- **Medium temperature (0.4 - 0.7)**: Balanced creativity and consistency. Best for:
+  - General purpose assistants
+  - Question answering
+  - Summary generation
+
+- **High temperature (0.8 - 1.0)**: More creative, varied outputs. Best for:
+  - Creative writing
+  - Brainstorming
+  - Generating diverse options
+
+```
+Test my email-rewriter agent with temperatures 0.2, 0.5, and 0.8 to find 
+the right balance between creativity and professionalism
+```
+
+### Analyzing Experiment Results
+
+Once your experiment has collected enough completions, you can:
+
+1. **Review side-by-side comparisons** in the AnotherAI experiments view
+2. **Use annotations** to mark which outputs are better and why (keep reading to learn more about annotations!)
+3. **Ask Claude Code** to analyze the results:
+
+```
+Analyze the results of experiment/019885bb-24ea-70f8-c41b-0cbb22cc3c00 
+and recommend which configuration performs best specifically for both accuracy and cost
+```
+
+
+# Annotations
+
+Annotations are the tool that allows you to add comments to your completions and experiments. The idea behind annotations is to give you  a way to provide clear, specific feedback on completions that your AI Coding agent can access and use to improve your agents on your behalf.
+
+### What sort of content can be added in annotations?
+
+There are two types of annotations: text-based annotations and metric-based annotations (referred to below as "scores"). You can use one or both types of annotations on a completion; they are not mutually exclusive.
+
+#### Text
+This is the primary way to use annotations.
+
+Text-based annotations can contain feedback about:
+- What is working (e.g. "The event descriptions are clear and the ideal length")
+- What is not working (e.g. "The description of the events are too verbose, and this model missed out on extracting the updated time of the team sync")
+
+Using text-based annotations allow you to provide thorough, nuanced feedback in cases where a completion's quality isn't straightforward. For example:
+1. If you don't consider a completion as all good or all bad, you can highlight parts of a completion that are working well and parts that are not.
+2. You can add specific thoughts and context to a completion so your coding agent will have an in-depth understanding of the completion's quality.
+
+However if you would like to incorporate more quantitative ratings, you can do that by using scores, which are described below!
+
+#### Scores
+Scores can be added to annotations to provide quantitative evaluations. There are no predefined scores keys, you can add whatever is important to you. Some examples of common score metrics are:
+- Accuracy (does the content match what was expected?)
+- Tone (how appropriate is the tone given the context?)
+- Clarity (does the output make sense?)
+- Formatting (is markdown used appropriately and is the markdown correct?)
+
+<Callout type="info">
+Currently, scores can only be added:
+- **Via the API** - programmatically through the AnotherAI API
+- **Via MCP tools** - using Claude Code or other AI agents with MCP access
+</Callout>
+
+### How to Add Annotations
+
+#### In AnotherAI Web App
+
+You can add text-based annotations directly in AnotherAI on both the experiments screen and in individual completion detail views. Annotations can be added for both entire completions and individual fields within the output (when the output is structured).
+
+##### Annotations on Experiments Screen
+- To annotate entire completions: locate the "Add Annotation" button under each completion's output. Select the button to open a text box where you can add your feedback about the content of that specific completion. 
+- To annotate individual fields within the output, hover over the field you want to annotate and select the "Add Annotation" button.
+- You can also add annotations to the model, prompt, output schema (if structured output is enabled for the agent), and other parameters like temperature, top_p, etc.
+
+  <iframe src="https://customer-turax1sz4f7wbpuv.cloudflarestream.com/e123814e5c765505fa03443864bb2397/iframe" width="100%"
+  height="400" frameBorder="0" allowFullScreen></iframe>
+
+##### Annotations on Completion Detail View
+- To annotate entire completions: there is a text box on the top right of the screen where you can add your feedback about the content of the completion.
+- To annotate individual fields within the output, hover over the field you want to annotate and select the "Add Annotation" button. 
+
+Note: at this time, it's not possible to add scores directly in the web app.
+
+<iframe src="https://customer-turax1sz4f7wbpuv.cloudflarestream.com/72270b5b80230702252f69c9c3f4a20a/iframe" width="100%"
+height="400" frameBorder="0" allowFullScreen></iframe>
+
+#### Using Claude or AI Agents
+
+You can also ask Claude Code to review completions and add text-based, scores, or both types of annotations on your behalf. To ensure that Claude Code is evaluating the completions in the way you want, it's best to provide some guidance. For example:
+
+```
+Review the completions in anotherai/experiment/019885bb-24ea-70f8-c41b-0cbb22cc3c00 
+and leave scores about the completion's accuracy and tone. Evaluate accuracy based on whether the agent correctly extracted all todos from the transcript and evaluate tone based on whether the agent used an appropriately professional tone.
+```
+
+Claude will analyze the completions and add appropriate annotations. In the example above, Claude will add an annotation with the scores "accuracy" and "tone" and assigned appropriate values for each, based on the content of the completion. 
+
+### Using Claude Code to Improve your Agents using Annotations
+
+After you've added annotations to agent completions or an experiment, all you need to do is tell Claude that you've added annotations and ask it to use them to improve your agent. Just specify the agent or experiment that you added the annotations to, and Claude will take care of the rest. For example:
+
+```
+Adjust anotherai/agent/calendar-event-extractor based on the annotations that have been added.
+```
+
+Claude will use the annotations to improve the agent: be it by updating the prompt, model, output schema, or other parameters.
+
+### Other ways to use Annotations
+
+Claude can also leverage annotations to provide you with insights about your agent's performance. For example:
+
+#### 1. **Create Performance Reports**
+```
+Provide a report on the accuracy scores for all completions of calendar-event-extractor that used GPT-5. 
+```
+
+#### 2. **Compare Model Performance**
+```
+Which model has the best tone overall, based on annotations?
+```
+# End-User Feedback
+
+Incorporating end-user feedback into your agent's development process can be invaluable when creating effective agents. We recommend setting up user feedback in your product to be added directly to completions via annotations. 
+
+Below is an example of the process you might implement for collecting and incorporating end-user feedback:
+
+<Steps>
+<Step>
+### Set up user feedback collection in your product
+
+This will look different for each product. Generally we recommend allowing the user to provide a comment, so that they can provide nuanced feedback. You may also want to allow your user to leave a score - for example 1-5 stars, or a thumbs up/down - in these cases the feedback would be added as a metric in the annotations.
+</Step>
+
+<Step>
+### Write a script to send user feedback to AnotherAI via the annotations endpoint 
+
+
+```python
+# Example: Send user feedback as annotations via API
+import requests
+from datetime import datetime
+
+# Configure your AnotherAI API endpoint and key
+API_BASE_URL = "http://localhost:8000"
+API_KEY = "your-api-key"
+
+def submit_user_feedback(completion_id: str, rating: int, comment: str, user_id: str = "end_user"):
+    """Submit user feedback as an annotation to AnotherAI"""
+    
+    annotation = {
+        "id": f"feedback_{completion_id}_{datetime.now().timestamp()}",
+        "target": {
+            "completion_id": completion_id,
+            # key_path can be used to annotate specific fields
+            "key_path": None  # Annotating the entire completion
+        },
+        "author_name": user_id,
+        "text": comment,
+        "metric": {
+            "name": "accuracy",
+            "value": rating  # e.g., 1-5 star rating
+        },
+        "metadata": {
+            "source": "feedback_widget",
+            "additionalProp1": {}
+        }
+    }
+    
+    response = requests.post(
+        f"{API_BASE_URL}/v1/annotations",
+        json={"annotations": [annotation]},
+        headers={
+            "Authorization": f"Bearer {API_KEY}",
+            "Content-Type": "application/json"
+        }
+    )
+    
+    if response.status_code == 200:
+        print(f"Feedback submitted successfully for completion {completion_id}")
+    else:
+        print(f"Error submitting feedback: {response.text}")
+    
+    return response
+
+# Example usage after getting a completion
+completion_id = "anotherai/completion/0198cd7c-2b1a-73b1-ce14-53da0b268569"
+accuracy = 4
+user_comment = "The response was helpful but could be more concise"
+submit_user_feedback(completion_id, accuracy, user_comment)
+```
+</Step>
+
+<Step>
+### Create a custom view to easily review the feedback sent
+
+Ask Claude Code to create a view for you in AnotherAI to see all the feedback in one place.
+
+```
+Create a view that shows all completions of @[your-agent-name] with annotations. 
+The view should display the completion ID, input, outputs, and the annotation 
+left on the completion.
+```
+</Step>
+
+<Step>
+### Using Feedback for Improvements
+
+Ask Claude Code to analyze user feedback and suggest improvements:
+
+```
+Review the user feedback annotations for agent/email-writer from the last week 
+and suggest prompt improvements based on common complaints
+```
+
+Claude will query the annotations, identify patterns, and propose specific changes to improve user satisfaction.
+</Step>
+</Steps>
