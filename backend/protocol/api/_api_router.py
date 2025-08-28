@@ -16,6 +16,7 @@ from protocol.api._api_models import (
     DeploymentUpdate,
     Experiment,
     Model,
+    OpenAIListResult,
     Page,
     PatchViewFolderRequest,
     PatchViewRequest,
@@ -40,8 +41,8 @@ router = APIRouter(prefix="")
 
 
 @router.get("/v1/models", response_model_exclude_none=True)
-async def list_models() -> list[Model]:
-    return await models_service.list_models()
+async def list_models() -> OpenAIListResult[Model]:
+    return OpenAIListResult(data=await models_service.list_models())
 
 
 # ------------------------------------------------------------

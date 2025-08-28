@@ -155,14 +155,14 @@ def setup_environment(test_jwk: dict[str, Any]):
         yield
 
 
-# TODO: re-enable when we have actual events
-@pytest.fixture
+@pytest.fixture(scope="session")
 async def patched_broker():
-    return None
-    # with patch("taskiq.InMemoryBroker", new=PausableInMemoryBroker):
-    #     from api.broker import broker
+    with patch("taskiq.InMemoryBroker", new=PausableInMemoryBroker):
+        from protocol.worker.worker import broker
 
-    # return broker
+    await broker.startup()
+    yield broker
+    await broker.shutdown()
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -210,7 +210,6 @@ async def test_api_server(migrated_database: str, clickhouse_client: CHAsyncClie
 
 @pytest.fixture
 async def test_api_client(
-    # patched_broker: InMemoryBroker,
     request: pytest.FixtureRequest,
     purged_psql: asyncpg.Pool,
     psql_pool: asyncpg.Pool,
