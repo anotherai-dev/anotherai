@@ -54,7 +54,7 @@ export function findCommonSubstrings(texts: (string | null | undefined)[] | null
   // Input validation
   if (!texts || texts.length === 0) return "";
   // Filter out null, undefined, and very short texts
-  const validTexts = texts.filter((text) => {
+  const validTexts = texts.filter((text): text is string => {
     if (!text || typeof text !== "string") return false;
     return text.trim().length >= 3;
   });
