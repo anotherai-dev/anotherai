@@ -33,6 +33,13 @@ WORKDIR /app/web
 
 CMD ["npx", "next", "dev"]
 
+FROM sources AS test
+
+WORKDIR /app/web
+
+ENV NODE_ENV=test
+CMD ["npm", "run", "test:ci"]
+
 FROM sources AS builder
 
 WORKDIR /app/web

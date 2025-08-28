@@ -8,7 +8,11 @@
     "start": "next start",
     "lint": "next lint",
     "prettier-format": "prettier --write .",
-    "prettier-check": "prettier --check ."
+    "prettier-check": "prettier --check .",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:ci": "jest --ci --coverage --watchAll=false"
   },
   "optionalDependencies": {
     "@clerk/nextjs": "^6.31.1"
@@ -50,9 +54,14 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.8.0",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "24.2.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "jest": "^30.1.1",
+    "jest-environment-jsdom": "^30.1.1",
     "prettier": "^3.6.2",
     "prettier-plugin-tailwindcss": "^0.6.14",
     "tailwindcss": "^4"
