@@ -5,6 +5,7 @@ summary: Deployments allow managing part of the prompt and completion parameters
 
 import { Steps, Step } from 'fumadocs-ui/components/steps';
 import { Callout } from 'fumadocs-ui/components/callout';
+import { Accordions, Accordion } from 'fumadocs-ui/components/accordion';
 
 ## Why use deployments?
 
@@ -299,6 +300,78 @@ const completion = await openai.chat.completions.create({
     response_format: {
         type: "json_schema",
         json_schema: ... // response format is incompatible with the deployment
+    }
+});
+```
+</Tab>
+</Tabs>
+
+### Creating New vs. Updating Existing Deployments
+
+When you want to deploy and use a new version of your agent, depending on the scope of the changes, you may be able to update an existing deployment instead of creating a new one.
+
+#### Benefits of updating an existing deployment
+ 
+Updating an existing deployment does not require any code changes. Because no code changes are required, updating an existing deployment is generally much faster than creating and releasing a new deployment.
+
+<Callout type="info">
+To prevent unwanted deployments that could negatively impact your production environment, your coding agent will require you to confirm all deployment updates using the web app. 
+</Callout>
+
+#### What updates are compatible with an existing deployment?
+
+You can update an existing deployment if the new version is considered a non-breaking change.
+
+<Accordions type="single" defaultValue="non-breaking-changes">
+<Accordion title="Non-breaking Changes Examples" id="non-breaking-changes">
+
+- Changing the model
+- Adjusting temperature or other generation parameters  
+- Editing prompt wording while keeping the same variables
+
+</Accordion>
+</Accordions>
+
+#### Creating a New Deployment
+
+Creating a new deployment is required when the changes you are making are considered breaking changes.
+
+<Accordions type="single" defaultValue="breaking-changes">
+<Accordion title="Breaking Changes Examples" id="breaking-changes">
+
+- Editing the input variables
+    - Adding a new variable
+    - Removing a variable
+    - Changing the name or the type of an existing variable
+- Editing the output schema 
+    - Adding a new field
+    - Removing a field
+    - Changing the name or the type of an existing field
+
+</Accordion>
+</Accordions>
+
+When a new deployment is created, you will need to update your code to point to the new deployment.
+
+**Example: Updating code for a new deployment**
+
+<Tabs items={["OpenAI SDK (JS)"]}>
+<Tab>
+```js
+// Before - using old deployment
+const completion = await openai.chat.completions.create({
+    model: "anotherai/travel-assistant/production#1",
+    input: {
+        country: "France"
+    }
+});
+
+// After - using new deployment with breaking changes
+const completion = await openai.chat.completions.create({
+    model: "anotherai/travel-assistant/production#2", // new deployment
+    input: {
+        destination: "France", // variable renamed: country -> destination
+        traveler_type: "business" // new required variable added
     }
 });
 ```
