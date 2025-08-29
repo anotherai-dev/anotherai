@@ -19,12 +19,12 @@ claude "Please follow instructions in https://raw.githubusercontent.com/anothera
 
 AnotherAI is available as an MCP server in the IDEs below.
 
-<Tabs items={['Cursor', 'Claude Code']}>
+<Tabs items={['Cursor', 'Claude Code', 'Cursor CLI']}>
 
 <Tab value="Cursor">
 
 Quick setup (recommended):
-1. Complete the Self Host set up above and make sure the AnotherAI MCP server is running.
+1. Complete the [Self Host Set Up](#self-host-set-up) steps above.
 2. Tap on this button below
 
 <a href="cursor://anysphere.cursor-deeplink/mcp/install?name=anotherai&config=eyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjgwMDAvbWNwLyJ9"><img src="https://cursor.com/deeplink/mcp-install-dark.svg" alt="Add anotherai MCP server to Cursor" height="32" /></a>
@@ -80,6 +80,22 @@ Then type:
 ```
 
 You should see the AnotherAI server listed as "connected".
+
+</Tab>
+
+<Tab value="Cursor CLI">
+
+Cursor CLI can access MCPs configured in your IDE's  `mcp.json` configuration file, enabling the same MCP servers and tools that you've configured for the IDE.
+
+Setup steps:
+
+1. Complete the [Self Host Set Up](#self-host-set-up) steps above and ensure the AnotherAI MCP server is running
+2. Configure the AnotherAI MCP in your IDE's `mcp.json` file, as described in the `Cursor` tab
+3. Once the MCP is enabled and active, you can ask the Cursor CLI to interact with it
+
+<Callout type="info">
+**Additional Configuration**: If you find that the CLI claims it can't find or use the AnotherAI MCP, you may need to give it the specific file path to use to look for the mcp.json file.
+</Callout>
 
 </Tab>
 
