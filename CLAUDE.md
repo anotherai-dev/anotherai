@@ -35,14 +35,6 @@ npm run test:coverage # Run tests with coverage
 npm run test:ci       # Run tests for CI/CD
 ```
 
-Run Jest tests in Docker:
-```bash
-# Run tests using Docker
-docker-compose --profile test run --rm web-test
-
-# Build and run test container
-docker-compose --profile test up web-test
-```
 
 The Jest test suite covers:
 - Pure functions and business logic calculations

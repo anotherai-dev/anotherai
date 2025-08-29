@@ -95,19 +95,6 @@ services:
     depends_on:
       - api
 
-  web-test:
-    build:
-      context: .
-      dockerfile: web.Dockerfile
-      target: test
-      args:
-        - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-    volumes:
-      - ./web:/app/web
-    environment:
-      - NODE_ENV=test
-    profiles:
-      - test
 
   docs:
     build:

@@ -11,14 +11,15 @@ const customJestConfig = {
   testEnvironment: "jsdom",
   moduleNameMapper: {
     // Handle module aliases (this will be automatically configured for Next.js)
+    "^@/auth/(.*)$": "<rootDir>/src/auth/noauth/$1",
     "^@/(.*)$": "<rootDir>/src/$1",
   },
   testMatch: ["**/__tests__/**/*.(js|jsx|ts|tsx)", "**/*.(test|spec).(js|jsx|ts|tsx)"],
   testPathIgnorePatterns: [
     "<rootDir>/.next/",
     "<rootDir>/node_modules/",
-    "<rootDir>/src/auth/clerk/", // Ignore Clerk auth files with spec issues
-    "<rootDir>/src/auth/noauth/", // Ignore noauth files with spec issues
+    "<rootDir>/src/auth/clerk/", // Clerk auth files have runtime issues in Jest environment
+    "<rootDir>/src/auth/noauth/", // Auth files have Node.js/browser compatibility issues
   ],
   collectCoverageFrom: [
     "src/**/*.(js|jsx|ts|tsx)",
