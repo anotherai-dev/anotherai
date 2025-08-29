@@ -2,6 +2,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Body, Query
 
+from protocol._common.documentation import INCLUDE_PRIVATE_ROUTES
 from protocol.api._api_models import (
     Agent,
     Annotation,
@@ -16,6 +17,7 @@ from protocol.api._api_models import (
     DeploymentUpdate,
     Experiment,
     Model,
+    OpenAIListResult,
     Page,
     PatchViewFolderRequest,
     PatchViewRequest,
@@ -32,6 +34,7 @@ from protocol.api._dependencies._services import (
     ViewServiceDep,
 )
 from protocol.api._services import models_service
+from protocol.api._services.utils_service import ExtractVariablesRequest, ExtractVariablesResponse
 
 router = APIRouter(prefix="")
 
@@ -40,8 +43,8 @@ router = APIRouter(prefix="")
 
 
 @router.get("/v1/models", response_model_exclude_none=True)
-async def list_models() -> list[Model]:
-    return await models_service.list_models()
+async def list_models() -> OpenAIListResult[Model]:
+    return OpenAIListResult(data=await models_service.list_models())
 
 
 # ------------------------------------------------------------
@@ -294,3 +297,18 @@ async def archive_deployment(
     """Archives a deployment. The deployment can still be used if referred to by ID but no longer
     appears in the list of deployments."""
     return await deployment_service.archive_deployment(deployment_id)
+
+
+# ------------------------------------------------------------
+# Utils
+
+
+@router.post(
+    "/v1/utils/messages/extract-variables",
+    response_model_exclude_none=True,
+    include_in_schema=INCLUDE_PRIVATE_ROUTES,
+)
+def extract_variables_from_messages(
+    request: ExtractVariablesRequest,
+) -> ExtractVariablesResponse:
+    return extract_variables_from_messages(request)

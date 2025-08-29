@@ -22,16 +22,18 @@ async def _insert_tenant(
     slug: str,
     owner_id: str | None = None,
     org_id: str | None = None,
+    current_credits_usd: float = 0.0,
 ) -> TenantData:
     """Helper to insert a tenant directly into database."""
     async with pool.acquire() as conn:
         uid = await conn.fetchval(
-            "INSERT INTO tenants (slug, owner_id, org_id) VALUES ($1, $2, $3) RETURNING uid",
+            "INSERT INTO tenants (slug, owner_id, org_id, current_credits_usd) VALUES ($1, $2, $3, $4) RETURNING uid",
             slug,
             owner_id,
             org_id,
+            current_credits_usd,
         )
-    return TenantData(uid=uid, slug=slug, owner_id=owner_id, org_id=org_id)
+    return TenantData(uid=uid, slug=slug, owner_id=owner_id, org_id=org_id, current_credits_usd=current_credits_usd)
 
 
 @pytest.fixture
@@ -444,3 +446,69 @@ class TestListAPIKeys:
         keys = await tenant1_storage.list_api_keys()
         assert len(keys) == 1
         assert keys[0].name == "Tenant 1 Key"
+
+
+class TestDecrementCredits:
+    async def test_success(self, tenant_storage: PsqlTenantStorage, purged_psql: asyncpg.Pool) -> None:
+        # Insert tenant with initial credits
+        tenant_data = await _insert_tenant(purged_psql, "test-tenant", "owner123", current_credits_usd=100.0)
+        tenant_storage._tenant_uid = tenant_data.uid
+
+        result = await tenant_storage.decrement_credits(25.0)
+
+        # Verify returned data
+
+        assert result.uid == tenant_data.uid
+        assert result.current_credits_usd == 75.0
+        assert result.slug == tenant_data.slug
+        assert result.owner_id == tenant_data.owner_id
+
+        # Verify database was updated
+        async with purged_psql.acquire() as conn:
+            row = await conn.fetchrow("SELECT current_credits_usd FROM tenants WHERE uid = $1", tenant_data.uid)
+            assert row is not None
+            assert row["current_credits_usd"] == 75.0
+
+    async def test_decrement_to_zero(self, tenant_storage: PsqlTenantStorage, purged_psql: asyncpg.Pool) -> None:
+        # Insert tenant with exact amount to decrement
+        initial_credits = 50.0
+        tenant_data = await _insert_tenant(purged_psql, "test-tenant", "owner123", current_credits_usd=initial_credits)
+        tenant_storage._tenant_uid = tenant_data.uid
+
+        # Decrement all credits
+        result = await tenant_storage.decrement_credits(initial_credits)
+
+        # Should result in zero credits
+        assert result.current_credits_usd == 0.0
+
+        # Verify in database
+        async with purged_psql.acquire() as conn:
+            row = await conn.fetchrow("SELECT current_credits_usd FROM tenants WHERE uid = $1", tenant_data.uid)
+            assert row is not None
+            assert row["current_credits_usd"] == 0.0
+
+    async def test_decrement_zero(self, tenant_storage: PsqlTenantStorage, purged_psql: asyncpg.Pool) -> None:
+        # Insert tenant with credits
+        initial_credits = 50.0
+        tenant_data = await _insert_tenant(purged_psql, "test-tenant", "owner123", current_credits_usd=initial_credits)
+        tenant_storage._tenant_uid = tenant_data.uid
+
+        # Decrement zero credits
+        result = await tenant_storage.decrement_credits(0.0)
+
+        # Credits should remain unchanged
+        assert result.current_credits_usd == initial_credits
+
+        # Verify in database
+        async with purged_psql.acquire() as conn:
+            row = await conn.fetchrow("SELECT current_credits_usd FROM tenants WHERE uid = $1", tenant_data.uid)
+            assert row is not None
+            assert row["current_credits_usd"] == initial_credits
+
+    async def test_tenant_not_found(self, tenant_storage: PsqlTenantStorage, purged_psql: asyncpg.Pool) -> None:
+        # Set tenant_storage to use non-existent tenant UID
+        tenant_storage._tenant_uid = 99999
+
+        # Should raise ObjectNotFoundError
+        with pytest.raises(ObjectNotFoundError, match="Tenant with uid 99999 not found"):
+            await tenant_storage.decrement_credits(10.0)

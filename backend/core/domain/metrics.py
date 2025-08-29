@@ -39,17 +39,15 @@ def send_counter(name: str, value: int = 1, **tags: str | float | bool | None):
     add_background_task(Metric(name=name, counter=value, tags={k: v for k, v in tags.items() if v is not None}).send())
 
 
-# TODO: switch to sync like send_counter
-async def send_gauge(name: str, value: float, timestamp: float | None = None, **tags: str | float | bool | None):
-    try:
-        await Metric(
+def send_gauge(name: str, value: float, timestamp: float | None = None, **tags: str | float | bool | None):
+    add_background_task(
+        Metric(
             name=name,
             gauge=value,
             timestamp=timestamp or time.time(),
             tags={k: v for k, v in tags.items() if v is not None},
-        ).send()
-    except Exception:  # noqa: BLE001
-        get_logger(__name__).exception("Failed to send gauge metric", name=name, tags=tags)
+        ).send(),
+    )
 
 
 @contextmanager
@@ -58,6 +56,4 @@ def measure_time(name: str, **tags: str | float | bool | None):
     try:
         yield
     finally:
-        add_background_task(
-            send_gauge(name, time.time() - start, timestamp=start, **tags),
-        )
+        send_gauge(name, time.time() - start, timestamp=start, **tags)

@@ -7,11 +7,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from structlog import get_logger
 
 from core.domain.exceptions import DefaultError
+from core.domain.models.models import Model
 from core.logs.setup_logs import setup_logs
 from core.providers._base.provider_error import ProviderError
 from protocol._common import probes_router
 from protocol._common.lifecycle import shutdown, startup
-from protocol.api import api_router, run_router
+from protocol.api import _api_router, _run_router
 from protocol.api._api_utils import convert_error_response
 from protocol.api._dependencies._misc import set_start_time
 from protocol.api._mcp import mcp
@@ -80,12 +81,21 @@ async def default_error_handler(request: Request, exc: DefaultError):
     return convert_error_response(exc.serialized())
 
 
+@api.get("/v1/models/ids")
+async def get_model_ids() -> list[str]:
+    return list(Model)
+
+
 api.include_router(probes_router.router)
 
-# TODO: split when we have separate containers
-api.include_router(api_router.router)
-api.include_router(run_router.router)
+_INCLUDED_ROUTES = set(os.environ["INCLUDED_ROUTES"].split(",")) if os.environ.get("INCLUDED_ROUTES") else set()
 
+
+if not _INCLUDED_ROUTES or "api" in _INCLUDED_ROUTES:
+    api.include_router(_api_router.router)
+
+if not _INCLUDED_ROUTES or "run" in _INCLUDED_ROUTES:
+    api.include_router(_run_router.router)
 
 api.mount("/", _mcp_app)
 

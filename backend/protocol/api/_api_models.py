@@ -777,3 +777,10 @@ class DeploymentUpdate(BaseModel):
         if not self.version and not self.metadata:
             raise ValueError("Either version or metadata must be provided")
         return self
+
+
+class OpenAIListResult[T: BaseModel](BaseModel):
+    """A page of results as defined in the OpenAI api reference, see https://platform.openai.com/docs/api-reference/"""
+
+    object: Literal["list"] = "list"
+    data: list[T]

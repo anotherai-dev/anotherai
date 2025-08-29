@@ -6,7 +6,7 @@ from openai import AsyncOpenAI
 from pytest_httpx import HTTPXMock
 
 from core.domain.models.providers import Provider
-from core.utils.background import wait_for_background_tasks
+from core.utils.background import active_background_task_count, wait_for_background_tasks
 from tests.pausable_memory_broker import PausableInMemoryBroker
 from tests.utils import fixtures_json
 
@@ -36,8 +36,20 @@ class IntegrationTestClient:
         self.broker = broker
         self.httpx_mock = httpx_mock
 
-    async def wait_for_background(self):
-        await wait_for_background_tasks()
+    async def wait_for_background(self, max_retries: int = 10):
+        running: list[Any] = []
+        for _ in range(max_retries):
+            await wait_for_background_tasks()
+
+            await self.broker.wait_all()
+            # Retrying since some tasks could have created other tasks
+            running = [task for task in self.broker._running_tasks if not task.done()]  # pyright: ignore [reportPrivateUsage]  # noqa: SLF001
+            if not running and not active_background_task_count():
+                return
+
+        raise TimeoutError(
+            f"Tasks did not complete {list(running)} or {active_background_task_count()} background tasks",
+        )
 
     def openai_client(self):
         return AsyncOpenAI(http_client=self.client, api_key="").with_options(

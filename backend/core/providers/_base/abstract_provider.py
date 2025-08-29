@@ -740,7 +740,7 @@ class AbstractProvider[ProviderConfigVar: ProviderConfigInterface, ProviderReque
 
     async def _log_rate_limit(self, limit_name: str, percentage: float, options: ProviderOptions):
         """Percentage is a float between 0 and 1"""
-        await send_gauge(
+        send_gauge(
             "provider_rate_limit",
             percentage,
             provider=self.name(),
