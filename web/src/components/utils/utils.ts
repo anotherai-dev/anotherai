@@ -390,8 +390,13 @@ export function normalizeForComparison(value: unknown): string {
     for (const key of sortedKeys) {
       const objValue = (value as Record<string, unknown>)[key];
       // For primitive values, store them directly
-      if (objValue === null || objValue === undefined ||
-          typeof objValue === "string" || typeof objValue === "number" || typeof objValue === "boolean") {
+      if (
+        objValue === null ||
+        objValue === undefined ||
+        typeof objValue === "string" ||
+        typeof objValue === "number" ||
+        typeof objValue === "boolean"
+      ) {
         normalizedObj[key] = objValue;
       } else {
         // For complex values, parse the normalized string back to object/array
