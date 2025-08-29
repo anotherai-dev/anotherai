@@ -6,7 +6,7 @@ export const defaultQueryParts = {
   limit: "LIMIT 100",
 };
 
-export const buildQuery = (whereClause?: string) => {
+export const buildQuery = (whereClause?: string | null) => {
   const parts = [
     defaultQueryParts.select,
     defaultQueryParts.from,
