@@ -363,7 +363,7 @@ export function getVersionKeys(versions: Version[]): string[] {
 }
 
 // Helper function to normalize objects and arrays for order-independent comparison
-function normalizeForComparison(value: unknown): string {
+export function normalizeForComparison(value: unknown): string {
   if (value === null || value === undefined) {
     return "null";
   }
@@ -389,7 +389,19 @@ function normalizeForComparison(value: unknown): string {
 
     for (const key of sortedKeys) {
       const objValue = (value as Record<string, unknown>)[key];
-      normalizedObj[key] = JSON.parse(normalizeForComparison(objValue));
+      // For primitive values, store them directly
+      if (objValue === null || objValue === undefined ||
+          typeof objValue === "string" || typeof objValue === "number" || typeof objValue === "boolean") {
+        normalizedObj[key] = objValue;
+      } else {
+        // For complex values, parse the normalized string back to object/array
+        try {
+          normalizedObj[key] = JSON.parse(normalizeForComparison(objValue));
+        } catch {
+          // If parsing fails, fall back to string representation
+          normalizedObj[key] = String(objValue);
+        }
+      }
     }
 
     return JSON.stringify(normalizedObj);
