@@ -362,6 +362,42 @@ export function getVersionKeys(versions: Version[]): string[] {
   return Array.from(allKeys).filter((key) => !blackListedKeys.includes(key));
 }
 
+// Helper function to normalize objects and arrays for order-independent comparison
+function normalizeForComparison(value: unknown): string {
+  if (value === null || value === undefined) {
+    return "null";
+  }
+
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  if (Array.isArray(value)) {
+    // Sort array elements for consistent ordering
+    const sortedArray = [...value].sort((a, b) => {
+      const normalizedA = normalizeForComparison(a);
+      const normalizedB = normalizeForComparison(b);
+      return normalizedA.localeCompare(normalizedB);
+    });
+    return JSON.stringify(sortedArray);
+  }
+
+  if (typeof value === "object") {
+    // Sort object keys and recursively normalize values
+    const sortedKeys = Object.keys(value as Record<string, unknown>).sort();
+    const normalizedObj: Record<string, unknown> = {};
+
+    for (const key of sortedKeys) {
+      const objValue = (value as Record<string, unknown>)[key];
+      normalizedObj[key] = JSON.parse(normalizeForComparison(objValue));
+    }
+
+    return JSON.stringify(normalizedObj);
+  }
+
+  return String(value);
+}
+
 export function getMatchingVersionKeys(versions: Version[]): string[] {
   // For single version, return all keys (including defaults) except blacklisted ones
   if (versions.length === 1) {
@@ -392,25 +428,7 @@ export function getMatchingVersionKeys(versions: Version[]): string[] {
   for (const key of filteredKeys) {
     const values = versionsWithDefaults.map((version) => {
       const value = (version as unknown as Record<string, unknown>)[key];
-
-      // Convert all values to strings for consistent comparison
-      if (value === null || value === undefined) {
-        return "null";
-      }
-
-      if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-        return String(value);
-      }
-
-      if (Array.isArray(value)) {
-        return JSON.stringify(value);
-      }
-
-      if (typeof value === "object") {
-        return JSON.stringify(value);
-      }
-
-      return String(value);
+      return normalizeForComparison(value);
     });
 
     // Check if all values are the same
