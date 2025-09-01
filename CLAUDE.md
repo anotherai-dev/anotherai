@@ -30,9 +30,9 @@ Run Jest tests locally:
 ```bash
 cd web
 npm test              # Run tests once
-npm run test:watch    # Run tests in watch mode  
-npm run test:coverage # Run tests with coverage
-npm run test:ci       # Run tests for CI/CD
+yarn test:watch    # Run tests in watch mode
+yarn test:coverage # Run tests with coverage
+yarn test:ci       # Run tests for CI/CD
 ```
 
 
@@ -50,7 +50,7 @@ Use `gh` CLI commands (e.g., `gh issue view 124`, `gh pr view 45`) instead of we
 
 When writing GitHub comments (on issues or PRs), always identify that the comment was written by Claude Code by adding a signature or identifier, such as:
 - "-- Claude Code" at the end of the comment
-- Or starting with "Claude Code: " 
+- Or starting with "Claude Code: "
 - Or including "[via Claude Code]" in the comment
 
 ## Team GitHub Usernames
