@@ -42,12 +42,27 @@ class TestExtractReferences:
             pytest.param(
                 {"model": "anotherai/deployments/123"},
                 "123",
-                id="in model",
+                id="in model deployment plural",
+            ),
+            pytest.param(
+                {"model": "anotherai/deployment/123"},
+                "123",
+                id="in model deployment single",
+            ),
+            pytest.param(
+                {"model": "deployment/123"},
+                "123",
+                id="in model deployment single without anotherai prefix",
             ),
             pytest.param(
                 {"deployment_id": "123"},
                 "123",
                 id="in body",
+            ),
+            pytest.param(
+                {"deployment_id": "anotherai/deployment/123"},
+                "123",
+                id="in body deployment single with anotherai prefix",
             ),
         ],
     )

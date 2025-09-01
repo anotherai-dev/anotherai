@@ -47,7 +47,7 @@ async def test_create_and_use_deployment(test_api_client: IntegrationTestClient)
 
     # Now we can use the deployment
     response = await client.chat.completions.create(
-        model="anotherai/deployments/test-agent:production#1",
+        model="anotherai/deployment/test-agent:production#1",
         messages=[
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": "Hello, night!"},
@@ -77,7 +77,7 @@ async def test_create_and_use_deployment(test_api_client: IntegrationTestClient)
     # Using the deployment should fail since the deployment doesn't support input variables
     with pytest.raises(OpenAIError) as e:
         await client.chat.completions.create(
-            model="anotherai/deployments/test-agent:production#1",
+            model="anotherai/deployment/test-agent:production#1",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant to {{name}}"},
                 {"role": "user", "content": "Bye"},
@@ -116,7 +116,7 @@ async def test_create_and_use_deployment(test_api_client: IntegrationTestClient)
 
     # I can use the new deployment
     response3 = await client.chat.completions.create(
-        model="anotherai/deployments/dep2",
+        model="anotherai/deployment/dep2",
         messages=[
             # Should not have to supply the system message since it's in the deployment
             {"role": "user", "content": "Bye bye"},
@@ -179,7 +179,7 @@ async def test_create_and_use_deployment(test_api_client: IntegrationTestClient)
     )
     assert updated["version"]["prompt"] == completion4["version"]["prompt"]
     response5 = await client.chat.completions.create(
-        model="anotherai/deployments/dep2",
+        model="anotherai/deployment/dep2",
         messages=[
             # Should not have to supply the system message since it's in the deployment
             {"role": "user", "content": "Byeeeee"},
@@ -229,7 +229,7 @@ async def test_deployment_archive(test_api_client: IntegrationTestClient):
 
     # And use it
     response = await client.chat.completions.create(
-        model="anotherai/deployments/test-agent:production#1",
+        model="anotherai/deployment/test-agent:production#1",
         messages=[{"role": "user", "content": "Hello, world!"}],
     )
     assert response.version_id == version_id  # pyright: ignore[reportAttributeAccessIssue]
