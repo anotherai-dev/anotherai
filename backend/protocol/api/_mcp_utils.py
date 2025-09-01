@@ -5,8 +5,8 @@ from typing import Any, override
 from fastmcp.server import FastMCP
 from fastmcp.server.dependencies import get_http_request
 from fastmcp.server.middleware import CallNext, Middleware, MiddlewareContext
-from fastmcp.tools.tool import default_serializer
-from mcp.types import CallToolRequestParams, CallToolResult
+from fastmcp.tools.tool import ToolResult, default_serializer
+from mcp.types import CallToolRequestParams
 from pydantic import BaseModel, ValidationError
 from structlog import get_logger
 
@@ -33,8 +33,8 @@ class BaseMiddleware(Middleware):
     async def on_call_tool(
         self,
         context: MiddlewareContext[CallToolRequestParams],
-        call_next: CallNext[CallToolRequestParams, CallToolResult],
-    ) -> CallToolResult:
+        call_next: CallNext[CallToolRequestParams, ToolResult],
+    ) -> ToolResult:
         # Trying to deserialize JSON sent as a string
         # See https://github.com/jlowin/fastmcp/issues/932
         if context.message.arguments:
