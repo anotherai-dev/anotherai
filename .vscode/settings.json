@@ -18,6 +18,14 @@
     "node_modules": true,
     "**/.next": true
   },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/bower_components": true,
+    "**/*.code-search": true,
+    "yarn.lock": true,
+    "yarn-*.cjs": true,
+    "webyarn sdks base/.next": true
+  },
   "jest.runMode": "on-demand",
   "jest.outputConfig": "test-results-based",
   "python.testing.pytestArgs": ["-vv", "-s"],
