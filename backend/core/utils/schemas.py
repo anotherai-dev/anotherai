@@ -50,6 +50,15 @@ class InvalidSchemaError(Exception):
     pass
 
 
+class IncompatibleSchemaError(Exception):
+    def __init__(self, msg: str, keypath: list[int | str]):
+        super().__init__(msg)
+        self.keypath = keypath
+
+    def __str__(self) -> str:
+        return f"Incompatibily at {'.'.join(str(k) for k in self.keypath)}: {super().__str__()}"
+
+
 _ONE_OF_KEYS = ("oneOf", "anyOf", "allOf")
 
 
@@ -404,6 +413,32 @@ class JsonSchema:
         if isinstance(self.parent[1], int):  # pyright: ignore[reportUnnecessaryIsInstance]
             self.parent[0]._remove_item(self.parent[1], recursive=recursive)  # noqa: SLF001
             return
+
+    def _check_compatible_inner(self, other: Self, keypath: list[int | str]):
+        if self.type != other.type:
+            raise IncompatibleSchemaError("Types are not compatible", keypath)
+        match self.type:
+            case "object":
+                properties = set(self.schema.get("properties", {}))
+                other_properties = set(other.schema.get("properties", {}))
+                if properties != other_properties:
+                    extra_properties = properties - other_properties
+                    missing_properties = other_properties - properties
+                    msg = ["Object properties are not compatible"]
+                    if extra_properties:
+                        msg.append(f"Extra properties: {extra_properties}")
+                    if missing_properties:
+                        msg.append(f"Missing properties: {missing_properties}")
+                    raise IncompatibleSchemaError(". ".join(msg), keypath)
+                for key in properties:
+                    self.child_schema(key)._check_compatible_inner(other.child_schema(key), [*keypath, key])  # noqa: SLF001
+            case "array":
+                self.child_schema(0)._check_compatible_inner(other.child_schema(0), [*keypath, "[]"])  # noqa: SLF001
+            case _:
+                return
+
+    def check_compatible(self, other: Self):
+        return self._check_compatible_inner(other, [])
 
 
 def strip_json_schema_metadata_keys(

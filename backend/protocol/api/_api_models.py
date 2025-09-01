@@ -5,8 +5,11 @@ or in the conversion layer."""
 from datetime import date, datetime
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
+from pydantic.json_schema import SkipJsonSchema
 
+from core.domain.reasoning_effort import ReasoningEffort
+from core.domain.tool_choice import ToolChoice
 from core.utils.fields import datetime_factory
 
 
@@ -88,9 +91,8 @@ class OutputSchema(BaseModel):
 class Version(BaseModel):
     id: str = Field(description="The id of the version. Auto generated.", default="")
     model: str
-    # Default values match OpenAI API defaults (temperature=1.0, top_p=1.0)
-    temperature: float = 1.0
-    top_p: float = 1.0
+    temperature: float | None = None
+    top_p: float | None = None
     tools: list[Tool] | None = Field(
         default=None,
         description="A list of tools that the model can use. If empty, no tools are used.",
@@ -113,6 +115,27 @@ class Version(BaseModel):
         default=None,
         description="A JSON schema for the output of the model, aka the schema in the response format",
     )
+
+    max_output_tokens: int | None = Field(
+        default=None,
+        description="The maximum number of tokens to generate in the prompt",
+    )
+
+    tool_choice: ToolChoice | None = None
+
+    presence_penalty: float | None = None
+
+    frequency_penalty: float | None = None
+
+    parallel_tool_calls: bool | None = None
+
+    reasoning_effort: ReasoningEffort | None = None
+
+    reasoning_budget: int | None = None
+
+    use_structured_generation: SkipJsonSchema[bool | None] = None
+
+    provider: SkipJsonSchema[str | None] = None
 
 
 class Error(BaseModel):
@@ -309,7 +332,7 @@ class Completion(BaseModel):
         description="Annotations associated with the completion and the completion only. Annotations added within the scope of an experiment are not included here.",
     )
 
-    metadata: dict[str, Any] = Field(
+    metadata: dict[str, Any] | None = Field(
         description="Metadata associated with the completion. Can be used to store additional information about the completion.",
     )
 
@@ -692,3 +715,72 @@ class CreateAPIKeyRequest(BaseModel):
 class QueryCompletionResponse(BaseModel):
     rows: list[dict[str, Any]]
     url: str
+
+
+# ------------------------------------------------
+# Deployments
+
+
+class Deployment(BaseModel):
+    """A deployment represents a specific model configuration for production use."""
+
+    id: str = Field(
+        description="A unique user provided ID for the deployment",
+        examples=["my-agent-id:production#1"],
+    )
+
+    agent_id: str
+
+    version: Version = Field(
+        description="Version configuration including model, prompt, and tools",
+    )
+    created_at: datetime = Field(
+        default_factory=datetime_factory,
+        description="The timestamp when the deployment was created",
+    )
+
+    created_by: str
+
+    updated_at: datetime | None = None
+
+    metadata: dict[str, Any] | None = None
+
+    url: str
+
+    archived_at: datetime | None = None
+
+
+class DeploymentCreate(BaseModel):
+    version: Version
+    metadata: dict[str, Any] | None = None
+    created_by: str
+    agent_id: str
+    id: str
+
+
+class DeploymentUpdate(BaseModel):
+    version: Annotated[
+        Version | None,
+        Field(
+            description="""A new version for the deployment. Note that it is only possible to update the version of a
+        deployment when the new version expects a compatible variables (aka input_variables_schema) and response
+        format types (aka output_schema). Schemas are considered compatible if the structure they describe are
+        the same, i-e all fields have the same name, properties and types.""",
+        ),
+    ] = None
+
+    metadata: dict[str, Any] | None = None
+
+    @model_validator(mode="after")
+    def post_validate(self):
+        # check if at least one field is not None
+        if not self.version and not self.metadata:
+            raise ValueError("Either version or metadata must be provided")
+        return self
+
+
+class OpenAIListResult[T: BaseModel](BaseModel):
+    """A page of results as defined in the OpenAI api reference, see https://platform.openai.com/docs/api-reference/"""
+
+    object: Literal["list"] = "list"
+    data: list[T]

@@ -19,6 +19,7 @@
       }
     ],
     "paths": {
+      "@/auth/*": ["./src/auth/noauth/*"],
       "@/*": ["./src/*"]
     }
   },

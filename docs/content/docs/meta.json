@@ -1,0 +1,4 @@
+{
+  "title": "Documentation",
+  "pages": ["index", "agents", "deployments", "inference", "observability", "examples", "pricing"]
+}

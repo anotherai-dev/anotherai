@@ -16,8 +16,7 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   };
 
   // Token will be handled backend side
-
-  // Make the request
+  // Make the request through Next.js API proxy
   return fetch(`/api${path}`, {
     ...options,
     headers,

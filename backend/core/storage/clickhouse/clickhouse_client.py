@@ -9,11 +9,13 @@ from clickhouse_connect.driver.query import QueryResult
 from pydantic.main import BaseModel
 
 from core.domain.agent_completion import AgentCompletion
+from core.domain.agent_output import AgentOutput
 from core.domain.annotation import Annotation
 from core.domain.exceptions import BadRequestError, ObjectNotFoundError
 from core.domain.experiment import Experiment
+from core.domain.version import Version
 from core.storage.clickhouse._models._ch_annotation import ClickhouseAnnotation
-from core.storage.clickhouse._models._ch_completion import ClickhouseCompletion
+from core.storage.clickhouse._models._ch_completion import ClickhouseCompletion, parse_messages
 from core.storage.clickhouse._models._ch_experiment import ClickhouseExperiment
 from core.storage.clickhouse._models._ch_field_utils import data_and_columns, zip_columns
 from core.storage.clickhouse._utils import clone_client, sanitize_readonly_privileges
@@ -182,6 +184,44 @@ class ClickhouseClient(CompletionStorage):
         column_names = cast(tuple[str, ...], result.column_names)
 
         return [dict(zip(column_names, row, strict=False)) for row in result.result_rows]
+
+    @override
+    async def get_version_by_id(self, agent_id: str, version_id: str) -> tuple[Version, str]:
+        result = await self._client.query(
+            """
+            SELECT id, version FROM completions WHERE version_id = {version_id:String} and agent_id = {agent_id:String} LIMIT 1
+            """,
+            parameters={"version_id": version_id, "agent_id": agent_id},
+        )
+        if not result.result_rows:
+            raise ObjectNotFoundError(object_type="version")
+        return Version.model_validate_json(result.result_rows[0][1]), str(result.result_rows[0][0])
+
+    @override
+    async def cached_output(
+        self,
+        version_id: str,
+        input_id: str,
+        max_memory_usage: int = 1024 * 1024 * 5,  # 5MB
+        max_execution_time: float = 0.1,  # 100ms
+    ) -> AgentOutput | None:
+        result = await self._client.query(
+            _CACHED_OUTPUT_QUERY,
+            parameters={"version_id": version_id, "input_id": input_id},
+            settings={
+                "max_memory_usage": max_memory_usage,
+                "max_execution_time": max_execution_time,
+            },
+        )
+        if not result.result_rows:
+            return None
+        messages = parse_messages(result.result_rows[0][0])
+        return AgentOutput(messages=messages)
+
+
+_CACHED_OUTPUT_QUERY = """
+SELECT output_messages FROM completions PREWHERE input_id = {input_id:FixedString(32)} WHERE version_id = {version_id:FixedString(32)} and output_error = '' LIMIT 1
+"""
 
 
 def _map_field(field: CompletionField) -> str:

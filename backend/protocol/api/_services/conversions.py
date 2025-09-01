@@ -12,6 +12,7 @@ from core.domain.agent_output import AgentOutput as DomainOutput
 from core.domain.annotation import Annotation as DomainAnnotation
 from core.domain.api_key import APIKey as DomainAPIKey
 from core.domain.api_key import CompleteAPIKey as DomainCompleteAPIKey
+from core.domain.deployment import Deployment as DomainDeployment
 from core.domain.exceptions import BadRequestError
 from core.domain.experiment import Experiment as DomainExperiment
 from core.domain.file import File
@@ -40,6 +41,7 @@ from protocol.api._api_models import (
     CreateAgentRequest,
     CreateExperimentRequest,
     CreateViewResponse,
+    Deployment,
     Error,
     Experiment,
     Graph,
@@ -61,7 +63,7 @@ from protocol.api._api_models import (
     View,
     ViewFolder,
 )
-from protocol.api._services._urls import experiments_url, view_url
+from protocol.api._services._urls import deployment_url, experiments_url, view_url
 
 _log = get_logger(__name__)
 
@@ -227,6 +229,16 @@ def version_to_domain(version: Version) -> DomainVersion:
         enabled_tools=[tool_to_domain(t) for t in version.tools] if version.tools else None,
         prompt=[message_to_domain(m) for m in version.prompt] if version.prompt else None,
         output_schema=output_schema_to_domain(version.output_schema) if version.output_schema else None,
+        input_variables_schema=version.input_variables_schema,
+        max_output_tokens=version.max_output_tokens,
+        tool_choice=version.tool_choice,
+        parallel_tool_calls=version.parallel_tool_calls,
+        reasoning_effort=version.reasoning_effort,
+        reasoning_budget=version.reasoning_budget,
+        presence_penalty=version.presence_penalty,
+        frequency_penalty=version.frequency_penalty,
+        use_structured_generation=version.use_structured_generation,
+        provider=version.provider,
     )
 
 
@@ -234,11 +246,21 @@ def version_from_domain(version: DomainVersion) -> Version:
     return Version(
         id=version.id,
         model=version.model or "",
-        temperature=version.temperature or 1.0,
-        top_p=version.top_p or 1.0,
+        temperature=version.temperature,
+        top_p=version.top_p,
         tools=[tool_from_domain(t) for t in version.enabled_tools] if version.enabled_tools else None,
         prompt=[message_from_domain(m) for m in version.prompt] if version.prompt else None,
         output_schema=output_schema_from_domain(version.output_schema) if version.output_schema else None,
+        input_variables_schema=version.input_variables_schema,
+        max_output_tokens=version.max_output_tokens,
+        tool_choice=version.tool_choice,
+        parallel_tool_calls=version.parallel_tool_calls,
+        reasoning_effort=version.reasoning_effort,
+        reasoning_budget=version.reasoning_budget,
+        presence_penalty=version.presence_penalty,
+        frequency_penalty=version.frequency_penalty,
+        use_structured_generation=version.use_structured_generation,
+        provider=version.provider,
     )
 
 
@@ -273,7 +295,7 @@ def completion_from_domain(completion: DomainCompletion) -> Completion:
         output=output_from_domain(completion.agent_output),
         messages=[message_from_domain(m) for m in completion.messages] if completion.messages else [],
         annotations=None,  # TODO:
-        metadata=completion.metadata or {},
+        metadata=completion.metadata or None,
         cost_usd=completion.cost_usd or 0.0,
         duration_seconds=completion.duration_seconds or 0.0,
     )
@@ -579,3 +601,31 @@ def api_key_from_domain_complete(api_key: DomainCompleteAPIKey) -> CompleteAPIKe
         created_by=api_key.created_by,
         key=api_key.api_key,
     )
+
+
+def deployment_from_domain(deployment: DomainDeployment) -> Deployment:
+    return Deployment(
+        id=deployment.id,
+        agent_id=deployment.agent_id,
+        version=version_from_domain(deployment.version),
+        metadata=deployment.metadata or {},
+        created_at=_sanitize_datetime(deployment.created_at),
+        updated_at=_sanitize_datetime(deployment.updated_at) if deployment.updated_at else None,
+        url=deployment_url(deployment.id),
+        created_by=deployment.created_by,
+        archived_at=_sanitize_datetime(deployment.archived_at) if deployment.archived_at else None,
+    )
+
+
+def page_token_to_datetime(token: str | None):
+    if not token:
+        return None
+    try:
+        int_value = int(token)
+    except ValueError as e:
+        raise BadRequestError("Invalid page token") from e
+    return datetime.fromtimestamp(int_value, UTC)
+
+
+def page_token_from_datetime(dt: datetime) -> str:
+    return str(int(dt.timestamp()))

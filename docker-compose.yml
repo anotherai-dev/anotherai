@@ -82,14 +82,19 @@ services:
       context: .
       dockerfile: web.Dockerfile
       target: dev
+      args:
+        - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
     ports:
       - 3000:3000
+    env_file:
+      - .env
     environment:
       ANOTHERAI_API_URL: http://api:8000
     volumes:
       - ./web:/app/web
     depends_on:
       - api
+
 
   docs:
     build:
