@@ -5146,6 +5146,7 @@ __metadata:
     lucide-react: "npm:^0.539.0"
     next: "npm:^15.4.6"
     postcss: "npm:^8.5.3"
+    prettier: "npm:^3.6.2"
     react: "npm:^19.1.0"
     react-dom: "npm:^19.1.0"
     tailwind-merge: "npm:^3.3.0"
