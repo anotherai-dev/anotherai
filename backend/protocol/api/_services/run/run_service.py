@@ -34,7 +34,7 @@ from protocol.api._services.run._run_conversions import (
 _log = structlog.get_logger(__name__)
 
 
-_DEPLOYMENT_REGEXP = re.compile(r"^(anotherai)?/deployments?/(.+)$")
+_DEPLOYMENT_REGEXP = re.compile(r"^(anotherai/)?deployments?/(.+)$")
 
 
 class _EnvironmentRef(NamedTuple):
