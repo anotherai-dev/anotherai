@@ -9,6 +9,8 @@ from core.domain.tenant_data import TenantData
 from core.storage.tenant_storage import TenantStorage
 from core.utils.signature_verifier import SignatureVerifier
 
+NO_AUTHORIZATION_ALLOWED = os.getenv("NO_AUTHORIZATION_ALLOWED") == "true"
+
 
 @final
 class SecurityService:
@@ -46,8 +48,7 @@ class SecurityService:
         if not authorization or not authorization.startswith("Bearer "):
             # Shortcut to allow avoiding authentication alltogether
             # We basically create a tenant 0
-            # TODO: change to remove default
-            if os.getenv("NO_AUTHORIZATION_ALLOWED") == "true":
+            if NO_AUTHORIZATION_ALLOWED:
                 return await self._no_tenant()
             raise InvalidTokenError(
                 "Authorization header is missing. "
