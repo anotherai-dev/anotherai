@@ -13,9 +13,9 @@ interface DeploymentInfoTooltipProps {
 export function DeploymentInfoTooltip({ deploymentId, agentId }: DeploymentInfoTooltipProps) {
   const { showToast } = useToast();
 
-  const debugPromptText = `Debug what's going on with my deployed version of anotherai/agents/${agentId}/versions/${deploymentId}. Once you've figured out the problem, create an improved version and a new experiment comparing the current deployed version with the improved version. The problem I'm seeing is: `;
+  const debugPromptText = `Debug what's going on with my deployed version of anotherai/deployment/${deploymentId}. Once you've figured out the problem, create an improved version and a new experiment comparing the current deployed version with the improved version. The problem I'm seeing is: `;
 
-  const newModelPromptText = `Retry the last 10 completions of anotherai/agents/${agentId}/versions/${deploymentId} and compare the outputs with `;
+  const newModelPromptText = `Retry the last 10 completions of anotherai/deployment/${deploymentId} and compare the outputs with `;
 
   const handleCopyDebugPrompt = async () => {
     try {
@@ -59,7 +59,7 @@ export function DeploymentInfoTooltip({ deploymentId, agentId }: DeploymentInfoT
             </div>
           </div>
           <div className="mt-3 italic font-bold w-full whitespace-pre-wrap break-words">
-            Debug what&apos;s going on with my deployed version of anotherai/agents/{agentId}/versions/{deploymentId}
+            Debug what&apos;s going on with my deployed version of anotherai/deployment/{deploymentId}
             ...[describe the problem you&apos;re seeing here]
           </div>
         </div>
@@ -94,8 +94,8 @@ export function DeploymentInfoTooltip({ deploymentId, agentId }: DeploymentInfoT
             </div>
           </div>
           <div className="mt-3 italic font-bold w-full whitespace-pre-wrap break-words">
-            Retry the last 10 completions of anotherai/agents/{agentId}/versions/{deploymentId} and compare the outputs
-            with [add the model you&apos;d like to try].
+            Retry the last 10 completions of anotherai/deployment/{deploymentId} and compare the outputs with [add the
+            model you&apos;d like to try].
           </div>
         </div>
 

@@ -64,7 +64,7 @@ export function VersionHeader(props: VersionHeaderProps) {
   const { showToast } = useToast();
 
   const handleCopyVersion = async () => {
-    const versionPath = `anotherai/agents/${agentId}/versions/${version.id}`;
+    const versionPath = `anotherai/deployment/${version.id}`;
     try {
       await navigator.clipboard.writeText(versionPath);
       showToast("Copied to clipboard");
