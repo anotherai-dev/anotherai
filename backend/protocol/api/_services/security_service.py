@@ -47,7 +47,7 @@ class SecurityService:
             # Shortcut to allow avoiding authentication alltogether
             # We basically create a tenant 0
             # TODO: change to remove default
-            if os.getenv("NO_TENANT_ALLOWED", "true") == "true":
+            if os.getenv("NO_AUTHORIZATION_ALLOWED") == "true":
                 return await self._no_tenant()
             raise InvalidTokenError(
                 "Authorization header is missing. "
