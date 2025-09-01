@@ -7,6 +7,7 @@ from taskiq import SimpleRetryMiddleware, TaskiqEvents, TaskiqMessage, TaskiqRes
 from core.domain.exceptions import InternalError
 from core.domain.metrics import send_counter, send_gauge
 from core.logs.setup_logs import setup_logs
+from protocol._common.broker_utils import use_in_memory_broker
 from protocol._common.errors import configure_scope_for_error
 from protocol._common.lifecycle import shutdown, startup
 
@@ -18,10 +19,13 @@ _log.propagate = True
 
 def _broker():
     broker_url = os.environ.get("JOBS_BROKER_URL")
-    if not broker_url or broker_url.startswith("memory://"):
+    if use_in_memory_broker(broker_url):
         from taskiq import InMemoryBroker
 
         return InMemoryBroker()
+
+    if not broker_url:
+        raise ValueError("JOBS_BROKER_URL is not set")
 
     if broker_url.startswith("redis"):
         from taskiq_redis import ListQueueBroker

@@ -161,9 +161,7 @@ async def patched_broker(migrated_database: None, test_blob_storage: None, click
     with patch("taskiq.InMemoryBroker", new=PausableInMemoryBroker):
         from protocol.worker.worker import broker
 
-    await broker.startup()
-    yield broker
-    await broker.shutdown()
+    return broker
 
 
 @pytest.fixture(scope="session", autouse=True)
