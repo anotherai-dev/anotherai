@@ -42,3 +42,14 @@ jobs:
       env: prod
       full_app_name: anotherai-api-prod
       label: latest
+
+
+  backend-deploy-worker:
+    needs: [backend-build]
+    uses: ./.github/workflows/.deploy.yml
+    secrets: inherit
+    with:
+      image_name: ${{ needs.backend-build.outputs.image_name }}
+      env: prod
+      full_app_name: anotherai-worker-prod
+      label: latest
