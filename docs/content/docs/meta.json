@@ -1,4 +1,4 @@
 {
   "title": "Documentation",
-  "pages": ["index", "agents", "deployments", "inference", "observability", "examples"]
+  "pages": ["index", "agents", "deployments", "inference", "observability", "workflows", "examples", "pricing"]
 }

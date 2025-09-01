@@ -1,3 +1,4 @@
+import { ModelIconWithName } from "@/components/ModelIcon";
 import { formatRelativeDateWithTime } from "@/components/utils/utils";
 import { Deployment } from "@/types/models";
 
@@ -13,7 +14,9 @@ export function DeploymentInfoSection({ deployment }: DeploymentInfoSectionProps
     },
     {
       label: "Model",
-      value: deployment.version.model,
+      value: (
+        <ModelIconWithName modelId={deployment.version.model} size={12} nameClassName="text-[13px] text-gray-700" />
+      ),
     },
     {
       label: "Created",

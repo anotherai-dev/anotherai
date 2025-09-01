@@ -18,9 +18,8 @@ def completion_runner(tenant: TenantDep, dependencies: LifecycleDependenciesDep)
     return CompletionRunner(
         tenant=tenant,
         completion_storage=dependencies.storage_builder.completions(tenant.uid),
-        agent_storage=dependencies.storage_builder.agents(tenant.uid),
-        file_storage=dependencies.storage_builder.files(tenant.uid),
         provider_factory=dependencies.provider_factory,
+        event_router=dependencies.tenant_event_router(tenant.uid),
     )
 
 
