@@ -13,12 +13,12 @@ permissions:
   packages: write
 
 jobs:
-  # backend-quality:
-  #   uses: ./.github/workflows/.backend-quality.yml
-  #   secrets: inherit
+  backend-quality:
+    uses: ./.github/workflows/.backend-quality.yml
+    secrets: inherit
 
   backend-build:
-    # needs: backend-quality
+    needs: backend-quality
     uses: ./.github/workflows/.build-azure.yml
     with:
       env: prod
