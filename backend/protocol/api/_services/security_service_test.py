@@ -23,15 +23,8 @@ def mock_tenant_storage():
 
 
 @pytest.fixture
-def security_service_no_tenant_allowed(mock_verifier: Mock, mock_tenant_storage: Mock):
-    with patch("os.environ", {"NO_TENANT_ALLOWED": "true"}):
-        yield SecurityService(tenant_storage=mock_tenant_storage, verifier=mock_verifier)
-
-
-@pytest.fixture
 def security_service(mock_verifier: Mock, mock_tenant_storage: Mock):
-    with patch("os.environ", {"NO_TENANT_ALLOWED": "false"}):
-        yield SecurityService(tenant_storage=mock_tenant_storage, verifier=mock_verifier)
+    return SecurityService(tenant_storage=mock_tenant_storage, verifier=mock_verifier)
 
 
 @pytest.fixture
@@ -46,30 +39,44 @@ class TestFindTenant:
 
         mock_tenant_storage.create_tenant.assert_not_called()
 
+    @patch("protocol.api._services.security_service.NO_AUTHORIZATION_ALLOWED", True)
     async def test_no_auth_tenant_allowed_existing_tenant(
         self,
-        security_service_no_tenant_allowed: SecurityService,
+        security_service: SecurityService,
         mock_tenant_storage: Mock,
         sample_tenant: TenantData,
     ):
         mock_tenant_storage.tenant_by_owner_id.return_value = sample_tenant
 
-        result = await security_service_no_tenant_allowed.find_tenant("")
+        result = await security_service.find_tenant("")
 
         assert result == sample_tenant
         mock_tenant_storage.tenant_by_owner_id.assert_called_once_with("")
         mock_tenant_storage.create_tenant.assert_not_called()
 
+    @patch("protocol.api._services.security_service.NO_AUTHORIZATION_ALLOWED", False)
+    async def test_no_auth_tenant_not_allowed_existing_tenant(
+        self,
+        security_service: SecurityService,
+        mock_tenant_storage: Mock,
+        sample_tenant: TenantData,
+    ):
+        with pytest.raises(InvalidTokenError):
+            await security_service.find_tenant("")
+
+        mock_tenant_storage.tenant_by_owner_id.assert_not_called()
+
+    @patch("protocol.api._services.security_service.NO_AUTHORIZATION_ALLOWED", True)
     async def test_no_auth_tenant_allowed_create_new_tenant(
         self,
-        security_service_no_tenant_allowed: SecurityService,
+        security_service: SecurityService,
         mock_tenant_storage: Mock,
         sample_tenant: TenantData,
     ):
         mock_tenant_storage.tenant_by_owner_id.side_effect = ObjectNotFoundError("tenant")
         mock_tenant_storage.create_tenant.return_value = sample_tenant
 
-        result = await security_service_no_tenant_allowed.find_tenant("")
+        result = await security_service.find_tenant("")
 
         assert result == sample_tenant
         mock_tenant_storage.tenant_by_owner_id.assert_called_once_with("")
@@ -101,16 +108,16 @@ class TestFindTenant:
 
     async def test_invalid_bearer_format_tenant_allowed(
         self,
-        security_service_no_tenant_allowed: SecurityService,
+        security_service: SecurityService,
         mock_tenant_storage: Mock,
         sample_tenant: TenantData,
     ):
         mock_tenant_storage.tenant_by_owner_id.return_value = sample_tenant
 
-        result = await security_service_no_tenant_allowed.find_tenant("Invalid format")
+        with pytest.raises(InvalidTokenError):
+            await security_service.find_tenant("Invalid format")
 
-        assert result == sample_tenant
-        mock_tenant_storage.tenant_by_owner_id.assert_called_once_with("")
+        mock_tenant_storage.tenant_by_owner_id.assert_not_called()
 
     async def test_api_key_valid(
         self,
