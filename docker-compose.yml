@@ -95,6 +95,7 @@ services:
     depends_on:
       - api
 
+
   docs:
     build:
       context: .

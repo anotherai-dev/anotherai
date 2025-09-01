@@ -33,6 +33,7 @@ WORKDIR /app/web
 
 CMD ["npx", "next", "dev"]
 
+
 FROM sources AS builder
 
 WORKDIR /app/web
