@@ -55,12 +55,13 @@ function CompletionsPageContent() {
   }, [value, router, searchParams]);
 
   return (
-    <div className="flex flex-col w-full h-full mx-auto px-4 py-8 gap-6 bg-gray-50">
+    <div className="flex flex-col w-full h-full mx-auto px-4 pt-4 pb-8 gap-4 bg-gray-50">
       <PageHeader
-        breadcrumbs={[{ label: "Completions" }]}
+        breadcrumbs={[]}
         title="Completions"
         description="Search through completions using SQL queries, view detailed completion lists, and open individual completion details for analysis"
         descriptionRightContent={<FilterCompletionsInstructions />}
+        className="pb-2"
       />
 
       <SearchSection

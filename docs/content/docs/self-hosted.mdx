@@ -103,6 +103,18 @@ Create an experiment in AnotherAI that compares how GPT-5 mini and GPT-4 mini pe
 Use AnotherAI to help me find a faster model for @[your-agent-name-here] while still maintaining accuracy.
 ```
 
+### Configuring Authentication
+
+The default configuration disables authentication all together using `NO_AUTHORIZATION_ALLOWED=true` in the `.env` file.
+
+If that variable is not present, the backend expects means to validate a JWT token in environment variables, either:
+- `JWKS_URL`: the URL to a valid JSON Web Key Set
+- `JWK`: a stringified JSON of a valid JSON Web Key
+
+> You can check [signature_verifier](/backend//core/utils/signature_verifier.py) for the implementation of the signature verification and the [lifecycle.py](/backend/protocol/_common/lifecycle.py) for how the verifier is selected.
+
+The Web Client currently only supports Clerk based authentication, which is also disabled by default. It can be activated by providing the `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` environment variables (note that the `NEXT_PUBLIC_...` key must be available at build time).
+
 ## Join the community
 
 If you have questions about AnotherAI, reach out to our team and community on our community [Slack](https://join.slack.com/t/anotherai-dev/shared_invite/zt-3av2prezr-Lz10~8o~rSRQE72m_PyIJA).

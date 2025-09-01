@@ -196,6 +196,20 @@ class PsqlTenantStorage(PsqlBaseStorage, TenantStorage):
             )
             return [self._validate(_APIKeyRow, row).to_domain() for row in rows]
 
+    @override
+    async def decrement_credits(self, credits: float):
+        async with self._pool.acquire() as connection:
+            row = await connection.fetchrow(
+                """
+                UPDATE tenants SET current_credits_usd = current_credits_usd - $1 WHERE uid = $2 RETURNING *
+                """,
+                credits,
+                self._tenant_uid,
+            )
+            if not row:
+                raise ObjectNotFoundError(f"Tenant with uid {self._tenant_uid} not found")
+            return self._validate(_TenantRow, row).to_domain()
+
 
 class _TenantRow(BaseModel):
     uid: int = 0
@@ -227,6 +241,7 @@ class _TenantRow(BaseModel):
             slug=self.slug,
             org_id=self.org_id,
             owner_id=self.owner_id,
+            current_credits_usd=self.current_credits_usd,
         )
 
 

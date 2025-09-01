@@ -3,6 +3,7 @@ from typing import final
 
 from structlog import get_logger
 
+from core.domain.events import EventRouter
 from core.providers._base.httpx_provider_base import HTTPXProviderBase
 from core.providers.factory.abstract_provider_factory import AbstractProviderFactory
 from core.storage.storage_builder import StorageBuilder
@@ -13,6 +14,7 @@ from core.utils.signature_verifier import (
     NoopSignatureVerifier,
     SignatureVerifier,
 )
+from protocol._common._default_event_router import SystemEventRouter, TenantEventRouter
 from protocol.api._services.security_service import SecurityService
 
 _log = get_logger(__name__)
@@ -24,9 +26,16 @@ class LifecycleDependencies:
         self.storage_builder = storage_builder
         self.provider_factory = provider_factory
         self.security_service = SecurityService(self.storage_builder.tenants(-1), _default_verifier())
+        self._system_event_router = SystemEventRouter()
 
     async def close(self):
         await self.storage_builder.close()
+
+    def tenant_event_router(self, tenant_uid: int) -> EventRouter:
+        return TenantEventRouter(tenant_uid, self._system_event_router)
+
+    def system_event_router(self) -> EventRouter:
+        return self._system_event_router
 
     shared: "LifecycleDependencies | None" = None
 
@@ -62,6 +71,6 @@ def _default_verifier() -> SignatureVerifier:
 
 
 async def _default_storage_builder() -> StorageBuilder:
-    from core.storage._default_storage_builder import DefaultStorageBuilder
+    from protocol._common._default_storage_builder import DefaultStorageBuilder
 
     return await DefaultStorageBuilder.create()
