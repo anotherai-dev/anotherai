@@ -28,7 +28,7 @@ class PsqlBaseStorage:
 
     @asynccontextmanager
     async def _connect(self):
-        async with self._pool.acquire() as conn:
+        async with self._pool.acquire() as conn, conn.transaction():
             # Set local variable for RLS
             _ = await conn.execute(f"SET app.tenant_uid = {int(self._tenant_uid)}")
             yield conn
