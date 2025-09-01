@@ -1,4 +1,14 @@
 {
   "title": "Documentation",
-  "pages": ["index", "agents", "deployments", "inference", "observability", "workflows", "examples", "pricing", "self-hosted"]
+  "pages": [
+    "index",
+    "agents",
+    "deployments",
+    "inference",
+    "observability",
+    "workflows",
+    "examples",
+    "pricing",
+    "self-hosted"
+  ]
 }
