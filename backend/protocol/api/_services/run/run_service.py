@@ -1,3 +1,4 @@
+import re
 from typing import Any, NamedTuple
 
 import structlog
@@ -32,7 +33,8 @@ from protocol.api._services.run._run_conversions import (
 
 _log = structlog.get_logger(__name__)
 
-_DEPLOYMENT_PREFIX = "anotherai/deployments/"
+
+_DEPLOYMENT_REGEXP = re.compile(r"^(anotherai/)?deployments?/(.+)$")
 
 
 class _EnvironmentRef(NamedTuple):
@@ -238,13 +240,17 @@ To list all models programmatically: Use the list_models tool""",
 
 def _env_from_fields(request: OpenAIProxyChatCompletionRequest) -> _EnvironmentRef | None:
     if request.deployment_id:
-        return _EnvironmentRef(
-            deployment_id=request.deployment_id.removeprefix(_DEPLOYMENT_PREFIX),
-        )
-    if request.model.startswith(_DEPLOYMENT_PREFIX):
-        return _EnvironmentRef(
-            deployment_id=request.model[len(_DEPLOYMENT_PREFIX) :],
-        )
+        # If the deployment id matches the deployment regexp, we still try and extract the actual deployment id
+        # from the pattern. Otherwise we accept as is since it is a dedicated field
+        match = _DEPLOYMENT_REGEXP.match(request.deployment_id)
+        if match:
+            return _EnvironmentRef(
+                deployment_id=match.group(2),
+            )
+        return _EnvironmentRef(deployment_id=request.deployment_id)
+
+    if match := _DEPLOYMENT_REGEXP.match(request.model):
+        return _EnvironmentRef(deployment_id=match.group(2))
     return None
 
 
@@ -295,7 +301,7 @@ def _extract_references(request: OpenAIProxyChatCompletionRequest) -> _Environme
                 f"""'{request.model}' does not refer to a valid model or deployment. The accepted formats are:
                 - <model>: a valid model name or alias
                 - <agent_id>/<model>: passing an agent_id as a prefix
-                - {_DEPLOYMENT_PREFIX}/<deployment_id>: passing a deployment id
+                - anotherai/deployment/<deployment_id>: passing a deployment id
 
                 If the model cannot be changed, it is also possible to pass the agent_id or deployment_id in the
                 body of the request.""",
