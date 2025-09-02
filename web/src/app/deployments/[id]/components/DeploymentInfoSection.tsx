@@ -1,5 +1,5 @@
 import { ModelIconWithName } from "@/components/ModelIcon";
-import { formatRelativeDateWithTime } from "@/components/utils/utils";
+import { formatDate } from "@/components/utils/utils";
 import { Deployment } from "@/types/models";
 
 interface DeploymentInfoSectionProps {
@@ -20,7 +20,7 @@ export function DeploymentInfoSection({ deployment }: DeploymentInfoSectionProps
     },
     {
       label: "Created",
-      value: formatRelativeDateWithTime(deployment.created_at),
+      value: formatDate(deployment.created_at, "relative_with_time"),
     },
   ];
 

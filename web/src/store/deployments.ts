@@ -157,8 +157,6 @@ export const useDeployments = create<DeploymentsState>((set, get) => ({
 
     try {
       const patchUrl = `/v1/deployments/${encodeURIComponent(deploymentId)}`;
-      console.log(`Attempting PATCH to: ${patchUrl}`);
-      console.log(`PATCH payload:`, JSON.stringify(update, null, 2));
 
       const response = await apiFetch(patchUrl, {
         method: "PATCH",
@@ -168,7 +166,6 @@ export const useDeployments = create<DeploymentsState>((set, get) => ({
         body: JSON.stringify(update),
       });
 
-      console.log(`PATCH response status: ${response.status}`);
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`PATCH request failed: ${errorText}`);
