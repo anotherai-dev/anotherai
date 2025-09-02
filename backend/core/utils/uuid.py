@@ -48,6 +48,13 @@ def is_uuid7(uuid: UUID) -> bool:
     return (uuid.int >> 76) & 0xF == 0x7
 
 
+def is_uuid7_str(uuid: str) -> bool:
+    try:
+        return is_uuid7(UUID(uuid))
+    except ValueError:
+        return False
+
+
 def uuid7_generation_time(uuid: UUID) -> datetime:
     """Get the generation time of the uuid"""
     return datetime.fromtimestamp((uuid.int >> 80) / 1000, tz=UTC)

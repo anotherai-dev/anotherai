@@ -1,6 +1,7 @@
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { HoverPopover } from "@/components/HoverPopover";
+import { ModelIconWithName } from "@/components/ModelIcon";
 import { AnnotationsView } from "@/components/annotations/AnnotationsView";
 import { Annotation, Version } from "@/types/models";
 
@@ -38,14 +39,13 @@ export function VersionHeaderModel(props: VersionHeaderModelProps) {
             </span>
           }
           position="rightOverlap"
-          delay={0}
           popoverClassName="bg-white border border-gray-200"
         >
           <div
             className="px-2 py-1 text-xs rounded font-medium bg-gray-200 border border-gray-300 text-gray-900 w-fit hover:bg-gray-300 cursor-pointer transition-colors"
             onClick={(e) => handleAddAnnotation(e)}
           >
-            {version.model}
+            <ModelIconWithName modelId={version.model} size={12} nameClassName="text-xs text-gray-900 font-medium" />
           </div>
         </HoverPopover>
       ) : (
@@ -53,7 +53,7 @@ export function VersionHeaderModel(props: VersionHeaderModelProps) {
           className="px-2 py-1 text-xs rounded font-medium bg-gray-200 border border-gray-300 text-gray-900 w-fit hover:bg-gray-300 cursor-pointer transition-colors"
           onClick={(e) => handleAddAnnotation(e)}
         >
-          {version.model}
+          <ModelIconWithName modelId={version.model} size={12} nameClassName="text-xs text-gray-900 font-medium" />
         </div>
       )}
       <AnnotationsView

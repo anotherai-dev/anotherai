@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { HoverPopover } from "@/components/HoverPopover";
 import { useOrFetchViewFolders, useViews } from "@/store/views";
 import { View } from "@/types/models";
+import { CreateViewInstructions } from "./CreateViewInstructions";
 import { EditableFolderNameRef } from "./EditableFolderName";
 import FolderCell from "./FolderCell";
 
@@ -245,17 +246,21 @@ export default function ViewsSection() {
   return (
     <div className="flex flex-col flex-1 p-2 min-h-0">
       {/* Views Header */}
-      <div className="flex items-center justify-between pl-3 pr-[9px] py-2 mb-1 text-[11px] font-medium text-gray-500 uppercase tracking-wider">
+      <div className="flex items-center justify-between pl-3 pr-0.5 py-2 mb-1 text-[11px] font-medium text-gray-500 uppercase tracking-wider">
         <span>Views</span>
-        <HoverPopover content="Create new folder" position="top" popoverClassName="bg-gray-800 rounded-[2px]">
-          <button
-            onClick={handleCreateFolder}
-            disabled={isCreatingFolder}
-            className="p-1 rounded hover:bg-gray-200 hover:text-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-          >
-            <Plus className="w-3 h-3" />
-          </button>
-        </HoverPopover>
+        <div className="flex items-center gap-1">
+          <CreateViewInstructions />
+          <HoverPopover content="Create new folder" position="top" popoverClassName="bg-gray-800 rounded-[2px]">
+            <button
+              onClick={handleCreateFolder}
+              disabled={isCreatingFolder}
+              className="p-1 rounded hover:bg-gray-200 hover:text-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-0.5"
+            >
+              <Plus className="w-3 h-3" />
+              Folder
+            </button>
+          </HoverPopover>
+        </div>
       </div>
 
       {/* Main content area with flex-1 to take remaining space */}
@@ -308,11 +313,6 @@ export default function ViewsSection() {
             })}
           </>
         )}
-      </div>
-
-      {/* Auto-refresh indicator */}
-      <div className="px-3 pt-3 pb-2 border-t border-gray-200 mt-3">
-        <p className="text-xs text-gray-400 text-center">Views update automatically</p>
       </div>
     </div>
   );

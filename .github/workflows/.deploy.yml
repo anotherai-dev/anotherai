@@ -1,0 +1,133 @@
+name: Deploy
+
+on:
+  workflow_call:
+    inputs:
+      env:
+        required: true
+        type: string
+      full_app_name:
+        required: true
+        type: string
+      image_name:
+        required: true
+        type: string
+      label:
+        required: false
+        type: string
+        default: ""
+      channel_id:
+        required: false
+        type: string
+        default: ""
+      app_url:
+        required: false
+        type: string
+        default: "https://workflowai.com"
+    secrets:
+      AZURE_CLIENT_ID:
+        required: true
+      AZURE_TENANT_ID:
+        required: true
+      AZURE_RESOURCE_GROUP:
+        required: true
+      AZURE_SUBSCRIPTION_ID:
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    name: deploy
+    # Making sure there is a single job deploying on a given environment at a time
+    concurrency:
+      group: deploy-${{inputs.full_app_name}}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.env }}
+    env:
+      FULL_APP_NAME: ${{ inputs.full_app_name }}
+      IMAGE_NAME: ${{ inputs.image_name }}
+      AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+    steps:
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: deploy
+        run: |
+          az containerapp update \
+            --name ${FULL_APP_NAME} \
+            --image ${IMAGE_NAME} \
+            --resource-group ${AZURE_RESOURCE_GROUP} \
+            --revision-suffix v${GITHUB_SHA:0:7}
+
+      - name: Label
+        if: inputs.label != ''
+        run: |
+          az containerapp revision label add \
+            --revision "${FULL_APP_NAME}--v${GITHUB_SHA:0:7}" \
+            --resource-group ${AZURE_RESOURCE_GROUP} \
+            --label ${LABEL} \
+            --no-prompt
+        env:
+          LABEL: ${{ inputs.label }}
+
+      - name: Wait for revision to be running
+        run: |
+          max_attempts=30
+          attempt=1
+          sleep_time=10
+
+          while [ $attempt -le $max_attempts ]; do
+              # Get the revision status
+              revision_status=$(az containerapp revision show \
+                  --revision "${FULL_APP_NAME}--v${GITHUB_SHA:0:7}" \
+                  --resource-group ${AZURE_RESOURCE_GROUP} \
+                  --query "properties.runningState" \
+                  -o tsv)
+
+              if [ "$revision_status" == "Running" ] || [ "$revision_status" == "RunningAtMaxScale" ]; then
+                  echo "Revision is now running"
+                  exit 0
+              fi
+
+              echo "Attempt ${attempt}/${max_attempts}: Revision status is ${revision_status}. Waiting ${sleep_time} seconds..."
+              sleep $sleep_time
+              attempt=$((attempt + 1))
+          done
+
+          echo "Timeout waiting for revision to be running"
+          exit 1
+      - name: Post to a Slack channel
+        if: inputs.channel_id != ''
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          channel-id: ${{ inputs.channel_id }}
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "plain_text",
+                    "text": ":rocket: Successfully deployed ${{ inputs.full_app_name }} from ${{ github.ref }}",
+                    "emoji": true
+                  },
+                  "accessory": {
+                    "type": "button",
+                    "text": {
+                      "type": "plain_text",
+                      "text": "View",
+                      "emoji": true
+                    },
+                    "url": "${{ inputs.app_url }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

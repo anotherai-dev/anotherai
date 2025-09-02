@@ -327,3 +327,83 @@ export interface APIKeyListResponse {
   next_page_token?: string;
   previous_page_token?: string;
 }
+
+// Deployments
+export interface Deployment {
+  id: string;
+  agent_id: string;
+  version: Version;
+  created_at: string;
+  created_by: string;
+  updated_at?: string;
+  metadata?: Record<string, unknown>;
+  url: string;
+}
+
+export interface DeploymentCreate {
+  id: string;
+  agent_id: string;
+  version: Version;
+  created_by: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface DeploymentUpdate {
+  version?: Version;
+  metadata?: Record<string, unknown>;
+}
+
+export interface DeploymentListResponse {
+  items: Deployment[];
+  total: number;
+  next_page_token?: string;
+  previous_page_token?: string;
+}
+
+// Models
+export interface SupportsModality {
+  image: boolean;
+  audio: boolean;
+  pdf: boolean;
+  text: boolean;
+}
+
+export interface ModelSupports {
+  input: SupportsModality;
+  output: SupportsModality;
+  parallel_tool_calls: boolean;
+  tools: boolean;
+  top_p: boolean;
+  temperature: boolean;
+}
+
+export interface ModelReasoning {
+  can_be_disabled: boolean;
+  low_effort_reasoning_budget: number;
+  medium_effort_reasoning_budget: number;
+  high_effort_reasoning_budget: number;
+  min_reasoning_budget: number;
+  max_reasoning_budget: number;
+}
+
+export interface ModelPricing {
+  input_token_usd: number;
+  output_token_usd: number;
+}
+
+export interface ModelContextWindow {
+  max_tokens: number;
+  max_output_tokens: number;
+}
+
+export interface Model {
+  id: string;
+  display_name: string;
+  icon_url: string;
+  supports: ModelSupports;
+  pricing: ModelPricing;
+  release_date: string;
+  reasoning?: ModelReasoning;
+  context_window: ModelContextWindow;
+  speed_index: number;
+}

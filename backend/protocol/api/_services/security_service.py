@@ -9,6 +9,8 @@ from core.domain.tenant_data import TenantData
 from core.storage.tenant_storage import TenantStorage
 from core.utils.signature_verifier import SignatureVerifier
 
+NO_AUTHORIZATION_ALLOWED = os.getenv("NO_AUTHORIZATION_ALLOWED") == "true"
+
 
 @final
 class SecurityService:
@@ -42,19 +44,30 @@ class SecurityService:
             # owner id is not found but we have a valid claims so we can create a new tenant
             return await self._tenant_storage.create_tenant_for_owner_id(owner_id)
 
-    async def find_tenant(self, authorization: str) -> TenantData:
+    def token_from_header(self, authorization: str) -> str:
         if not authorization or not authorization.startswith("Bearer "):
             # Shortcut to allow avoiding authentication alltogether
             # We basically create a tenant 0
-            # TODO: change to remove default
-            if os.getenv("NO_TENANT_ALLOWED", "true") == "true":
+            if NO_AUTHORIZATION_ALLOWED:
+                return ""
+            raise InvalidTokenError(
+                "Authorization header is missing. "
+                "A valid authorization header with an API key looks like 'Bearer wai-****'. If you need a new API key, "
+                f"Grab a fresh one (plus $5 in free LLM credits for new users) at {ANOTHERAI_APP_URL}/keys 🚀",
+            )
+        return authorization.split(" ")[1]
+
+    async def find_tenant(self, token: str) -> TenantData:
+        if not token:
+            # Shortcut to allow avoiding authentication alltogether
+            # We basically create a tenant 0
+            if NO_AUTHORIZATION_ALLOWED:
                 return await self._no_tenant()
             raise InvalidTokenError(
                 "Authorization header is missing. "
                 "A valid authorization header with an API key looks like 'Bearer wai-****'. If you need a new API key, "
                 f"Grab a fresh one (plus $5 in free LLM credits for new users) at {ANOTHERAI_APP_URL}/keys 🚀",
             )
-        token = authorization.split(" ")[1]
         if is_api_key(token):
             return await self._api_key_tenant(token)
 

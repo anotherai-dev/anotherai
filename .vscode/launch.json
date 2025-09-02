@@ -36,6 +36,22 @@
       ],
       "justMyCode": false,
       "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "name": "Worker",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "taskiq",
+      "cwd": "${workspaceFolder}/backend",
+      "args": [
+        "worker",
+        "protocol.worker.worker:broker",
+        "--fs-discover",
+        "--tasks-pattern",
+        "protocol/worker/tasks/*_tasks.py",
+        "--workers",
+        "1"
+      ]
     }
   ]
 }

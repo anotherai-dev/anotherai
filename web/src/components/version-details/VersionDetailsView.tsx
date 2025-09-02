@@ -1,5 +1,6 @@
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useState } from "react";
+import { ModelIconWithName } from "@/components/ModelIcon";
 import { SchemaViewer } from "@/components/SchemaViewer";
 import { MessagesViewer } from "@/components/messages/MessagesViewer";
 import { getVersionWithDefaults } from "@/components/utils/utils";
@@ -22,7 +23,7 @@ export function VersionDetailsView({ version, showPrompt = false, showOutputSche
       <div className="bg-white border border-gray-200 rounded-[2px] p-2">
         <div className="flex justify-between items-center">
           <span className="text-xs font-medium text-gray-700">Model</span>
-          <span className="text-xs text-gray-900">{version.model}</span>
+          <ModelIconWithName modelId={version.model} size={12} nameClassName="text-xs text-gray-900" />
         </div>
       </div>
 

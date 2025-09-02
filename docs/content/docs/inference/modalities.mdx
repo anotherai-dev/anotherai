@@ -1,0 +1,100 @@
+---
+title: Modalities
+summary: Explanation on how different modalities are supported by AnotherAI
+---
+
+## Completion API
+
+Just like OpenAI, AnotherAI supports passing images and audio to the completion endpoint.
+
+<Tabs>
+<Tab value="OpenAI SDK (js)">
+```js
+const response = await openai.chat.completions.create({
+  model: "gpt-4o-mini",
+  messages: [
+    {
+      role: "user",
+      content: [{ type: "image_url", image_url: { url: "https://example.com/image.png" } }]
+    }
+  ]
+});
+```
+</Tab>
+</Tabs>
+
+### Handling Audio URLs
+
+AnotherAI supports passing audio URLs as opposed to base64 encoded audio data. Simply pass the URL in the data field and the format will be ignored.
+
+<Tabs>
+<Tab value="OpenAI SDK (js)">
+```js
+const response = await openai.chat.completions.create({
+  model: "gpt-4o-mini",
+  messages: [
+    {
+      role: "user",
+      content: [{ type: "input_audio", input_audio: { 
+        data: "https://example.com/audio.mp3", // just pass a URL in the data field
+        format: "mp3" // when the data field is a URL, the format is ignored
+    } }]
+    }
+  ]
+});
+```
+</Tab>
+</Tabs>
+
+### Usage in templates
+
+As described in the [Input Variables](/observability/input-variables) section, it is possible to separate static instructions from dynamic data by using Jinja2 variables in the text content of messages.
+
+However it is **not currently possible to use input variables to represent image or audio data or URLs**. Image and audio payloads should always be passed in the content of messages, in their respective fields.
+
+<Tabs>
+<Tab value="OpenAI SDK (js)">
+```js
+// ✅ Do: Pass the image URL as a image URL content
+const response = await openai.chat.completions.create({
+  model: "gpt-4o-mini",
+  messages: [
+    {
+      role: "user",
+      content: [
+        {
+          type: "image_url",
+          image_url: {
+            url: "https://example.com/audio.mp3",
+          },
+        },
+      ],
+    },
+  ],
+});
+
+// ❌ Don't: Pass the image URL in an input variable
+const response = await openai.chat.completions.create({
+  model: "gpt-4o-mini",
+  messages: [
+    {
+      role: "user",
+      // Here the image URL will be treated as a string by the LLM
+      content: "{{ image_url}}"
+    },
+  ],
+  extra_body: {
+    input: {
+      variables: {
+        image_url: "https://example.com/image.png",
+      },
+    },
+  },
+});
+
+```
+</Tab>
+</Tabs>
+
+
+

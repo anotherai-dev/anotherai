@@ -14,10 +14,21 @@ interface PageHeaderProps {
   copyablePrefixAndId?: string;
   className?: string;
   rightContent?: React.ReactNode;
+  descriptionRightContent?: React.ReactNode;
+  descriptionBottomContent?: React.ReactNode;
 }
 
 export function PageHeader(props: PageHeaderProps) {
-  const { breadcrumbs, title, description, copyablePrefixAndId, className = "mb-8", rightContent } = props;
+  const {
+    breadcrumbs,
+    title,
+    description,
+    copyablePrefixAndId,
+    className = "mb-8",
+    rightContent,
+    descriptionRightContent,
+    descriptionBottomContent,
+  } = props;
   const { showToast } = useToast();
 
   const handleCopy = async () => {
@@ -69,7 +80,17 @@ export function PageHeader(props: PageHeaderProps) {
         </div>
       )}
 
-      {description && <p className="text-sm text-gray-600">{description}</p>}
+      {(description || descriptionRightContent || descriptionBottomContent) && (
+        <div>
+          {(description || descriptionRightContent) && (
+            <div className="flex items-center justify-between">
+              {description && <p className="text-sm text-gray-600 flex-1">{description}</p>}
+              {descriptionRightContent && <div className="flex-shrink-0 ml-4">{descriptionRightContent}</div>}
+            </div>
+          )}
+          {descriptionBottomContent && <div className="mt-3">{descriptionBottomContent}</div>}
+        </div>
+      )}
     </div>
   );
 }

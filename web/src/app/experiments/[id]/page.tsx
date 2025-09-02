@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import ErrorState from "@/components/ErrorState";
 import LoadingState from "@/components/LoadingState";
 import { PageHeader } from "@/components/PageHeader";
+import { ImproveAgentAnnotationsInstructions } from "@/components/experiment/ImproveAgentAnnotationsInstructions";
 import { useOrFetchAnnotations } from "@/store/annotations";
 import { useOrFetchExperiment } from "@/store/experiment";
 import { OriginalResultsSection } from "./sections/OriginalResultsSection";
@@ -42,6 +43,7 @@ export default function ExperimentDetailPage() {
           title={experiment.title}
           description={experiment.description}
           copyablePrefixAndId={`anotherai/experiment/${experimentId}`}
+          descriptionBottomContent={<ImproveAgentAnnotationsInstructions agentId={experiment.agent_id} />}
         />
         <OriginalResultsSection experiment={experiment} />
         <MatrixSection experiment={experiment} annotations={annotations} />

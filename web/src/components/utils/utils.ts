@@ -27,10 +27,87 @@ export function getMetricBadgeColor(value: number, values: number[], isHigherBet
   return "bg-transparent border border-gray-200 text-gray-700";
 }
 
+export function getMetricBadgeWithRelative(value: number, values: number[], isHigherBetter: boolean = false) {
+  if (!values || values.length === 0) {
+    return {
+      color: "bg-transparent border border-gray-200 text-gray-700",
+      relativeText: undefined,
+      isBest: false,
+      isWorst: false,
+    };
+  }
+
+  const sortedValues = [...values].sort((a, b) => a - b);
+  const min = sortedValues[0];
+  const max = sortedValues[sortedValues.length - 1];
+
+  // If all values are the same, no relative comparison needed
+  if (min === max) {
+    return {
+      color: "bg-transparent border border-gray-200 text-gray-700",
+      relativeText: undefined,
+      isBest: false,
+      isWorst: false,
+    };
+  }
+
+  let color: string;
+  let isBest = false;
+  let isWorst = false;
+  let relativeText: string | undefined;
+
+  if (isHigherBetter) {
+    isBest = value === max;
+    isWorst = value === min;
+
+    if (isBest) {
+      color = "bg-green-200 border border-green-400 text-green-900";
+      relativeText = `${(max / min).toFixed(1)}x better`;
+    } else if (isWorst) {
+      color = "bg-red-200 border border-red-300 text-red-900";
+    } else {
+      color = "bg-transparent border border-gray-200 text-gray-700";
+    }
+
+    // For non-best values, show how much worse they are
+    if (!isBest && max > 0) {
+      relativeText = `${(max / value).toFixed(1)}x`;
+    }
+  } else {
+    isBest = value === min;
+    isWorst = value === max;
+
+    if (isBest) {
+      color = "bg-green-200 border border-green-400 text-green-900";
+      relativeText = `${(max / min).toFixed(1)}x better`;
+    } else if (isWorst) {
+      color = "bg-red-200 border border-red-300 text-red-900";
+    } else {
+      color = "bg-transparent border border-gray-200 text-gray-700";
+    }
+
+    // For non-best values, show how much worse they are
+    if (!isBest && min > 0) {
+      relativeText = `${(value / min).toFixed(1)}x`;
+    }
+  }
+
+  return {
+    color,
+    relativeText,
+    isBest,
+    isWorst,
+  };
+}
+
 export function formatCurrency(value: number, multiplier: number = 1000): string {
   // Convert using multiplier for better readability
   const adjustedValue = value * multiplier;
   return `$${adjustedValue.toFixed(2)}`;
+}
+
+export function formatTotalCost(value: unknown): string {
+  return value ? `$${Math.max(Number(value), 0.01).toFixed(2)}` : "-";
 }
 
 export function formatDuration(seconds: number): string {
@@ -56,18 +133,73 @@ export function formatRelativeDate(value: unknown): string {
   return date.toLocaleDateString();
 }
 
+export function formatRelativeDateWithTime(value: unknown): string {
+  if (value === null || value === undefined) return "N/A";
+
+  const date = new Date(String(value));
+  if (isNaN(date.getTime())) return "Invalid Date";
+
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+
+  // For older dates, show both date and time
+  return `${date.toLocaleDateString()}, ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+}
+
+export function formatDate(
+  value: unknown,
+  format: "date" | "datetime" | "time" | "relative" | "relative_with_time"
+): string {
+  if (value === null || value === undefined) return "N/A";
+
+  // Ensure UTC timestamps are properly parsed by adding 'Z' suffix if missing
+  const dateString = String(value);
+  const utcDateString = dateString.endsWith("Z") ? dateString : dateString + "Z";
+  const date = new Date(utcDateString);
+
+  if (isNaN(date.getTime())) return "Invalid Date";
+
+  switch (format) {
+    case "datetime":
+      return date.toLocaleString();
+    case "time":
+      return date.toLocaleTimeString();
+    case "relative":
+      return formatRelativeDate(utcDateString);
+    case "relative_with_time":
+      return formatRelativeDateWithTime(utcDateString);
+    default:
+      return date.toLocaleDateString();
+  }
+}
+
 export function calculateAverageMetrics(completions: ExperimentCompletion[]): {
   avgCost: number;
   avgDuration: number;
+  costs: number[];
+  durations: number[];
 } {
-  if (completions.length === 0) return { avgCost: 0, avgDuration: 0 };
+  if (completions.length === 0) return { avgCost: 0, avgDuration: 0, costs: [], durations: [] };
 
-  const totalCost = completions.reduce((sum, completion) => sum + (completion.cost_usd || 0), 0);
-  const totalDuration = completions.reduce((sum, completion) => sum + (completion.duration_seconds || 0), 0);
+  const costs = completions.map((completion) => completion.cost_usd || 0);
+  const durations = completions.map((completion) => completion.duration_seconds || 0);
+
+  const totalCost = costs.reduce((sum, cost) => sum + cost, 0);
+  const totalDuration = durations.reduce((sum, duration) => sum + duration, 0);
 
   return {
     avgCost: totalCost / completions.length,
     avgDuration: totalDuration / completions.length,
+    costs,
+    durations,
   };
 }
 
@@ -105,7 +237,7 @@ export function getPriceAndLatencyPerVersion(
   }>
 ): Array<{
   versionId: string;
-  metrics: { avgCost: number; avgDuration: number };
+  metrics: { avgCost: number; avgDuration: number; costs: number[]; durations: number[] };
 }> {
   return completionsPerVersion.map(({ versionId, completions }) => ({
     versionId,
@@ -257,6 +389,59 @@ export function getVersionKeys(versions: Version[]): string[] {
   return Array.from(allKeys).filter((key) => !blackListedKeys.includes(key));
 }
 
+// Helper function to normalize objects and arrays for order-independent comparison
+export function normalizeForComparison(value: unknown): string {
+  if (value === null || value === undefined) {
+    return "null";
+  }
+
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  if (Array.isArray(value)) {
+    // Sort array elements for consistent ordering
+    const sortedArray = [...value].sort((a, b) => {
+      const normalizedA = normalizeForComparison(a);
+      const normalizedB = normalizeForComparison(b);
+      return normalizedA.localeCompare(normalizedB);
+    });
+    return JSON.stringify(sortedArray);
+  }
+
+  if (typeof value === "object") {
+    // Sort object keys and recursively normalize values
+    const sortedKeys = Object.keys(value as Record<string, unknown>).sort();
+    const normalizedObj: Record<string, unknown> = {};
+
+    for (const key of sortedKeys) {
+      const objValue = (value as Record<string, unknown>)[key];
+      // For primitive values, store them directly
+      if (
+        objValue === null ||
+        objValue === undefined ||
+        typeof objValue === "string" ||
+        typeof objValue === "number" ||
+        typeof objValue === "boolean"
+      ) {
+        normalizedObj[key] = objValue;
+      } else {
+        // For complex values, parse the normalized string back to object/array
+        try {
+          normalizedObj[key] = JSON.parse(normalizeForComparison(objValue));
+        } catch {
+          // If parsing fails, fall back to string representation
+          normalizedObj[key] = String(objValue);
+        }
+      }
+    }
+
+    return JSON.stringify(normalizedObj);
+  }
+
+  return String(value);
+}
+
 export function getMatchingVersionKeys(versions: Version[]): string[] {
   // For single version, return all keys (including defaults) except blacklisted ones
   if (versions.length === 1) {
@@ -287,25 +472,7 @@ export function getMatchingVersionKeys(versions: Version[]): string[] {
   for (const key of filteredKeys) {
     const values = versionsWithDefaults.map((version) => {
       const value = (version as unknown as Record<string, unknown>)[key];
-
-      // Convert all values to strings for consistent comparison
-      if (value === null || value === undefined) {
-        return "null";
-      }
-
-      if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-        return String(value);
-      }
-
-      if (Array.isArray(value)) {
-        return JSON.stringify(value);
-      }
-
-      if (typeof value === "object") {
-        return JSON.stringify(value);
-      }
-
-      return String(value);
+      return normalizeForComparison(value);
     });
 
     // Check if all values are the same
@@ -829,4 +996,21 @@ export function resolveRef(node: JsonSchemaNode, rootSchema: JsonSchemaNode): Js
   // Handle other types of references if needed in the future
   console.warn(`Unsupported $ref format: ${node.$ref}`);
   return node;
+}
+
+/**
+ * Simple function to strip markdown formatting
+ */
+export function stripMarkdown(markdown: string): string {
+  return markdown
+    .replace(/#{1,6}\s/g, "") // Remove headers
+    .replace(/\*\*(.*?)\*\*/g, "$1") // Remove bold
+    .replace(/\*(.*?)\*/g, "$1") // Remove italic
+    .replace(/`(.*?)`/g, "$1") // Remove inline code
+    .replace(/\[(.*?)\]\(.*?\)/g, "$1") // Remove links, keep text
+    .replace(/>\s/g, "") // Remove blockquotes
+    .replace(/^\s*[-*+]\s/gm, "") // Remove list markers
+    .replace(/^\s*\d+\.\s/gm, "") // Remove numbered list markers
+    .replace(/\n+/g, " ") // Replace newlines with spaces
+    .trim();
 }

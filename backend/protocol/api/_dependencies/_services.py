@@ -3,11 +3,13 @@ from typing import Annotated
 from fastapi import Depends
 
 from core.services.completion_runner import CompletionRunner
+from core.services.store_completion.completion_storer import CompletionStorer
 from protocol.api._dependencies._lifecycle import LifecycleDependenciesDep
 from protocol.api._dependencies._tenant import TenantDep
 from protocol.api._services.agent_service import AgentService
 from protocol.api._services.annotation_service import AnnotationService
 from protocol.api._services.completion_service import CompletionService
+from protocol.api._services.deployment_service import DeploymentService
 from protocol.api._services.experiment_service import ExperimentService
 from protocol.api._services.organization_service import OrganizationService
 from protocol.api._services.view_service import ViewService
@@ -17,9 +19,8 @@ def completion_runner(tenant: TenantDep, dependencies: LifecycleDependenciesDep)
     return CompletionRunner(
         tenant=tenant,
         completion_storage=dependencies.storage_builder.completions(tenant.uid),
-        agent_storage=dependencies.storage_builder.agents(tenant.uid),
-        file_storage=dependencies.storage_builder.files(tenant.uid),
         provider_factory=dependencies.provider_factory,
+        event_router=dependencies.tenant_event_router(tenant.uid),
     )
 
 
@@ -81,3 +82,24 @@ def organization_service(tenant: TenantDep, dependencies: LifecycleDependenciesD
 
 
 OrganizationServiceDep = Annotated[OrganizationService, Depends(organization_service)]
+
+
+def deployment_service(tenant: TenantDep, dependencies: LifecycleDependenciesDep) -> DeploymentService:
+    return DeploymentService(
+        dependencies.storage_builder.deployments(tenant.uid),
+        dependencies.storage_builder.completions(tenant.uid),
+    )
+
+
+DeploymentServiceDep = Annotated[DeploymentService, Depends(deployment_service)]
+
+
+def completion_storer(tenant: TenantDep, dependencies: LifecycleDependenciesDep) -> CompletionStorer:
+    return CompletionStorer(
+        completion_storage=dependencies.storage_builder.completions(tenant.uid),
+        agent_storage=dependencies.storage_builder.agents(tenant.uid),
+        file_storage=dependencies.storage_builder.files(tenant.uid),
+    )
+
+
+CompletionStorerDep = Annotated[CompletionStorer, Depends(completion_storer)]

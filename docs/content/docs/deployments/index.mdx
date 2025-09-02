@@ -1,0 +1,380 @@
+---
+title: Deployments
+summary: Deployments allow managing part of the prompt and completion parametersoutside of the codebase.
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Accordions, Accordion } from 'fumadocs-ui/components/accordion';
+
+## Why use deployments?
+
+At heart, deployments are simply a way to manage some completion parameters that would traditionally be committed and deployed with the codebase. With the speed at which LLMs are evolving, re-deploying code any time a prompt needs to be adjusted or a model needs to be changed is not sustainable.
+
+The flow is simple:
+<Steps>
+<Step>
+Create completions via the API or the playground mcp tool. AnotherAI will separate the completion parameters into the static components (aka Version) and the dynamic components (aka Input).
+</Step>
+<Step>
+Once you are happy with a set of parameters, create a deployment via the MCP tool.
+</Step>
+<Step>
+Update your code to point to the deployed version and remove the hardcoded parameters.
+</Step>
+</Steps>
+
+In other words, change:
+
+<Tabs items={["OpenAI SDK (JS)"]}>
+<Tab>
+```js
+const completion = await openai.chat.completions.create({
+  model: "gpt-4o",
+  messages: [
+        {
+            "role": "system",
+            // Using a template here instead of a string format to allow separating a static system message template and 
+            // input variables.
+            "content": `You are an expert on {{ country }}. You are helping a customer traveling to {{ country }}. Answer questions in {{ language }}.`
+        },
+        { role: "user", content: "Any customs I should be mindful about at the dinner table ?" },
+    ],
+    temperature: 0.5,
+    //   Input variables
+    input: {
+        country: "France",
+        language: "English",
+    }
+    agent_id: "travel-assistant"
+});
+```
+
+to:
+
+```js
+const completion = await openai.chat.completions.create({
+    // model and temperature are stored in the deployment
+    model: "anotherai/travel-assistant/production#1",
+    messages: [
+        // System message template is stored in the deployment
+        // User message is dynamic here so it is not stored in the deployment
+        { role: "user", content: "Any customs I should be mindful about at the dinner table ?" },
+    ],
+    input: {
+        country: "France",
+        language: "English",
+    }
+    // agent_id is stored in the deployment
+});
+```
+</Tab>
+</Tabs>
+
+
+## Understanding versions and input
+
+{/* TODO: this should likely be elsewhere ? */}
+
+To understand deployments, it is important to understand how AnotherAI separates the static (_Version_) and dynamic (_Input_) portions of the completion call, and how AnotherAI re-creates the completion call from a _Version_ and _Input_.
+
+### Separating version and input
+
+The rules for separating the _Version_ and _Input_ are simple:
+- All completion parameters (model, temperature, etc.) besides `messages` are part of the _Version_
+- All messages up to the last message containing a templated content is part of the _Version_ (`version.prompt`)
+- If no message contains a templated content and if the first message is a system message, the first system message is part of the _Version_
+
+The input contains the rest:
+- the input variables
+- the messages that are not part of the _Version_
+
+
+For example, in the following code:
+- The version contains the first system message but not the user message since the user message does not contain a templated content.
+- The input contains the user message and the input variables.
+
+
+<Tabs items={["OpenAI SDK (JS)"]}>
+<Tab>
+```js
+const completion = await openai.chat.completions.create({
+  model: "gpt-4o",
+  messages: [
+        {
+            "role": "system",
+            // Using a template here instead of a string format to allow separating a static system message template and 
+            // input variables.
+            "content": `You are an expert on {{ country }}. You are helping a customer traveling to {{ country }}. Answer questions in {{ language }}.`
+        },
+        { role: "user", content: "Any customs I should be mindful about at the dinner table ?" },
+    ],
+    temperature: 0.5,
+    //   Input variables
+    input: {
+        country: "France",
+        language: "English",
+    }
+    agent_id: "travel-assistant"
+});
+```
+</Tab>
+</Tabs>
+
+
+### Compiling a completion call from a version and input
+
+Most providers API only accept a list of messages as input so AnotherAI needs to compile the completion call from the _Version_ and _Input_.
+
+Building the message list is done in two steps:
+- 1. The message templates that belong to the _Version_ are rendered using the input variables.
+- 2. The messages that belong to the _Input_ are added to the message list.
+
+{/* TODO: example here, a bit difficult since we don't refer to versions directly and we would need to refer to a deployment */}
+
+### Response format and Variables schema
+
+A Version also refers to a specific response format and set of variables. That's because both are usually tightly linked to the prompt itself:
+- the system message often refers to specific fields in the response format
+- if the prompt is templated, it directly refers to a set of input variables
+
+{/* TODO: we need to introduce the concept of schemas somewhere since they are tied to versions. Not sure if here is the best place. */}
+
+## Deployments
+
+A deployment is a way to refer to a _Version_ via an alias so that the underlying prompt and parameters can be edited without having to change the codebase.
+
+Following with the [example above](#understanding-versions-and-input), if we deploy the associated version with the alias `travel-assistant/production#1`, we can use it in the codebase like this:
+
+<Tabs items={["OpenAI SDK (JS)"]}>
+<Tab>
+```js
+const completion = await openai.chat.completions.create({
+    model: "anotherai/travel-assistant/production#1",
+    messages: [
+        { role: "user", content: "Any customs I should be mindful about at the dinner table ?" },
+    ],
+    input: {
+        country: "France",
+        language: "English",
+    }
+});
+```
+</Tab>
+</Tabs>
+
+When AnotherAI receives the request, it retrieves the _Version_ using the alias (`travel-assistant/production#1`), follow the steps described [above](#compiling-a-completion-call-from-a-version-and-input) before sending the request to the provider.
+
+### Deployment (and Version) compatibility
+
+As explained above, it is possible to change the _Version_ that is targeted by a deployment. If there were no restrictions, on the replacement _Version_, it would be possible to break production code. For example, consider a `Deployment A` that requires two variables `name` and `age`. If we were to replace it with a `Deployment B` that requires three variables `name`, `age` and `city`, it would not be possible to correctly render the template. The same example can occur can be done with a response format (aka output schema).
+
+To prevent any issue, AnotherAI prevents replacing a deployment with a version that has an incompatible set of variables or response format. Incompatible means that the two object definitions (JSON schemas) have different properties or property types.
+
+<Tabs items={["OpenAI SDK (JS)"]}>
+<Tab>
+```js
+// Consider an agent that extracts the capital of a country given a city
+const completion = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [
+        { role: "user", content: "Give me the capital of the country of {{ city }} ?" },
+    ],
+    input: {
+        city: "Toulouse"
+    }
+    response_format: {
+        type: "json_schema",
+        json_schema: {
+            name: "capital_response",
+            schema: {
+                type: "object",
+                properties: {
+                    capital: { type: "string" }
+                }
+            }
+        }
+    }
+});
+
+// the following is compatible since it uses the same variable schema and response format
+const completion = await openai.chat.completions.create({
+    model: "gpt-4.1", // different model
+    messages: [
+        // A new system message
+        {role: "system": content: "You are a geography expert."}
+        { role: "user", content: "What is the capital closest to {{ city }} ?" },
+    ],
+    temperature: 0, // a different temperature
+    input: {
+        city: "Toulouse"
+    }
+    response_format: {
+        type: "json_schema",
+        json_schema: {
+            name: "capital_response",
+            schema: {
+                type: "object",
+                properties: {
+                    capital: { 
+                        type: "string",
+                        // Different JSON Schema metadata are not considered as incompatible
+                        description: "<city>, <country>",
+                        examples: ["Paris, France", "London, United Kingdom"]
+                    }
+                }
+            }
+        }
+    }
+});
+
+// the following is not compatible since it uses a different variable schema
+const completion = await openai.chat.completions.create({
+    model: "gpt-4.1",
+    messages: [
+        // city -> country would be a breaking change in code
+        { role: "user", content: "Give me the capital of {{ country }} ?" },
+    ],
+    input: {
+        country: "France" // breaking change
+    }
+    ...
+});
+```
+</Tab>
+</Tabs>
+
+<Callout type="info">
+That does not mean that the new code cannot be deployed. It should simply create a new deployment instead of replacing the existing one. You can create as many deployments as you want. We suggest a naming convention like `<agent-id>/<environment>#<number>`.
+</Callout>
+
+### Reconciliating code and deployments
+
+The code allows targeting a deployment but still provide completion parameters. For example, one could write:
+
+<Tabs items={["OpenAI SDK (JS)"]}>
+<Tab>
+```js
+const completion = await openai.chat.completions.create({
+    model: "anotherai/travel-assistant/production#1",
+    input: {
+        country: "France"
+    }
+    temperature: 0.5, // temperature might be different from the deployment
+});
+
+```
+</Tab>
+</Tabs>
+
+In the above example, we need to decide which temperature should be used, the one from the deployment or the one from the code.
+
+We believe that code should be the source of truth which means that in the above case the temperature should be the one from the code. The reconciliation between code and deployments follows the following rules:
+- any provided completion parameter can override the corresponding deployment parameter
+- if the override creates a version that is incompatible with the deployment an error is raised.
+
+Consider a deployment `travel-assistant/production#1` created with:
+- model: "gpt-4o"
+- temperature: 0.5
+- variables: `country: string`
+
+<Tabs items={["OpenAI SDK (JS)"]}>
+<Tab>
+```js
+// Accepted since the version is compatible with the deployment
+const completion = await openai.chat.completions.create({
+    model: "anotherai/travel-assistant/production#1",
+    input: {
+        country: "France"
+    }
+    temperature: 1, // temperature 1 is used
+    tools: [...] // tools are used
+});
+
+// Rejected since the version is incompatible with the deployment
+const completion = await openai.chat.completions.create({
+    model: "anotherai/travel-assistant/production#1",
+    input: {
+        country: "France"
+    }
+    response_format: {
+        type: "json_schema",
+        json_schema: ... // response format is incompatible with the deployment
+    }
+});
+```
+</Tab>
+</Tabs>
+
+### Creating New vs. Updating Existing Deployments
+
+When you want to deploy and use a new version of your agent, depending on the scope of the changes, you may be able to update an existing deployment instead of creating a new one.
+
+#### Benefits of updating an existing deployment
+ 
+Updating an existing deployment does not require any code changes. Because no code changes are required, updating an existing deployment is generally much faster than creating and releasing a new deployment.
+
+<Callout type="info">
+To prevent unwanted deployments that could negatively impact your production environment, your coding agent will require you to confirm all deployment updates using the web app. 
+</Callout>
+
+#### What updates are compatible with an existing deployment?
+
+You can update an existing deployment if the new version is considered a non-breaking change.
+
+<Accordions type="single" defaultValue="non-breaking-changes">
+<Accordion title="Non-breaking Changes Examples" id="non-breaking-changes">
+
+- Changing the model
+- Adjusting temperature or other generation parameters  
+- Editing prompt wording while keeping the same variables
+
+</Accordion>
+</Accordions>
+
+#### Creating a New Deployment
+
+Creating a new deployment is required when the changes you are making are considered breaking changes.
+
+<Accordions type="single" defaultValue="breaking-changes">
+<Accordion title="Breaking Changes Examples" id="breaking-changes">
+
+- Editing the input variables
+    - Adding a new variable
+    - Removing a variable
+    - Changing the name or the type of an existing variable
+- Editing the output schema 
+    - Adding a new field
+    - Removing a field
+    - Changing the name or the type of an existing field
+
+</Accordion>
+</Accordions>
+
+When a new deployment is created, you will need to update your code to point to the new deployment.
+
+**Example: Updating code for a new deployment**
+
+<Tabs items={["OpenAI SDK (JS)"]}>
+<Tab>
+```js
+// Before - using old deployment
+const completion = await openai.chat.completions.create({
+    model: "anotherai/travel-assistant/production#1",
+    input: {
+        country: "France"
+    }
+});
+
+// After - using new deployment with breaking changes
+const completion = await openai.chat.completions.create({
+    model: "anotherai/travel-assistant/production#2", // new deployment
+    input: {
+        destination: "France", // variable renamed: country -> destination
+        traveler_type: "business" // new required variable added
+    }
+});
+```
+</Tab>
+</Tabs>
+

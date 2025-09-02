@@ -51,7 +51,7 @@ async def _create_readonly_user(
     password: str,
     database: str,
 ) -> AsyncClient:
-    _ = await client.command(f"CREATE USER IF NOT EXISTS {user}  IDENTIFIED BY '{password}'")
+    _ = await client.command(f"CREATE USER IF NOT EXISTS {user} IDENTIFIED WITH sha256_password BY '{password}'")
 
     await sanitize_readonly_privileges(client, tenant_uid, user)
     return await create_async_client(
