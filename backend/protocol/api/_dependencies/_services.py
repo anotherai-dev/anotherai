@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import Depends
 
 from core.services.completion_runner import CompletionRunner
+from core.services.store_completion.completion_storer import CompletionStorer
 from protocol.api._dependencies._lifecycle import LifecycleDependenciesDep
 from protocol.api._dependencies._tenant import TenantDep
 from protocol.api._services.agent_service import AgentService
@@ -91,3 +92,14 @@ def deployment_service(tenant: TenantDep, dependencies: LifecycleDependenciesDep
 
 
 DeploymentServiceDep = Annotated[DeploymentService, Depends(deployment_service)]
+
+
+def completion_storer(tenant: TenantDep, dependencies: LifecycleDependenciesDep) -> CompletionStorer:
+    return CompletionStorer(
+        completion_storage=dependencies.storage_builder.completions(tenant.uid),
+        agent_storage=dependencies.storage_builder.agents(tenant.uid),
+        file_storage=dependencies.storage_builder.files(tenant.uid),
+    )
+
+
+CompletionStorerDep = Annotated[CompletionStorer, Depends(completion_storer)]

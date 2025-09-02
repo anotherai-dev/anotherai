@@ -16,6 +16,7 @@ from protocol.api._api_models import (
     DeploymentCreate,
     DeploymentUpdate,
     Experiment,
+    ImportCompletionResponse,
     Model,
     OpenAIListResult,
     Page,
@@ -28,12 +29,14 @@ from protocol.api._dependencies._services import (
     AgentServiceDep,
     AnnotationServiceDep,
     CompletionServiceDep,
+    CompletionStorerDep,
     DeploymentServiceDep,
     ExperimentServiceDep,
     OrganizationServiceDep,
     ViewServiceDep,
 )
 from protocol.api._services import models_service
+from protocol.api._services.completion_service import CompletionService
 from protocol.api._services.utils_service import ExtractVariablesRequest, ExtractVariablesResponse
 
 router = APIRouter(prefix="")
@@ -90,6 +93,14 @@ async def get_experiment(
 
 # ------------------------------------------------------------
 # Completions
+
+
+@router.post("/v1/completions", response_model_exclude_none=True)
+async def create_completion(
+    completion_storer: CompletionStorerDep,
+    completion: Completion,
+) -> ImportCompletionResponse:
+    return await CompletionService.create_completion(completion, completion_storer)
 
 
 @router.get("/v1/completions/query")
