@@ -56,7 +56,7 @@ Once the deployment is created, ask Claude to update your code to use the new de
 Update my agent code to use the new deployment travel-assistant/production#1
 ```
 
-Claude will modify your code from the hardcoded parameters to the deployment reference.
+Claude will update your code to use the deployment reference, removing the static components that are now stored in the deployment.
 
 **Before:**
 
@@ -110,14 +110,16 @@ completion = await openai.chat.completions.create(
 </Tab>
 </Tabs>
 
-**After (using deployment):**
+**After:**
 
 <Tabs items={["OpenAI SDK (JS)", "OpenAI SDK (Python)"]}>
 <Tab>
 ```js
 const completion = await openai.chat.completions.create({
+  //Static components are now stored in the deployment
   model: "anotherai/travel-assistant/production#1",
   messages: [
+    // Dynamic user messages remain in code
     { role: "user", content: userQuestion }
   ],
   input: {
@@ -130,8 +132,10 @@ const completion = await openai.chat.completions.create({
 <Tab>
 ```python
 completion = await openai.chat.completions.create(
+    # Model, temperature, system message, and agent_id are now in the deployment
     model="anotherai/travel-assistant/production#1",
     messages=[
+        # Only dynamic user messages remain in code
         {"role": "user", "content": user_question}
     ],
     extra_body={
