@@ -1,19 +1,24 @@
 import { renderHook } from "@testing-library/react";
 import { useParsedSearchParams } from "../queryString";
 
-// Access the global mock
-declare global {
-  var mockSearchParamsGet: jest.MockedFunction<any>;
-}
+// Mock Next.js useSearchParams hook
+const mockGet = jest.fn();
+const mockSearchParams = {
+  get: mockGet,
+};
+
+jest.mock("next/navigation", () => ({
+  useSearchParams: () => mockSearchParams,
+}));
 
 describe("useParsedSearchParams", () => {
   beforeEach(() => {
-    global.mockSearchParamsGet.mockClear();
+    mockGet.mockClear();
   });
 
   describe("Basic functionality", () => {
     it("returns undefined for non-existent parameters", () => {
-      global.mockSearchParamsGet.mockReturnValue(null);
+      mockGet.mockReturnValue(null);
 
       const { result } = renderHook(() => useParsedSearchParams("param1", "param2"));
 
@@ -22,12 +27,12 @@ describe("useParsedSearchParams", () => {
         param2: undefined,
       });
 
-      expect(global.mockSearchParamsGet).toHaveBeenCalledWith("param1");
-      expect(global.mockSearchParamsGet).toHaveBeenCalledWith("param2");
+      expect(mockGet).toHaveBeenCalledWith("param1");
+      expect(mockGet).toHaveBeenCalledWith("param2");
     });
 
     it("returns parameter values when they exist", () => {
-      global.mockSearchParamsGet.mockReturnValueOnce("value1").mockReturnValueOnce("value2");
+      mockGet.mockReturnValueOnce("value1").mockReturnValueOnce("value2");
 
       const { result } = renderHook(() => useParsedSearchParams("param1", "param2"));
 
@@ -38,7 +43,7 @@ describe("useParsedSearchParams", () => {
     });
 
     it("handles single parameter", () => {
-      global.mockSearchParamsGet.mockReturnValue("single-value");
+      mockGet.mockReturnValue("single-value");
 
       const { result } = renderHook(() => useParsedSearchParams("singleParam"));
 
@@ -51,13 +56,13 @@ describe("useParsedSearchParams", () => {
       const { result } = renderHook(() => useParsedSearchParams());
 
       expect(result.current).toEqual({});
-      expect(global.mockSearchParamsGet).not.toHaveBeenCalled();
+      expect(mockGet).not.toHaveBeenCalled();
     });
   });
 
   describe("Mixed parameter scenarios", () => {
     it("handles mix of existing and non-existing parameters", () => {
-      global.mockSearchParamsGet.mockReturnValueOnce("existing-value").mockReturnValueOnce(null).mockReturnValueOnce("another-value");
+      mockGet.mockReturnValueOnce("existing-value").mockReturnValueOnce(null).mockReturnValueOnce("another-value");
 
       const { result } = renderHook(() => useParsedSearchParams("exists", "missing", "alsoExists"));
 
@@ -69,7 +74,7 @@ describe("useParsedSearchParams", () => {
     });
 
     it("handles empty string values", () => {
-      global.mockSearchParamsGet.mockReturnValueOnce("").mockReturnValueOnce("value");
+      mockGet.mockReturnValueOnce("").mockReturnValueOnce("value");
 
       const { result } = renderHook(() => useParsedSearchParams("empty", "normal"));
 
@@ -80,7 +85,7 @@ describe("useParsedSearchParams", () => {
     });
 
     it("converts null to undefined", () => {
-      global.mockSearchParamsGet.mockReturnValue(null);
+      mockGet.mockReturnValue(null);
 
       const { result } = renderHook(() => useParsedSearchParams("param"));
 
@@ -92,7 +97,7 @@ describe("useParsedSearchParams", () => {
 
   describe("Parameter value types", () => {
     it("handles URL-encoded values", () => {
-      global.mockSearchParamsGet.mockReturnValue("hello%20world");
+      mockGet.mockReturnValue("hello%20world");
 
       const { result } = renderHook(() => useParsedSearchParams("encoded"));
 
@@ -102,7 +107,7 @@ describe("useParsedSearchParams", () => {
     });
 
     it("handles special characters", () => {
-      global.mockSearchParamsGet.mockReturnValue("value+with&special=chars");
+      mockGet.mockReturnValue("value+with&special=chars");
 
       const { result } = renderHook(() => useParsedSearchParams("special"));
 
@@ -112,7 +117,7 @@ describe("useParsedSearchParams", () => {
     });
 
     it("handles numeric string values", () => {
-      global.mockSearchParamsGet.mockReturnValueOnce("123").mockReturnValueOnce("45.67");
+      mockGet.mockReturnValueOnce("123").mockReturnValueOnce("45.67");
 
       const { result } = renderHook(() => useParsedSearchParams("int", "float"));
 
@@ -123,7 +128,7 @@ describe("useParsedSearchParams", () => {
     });
 
     it("handles boolean-like string values", () => {
-      global.mockSearchParamsGet.mockReturnValueOnce("true").mockReturnValueOnce("false");
+      mockGet.mockReturnValueOnce("true").mockReturnValueOnce("false");
 
       const { result } = renderHook(() => useParsedSearchParams("truthy", "falsy"));
 
@@ -136,7 +141,7 @@ describe("useParsedSearchParams", () => {
 
   describe("Hook behavior and memoization", () => {
     it("memoizes result when parameters and search params unchanged", () => {
-      global.mockSearchParamsGet.mockReturnValue("stable-value");
+      mockGet.mockReturnValue("stable-value");
 
       const { result, rerender } = renderHook(() => useParsedSearchParams("param"));
 
@@ -151,7 +156,7 @@ describe("useParsedSearchParams", () => {
     });
 
     it("handles parameter key changes", () => {
-      global.mockSearchParamsGet.mockReturnValueOnce("value1").mockReturnValueOnce("value2");
+      mockGet.mockReturnValueOnce("value1").mockReturnValueOnce("value2");
 
       const { result, rerender } = renderHook(({ keys }) => useParsedSearchParams(...keys), {
         initialProps: { keys: ["param1"] as const },
@@ -165,7 +170,7 @@ describe("useParsedSearchParams", () => {
     });
 
     it("handles adding more parameters", () => {
-      global.mockSearchParamsGet.mockReturnValueOnce("value1").mockReturnValueOnce("value1").mockReturnValueOnce("value2");
+      mockGet.mockReturnValueOnce("value1").mockReturnValueOnce("value1").mockReturnValueOnce("value2");
 
       const { result, rerender } = renderHook(({ keys }) => useParsedSearchParams(...keys), {
         initialProps: { keys: ["param1"] as const },
@@ -184,7 +189,7 @@ describe("useParsedSearchParams", () => {
 
   describe("Type safety and constraints", () => {
     it("maintains type safety for known parameter keys", () => {
-      global.mockSearchParamsGet.mockReturnValueOnce("agent123").mockReturnValueOnce("exp456");
+      mockGet.mockReturnValueOnce("agent123").mockReturnValueOnce("exp456");
 
       const { result } = renderHook(() => useParsedSearchParams("agentId", "experimentId"));
 
@@ -198,7 +203,7 @@ describe("useParsedSearchParams", () => {
 
     it("handles readonly array of parameter names", () => {
       const params = ["param1", "param2"] as const;
-      global.mockSearchParamsGet.mockReturnValueOnce("value1").mockReturnValueOnce("value2");
+      mockGet.mockReturnValueOnce("value1").mockReturnValueOnce("value2");
 
       const { result } = renderHook(() => useParsedSearchParams(...params));
 
@@ -212,7 +217,7 @@ describe("useParsedSearchParams", () => {
   describe("Edge cases and error handling", () => {
     it("handles very long parameter names", () => {
       const longParam = "a".repeat(1000);
-      global.mockSearchParamsGet.mockReturnValue("value");
+      mockGet.mockReturnValue("value");
 
       const { result } = renderHook(() => useParsedSearchParams(longParam));
 
@@ -222,7 +227,7 @@ describe("useParsedSearchParams", () => {
     });
 
     it("handles special parameter names", () => {
-      global.mockSearchParamsGet.mockReturnValueOnce("value1").mockReturnValueOnce("value2").mockReturnValueOnce("value3");
+      mockGet.mockReturnValueOnce("value1").mockReturnValueOnce("value2").mockReturnValueOnce("value3");
 
       const { result } = renderHook(() =>
         useParsedSearchParams("param-with-dash", "param_with_underscore", "paramWithCamelCase")
@@ -236,7 +241,7 @@ describe("useParsedSearchParams", () => {
     });
 
     it("handles duplicate parameter names", () => {
-      global.mockSearchParamsGet.mockReturnValue("duplicate-value");
+      mockGet.mockReturnValue("duplicate-value");
 
       const { result } = renderHook(() => useParsedSearchParams("param", "param"));
 
@@ -245,11 +250,11 @@ describe("useParsedSearchParams", () => {
       });
 
       // Should still call get for each parameter (even duplicates)
-      expect(global.mockSearchParamsGet).toHaveBeenCalledTimes(2);
+      expect(mockGet).toHaveBeenCalledTimes(2);
     });
 
     it("handles numeric parameter keys", () => {
-      global.mockSearchParamsGet.mockReturnValue("numeric-key-value");
+      mockGet.mockReturnValue("numeric-key-value");
 
       const { result } = renderHook(() => useParsedSearchParams("123"));
 
@@ -262,7 +267,7 @@ describe("useParsedSearchParams", () => {
   describe("Integration scenarios", () => {
     it("simulates real search params parsing", () => {
       // Simulate URL: ?agentId=agent-123&page=1&filter=active&sort=
-      global.mockSearchParamsGet.mockImplementation((key) => {
+      mockGet.mockImplementation((key) => {
         const params: Record<string, string | null> = {
           agentId: "agent-123",
           page: "1",
@@ -285,7 +290,7 @@ describe("useParsedSearchParams", () => {
     });
 
     it("handles complex search parameter scenario", () => {
-      global.mockSearchParamsGet.mockImplementation((key) => {
+      mockGet.mockImplementation((key) => {
         // Simulate complex URL parameters
         const params: Record<string, string | null> = {
           search: "machine learning",

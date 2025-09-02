@@ -20,7 +20,6 @@ const customJestConfig = {
     "<rootDir>/node_modules/",
     "<rootDir>/src/auth/clerk/", // Clerk auth files have runtime issues in Jest environment
     "<rootDir>/src/auth/noauth/", // Auth files have Node.js/browser compatibility issues
-    "<rootDir>/src/lib/__tests__/queryString.test.ts", // React hook testing issues with Next.js setup
   ],
   collectCoverageFrom: [
     "src/**/*.(js|jsx|ts|tsx)",
