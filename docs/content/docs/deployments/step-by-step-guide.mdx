@@ -7,8 +7,6 @@ import { Callout } from "fumadocs-ui/components/callout";
 import { Step, Steps } from "fumadocs-ui/components/steps";
 import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 
-# Step-by-Step Guide to Deploying Versions
-
 This guide walks you through the process of deploying a version of your agent using AnotherAI and your AI coding agent.
 
 ## Creating a Deployment
@@ -19,9 +17,9 @@ This guide walks you through the process of deploying a version of your agent us
 
 1. Open [anotherai.dev](https://anotherai.dev)
 2. Locate the experiment that has the version of the agent you want to deploy.
-3. Hover over the version number to copy the version ID (it will look something like `ver_abc123def456`)
+3. Hover over the version number to copy the version ID
 
-TODO: add image of copying version ID
+![Copy Version ID](/images/copy_version_id.png)
 
 </Step>
 
@@ -60,7 +58,7 @@ Update my agent code to use the new deployment travel-assistant/production#1
 
 Claude will modify your code from the hardcoded parameters to the deployment reference.
 
-**Before (hardcoded parameters):**
+**Before:**
 
 <Tabs items={["OpenAI SDK (JS)", "OpenAI SDK (Python)"]}>
 <Tab>
@@ -77,6 +75,7 @@ const completion = await openai.chat.completions.create({
     { role: "user", content: userQuestion }
   ],
   temperature: 0.7,
+  // Input variables
   input: {
     country: destination,
     language: userLanguage
