@@ -16,7 +16,7 @@ RUN apk update && \
 # Instals the dependencies via uv and copies the source code
 FROM base AS builder
 
-RUN apk add --no-cache build-base libffi-dev geos-dev rust cargo
+RUN apk add --no-cache build-base libffi-dev geos-dev
 
 ENV UV_COMPILE_BYTECODE=1  UV_LINK_MODE=copy
 
