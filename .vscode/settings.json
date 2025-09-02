@@ -26,6 +26,8 @@
     "yarn-*.cjs": true,
     "webyarn sdks base/.next": true
   },
+  "jestrunner.projectPath": "web",
+  "jestrunner.jestPath": "./node_modules/jest/bin/jest.js",
   "jest.runMode": "on-demand",
   "jest.outputConfig": "test-results-based",
   "python.testing.pytestArgs": ["-vv", "-s"],
