@@ -6,7 +6,7 @@ import { ActivityIndicator } from "@/components/ActivityIndicator";
 import { LoadingIndicator } from "@/components/LoadingIndicator";
 import { PageError } from "@/components/PageError";
 import { SimpleTableComponent } from "@/components/SimpleTableComponent";
-import { formatRelativeDateWithTime, formatTotalCost } from "@/components/utils/utils";
+import { formatDate, formatTotalCost } from "@/components/utils/utils";
 import { Deployment } from "@/types/models";
 import { DeploymentsBaseCell } from "./DeploymentsBaseCell";
 
@@ -74,7 +74,7 @@ export function DeploymentsTable(props: DeploymentsTableProps) {
           {formatTotalCost(stats?.total_cost)}
         </DeploymentsBaseCell>,
         <DeploymentsBaseCell key="created_at" className="text-gray-500">
-          {formatRelativeDateWithTime(deployment.created_at)}
+          {formatDate(deployment.created_at, "relative_with_time")}
         </DeploymentsBaseCell>,
       ];
     });
