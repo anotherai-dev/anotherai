@@ -3,18 +3,20 @@ import json
 from typing import Any, override
 
 from fastmcp.server import FastMCP
-from fastmcp.server.dependencies import get_http_request
+from fastmcp.server.auth import AccessToken, AuthProvider, RemoteAuthProvider, TokenVerifier
+from fastmcp.server.dependencies import get_access_token
 from fastmcp.server.middleware import CallNext, Middleware, MiddlewareContext
 from fastmcp.tools.tool import ToolResult, default_serializer
 from mcp.types import CallToolRequestParams
-from pydantic import BaseModel, ValidationError
+from pydantic import AnyHttpUrl, BaseModel, ValidationError
 from structlog import get_logger
 
+from core.consts import ANOTHERAI_API_ROOT_URL, AUTHORIZATION_SERVER
+from core.domain.exceptions import InvalidTokenError
 from core.domain.tenant_data import TenantData
 from core.services.documentation_search import DocumentationSearch
 from protocol.api._dependencies._lifecycle import lifecyle_dependencies
 from protocol.api._dependencies._services import completion_runner
-from protocol.api._dependencies._tenant import authenticated_tenant
 from protocol.api._services.agent_service import AgentService
 from protocol.api._services.annotation_service import AnnotationService
 from protocol.api._services.completion_service import CompletionService
@@ -64,10 +66,20 @@ class CustomFastMCP(FastMCP[Any]):
         _ = self._mcp_server.call_tool(validate_input=False)(self._mcp_call_tool)
 
 
+_CLAIMS_TENANT = "tenant"
+
+
+# Stupid hack to allow testing
+# TODO: figure out how to avoid wrapping in an async function
+async def _async_get_access_token() -> AccessToken | None:
+    return get_access_token()
+
+
 async def _authenticated_tenant() -> TenantData:
-    request = get_http_request()
-    lifecycle = lifecyle_dependencies()
-    return await authenticated_tenant(request, lifecycle)
+    token = await _async_get_access_token()
+    if not token or not token.claims:
+        raise InvalidTokenError("No token found")
+    return token.claims[_CLAIMS_TENANT]
 
 
 async def playground_service() -> PlaygroundService:
@@ -134,3 +146,25 @@ async def deployment_service() -> DeploymentService:
     deps = lifecyle_dependencies()
     tenant = await _authenticated_tenant()
     return DeploymentService(deps.storage_builder.deployments(tenant.uid), deps.storage_builder.completions(tenant.uid))
+
+
+class CustomTokenVerifier(TokenVerifier):
+    async def verify_token(self, token: str) -> AccessToken | None:
+        deps = lifecyle_dependencies()
+        tenant = await deps.security_service.find_tenant(token)
+        return AccessToken(
+            token=token,
+            client_id="",
+            scopes=[],
+            claims={
+                _CLAIMS_TENANT: tenant,
+            },
+        )
+
+
+def build_auth_provider() -> AuthProvider:
+    return RemoteAuthProvider(
+        token_verifier=CustomTokenVerifier(),
+        authorization_servers=[AnyHttpUrl(AUTHORIZATION_SERVER)],
+        resource_server_url=f"{ANOTHERAI_API_ROOT_URL}/mcp",
+    )

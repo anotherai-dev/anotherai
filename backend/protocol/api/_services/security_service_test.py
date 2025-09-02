@@ -128,7 +128,7 @@ class TestFindTenant:
         api_key = "aai-test-key-123"
         mock_tenant_storage.tenant_by_api_key.return_value = sample_tenant
 
-        result = await security_service.find_tenant(f"Bearer {api_key}")
+        result = await security_service.find_tenant(api_key)
 
         assert result == sample_tenant
         mock_tenant_storage.tenant_by_api_key.assert_called_once_with(api_key)
@@ -138,7 +138,7 @@ class TestFindTenant:
         mock_tenant_storage.tenant_by_api_key.side_effect = ObjectNotFoundError("tenant")
 
         with pytest.raises(InvalidTokenError):
-            await security_service.find_tenant(f"Bearer {api_key}")
+            await security_service.find_tenant(api_key)
 
         mock_tenant_storage.tenant_by_api_key.assert_called_once_with(api_key)
 
@@ -154,7 +154,7 @@ class TestFindTenant:
         mock_verifier.verify.return_value = claims
         mock_tenant_storage.tenant_by_org_id.return_value = sample_tenant
 
-        result = await security_service.find_tenant(f"Bearer {token}")
+        result = await security_service.find_tenant(token)
 
         assert result == sample_tenant
         mock_verifier.verify.assert_called_once_with(token)
@@ -174,7 +174,7 @@ class TestFindTenant:
         mock_tenant_storage.tenant_by_org_id.side_effect = ObjectNotFoundError("tenant")
         mock_tenant_storage.create_tenant_for_org_id.return_value = sample_tenant
 
-        result = await security_service.find_tenant(f"Bearer {token}")
+        result = await security_service.find_tenant(token)
 
         assert result == sample_tenant
         mock_verifier.verify.assert_called_once_with(token)
@@ -194,7 +194,7 @@ class TestFindTenant:
         mock_tenant_storage.tenant_by_org_id.side_effect = ObjectNotFoundError("tenant")
         mock_tenant_storage.create_tenant_for_org_id.return_value = sample_tenant
 
-        result = await security_service.find_tenant(f"Bearer {token}")
+        result = await security_service.find_tenant(token)
 
         assert result == sample_tenant
         # Should use org_id as fallback when org_slug is None
@@ -212,7 +212,7 @@ class TestFindTenant:
         mock_verifier.verify.return_value = claims
         mock_tenant_storage.tenant_by_owner_id.return_value = sample_tenant
 
-        result = await security_service.find_tenant(f"Bearer {token}")
+        result = await security_service.find_tenant(token)
 
         assert result == sample_tenant
         mock_verifier.verify.assert_called_once_with(token)
@@ -232,7 +232,7 @@ class TestFindTenant:
         mock_tenant_storage.tenant_by_owner_id.side_effect = ObjectNotFoundError("tenant")
         mock_tenant_storage.create_tenant_for_owner_id.return_value = sample_tenant
 
-        result = await security_service.find_tenant(f"Bearer {token}")
+        result = await security_service.find_tenant(token)
 
         assert result == sample_tenant
         mock_verifier.verify.assert_called_once_with(token)
@@ -249,7 +249,7 @@ class TestFindTenant:
         mock_verifier.verify.side_effect = Exception("Invalid signature")
 
         with pytest.raises(Exception, match="Invalid signature"):
-            _ = await security_service.find_tenant(f"Bearer {token}")
+            _ = await security_service.find_tenant(token)
 
         mock_verifier.verify.assert_called_once_with(token)
         # No storage methods should be called
@@ -267,7 +267,7 @@ class TestFindTenant:
         mock_verifier.verify.return_value = claims
 
         with pytest.raises(InvalidTokenError, match="Invalid token claims"):
-            _ = await security_service.find_tenant(f"Bearer {token}")
+            _ = await security_service.find_tenant(token)
 
         mock_verifier.verify.assert_called_once_with(token)
         # No storage methods should be called
@@ -285,9 +285,50 @@ class TestFindTenant:
         mock_verifier.verify.return_value = claims
 
         with pytest.raises(InvalidTokenError, match="Invalid token claims"):
-            _ = await security_service.find_tenant(f"Bearer {token}")
+            _ = await security_service.find_tenant(token)
 
         mock_verifier.verify.assert_called_once_with(token)
         # No storage methods should be called
         mock_tenant_storage.tenant_by_org_id.assert_not_called()
         mock_tenant_storage.tenant_by_owner_id.assert_not_called()
+
+
+class TestTokenFromHeader:
+    @pytest.mark.parametrize("authorization", ["Basic blabla", "blabla"])
+    def test_invalid_tokens(self, security_service: SecurityService, authorization: str):
+        with pytest.raises(InvalidTokenError):
+            security_service.token_from_header(authorization)
+
+    @patch("protocol.api._services.security_service.NO_AUTHORIZATION_ALLOWED", True)
+    @pytest.mark.parametrize("authorization", ["Bearer ", "Bearer", ""])
+    def test_empty_tokens(self, security_service: SecurityService, authorization: str):
+        result = security_service.token_from_header(authorization)
+
+        assert result == ""
+
+    @patch("protocol.api._services.security_service.NO_AUTHORIZATION_ALLOWED", False)
+    @pytest.mark.parametrize("authorization", ["Bearer", ""])
+    def test_empty_tokens_raises_if_not_allowed(self, security_service: SecurityService, authorization: str):
+        with pytest.raises(InvalidTokenError):
+            security_service.token_from_header(authorization)
+
+    @pytest.mark.parametrize(
+        ("authorization", "expected_token"),
+        [
+            ("Bearer token123", "token123"),
+            ("Bearer aai-test-key", "aai-test-key"),
+            ("Bearer jwt.token.here", "jwt.token.here"),
+            ("Bearer token with spaces", "token"),  # Split on space, so only first part after Bearer
+            ("Bearer token123 extra", "token123"),  # Only takes first token part
+        ],
+    )
+    def test_various_valid_bearer_formats(
+        self,
+        security_service: SecurityService,
+        authorization: str,
+        expected_token: str,
+    ):
+        """Test various valid Bearer authorization formats."""
+        result = security_service.token_from_header(authorization)
+
+        assert result == expected_token
