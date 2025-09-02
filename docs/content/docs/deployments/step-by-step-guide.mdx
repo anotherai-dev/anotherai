@@ -1,0 +1,200 @@
+---
+title: Step-by-Step Deployment Guide
+summary: A practical guide to deploying versions from experiments in AnotherAI
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Step, Steps } from "fumadocs-ui/components/steps";
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+# Step-by-Step Guide to Deploying Versions
+
+This guide walks you through the process of deploying a version of your agent using AnotherAI and your AI coding agent.
+
+## Creating a Deployment
+
+<Steps>
+<Step>
+### Select the Version You Want to Deploy
+
+1. Open [anotherai.dev](https://anotherai.dev)
+2. Locate the experiment that has the version of the agent you want to deploy.
+3. Hover over the version number to copy the version ID (it will look something like `ver_abc123def456`)
+
+TODO: add image of copying version ID
+
+</Step>
+
+<Step>
+### Ask your Agent to Deploy the Version
+
+1. Open Claude Code (or your preferred AI coding agent)
+2. Request that your AI Agent deploys the version to your preferred [environment](#common-environment-names) and paste the version ID.
+
+```
+I want to deploy anotherai/deployment/a9f1fc5ab11299a9fee5604e51fe7b6e to production.
+```
+
+3. Optionally, you can request a specific name be used for the deployment. Otherwise, your AI coding agent will pick one for you automatically.
+
+```
+I want to deploy anotherai/deployment/a9f1fc5ab11299a9fee5604e51fe7b6e to production.
+Name the deployment: "calendar-assistant/production-9-2"
+```
+
+#### Common environment names
+
+- `dev` - for development testing
+- `staging` - for pre-production validation
+- `production` or `prod` - for live production use
+</Step>
+
+<Step>
+### Update Your Code
+
+Once the deployment is created, ask Claude to update your code to use the new deployment.
+
+```
+Update my agent code to use the new deployment travel-assistant/production#1
+```
+
+Claude will modify your code from the hardcoded parameters to the deployment reference.
+
+**Before (hardcoded parameters):**
+
+<Tabs items={["OpenAI SDK (JS)", "OpenAI SDK (Python)"]}>
+<Tab>
+```js
+const completion = await openai.chat.completions.create({
+  model: "gpt-4o",
+  messages: [
+    {
+      role: "system",
+      content: `You are an expert on {{ country }}. 
+                You are helping a customer traveling to {{ country }}. 
+                Answer questions in {{ language }}.`
+    },
+    { role: "user", content: userQuestion }
+  ],
+  temperature: 0.7,
+  input: {
+    country: destination,
+    language: userLanguage
+  },
+  agent_id: "travel-assistant"
+});
+```
+</Tab>
+<Tab>
+```python
+completion = await openai.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {
+            "role": "system",
+            "content": """You are an expert on {{ country }}. 
+                         You are helping a customer traveling to {{ country }}. 
+                         Answer questions in {{ language }}."""
+        },
+        {"role": "user", "content": user_question}
+    ],
+    temperature=0.7,
+    extra_body={
+        "input": {
+            "country": destination,
+            "language": user_language
+        },
+        "agent_id": "travel-assistant"
+    }
+)
+```
+</Tab>
+</Tabs>
+
+**After (using deployment):**
+
+<Tabs items={["OpenAI SDK (JS)", "OpenAI SDK (Python)"]}>
+<Tab>
+```js
+const completion = await openai.chat.completions.create({
+  model: "anotherai/travel-assistant/production#1",
+  messages: [
+    { role: "user", content: userQuestion }
+  ],
+  input: {
+    country: destination,
+    language: userLanguage
+  }
+});
+```
+</Tab>
+<Tab>
+```python
+completion = await openai.chat.completions.create(
+    model="anotherai/travel-assistant/production#1",
+    messages=[
+        {"role": "user", "content": user_question}
+    ],
+    extra_body={
+        "input": {
+            "country": destination,
+            "language": user_language
+        }
+    }
+)
+```
+</Tab>
+</Tabs>
+
+Alternatively, if you want to do it yourself or just understand the changes that will be made, read more [here](./index#why-use-deployments).
+
+</Step>
+</Steps>
+
+## Updating a Deployment
+
+There are two types of deployment updates that can be made: breaking and non-breaking. To learn more about the differences, read more [here](./index#creating-new-vs-updating-existing-deployments).
+
+### Non-Breaking Changes (Update Existing Deployment)
+
+When your changes don't affect the input variables or output schema, you can update the existing deployment:
+
+<Steps>
+<Step>
+Copy the new version ID you want to deploy from [AnotherAI](https://anotherai.dev).
+</Step>
+
+<Step>
+  Ask Claude to update the existing deployment: ``` Update deployment travel-assistant/production#1 to use
+  anotherai/deployment/a9f1fc5ab11299a9fee5604e51fe7b6e ```
+</Step>
+
+<Step>Confirm the update in the AnotherAI web app when prompted.</Step>
+
+<Step>
+That's it! **No code changes needed** - your application automatically uses the updated version.
+</Step>
+</Steps>
+
+### Breaking Changes (Create New Deployment)
+
+When your changes affect input variables or output schema, you must create a new deployment:
+
+<Steps>
+<Step>
+Copy the new version ID you want to deploy from [AnotherAI](https://anotherai.dev).
+</Step>
+
+<Step>
+  Ask Claude to deploy the new version to your preferred environment in a new deployment. Alternatively, if you ask
+  Claude to update an existing deployment and it cannot because the new version is incompatible, Claude will
+  automatically create a new deployment for you.
+</Step>
+
+<Step>
+Update your code to use the new deployment name:
+```
+Update my code to use travel-assistant/production#2 instead of travel-assistant/production#1
+```
+</Step>
+</Steps>
