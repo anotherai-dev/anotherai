@@ -1,6 +1,6 @@
 # Another AI Quickstart Instructions
 
-Follow the following steps to get a local instance of AnotherAI started. AnotherAI is a self-hosted AI platform that 
+Follow the following steps to get a local instance of AnotherAI started. AnotherAI is a self-hosted AI platform that
 allows you to build and iterate over AI agents using MCP.
 
 You will need:

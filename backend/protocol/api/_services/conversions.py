@@ -13,6 +13,7 @@ from core.domain.annotation import Annotation as DomainAnnotation
 from core.domain.api_key import APIKey as DomainAPIKey
 from core.domain.api_key import CompleteAPIKey as DomainCompleteAPIKey
 from core.domain.deployment import Deployment as DomainDeployment
+from core.domain.error import Error as DomainError
 from core.domain.exceptions import BadRequestError
 from core.domain.experiment import Experiment as DomainExperiment
 from core.domain.file import File
@@ -286,6 +287,13 @@ def output_from_domain(output: DomainOutput) -> Output:
     )
 
 
+def output_to_domain(output: Output) -> DomainOutput:
+    return DomainOutput(
+        messages=[message_to_domain(m) for m in output.messages] if output.messages else None,
+        error=DomainError(message=output.error.error) if output.error else None,
+    )
+
+
 def completion_from_domain(completion: DomainCompletion) -> Completion:
     return Completion(
         id=completion.id,
@@ -295,6 +303,21 @@ def completion_from_domain(completion: DomainCompletion) -> Completion:
         output=output_from_domain(completion.agent_output),
         messages=[message_from_domain(m) for m in completion.messages] if completion.messages else [],
         annotations=None,  # TODO:
+        metadata=completion.metadata or None,
+        cost_usd=completion.cost_usd or 0.0,
+        duration_seconds=completion.duration_seconds or 0.0,
+    )
+
+
+def completion_to_domain(completion: Completion) -> DomainCompletion:
+    return DomainCompletion(
+        id=completion.id,
+        agent=DomainAgent(id=completion.agent_id, uid=0),
+        version=version_to_domain(completion.version),
+        agent_input=input_to_domain(completion.input),
+        agent_output=output_to_domain(completion.output),
+        messages=[message_to_domain(m) for m in completion.messages] if completion.messages else [],
+        traces=[],  # TODO: ?
         metadata=completion.metadata or None,
         cost_usd=completion.cost_usd or 0.0,
         duration_seconds=completion.duration_seconds or 0.0,
