@@ -153,6 +153,9 @@ To set up the MCP (Model Context Protocol) with Claude Code locally:
 claude mcp add --scope user --transport http anotherai https://api.anotherai.dev/mcp
 ```
 
+> The command above assumes that authentication is disabled (NO_AUTHORIZATION_ALLOWED=true).
+> Otherwise, add an API Key with `--transport http --header "Authorization: Bearer YOUR_API_KEY_HERE"`
+
 #### For Cursor
 
 Tap on this button to install the MCP server in Cursor (make sure the MCP server is running see [#try-it-out](#try-it-out)):
