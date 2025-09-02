@@ -8,7 +8,7 @@ interface CompletionTableDateCellProps {
 
 export function CompletionTableDateCell({ value, format = "date" }: CompletionTableDateCellProps) {
   const formattedDate = useMemo(() => formatDate(value, format), [value, format]);
-  
+
   if (formattedDate === "N/A" || formattedDate === "Invalid Date") {
     return <span className="text-xs text-gray-400">{formattedDate}</span>;
   }

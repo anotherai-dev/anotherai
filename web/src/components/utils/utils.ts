@@ -154,12 +154,15 @@ export function formatRelativeDateWithTime(value: unknown): string {
   return `${date.toLocaleDateString()}, ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
 }
 
-export function formatDate(value: unknown, format: "date" | "datetime" | "time" | "relative" | "relative_with_time"): string {
+export function formatDate(
+  value: unknown,
+  format: "date" | "datetime" | "time" | "relative" | "relative_with_time"
+): string {
   if (value === null || value === undefined) return "N/A";
 
   // Ensure UTC timestamps are properly parsed by adding 'Z' suffix if missing
   const dateString = String(value);
-  const utcDateString = dateString.endsWith('Z') ? dateString : dateString + 'Z';
+  const utcDateString = dateString.endsWith("Z") ? dateString : dateString + "Z";
   const date = new Date(utcDateString);
 
   if (isNaN(date.getTime())) return "Invalid Date";
