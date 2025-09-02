@@ -1,5 +1,8 @@
 import "@testing-library/jest-dom";
 
+// Create a shared mock for search params that tests can access
+global.mockSearchParamsGet = jest.fn();
+
 // Mock Next.js router
 jest.mock("next/navigation", () => ({
   useRouter() {
@@ -13,7 +16,9 @@ jest.mock("next/navigation", () => ({
     };
   },
   useSearchParams() {
-    return new URLSearchParams();
+    return {
+      get: global.mockSearchParamsGet,
+    };
   },
   usePathname() {
     return "/";
