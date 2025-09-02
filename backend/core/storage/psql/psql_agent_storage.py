@@ -15,22 +15,23 @@ class PsqlAgentsStorage(PsqlBaseStorage, AgentStorage):
         if agent.uid == 0:
             agent.uid = id_uint32()
 
-        async with self._connect() as connection:
-            try:
+        try:
+            async with self._connect() as connection:
                 _ = await connection.execute(
                     """
-                    INSERT INTO agents (uid, slug, name)
-                    VALUES ($1, $2, $3)
-                    """,
+                        INSERT INTO agents (uid, slug, name)
+                        VALUES ($1, $2, $3)
+                        """,
                     agent.uid,
                     agent.id,
                     agent.name,
                 )
-            except UniqueViolationError:
-                try:
+        except UniqueViolationError:
+            try:
+                async with self._connect() as connection:
                     agent.uid = await self._agent_uid(connection, agent.id)
-                except ObjectNotFoundError:
-                    raise DuplicateValueError("Agent already exists") from None
+            except ObjectNotFoundError:
+                raise DuplicateValueError("Agent already exists") from None
 
     @override
     async def get_agent(self, agent_id: str) -> Agent:

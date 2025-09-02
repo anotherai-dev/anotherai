@@ -28,13 +28,13 @@ Are you interested in a self-hosted, [open-source](https://github.com/anotherai-
 
 AnotherAI is available as an MCP server in the IDEs below.
 
-<Tabs items={['Cursor', 'Claude Code']}>
+<Tabs items={['Cursor', 'Claude Code', 'Cursor CLI']}>
 
 <Tab value="Cursor">
 
 Quick setup (recommended):
-1. Complete the Hosted set up above
-2. Tap on the button below 
+1. Complete the [set up](#set-up) steps above
+2. Tap on the button below
 
 TODO: confirm if this quick setup will work as is for hosted version as well.
 
@@ -98,6 +98,22 @@ Then type:
 ```
 
 You should see the AnotherAI server listed as "connected".
+
+</Tab>
+
+<Tab value="Cursor CLI">
+
+Cursor CLI can access MCPs configured in your IDE's  `mcp.json` configuration file, enabling the same MCP servers and tools that you've configured for the IDE.
+
+Setup steps:
+
+1. Complete the [set up](#set-up) steps described above and ensure the AnotherAI MCP server is running
+2. Configure the AnotherAI MCP in your IDE's `mcp.json` file, as described in the `Cursor` tab.
+3. Once the MCP is enabled and active, you can ask the Cursor CLI to interact with it
+
+<Callout type="info">
+**Additional Configuration**: If you find that the CLI claims it can't find or use the AnotherAI MCP, you may need to give it the specific file path to use to look for the mcp.json file.
+</Callout>
 
 </Tab>
 

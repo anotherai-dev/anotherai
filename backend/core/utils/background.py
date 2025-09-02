@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 from collections.abc import Coroutine
 from typing import Any
 
@@ -10,10 +11,14 @@ class BackgroundTasks:
     def __init__(self):
         self._tasks = set[asyncio.Task[None]]()
 
+    def _safe_pop_task(self, task: asyncio.Task[None]) -> None:
+        with contextlib.suppress(KeyError):
+            self._tasks.remove(task)
+
     def add(self, task: Coroutine[Any, Any, None]):
         t = asyncio.create_task(sentry_wrap(task))
         self._tasks.add(t)
-        t.add_done_callback(self._tasks.remove)
+        t.add_done_callback(self._safe_pop_task)
 
     async def wait(self):
         if not self._tasks:

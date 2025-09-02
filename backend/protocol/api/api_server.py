@@ -11,8 +11,9 @@ from core.domain.models.models import Model
 from core.logs.setup_logs import setup_logs
 from core.providers._base.provider_error import ProviderError
 from protocol._common import probes_router
+from protocol._common.broker_utils import use_in_memory_broker
 from protocol._common.lifecycle import shutdown, startup
-from protocol.api import _api_router, _run_router
+from protocol.api import _api_router, _run_router, _well_known_router
 from protocol.api._api_utils import convert_error_response
 from protocol.api._dependencies._misc import set_start_time
 from protocol.api._mcp import mcp
@@ -37,6 +38,13 @@ async def _lifespan(app: FastAPI):
     dependencies = await startup()
     app.state.dependencies = dependencies
 
+    in_memory_broker = use_in_memory_broker(os.environ.get("JOBS_BROKER_URL"))
+    # Need to manually call the lifecycle hooks for the in memory broker
+    if in_memory_broker:
+        from protocol.worker.worker import broker
+
+        await broker.startup()
+
     if os.getenv("MIGRATE_STORAGE_ON_STARTUP") == "1":
         _log.info("Migrating storage on startup")
         await dependencies.storage_builder.migrate()
@@ -44,6 +52,11 @@ async def _lifespan(app: FastAPI):
 
     async with _mcp_lifespan(app):
         yield
+
+    if in_memory_broker:
+        from protocol.worker.worker import broker
+
+        await broker.shutdown()
 
     await shutdown(dependencies)
 
@@ -88,11 +101,15 @@ async def get_model_ids() -> list[str]:
 
 api.include_router(probes_router.router)
 
+
 _INCLUDED_ROUTES = set(os.environ["INCLUDED_ROUTES"].split(",")) if os.environ.get("INCLUDED_ROUTES") else set()
 
 
 if not _INCLUDED_ROUTES or "api" in _INCLUDED_ROUTES:
     api.include_router(_api_router.router)
+    api.include_router(_well_known_router.router)
+    # Some MCP clients look for the .well-known after the /mcp prefix
+    api.include_router(_well_known_router.router, prefix="/mcp")
 
 if not _INCLUDED_ROUTES or "run" in _INCLUDED_ROUTES:
     api.include_router(_run_router.router)

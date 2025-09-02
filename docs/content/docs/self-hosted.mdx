@@ -19,12 +19,12 @@ claude "Please follow instructions in https://raw.githubusercontent.com/anothera
 
 AnotherAI is available as an MCP server in the IDEs below.
 
-<Tabs items={['Cursor', 'Claude Code']}>
+<Tabs items={['Cursor', 'Claude Code', 'Cursor CLI']}>
 
 <Tab value="Cursor">
 
 Quick setup (recommended):
-1. Complete the Self Host set up above and make sure the AnotherAI MCP server is running.
+1. Complete the [Self Host Set Up](#self-host-set-up) steps above.
 2. Tap on this button below
 
 <a href="cursor://anysphere.cursor-deeplink/mcp/install?name=anotherai&config=eyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjgwMDAvbWNwLyJ9"><img src="https://cursor.com/deeplink/mcp-install-dark.svg" alt="Add anotherai MCP server to Cursor" height="32" /></a>
@@ -83,6 +83,22 @@ You should see the AnotherAI server listed as "connected".
 
 </Tab>
 
+<Tab value="Cursor CLI">
+
+Cursor CLI can access MCPs configured in your IDE's  `mcp.json` configuration file, enabling the same MCP servers and tools that you've configured for the IDE.
+
+Setup steps:
+
+1. Complete the [Self Host Set Up](#self-host-set-up) steps above and ensure the AnotherAI MCP server is running
+2. Configure the AnotherAI MCP in your IDE's `mcp.json` file, as described in the `Cursor` tab
+3. Once the MCP is enabled and active, you can ask the Cursor CLI to interact with it
+
+<Callout type="info">
+**Additional Configuration**: If you find that the CLI claims it can't find or use the AnotherAI MCP, you may need to give it the specific file path to use to look for the mcp.json file.
+</Callout>
+
+</Tab>
+
 </Tabs>
 
 ### Try it out
@@ -102,6 +118,18 @@ Create an experiment in AnotherAI that compares how GPT-5 mini and GPT-4 mini pe
 ```bash
 Use AnotherAI to help me find a faster model for @[your-agent-name-here] while still maintaining accuracy.
 ```
+
+### Configuring Authentication
+
+The default configuration disables authentication all together using `NO_AUTHORIZATION_ALLOWED=true` in the `.env` file.
+
+If that variable is not present, the backend expects means to validate a JWT token in environment variables, either:
+- `JWKS_URL`: the URL to a valid JSON Web Key Set
+- `JWK`: a stringified JSON of a valid JSON Web Key
+
+> You can check [signature_verifier](/backend//core/utils/signature_verifier.py) for the implementation of the signature verification and the [lifecycle.py](/backend/protocol/_common/lifecycle.py) for how the verifier is selected.
+
+The Web Client currently only supports Clerk based authentication, which is also disabled by default. It can be activated by providing the `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` environment variables (note that the `NEXT_PUBLIC_...` key must be available at build time).
 
 ## Join the community
 

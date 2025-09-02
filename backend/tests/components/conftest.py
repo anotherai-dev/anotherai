@@ -16,7 +16,6 @@ from fastapi import FastAPI
 from fastmcp import Client, FastMCP
 from httpx import ASGITransport, AsyncClient
 from pytest_httpx import HTTPXMock
-from starlette.requests import Request
 
 from tests.asgi_transport import patch_asgi_transport
 from tests.components._common import IntegrationTestClient
@@ -161,9 +160,7 @@ async def patched_broker(migrated_database: None, test_blob_storage: None, click
     with patch("taskiq.InMemoryBroker", new=PausableInMemoryBroker):
         from protocol.worker.worker import broker
 
-    await broker.startup()
-    yield broker
-    await broker.shutdown()
+    return broker
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -224,18 +221,11 @@ async def test_api_client(
 ):
     # Making sure the call is patched before applying all imports
 
-    def _mock_get_http_request():
-        return Request(
-            scope={
-                "type": "http",
-                "method": "GET",
-                "path": "/mcp",
-                "headers": [
-                    (b"host", b"localhost:8000"),
-                    (b"authorization", f"Bearer {test_jwt}".encode()),
-                ],
-            },
-        )
+    # The MCP in memory transport bypasses auth entirely so we need to mock it
+    async def _mock_get_access_token():
+        from protocol.api._mcp_utils import CustomTokenVerifier
+
+        return await CustomTokenVerifier().verify_token(test_jwt)
 
     # Manually trigger the lifespan events since ASGITransport doesn't do it automatically
 
@@ -253,7 +243,7 @@ async def test_api_client(
         headers=headers,
     )
 
-    with patch("protocol.api._mcp_utils.get_http_request", side_effect=_mock_get_http_request):
+    with patch("protocol.api._mcp_utils._async_get_access_token", side_effect=_mock_get_access_token):
         async with Client(test_api_server[1]) as mcp_client:
             client = IntegrationTestClient(api_client, mcp_client, patched_broker, httpx_mock)
             yield client

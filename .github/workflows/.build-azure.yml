@@ -1,0 +1,128 @@
+name: Build
+
+on:
+  workflow_call:
+    inputs:
+      env:
+        required: true
+        type: string
+      registry_suffix:
+        required: true
+        type: string
+      app_name:
+        required: false
+        type: string
+        default: anotherai-api
+      release_name:
+        required: false
+        type: string
+        default: ${{ github.sha }}
+      service:
+        required: true
+        type: string
+      tag_suffix:
+        required: false
+        type: string
+        default: ""
+    secrets:
+      AZURE_CLIENT_ID:
+        required: true
+      AZURE_TENANT_ID:
+        required: true
+      AZURE_RESOURCE_GROUP:
+        required: true
+      AZURE_SUBSCRIPTION_ID:
+        required: true
+      SENTRY_HOOK:
+        required: true
+      SENTRY_AUTH_TOKEN:
+        required: false
+      build_args:
+        required: false
+
+    outputs:
+      image_name:
+        description: The name of the image to deploy
+        value: ${{ jobs.build.outputs.image_name }}
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build:
+    name: Build
+    # Making sure there is a single job deploying on a given environment at a time
+    concurrency:
+      group: build-azure-image-${{inputs.app_name}}-${{ inputs.env }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.env }}
+    env:
+      REGISTRY_NAME: anotherai${{ inputs.registry_suffix }}
+      APP_NAME: ${{ inputs.app_name }}
+      TAG_SUFFIX: ${{ inputs.tag_suffix }}
+    outputs:
+      image_name: ${{ steps.set_image_name.outputs.image_name }}
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: log into container registry
+        run: az acr login --name ${REGISTRY_NAME}
+      - name: create sentry release
+        run: |
+          curl ${SENTRY_HOOK} \
+            -X POST \
+            -H 'Content-Type: application/json' \
+            -d '{"version": "${GITHUB_SHA}"}'
+        env:
+          SENTRY_HOOK: ${{ secrets.SENTRY_HOOK }}
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ inputs.service }}.Dockerfile
+          push: false
+          load: true
+          tags: ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME}}:latest${{ inputs.tag_suffix }},${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME}}:${{ github.sha }}${{ inputs.tag_suffix }}
+          build-args: |
+            RELEASE_NAME=${{ inputs.release_name }}
+            ${{ secrets.build_args }}
+          cache-from: type=registry,ref=${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:buildcache,mode=max
+          secrets: |
+            "sentry_auth_token=${{ secrets.SENTRY_AUTH_TOKEN }}"
+      - name: Scan image for vulnerabilities
+        uses: aquasecurity/trivy-action@0.32.0
+        with:
+          image-ref: ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}${{ inputs.tag_suffix }}
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+          skip-dirs: "/app/.venv"
+        env:
+          TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db,public.ecr.aws/aquasecurity/trivy-db
+          TRIVY_JAVA_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-java-db,public.ecr.aws/aquasecurity/trivy-java-db
+          ACTIONS_RUNTIME_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push image to registry
+        uses: docker/build-push-action@v6
+        with:
+          file: ${{ inputs.service }}.Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME}}:latest${{ inputs.tag_suffix }},${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME}}:${{ github.sha }}${{ inputs.tag_suffix }}
+          build-args: |
+            RELEASE_NAME=${{ inputs.release_name }}
+            ${{ secrets.build_args }}
+          secrets: |
+            "sentry_auth_token=${{ secrets.SENTRY_AUTH_TOKEN }}"
+      - id: set_image_name
+        name: Set image name
+        run: echo "image_name=${REGISTRY_NAME}.azurecr.io/${APP_NAME}:${GITHUB_SHA}${TAG_SUFFIX}" >> "$GITHUB_OUTPUT"

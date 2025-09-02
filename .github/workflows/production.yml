@@ -1,0 +1,55 @@
+name: Production
+
+on:
+  push:
+    branches:
+      - production
+      # TODO: remove when we don't want to deploy from main
+      - main
+
+permissions:
+  contents: read
+  id-token: write
+  packages: write
+
+jobs:
+  backend-quality:
+    uses: ./.github/workflows/.backend-quality.yml
+    secrets: inherit
+
+  backend-build:
+    needs: backend-quality
+    uses: ./.github/workflows/.build-azure.yml
+    with:
+      env: prod
+      registry_suffix: prod
+      app_name: anotherai-api-prod
+      service: backend
+    secrets:
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      SENTRY_HOOK: ${{ secrets.SENTRY_API_HOOK }}
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
+  backend-deploy-api:
+    needs: [backend-build]
+    uses: ./.github/workflows/.deploy.yml
+    secrets: inherit
+    with:
+      image_name: ${{ needs.backend-build.outputs.image_name }}
+      env: prod
+      full_app_name: anotherai-api-prod
+      label: latest
+
+
+  backend-deploy-worker:
+    needs: [backend-build]
+    uses: ./.github/workflows/.deploy.yml
+    secrets: inherit
+    with:
+      image_name: ${{ needs.backend-build.outputs.image_name }}
+      env: prod
+      full_app_name: anotherai-worker-prod
+      # label: latest

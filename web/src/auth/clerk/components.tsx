@@ -14,19 +14,15 @@ export { UserButton } from "./UserButton";
 export { ApiKeysButton } from "@/components/auth/ApiKeysButton";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  return (
-    <ClerkProvider signInFallbackRedirectUrl="/" afterSignOutUrl="/" signInUrl="/sign-in" signUpUrl="/sign-up">
-      {children}
-    </ClerkProvider>
-  );
+  return <ClerkProvider>{children}</ClerkProvider>;
 }
 
 export function SignInButton(props: AuthComponentProps) {
-  return <ClerkSignInButton mode="modal" {...props}></ClerkSignInButton>;
+  return <ClerkSignInButton {...props}></ClerkSignInButton>;
 }
 
 export function SignUpButton(props: AuthComponentProps) {
-  return <ClerkSignUpButton mode="modal" {...props}></ClerkSignUpButton>;
+  return <ClerkSignUpButton {...props}></ClerkSignUpButton>;
 }
 
 export function SignIn({ redirect }: { redirect?: string }) {

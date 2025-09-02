@@ -132,7 +132,7 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
         WHERE {where} AND e.deleted_at IS NULL
         """  # noqa: S608 # OK here since where is defined above
 
-        async with self._pool.acquire() as connection:
+        async with self._connect() as connection:
             count = await connection.fetchval(query, *arguments)
             return count or 0
 
