@@ -18,9 +18,10 @@ COPY package.json yarn.lock ./
 COPY web/package.json ./web/
 COPY docs/package.json ./docs/
 
-# Install all dependencies
-# Next JS needs dev dependencies 
-RUN yarn install --frozen-lockfile
+# Check if locfile is up to date
+RUN yarn install --mode=skip-build --immutable
+# Install only the web dependencies
+RUN yarn workspaces focus web
 
 FROM deps AS sources
 
@@ -35,14 +36,14 @@ FROM sources AS dev
 EXPOSE 3000
 WORKDIR /app/web
 
-CMD ["npx", "next", "dev"]
+CMD ["yarn", "run", "next", "dev"]
 
 
 FROM sources AS builder
 
 WORKDIR /app/web
 
-RUN npm run build
+RUN yarn build
 
 FROM base AS prod
 
