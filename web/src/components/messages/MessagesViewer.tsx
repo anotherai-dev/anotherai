@@ -33,6 +33,7 @@ export function MessagesViewer(props: MessagesViewerProps) {
             item.object ||
             item.image_url ||
             item.audio_url ||
+            item.file ||
             item.tool_call_request ||
             item.tool_call_result
         )
