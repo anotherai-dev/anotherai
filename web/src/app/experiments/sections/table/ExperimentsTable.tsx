@@ -2,7 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
-import { LoadingIndicator } from "@/components/LoadingIndicator";
+import { EmptyState } from "@/components/EmptyState";
+import { LoadingState } from "@/components/LoadingState";
 import { PageError } from "@/components/PageError";
 import { Pagination } from "@/components/Pagination";
 import { SimpleTableComponent } from "@/components/SimpleTableComponent";
@@ -77,19 +78,16 @@ export function ExperimentsTable(props: ExperimentsTableProps) {
   }
 
   if (isLoading) {
-    return (
-      <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-        <LoadingIndicator />
-      </div>
-    );
+    return <LoadingState />;
   }
 
   if (!isLoading && displayData.length === 0) {
     return (
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-        <p className="text-gray-500">No experiments found.</p>
-        <p className="text-gray-400 text-sm mt-2">Create your first experiment to get started</p>
-      </div>
+      <EmptyState
+        title="No experiments found."
+        subtitle="Create your first experiment to get started"
+        documentationUrl="https://docs.anotherai.dev/experiments"
+      />
     );
   }
 

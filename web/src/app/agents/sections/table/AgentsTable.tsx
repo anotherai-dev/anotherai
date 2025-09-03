@@ -2,7 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
-import { LoadingIndicator } from "@/components/LoadingIndicator";
+import { EmptyState } from "@/components/EmptyState";
+import { LoadingState } from "@/components/LoadingState";
 import { PageError } from "@/components/PageError";
 import { SimpleTableComponent } from "@/components/SimpleTableComponent";
 import { formatRelativeDate, formatTotalCost } from "@/components/utils/utils";
@@ -102,18 +103,16 @@ export function AgentsTable(props: AgentsTableProps) {
   }
 
   if (isLoading) {
-    return (
-      <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-        <LoadingIndicator />
-      </div>
-    );
+    return <LoadingState />;
   }
 
   if (!isLoading && displayData.length === 0) {
     return (
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-        <p className="text-gray-500">No agents found.</p>
-      </div>
+      <EmptyState
+        title="No agents found."
+        subtitle="Create your first agent to get started"
+        documentationUrl="https://docs.anotherai.dev/agents"
+      />
     );
   }
 

@@ -3,7 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { ActivityIndicator } from "@/components/ActivityIndicator";
-import { LoadingIndicator } from "@/components/LoadingIndicator";
+import { EmptyState } from "@/components/EmptyState";
+import { LoadingState } from "@/components/LoadingState";
 import { PageError } from "@/components/PageError";
 import { SimpleTableComponent } from "@/components/SimpleTableComponent";
 import { formatDate, formatTotalCost } from "@/components/utils/utils";
@@ -90,7 +91,7 @@ export function DeploymentsTable(props: DeploymentsTableProps) {
 
   // Loading state
   if (isLoading) {
-    return <LoadingIndicator />;
+    return <LoadingState />;
   }
 
   // Error state
@@ -101,10 +102,11 @@ export function DeploymentsTable(props: DeploymentsTableProps) {
   // Empty state
   if (deployments.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-gray-500">
-        <div className="text-lg font-medium mb-2">No deployments found</div>
-        <div className="text-sm">Create your first deployment to get started</div>
-      </div>
+      <EmptyState
+        title="No deployments found"
+        subtitle="Create your first deployment to get started"
+        documentationUrl="https://docs.anotherai.dev/deployments"
+      />
     );
   }
 

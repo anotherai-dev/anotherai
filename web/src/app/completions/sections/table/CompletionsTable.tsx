@@ -2,9 +2,12 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo } from "react";
+import { EmptyState } from "@/components/EmptyState";
+import { LoadingState } from "@/components/LoadingState";
 import { PageError } from "@/components/PageError";
 import { SimpleTableComponent } from "@/components/SimpleTableComponent";
 import { transformCompletionsData } from "@/components/utils/utils";
+import { defaultQuery } from "@/utils/queries";
 import { CompletionTableCell } from "./cells/CompletionTableCell";
 
 interface CompletionsTableProps {
@@ -12,9 +15,10 @@ interface CompletionsTableProps {
   isLoading: boolean;
   error?: Error;
   maxHeight?: string;
+  currentQuery?: string;
 }
 
-export function CompletionsTable({ data, isLoading, error, maxHeight }: CompletionsTableProps) {
+export function CompletionsTable({ data, isLoading, error, maxHeight, currentQuery }: CompletionsTableProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -56,12 +60,24 @@ export function CompletionsTable({ data, isLoading, error, maxHeight }: Completi
     return <PageError error={error.message} />;
   }
 
+  if (isLoading) {
+    return <LoadingState />;
+  }
+
   if (!isLoading && data.length === 0) {
-    return (
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-        <p className="text-gray-500">No completions found. Try adjusting your query.</p>
-      </div>
-    );
+    const isDefaultQuery = currentQuery === defaultQuery;
+
+    if (isDefaultQuery) {
+      return (
+        <EmptyState
+          title="No completions created yet."
+          subtitle="Start by creating your first completion using the AnotherAI API and MCP."
+          documentationUrl="https://docs.anotherai.dev"
+        />
+      );
+    }
+
+    return <EmptyState title="No completions found." subtitle="Try adjusting your query." />;
   }
 
   if (data.length === 0) {
