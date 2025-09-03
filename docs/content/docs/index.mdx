@@ -38,7 +38,7 @@ Quick setup (recommended):
 
 TODO: confirm if this quick setup will work as is for hosted version as well.
 
-<a href="cursor://anysphere.cursor-deeplink/mcp/install?name=anotherai&config=eyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjgwMDAvbWNwLyJ9"><img src="https://cursor.com/deeplink/mcp-install-dark.svg" alt="Add anotherai MCP server to Cursor" height="32" /></a>
+<a href="cursor://anysphere.cursor-deeplink/mcp/install?name=anotherai&config=eyJ1cmwiOiJodHRwczovL2FwaS5hbm90aGVyYWkuZGV2L21jcCJ9Cg=="><img src="https://cursor.com/deeplink/mcp-install-dark.svg" alt="Add anotherai MCP server to Cursor" height="32" /></a>
 
 Manual installation:
 
@@ -54,7 +54,7 @@ Add the following configuration to your MCP servers config:
 {
   "mcpServers": {
     "anotherai": {
-      "url": "{{API_URL}}/mcp/",
+      "url": "{{API_URL}}/mcp",
       "headers": {
         "Authorization": "Bearer <your_api_key_here>"
       }
@@ -79,7 +79,7 @@ Cursor UI should now look like this (note the green indicator and the number of 
 TODO: confirm actual claude command for hosted version.
 
   ```bash
-  claude mcp add --scope user https://api.anotherai.dev/mcp/ --transport http -H "Authorization: Bearer YOUR_API_KEY_HERE"
+  claude mcp add --scope user anotherai https://api.anotherai.dev/mcp --transport http --header "Authorization: Bearer YOUR_API_KEY_HERE"
   ```
 
   <Callout type="info">
@@ -123,9 +123,9 @@ Setup steps:
 
 After you have the above set up completed, AnotherAI is ready to use!
 
-- If you have agents already created, check out how to migrate them to AnotherAI. [TODO: link to applicable page once https://github.com/anotherai-dev/anotherai/pull/29 is merged]
+- If you have agents already created, check out how to [migrate them to AnotherAI](/agents/migrating).
 
-- If you don't have any agents built yet, check out [TODO: link to applicable page once https://github.com/anotherai-dev/anotherai/pull/29 is merged] to learn about building a new AnotherAI-compatible agent.
+- If you don't have any agents built yet, check out [building a new agent](/agents/building) to learn about building a new AnotherAI-compatible agent.
 
 
 Once you have an agent built or migrated, here are some examples of prompts you can send to Claude Code to test how AnotherAI works:
