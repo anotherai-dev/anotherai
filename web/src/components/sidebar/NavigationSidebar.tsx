@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, Cloud, Search, Settings } from "lucide-react";
+import { ChevronLeft, Cloud, FileText, Search, Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -138,6 +138,15 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
           >
             <Settings className="w-4 h-4" />
             MCP Set Up
+          </a>
+          <a
+            href="https://docs.anotherai.dev"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-1 text-gray-700 hover:bg-gray-100"
+          >
+            <FileText className="w-4 h-4" />
+            Documentation
           </a>
         </div>
 

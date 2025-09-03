@@ -9,8 +9,8 @@ We've tried and the early results are promising. We wanted to share an early pre
 **DEMOs**
 
 ```
-> Claude: can you build with AnotherAI an agent that can extract calendar events from 
-> an email? Make sure to try 3 different models from OpenAI, Anthropic and Google, 
+> Claude: can you build with AnotherAI an agent that can extract calendar events from
+> an email? Make sure to try 3 different models from OpenAI, Anthropic and Google,
 > and 5 different emails. Tell me what you think.
 ```
 
@@ -30,7 +30,7 @@ And you can see the results in the web app:
 ---
 
 ```
-> Claude: can you try GPT-5 on 10 random completions from agent: 
+> Claude: can you try GPT-5 on 10 random completions from agent:
 > extract-calendar-events? what do you think?
 ```
 
@@ -88,13 +88,13 @@ Claude: can you setup AnotherAI on this agent @my-agent.py?
 
 ### MCP server
 
-We use the `http` transport to expose the MCP server at `http://localhost:8000/mcp/`. See below for [instructions](#mcp-setup) on how to install it in Claude Code and Cursor.
+We use the `http` transport to expose the MCP server at `https://api.anotherai.dev/mcp`. See below for [instructions](#mcp-setup) on how to install it in Claude Code and Cursor.
 
 We have curated a list of tools that we think are useful for building AI agents, available at [`backend/protocol/api/_mcp.py`](blob/main/backend/protocol/api/_mcp.py). We've already spent a good amount of time to make sure these tools are well designed and documented for Claude Code.
 
 ### Web App
 
-The web app is available at [http://localhost:3000/](http://localhost:3000/). 
+The web app is available at [http://localhost:3000/](http://localhost:3000/).
 Features:
 - View experiments
 - View completions logs
@@ -103,14 +103,14 @@ Features:
 The web app is designed to be read-only, and is used with Claude Code and Cursor. For example, to create a new view, use the following prompt in Claude Code:
 
 ```
-> Claude: can you create a new view in Another that shows the average, p90 and p99 
+> Claude: can you create a new view in Another that shows the average, p90 and p99
 > latency across all my agents? Make a line graph per day.
 ```
 
 ![New Chart](/docs/public/gifs/new-chart.gif)
 
 ```
-> Claude: show me all the completions that are taking more than 10 seconds to 
+> Claude: show me all the completions that are taking more than 10 seconds to
 > complete.
 ```
 
@@ -128,7 +128,7 @@ The API auto-generated documentation is available at [http://localhost:8000/docs
 
 First, you'll need to self-host your own AnotherAI. The easiest way is to ask Claude Code to do it for you.
 
-> You can also just ask claude. 
+> You can also just ask claude.
 > `claude "Please follow instructions in https://raw.githubusercontent.com/anotherai-dev/anotherai/refs/heads/main/examples/quickstart/INSTRUCTIONS.md"`
 
 ```sh
@@ -150,14 +150,17 @@ docker-compose up
 To set up the MCP (Model Context Protocol) with Claude Code locally:
 
 ```sh
-claude mcp add --scope user --transport http anotherai http://localhost:8000/mcp/
+claude mcp add --scope user --transport http anotherai https://api.anotherai.dev/mcp
 ```
+
+> The command above assumes that authentication is disabled (NO_AUTHORIZATION_ALLOWED=true).
+> Otherwise, add an API Key with `--transport http --header "Authorization: Bearer YOUR_API_KEY_HERE"`
 
 #### For Cursor
 
 Tap on this button to install the MCP server in Cursor (make sure the MCP server is running see [#try-it-out](#try-it-out)):
 
-<a href="cursor://anysphere.cursor-deeplink/mcp/install?name=anotherai&config=eyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjgwMDAvbWNwLyJ9"><img src="https://cursor.com/deeplink/mcp-install-dark.svg" alt="Add anotherai MCP server to Cursor" height="32" /></a>
+<a href="cursor://anysphere.cursor-deeplink/mcp/install?name=anotherai&config=eyJ1cmwiOiJodHRwczovL2FwaS5hbm90aGVyYWkuZGV2L21jcCJ9Cg=="><img src="https://cursor.com/deeplink/mcp-install-dark.svg" alt="Add anotherai MCP server to Cursor" height="32" /></a>
 
 ```mcp.json
 {
@@ -200,7 +203,7 @@ If you have an existing agent in your codebase, here are some ways you can ask C
 
 ### Join our community on Slack!
 
-Please, come say hi! We're still in alpha, and we're happy to get your feedback. We're pretty sure some things won't work out of the box, but we can promise we'll try our best to fix things quickly. 
+Please, come say hi! We're still in alpha, and we're happy to get your feedback. We're pretty sure some things won't work out of the box, but we can promise we'll try our best to fix things quickly.
 
 Here -> [anotherai-dev.slack.com](https://join.slack.com/t/anotherai-dev/shared_invite/zt-3av2prezr-Lz10~8o~rSRQE72m_PyIJA)
 
@@ -209,7 +212,7 @@ Here -> [anotherai-dev.slack.com](https://join.slack.com/t/anotherai-dev/shared_
 Once the MCP is installed, you can ask your questions directly via Claude Code or Cursor. The tool `search_documentation` is available.
 
 > I have already an agent running, can I use AnotherAI to improve it?
-> 
+>
 Yes, but you'll need to switch the existing agent to use our Chat Completions API. Ask Claude Code to do it for you.
 We are considering adding an API endpoint that captures the completions after they have been generated, let us know if you'd like to see this feature.
 

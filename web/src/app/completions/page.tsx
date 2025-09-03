@@ -39,7 +39,7 @@ function CompletionsPageContent() {
         isLoading={isLoading}
       />
 
-      <CompletionsTable data={data ?? []} isLoading={isLoading} error={error} />
+      <CompletionsTable data={data ?? []} isLoading={isLoading} error={error} currentQuery={query} />
     </div>
   );
 }
