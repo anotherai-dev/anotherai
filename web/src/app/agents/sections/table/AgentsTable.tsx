@@ -111,7 +111,7 @@ export function AgentsTable(props: AgentsTableProps) {
       <EmptyState
         title="No agents found."
         subtitle="Create your first agent to get started"
-        documentationUrl="https://docs.anotherai.dev/agents"
+        documentationUrl="https://docs.anotherai.dev/agents/building"
       />
     );
   }
