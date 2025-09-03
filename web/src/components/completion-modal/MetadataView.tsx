@@ -33,7 +33,7 @@ export function MetadataView({ metadata }: Props) {
       const stringValue = typeof value === "string" ? value : JSON.stringify(value);
       const query = `SELECT * FROM completions WHERE metadata['${key}'] = '${stringValue}'`;
       const encodedQuery = encodeURIComponent(query);
-      router.push(`/completions?query=${encodedQuery}`);
+      router.push(`/completions?newQuery=${encodedQuery}`);
     },
     [router]
   );
