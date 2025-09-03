@@ -49,7 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <div className="mb-6">
                     <p className="text-sm text-gray-600">Please sign in to continue</p>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <SignInButton>
                       <button className="w-full bg-blue-600 text-white hover:bg-blue-700 cursor-pointer px-6 py-2 rounded-[2px] font-medium transition-colors duration-200">
                         Sign In
@@ -58,10 +58,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <div>
                       <span className="text-gray-600 text-sm">{`Don't have an account? `}</span>
                       <SignUpButton>
-                        <button className="text-gray-900 hover:text-gray-700 text-sm font-medium transition-colors duration-200 cursor-pointer">
+                        <button className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors duration-200 cursor-pointer">
                           Sign Up
                         </button>
                       </SignUpButton>
+                    </div>
+                    <div className="pt-2 border-t border-gray-200">
+                      <span className="text-gray-600 text-sm">Want to learn more? </span>
+                      <a
+                        href="https://docs.anotherai.dev"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors duration-200 cursor-pointer"
+                      >
+                        Read the documentation
+                      </a>
                     </div>
                   </div>
                 </div>
