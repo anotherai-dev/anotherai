@@ -1,7 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { FilterCompletionsInstructions } from "@/components/completion-modal/FilterCompletionsInstructions";
 import { useCompletionsListSync } from "@/hooks/useCompletionsListSync";
@@ -9,50 +8,19 @@ import { useCompletionsQuery } from "@/store/completions";
 import { defaultQuery } from "@/utils/queries";
 import { SearchSection } from "./sections/SearchSection";
 import { CompletionsTable } from "./sections/table/CompletionsTable";
+import { useQuerySync } from "./useQuerySync";
 
 export const dynamic = "force-dynamic";
 
 function CompletionsPageContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  const queryFromUrl = searchParams.get("query");
-  const [value, setValue] = useState(queryFromUrl || defaultQuery);
+  const [query, setQuery] = useQuerySync(defaultQuery);
 
   const placeholder = "Enter SQL query (e.g., SELECT * FROM completions WHERE model = 'gpt-4') to search completions";
 
-  const { data, isLoading, error } = useCompletionsQuery(value);
+  const { data, isLoading, error } = useCompletionsQuery(query);
 
   // Sync completions data with stored completions list for modal navigation
   useCompletionsListSync(data);
-
-  // Sync URL parameters with state, avoiding circular updates
-  useEffect(() => {
-    const urlQuery = searchParams.get("query");
-    if (urlQuery !== null) {
-      setValue(urlQuery);
-    }
-  }, [searchParams]);
-
-  // Update URL when query changes (but not if it matches what's already in URL)
-  useEffect(() => {
-    const currentUrlQuery = searchParams.get("query");
-
-    // Don't update URL if this matches what's already there
-    if (currentUrlQuery === value || (currentUrlQuery === null && value === defaultQuery)) {
-      return;
-    }
-
-    const params = new URLSearchParams(searchParams);
-    if (value === defaultQuery) {
-      params.delete("query");
-    } else {
-      params.set("query", value);
-    }
-
-    const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
-    router.replace(newUrl, { scroll: false });
-  }, [value, router, searchParams]);
 
   return (
     <div className="flex flex-col w-full h-full mx-auto px-4 pt-4 pb-8 gap-4 bg-gray-50">
@@ -65,8 +33,8 @@ function CompletionsPageContent() {
       />
 
       <SearchSection
-        onSearch={(query) => setValue(query)}
-        defaultValue={value}
+        onSearch={(newQuery) => setQuery(newQuery)}
+        defaultValue={query}
         placeholder={placeholder}
         isLoading={isLoading}
       />

@@ -32,6 +32,7 @@ mcp = _mcp_utils.CustomFastMCP(
     "Another AI",
     middleware=[_mcp_utils.BaseMiddleware()],
     tool_serializer=_mcp_utils.tool_serializer,
+    auth=_mcp_utils.build_auth_provider(),
 )
 
 

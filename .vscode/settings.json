@@ -26,8 +26,10 @@
     "yarn-*.cjs": true,
     "webyarn sdks base/.next": true
   },
+  "jest.enable": true,
+  "jest.rootPath": "web",
   "jest.runMode": "on-demand",
-  "jest.outputConfig": "test-results-based",
+  // "jest.outputConfig": "test-results-based",
   "python.testing.pytestArgs": ["-vv", "-s"],
   "python.testing.unittestEnabled": false,
   "python.testing.pytestEnabled": true,
@@ -62,5 +64,5 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "prettier.prettierPath": "./node_modules/prettier",
-  "jest.enable": false
+  "json.format.keepLines": true
 }

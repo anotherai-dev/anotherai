@@ -17,9 +17,9 @@ COPY web/package.json ./web/
 # in the post install script
 COPY docs /app/docs
 
-# Install all dependencies
-# Next JS needs dev dependencies 
-RUN yarn install --frozen-lockfile
+# Check if lockfile is up to date
+RUN yarn install --mode=skip-build --immutable
+RUN yarn workspaces focus docs
 
 FROM sources AS dev
 

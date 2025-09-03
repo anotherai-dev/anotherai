@@ -304,7 +304,10 @@ class Annotation(BaseModel):
 
 
 class Completion(BaseModel):
-    id: str
+    id: str = Field(
+        default="",
+        description="The id of the completion. Must be a UUID7. Auto generated if not provided.",
+    )
     agent_id: str
 
     version: Version = Field(
@@ -324,15 +327,18 @@ class Completion(BaseModel):
     output: Output = Field(description="The output of the inference")
 
     messages: list[Message] = Field(
+        default_factory=list,
         description="The full list of message sent to the model, includes the messages in the version prompt "
         "(rendered with the input variables if needed), the appended messages and the messages returned by the model",
     )
 
     annotations: list[Annotation] | None = Field(
+        default=None,
         description="Annotations associated with the completion and the completion only. Annotations added within the scope of an experiment are not included here.",
     )
 
     metadata: dict[str, Any] | None = Field(
+        default=None,
         description="Metadata associated with the completion. Can be used to store additional information about the completion.",
     )
 
@@ -340,6 +346,15 @@ class Completion(BaseModel):
     duration_seconds: float | None = Field(
         description="The duration of the inference in seconds.",
     )
+
+
+class ImportCompletionResponse(BaseModel):
+    """The response to the import completion request.
+    We do not return the entire completion here as it can be quite large.
+    If you need the entire completion, you can fetch it using the id."""
+
+    id: str
+    url: str
 
 
 class ExperimentItem(BaseModel):
