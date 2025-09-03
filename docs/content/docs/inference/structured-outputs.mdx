@@ -249,7 +249,7 @@ You can significantly improve the LLM's understanding of the desired output stru
 
 Here's an example:
 
-<Tabs items={["Python", "TypeScript", "CURL"]}>
+<Tabs items={["Python"]}>
   <Tab>
   ```python
   from typing import Optional, List
@@ -274,6 +274,7 @@ Here's an example:
       ...
   ```
   </Tab>
+  {/* TODO: Add TypeScript and CURL examples
   <Tab>
   ```typescript
   import { z } from "zod";
@@ -349,31 +350,22 @@ Here's an example:
   When using CURL or the raw API, you define the schema using JSON Schema format. Field descriptions are provided using the `"description"` property, and examples can be provided using the `"examples"` array.
   </Callout>
   </Tab>
+  */}
 </Tabs>
 
 By providing these details, you make the task clearer for the LLM, reducing ambiguity and leading to better, more reliable structured data extraction.
-
-## Streaming
-
-TODO with @guillaq:
-https://platform.openai.com/docs/guides/structured-outputs?api-mode=chat&lang=python#streaming
 
 ## Migrating to Structured Outputs
 
 ### Using AnotherAI's AI Engineer
 
 ```
-(text to be pasted in AnotherAI's AI Engineer)
+Convert @customer-support-agent.py to use structured outputs instead of returning plain text responses.
 ```
 
 ### Examples
 
 Here are common examples showing how to migrate from traditional JSON prompting to using structured outputs:
-
-[TODO:
-- add examples for Typescript
-- add examples for CURL
-- ]
 
 <Accordions>
 <Accordion title="Example: Extract meeting details from text">
@@ -698,7 +690,7 @@ Here are common examples showing how to migrate from traditional JSON prompting 
           model: "gpt-4o",
           messages: [
               {role: "system", content: "Extract resume information and return as JSON with: name, email, phone, skills (list), experience (list of objects with company, role, duration), education (list)"},
-              {role: "user", content: `Parse this resume: {{resumeText}}`}
+              {role: "user", content: `Parse this resume: ${resumeText}`}
           ],
           input: {
               resumeText: resumeText
@@ -747,14 +739,14 @@ Here are common examples showing how to migrate from traditional JSON prompting 
           model: "gpt-4o",
           messages: [
               {role: "system", content: "Extract structured information from the resume."},
-              {role: "user", content: `Parse this resume: {{resumeText}}`}
+              {role: "user", content: `Parse this resume: ${resumeText}`}
           ],
-          response_format: zodResponseFormat(ResumeData, "ResumeData"), // 
-          input: {
-              resumeText: resumeText
-          },
+          response_format: zodResponseFormat(ResumeData, "ResumeData"),
           metadata: {
               agent_id: "resume-parser",
+          },
+          input: {
+              resumeText: resumeText
           }
       });
       

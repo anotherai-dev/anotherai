@@ -4,21 +4,55 @@ summary: Overview of the AnotherAI inference API. Lists key features, including 
 description: High-performance API for production AI inference, fully compatible with the OpenAI endpoint.
 ---
 
-![Inference overview](</images/inference/overview.png>)
+import { Card, Cards } from 'fumadocs-ui/components/card';
+import { BookOpen, Cpu, BrainCircuit, FileJson, HardDrive, DollarSign, Image, Zap } from 'lucide-react';
 
-## Features
+AnotherAI's inference API provides a unified, OpenAI-compatible interface for accessing AI models from multiple providers. With built-in features like structured outputs, caching, and cost tracking, it's designed for production-scale AI applications.
 
-### Fully compatible with the OpenAI endpoint
+- **OpenAI Compatible** - Drop-in replacement for OpenAI's API. Use your existing code with minimal changes.
+- **Multi-Provider Support** - Access models from OpenAI, Anthropic, Google, and more through a single API endpoint.
+- **Structured Outputs** - Generate type-safe JSON responses using Pydantic, Zod, or JSON Schema for reliable data extraction.
+- **Cost Monitoring** - Track estimated costs per request with detailed metadata showing token usage and pricing information.
+- **Request Caching** - Reduce costs and latency by automatically caching repeated requests with configurable TTL settings.
 
-### All major providers supported
+## Explore the Inference API
 
-### Structured outputs
-
-### Fallback
-
-### Streaming
-
-### Caching
-
-### Cost management
+<Cards>
+  <Card 
+    title="Models" 
+    href="/inference/models"
+    icon={<Cpu />}
+    description="Access and manage AI models from multiple providers. Learn how to list available models, switch between them, and use model versioning."
+  />
+  <Card 
+    title="Reasoning Models" 
+    href="/inference/reasoning"
+    icon={<BrainCircuit />}
+    description="Enable step-by-step reasoning with supported models. Get detailed thought processes and explanations for complex problem-solving."
+  />
+  <Card 
+    title="Structured Outputs" 
+    href="/inference/structured-outputs"
+    icon={<FileJson />}
+    description="Generate type-safe JSON responses using Pydantic, Zod, or JSON Schema. Ensure reliable, validated data extraction from AI models."
+  />
+  <Card 
+    title="Caching" 
+    href="/inference/caching"
+    icon={<HardDrive />}
+    description="Reduce costs and latency with intelligent caching. Configure caching strategies for both text and image-based requests."
+  />
+  <Card 
+    title="Cost Tracking" 
+    href="/inference/cost"
+    icon={<DollarSign />}
+    description="Monitor API usage with detailed cost metadata. Track estimated costs per request and optimize your AI spending."
+  />
+  <Card 
+    title="Modalities" 
+    href="/inference/modalities"
+    icon={<Image />}
+    description="Work with text, images, and other modalities. Learn how AnotherAI handles different input and output types."
+  />
+</Cards>
 
