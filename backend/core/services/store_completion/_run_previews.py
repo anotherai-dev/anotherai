@@ -32,6 +32,9 @@ def _message_preview(message: Message, max_len: int, role: str):
     if content.text:
         return f"{role}: {compute_preview(content.text, max_len=max_len)}"
 
+    if content.object:
+        return f"{role}: {compute_preview(content.object, max_len=max_len)}"
+
     if content.tool_call_result:
         return f"Tool: {compute_preview(content.tool_call_result.result, max_len=max_len)}"
 
