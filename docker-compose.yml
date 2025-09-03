@@ -82,7 +82,7 @@ services:
     build:
       context: .
       dockerfile: web.Dockerfile
-      target: dev
+      # target: dev
       args:
         - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
     ports:
@@ -95,7 +95,6 @@ services:
       - ./web:/app/web
     depends_on:
       - api
-
 
   docs:
     build:
