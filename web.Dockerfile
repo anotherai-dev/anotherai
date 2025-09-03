@@ -20,7 +20,7 @@ COPY docs/package.json ./docs/
 
 # Install all dependencies
 # Next JS needs dev dependencies 
-RUN yarn install --frozen-lockfile
+RUN yarn install --immutable
 
 FROM deps AS sources
 
