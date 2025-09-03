@@ -159,6 +159,8 @@ def message_content_to_domain(message_content: Message.Content) -> DomainMessage
         return DomainMessageContent(
             tool_call_result=tool_call_result_to_domain(message_content.tool_call_result),
         )
+    if message_content.object:
+        return DomainMessageContent(object=message_content.object)
     return DomainMessageContent(
         text=message_content.text,
         reasoning=message_content.reasoning,
