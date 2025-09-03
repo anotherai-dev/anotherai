@@ -6,8 +6,6 @@
     "models",
     "reasoning",
     "structured-outputs",
-    "reliability",
-    "streaming",
     "caching",
     "cost",
     "modalities"
