@@ -1,5 +1,5 @@
 {
   "title": "Deployments",
   "icon": "Rocket",
-  "pages": ["index"]
+  "pages": ["index", "step-by-step-guide"]
 }
