@@ -131,7 +131,7 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
           </Link>
           <ApiKeysButton onClick={handleOpenApiKeysModal} />
           <a
-            href="https://github.com/anotherai-dev/anotherai"
+            href="https://docs.anotherai.dev"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-1 text-gray-700 hover:bg-gray-100"
