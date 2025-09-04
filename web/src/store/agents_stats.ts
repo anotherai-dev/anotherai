@@ -7,6 +7,7 @@ enableMapSet();
 
 interface AgentStats {
   completions_last_7_days: number;
+  completions_last_3_days: number;
   total_cost: number;
   active: boolean;
   last_completion_date: string | null;
@@ -15,6 +16,7 @@ interface AgentStats {
 interface AgentStatsResult {
   agent_id: string;
   completions_last_7_days: number;
+  completions_last_3_days: number;
   total_cost: number;
   active: boolean;
   last_completion_date: string | null;
@@ -41,12 +43,14 @@ export const useAgentsStats = create<AgentsStatsState>((set, get) => ({
       return existing
         ? {
             completions_last_7_days: existing.completions_last_7_days,
+            completions_last_3_days: existing.completions_last_3_days,
             total_cost: existing.total_cost,
             active: existing.active,
             last_completion_date: existing.last_completion_date,
           }
         : {
             completions_last_7_days: 0,
+            completions_last_3_days: 0,
             total_cost: 0,
             active: false,
             last_completion_date: null,
@@ -64,7 +68,8 @@ export const useAgentsStats = create<AgentsStatsState>((set, get) => ({
       // Single comprehensive query to get all stats at once
       const query = `
         SELECT 
-          COUNT(*) as total_completions,
+          COALESCE(SUM(CASE WHEN created_at >= subtractDays(now(), 7) THEN 1 ELSE 0 END), 0) as total_completions_7d,
+          COALESCE(SUM(CASE WHEN created_at >= subtractDays(now(), 3) THEN 1 ELSE 0 END), 0) as total_completions_3d,
           COALESCE(SUM(cost_usd), 0) as total_cost,
           MAX(created_at) as last_completion
         FROM completions 
@@ -80,13 +85,15 @@ export const useAgentsStats = create<AgentsStatsState>((set, get) => ({
       }
 
       const statsData = (await response.json()) as {
-        total_completions: number;
+        total_completions_7d: number;
+        total_completions_3d: number;
         total_cost: number;
         last_completion: string | null;
       }[];
 
       const stats = statsData[0] || {
-        total_completions: 0,
+        total_completions_7d: 0,
+        total_completions_3d: 0,
         total_cost: 0,
         last_completion: null,
       };
@@ -99,7 +106,8 @@ export const useAgentsStats = create<AgentsStatsState>((set, get) => ({
 
       const agentStatsResult: AgentStatsResult = {
         agent_id: agentId,
-        completions_last_7_days: stats.total_completions || 0,
+        completions_last_7_days: stats.total_completions_7d || 0,
+        completions_last_3_days: stats.total_completions_3d || 0,
         total_cost: stats.total_cost || 0,
         active: isActive,
         last_completion_date: stats.last_completion,
@@ -115,6 +123,7 @@ export const useAgentsStats = create<AgentsStatsState>((set, get) => ({
 
       return {
         completions_last_7_days: agentStatsResult.completions_last_7_days,
+        completions_last_3_days: agentStatsResult.completions_last_3_days,
         total_cost: agentStatsResult.total_cost,
         active: agentStatsResult.active,
         last_completion_date: agentStatsResult.last_completion_date,
@@ -131,6 +140,7 @@ export const useAgentsStats = create<AgentsStatsState>((set, get) => ({
 
       return {
         completions_last_7_days: 0,
+        completions_last_3_days: 0,
         total_cost: 0,
         active: false,
         last_completion_date: null,
@@ -161,7 +171,8 @@ export const useAgentsStats = create<AgentsStatsState>((set, get) => ({
       const query = `
         SELECT 
           agent_id,
-          COUNT(*) as total_completions,
+          COALESCE(SUM(CASE WHEN created_at >= subtractDays(now(), 7) THEN 1 ELSE 0 END), 0) as total_completions_7d,
+          COALESCE(SUM(CASE WHEN created_at >= subtractDays(now(), 3) THEN 1 ELSE 0 END), 0) as total_completions_3d,
           COALESCE(SUM(cost_usd), 0) as total_cost,
           MAX(created_at) as last_completion
         FROM completions 
@@ -179,7 +190,8 @@ export const useAgentsStats = create<AgentsStatsState>((set, get) => ({
 
       const statsData = (await response.json()) as {
         agent_id: string;
-        total_completions: number;
+        total_completions_7d: number;
+        total_completions_3d: number;
         total_cost: number;
         last_completion: string | null;
       }[];
@@ -196,7 +208,8 @@ export const useAgentsStats = create<AgentsStatsState>((set, get) => ({
 
         const agentStatsResult: AgentStatsResult = {
           agent_id: row.agent_id,
-          completions_last_7_days: row.total_completions || 0,
+          completions_last_7_days: row.total_completions_7d || 0,
+          completions_last_3_days: row.total_completions_3d || 0,
           total_cost: row.total_cost || 0,
           active: isActive,
           last_completion_date: row.last_completion,
@@ -214,6 +227,7 @@ export const useAgentsStats = create<AgentsStatsState>((set, get) => ({
         // Add to return map
         statsMap.set(row.agent_id, {
           completions_last_7_days: agentStatsResult.completions_last_7_days,
+          completions_last_3_days: agentStatsResult.completions_last_3_days,
           total_cost: agentStatsResult.total_cost,
           active: agentStatsResult.active,
           last_completion_date: agentStatsResult.last_completion_date,
@@ -226,6 +240,7 @@ export const useAgentsStats = create<AgentsStatsState>((set, get) => ({
           const agentStatsResult: AgentStatsResult = {
             agent_id: agentId,
             completions_last_7_days: 0,
+            completions_last_3_days: 0,
             total_cost: 0,
             active: false,
             last_completion_date: null,
@@ -241,6 +256,7 @@ export const useAgentsStats = create<AgentsStatsState>((set, get) => ({
 
           statsMap.set(agentId, {
             completions_last_7_days: 0,
+            completions_last_3_days: 0,
             total_cost: 0,
             active: false,
             last_completion_date: null,
@@ -267,6 +283,7 @@ export const useAgentsStats = create<AgentsStatsState>((set, get) => ({
       agentIds.forEach((agentId) => {
         statsMap.set(agentId, {
           completions_last_7_days: 0,
+          completions_last_3_days: 0,
           total_cost: 0,
           active: false,
           last_completion_date: null,
@@ -327,6 +344,7 @@ export const useOrFetchMultipleAgentStats = (agentIds: string[]) => {
     if (stats) {
       allStats.set(agentId, {
         completions_last_7_days: stats.completions_last_7_days,
+        completions_last_3_days: stats.completions_last_3_days,
         total_cost: stats.total_cost,
         active: stats.active,
         last_completion_date: stats.last_completion_date,

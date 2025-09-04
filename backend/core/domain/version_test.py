@@ -333,3 +333,24 @@ class TestValidateOutput:
 
         error_message = str(exc_info.value)
         assert "[items.1.id]" in error_message
+
+
+class TestVersionValidate:
+    def test_validate_version(self):
+        version = Version.model_validate(
+            {
+                "id": "d59fe7a74f094d05ca9016a1b710ea26",
+                "model": "gpt-5-2025-08-07",
+                "temperature": 0,
+                "enabled_tools": [
+                    {
+                        "name": "@browser-text",
+                        "input_schema": {},
+                    },
+                    "@search-google",
+                ],
+            },
+        )
+        assert version.id == "d59fe7a74f094d05ca9016a1b710ea26"
+        assert version.enabled_tools
+        assert len(version.enabled_tools) == 2

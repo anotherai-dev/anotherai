@@ -13,7 +13,7 @@ interface DeployVersionInstructionsProps {
 export function DeployVersionInstructions({ versionId, agentId }: DeployVersionInstructionsProps) {
   const { showToast } = useToast();
 
-  const promptText = `Help me want to deploy ${versionId} of ${agentId || "[agent_id]"}. `;
+  const promptText = `Help me want to deploy anotherai/version/${versionId} of ${agentId || "[agent_id]"}. `;
 
   const handleCopyPrompt = async () => {
     try {
@@ -50,8 +50,8 @@ export function DeployVersionInstructions({ versionId, agentId }: DeployVersionI
         </div>
 
         <div className="mt-3 italic font-bold w-full whitespace-pre-wrap">
-          Help me want to deploy {versionId} of {agentId || "[agent_id]"}....[describe your deployment requirements
-          here]
+          Help me want to deploy anotherai/version/{versionId} of {agentId || "[agent_id]"}....[describe your deployment
+          requirements here]
         </div>
       </div>
 

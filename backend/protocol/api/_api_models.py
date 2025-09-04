@@ -61,8 +61,14 @@ class ToolCallRequest(BaseModel):
 
 class ToolCallResult(BaseModel):
     id: str = Field(description="The id of the tool call result")
-    output: Any | None = Field(description="The output of the tool")
-    error: str | None = Field(description="The error of the tool")
+    output: Any | None = Field(default=None, description="The output of the tool")
+    error: str | None = Field(default=None, description="The error of the tool")
+
+    @model_validator(mode="after")
+    def post_validate(self):
+        if not self.output and not self.error:
+            raise ValueError("Either output or error must be present")
+        return self
 
 
 class Message(BaseModel):
@@ -344,6 +350,7 @@ class Completion(BaseModel):
 
     cost_usd: float = Field(description="The cost of the inference in USD.")
     duration_seconds: float | None = Field(
+        default=None,
         description="The duration of the inference in seconds.",
     )
 
