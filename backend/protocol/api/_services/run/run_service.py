@@ -13,10 +13,9 @@ from core.domain.tenant_data import TenantData
 from core.domain.version import Version
 from core.providers._base.provider_error import MissingModelError
 from core.services.completion_runner import CompletionRunner
-from core.services.messages.messages_utils import json_schema_for_template
+from core.services.messages.messages_utils import json_schema_for_template_and_variables
 from core.services.models_service import suggest_model
 from core.storage.deployment_storage import DeploymentStorage
-from core.utils.schema_gen import schema_from_data
 from core.utils.schema_sanitation import streamline_schema, validate_schema
 from core.utils.schemas import IncompatibleSchemaError, JsonSchema
 from protocol.api._run_models import (
@@ -211,7 +210,7 @@ To list all models programmatically: Use the list_models tool""",
             # - The part that is templated (or the first system message)
             # - The part that is not templated
             # We don't remove any extras from the input, we just validate it
-            schema_from_template, last_templated_index = _json_schema_from_input(messages, variables)
+            schema_from_template, last_templated_index = json_schema_for_template_and_variables(messages, variables)
             if last_templated_index == -1:
                 cutoff_index = 1 if messages[0].role == "system" else 0
             else:
@@ -358,26 +357,3 @@ def _check_output_schema_compatibility(
             f"The requested response format is not compatible with the deployment's response format.\n{e}",
         ) from None
     return requested_schema
-
-
-def _json_schema_from_input(
-    messages: list[Message],
-    variables: dict[str, Any] | None,
-) -> tuple[dict[str, Any] | None, int]:
-    if variables is None:
-        # No body was sent with the request, so we treat the messages as a raw string
-        return None, -1
-
-    schema_from_input: dict[str, Any] | None = schema_from_data(variables) if variables else None
-    schema_from_template, last_templated_index = json_schema_for_template(
-        messages,
-        base_schema=schema_from_input,
-    )
-    if not schema_from_template:
-        if schema_from_input:
-            raise BadRequestError("Input variables are provided but the messages do not contain a valid template")
-        return None, -1
-    if not schema_from_input:
-        raise BadRequestError("Messages are templated but no input variables are provided")
-
-    return streamline_schema(schema_from_template), last_templated_index
