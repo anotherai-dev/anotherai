@@ -134,7 +134,7 @@ First, you'll need to self-host your own AnotherAI. The easiest way is to ask Cl
 ```sh
 # Create a new directory
 mkdir anotherai && cd anotherai
-# Download the docker-compose.yml file
+# Download the docker-compose.yml file. It contains pre-built images.
 curl -LO "https://raw.githubusercontent.com/anotherai-dev/anotherai/refs/heads/main/examples/quickstart/docker-compose.yml"
 # Download the basic env file
 curl -L "https://raw.githubusercontent.com/anotherai-dev/anotherai/refs/heads/main/.env.example" -o .env
