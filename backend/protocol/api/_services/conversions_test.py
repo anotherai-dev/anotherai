@@ -246,6 +246,20 @@ class TestMessageToDomain:
         assert domain_message.content[0].text is None
         assert domain_message.content[0].reasoning == "Just reasoning, no text"
 
+    def test_content_list_with_object(self):
+        """Test conversion of list content with object field."""
+        test_object = {"type": "custom", "data": {"key": "value", "number": 42}}
+        content = [Message.Content(object=test_object)]
+        message = Message(role="user", content=content)
+        domain_message = message_to_domain(message)
+
+        assert len(domain_message.content) == 1
+        assert domain_message.content[0].object == test_object
+        assert domain_message.content[0].text is None
+        assert domain_message.content[0].file is None
+        assert domain_message.content[0].tool_call_request is None
+        assert domain_message.content[0].tool_call_result is None
+
     def test_content_none_values(self):
         """Test content with all None values."""
         content = [Message.Content()]  # All fields are None by default

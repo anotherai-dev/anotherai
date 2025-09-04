@@ -158,6 +158,54 @@ class TestMessageListPreview:
         result = _messages_list_preview(messages)
         assert result == "User: [[img:https://example.com/file.png]]"
 
+    def test_message_with_object_dict(self):
+        """Test message with object field containing a dictionary"""
+        messages = [
+            Message(
+                content=[
+                    MessageContent(object={"key": "value", "number": 42, "nested": {"inner": "data"}}),
+                ],
+                role="user",
+            ),
+        ]
+        result = _messages_list_preview(messages)
+        assert result == 'User: key: "value", number: 42, nested: {inner: "data"}'
+
+    def test_message_with_object_list(self):
+        """Test message with object field containing a list"""
+        messages = [
+            Message(
+                content=[
+                    MessageContent(object=["item1", "item2", {"key": "value"}]),
+                ],
+                role="user",
+            ),
+        ]
+        result = _messages_list_preview(messages)
+        assert result == 'User: "item1", "item2", {key: "value"}'
+
+    def test_message_content_priority_object_over_tool_result(self):
+        """Test that object content takes priority over tool_call_result"""
+        tool_call = ToolCallResult(
+            id="test_id",
+            tool_name="test_tool",
+            tool_input_dict={},
+            result="Tool result",
+        )
+        messages = [
+            Message(
+                content=[
+                    MessageContent(
+                        object={"result": "structured data"},
+                        tool_call_result=tool_call,
+                    ),
+                ],
+                role="assistant",
+            ),
+        ]
+        result = _messages_list_preview(messages, include_roles={"assistant"})
+        assert result == 'Assistant: result: "structured data"'
+
 
 class TestToolCallRequestPreview:
     def test_tool_call_request_preview(self):
