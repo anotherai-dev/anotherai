@@ -14,14 +14,17 @@ import { DeploymentsBaseCell } from "./DeploymentsBaseCell";
 // Column key constants
 export const DEPLOYMENTS_COLUMNS = {
   AGENT_ID: "Agent Id",
-  NAME: "Name",
+  NAME: "Deployment Id",
   RUNS_LAST_7_DAYS: "Runs (Last 7d)",
   TOTAL_COST: "Total Cost (Last 7d)",
   CREATED_AT: "Created at",
+  UPDATED_AT: "Updated at",
+  CREATED_BY: "Created by",
 } as const;
 
 interface DeploymentStats {
   completions_last_7_days: number;
+  completions_last_3_days: number;
   total_cost: number;
   active: boolean;
   last_completion_date: string | null;
@@ -43,9 +46,11 @@ export function DeploymentsTable(props: DeploymentsTableProps) {
     return [
       DEPLOYMENTS_COLUMNS.AGENT_ID,
       DEPLOYMENTS_COLUMNS.NAME,
+      DEPLOYMENTS_COLUMNS.CREATED_BY,
       DEPLOYMENTS_COLUMNS.RUNS_LAST_7_DAYS,
       DEPLOYMENTS_COLUMNS.TOTAL_COST,
       DEPLOYMENTS_COLUMNS.CREATED_AT,
+      DEPLOYMENTS_COLUMNS.UPDATED_AT,
     ];
   }, []);
 
@@ -60,13 +65,16 @@ export function DeploymentsTable(props: DeploymentsTableProps) {
         </DeploymentsBaseCell>,
         <DeploymentsBaseCell key="name" className="font-bold text-gray-900">
           <div className="flex items-baseline gap-2 min-w-0 break-words">
-            {stats?.active !== undefined && (
+            {stats?.completions_last_3_days !== undefined && (
               <div className="flex items-center h-[1em] -translate-y-px">
-                <ActivityIndicator isActive={stats.active} />
+                <ActivityIndicator completionsLast3Days={stats.completions_last_3_days} />
               </div>
             )}
             <span className="flex-1 truncate">{deployment.id}</span>
           </div>
+        </DeploymentsBaseCell>,
+        <DeploymentsBaseCell key="created_by" className="text-gray-500">
+          {deployment.created_by}
         </DeploymentsBaseCell>,
         <DeploymentsBaseCell key="runs" className="text-gray-500">
           {stats?.completions_last_7_days ?? 0}
@@ -74,8 +82,11 @@ export function DeploymentsTable(props: DeploymentsTableProps) {
         <DeploymentsBaseCell key="cost" className="text-gray-900">
           {formatTotalCost(stats?.total_cost)}
         </DeploymentsBaseCell>,
-        <DeploymentsBaseCell key="created_at" className="text-gray-500">
+        <DeploymentsBaseCell key="created_at" className="text-gray-500 w-20">
           {formatDate(deployment.created_at, "relative_with_time")}
+        </DeploymentsBaseCell>,
+        <DeploymentsBaseCell key="updated_at" className="text-gray-500 w-20">
+          {deployment.updated_at ? formatDate(deployment.updated_at, "relative_with_time") : "—"}
         </DeploymentsBaseCell>,
       ];
     });

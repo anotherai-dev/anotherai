@@ -26,6 +26,7 @@ interface Agent {
 
 interface AgentStats {
   completions_last_7_days: number;
+  completions_last_3_days: number;
   total_cost: number;
   active: boolean;
   last_completion_date: string | null;
@@ -59,7 +60,7 @@ export function AgentsTable(props: AgentsTableProps) {
       return {
         [AGENTS_COLUMNS.AI_AGENT]: {
           name: agent.name && agent.name.trim() ? agent.name : agent.id,
-          active: stats?.active ?? null,
+          completionsLast3Days: stats?.completions_last_3_days ?? 0,
         },
         [AGENTS_COLUMNS.COMPLETIONS_LAST_7_DAYS]: stats?.completions_last_7_days ?? null,
         [AGENTS_COLUMNS.TOTAL_COST]: stats?.total_cost ?? null,
@@ -129,7 +130,9 @@ export function AgentsTable(props: AgentsTableProps) {
 
           switch (header) {
             case AGENTS_COLUMNS.AI_AGENT:
-              return <AgentsTableAgentCell key={header} value={value as { name: string; active: boolean | null }} />;
+              return (
+                <AgentsTableAgentCell key={header} value={value as { name: string; completionsLast3Days: number }} />
+              );
 
             case AGENTS_COLUMNS.COMPLETIONS_LAST_7_DAYS:
               return <AgentsBaseCell key={header} value={value} />;

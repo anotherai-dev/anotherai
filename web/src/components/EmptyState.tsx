@@ -7,11 +7,24 @@ interface EmptyStateProps {
   subtitle?: string;
   documentationUrl?: string;
   buttonText?: string;
+  height?: string;
 }
 
-export function EmptyState({ title, subtitle, documentationUrl, buttonText = "View Documentation" }: EmptyStateProps) {
+export function EmptyState({
+  title,
+  subtitle,
+  documentationUrl,
+  buttonText = "View Documentation",
+  height,
+}: EmptyStateProps) {
   return (
-    <div className="h-full flex flex-col items-center text-center" style={{ paddingTop: "25%" }}>
+    <div
+      className={`flex flex-col items-center text-center ${height ? "h-full justify-center" : "h-full"}`}
+      style={{
+        paddingTop: height ? undefined : "25%",
+        height: height,
+      }}
+    >
       <p className="text-gray-500 mb-1">{title}</p>
       {subtitle && <p className="text-gray-400 text-sm mb-4">{subtitle}</p>}
       {documentationUrl && (
