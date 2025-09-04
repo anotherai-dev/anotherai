@@ -13,39 +13,75 @@ This guide walks you through the process of deploying a version of your agent us
 
 <Steps>
 <Step>
-### Select the Version You Want to Deploy
+### Select and Deploy Your Version
 
-1. Open [anotherai.dev](https://anotherai.dev)
-2. Locate the experiment that has the version of the agent you want to deploy.
-3. Hover over the version number to copy the version ID
+<Tabs items={["From An Experiment", "From Your Code", "From a Completion"]}>
+<Tab>
+If you're using experiments to make improvements to your agent, you can always deploy the updated version of your agent from the experiments web view
 
-![Copy Version ID](/images/copy_version_id.png)
+1. Locate the experiment that has the version of the agent you want to deploy.
+2. Hover over the version number to copy the version ID
 
-</Step>
+![Deploy Version](/images/deploy-version-popup.png)
 
-<Step>
-### Ask your Agent to Deploy the Version
-
-1. Open Claude Code (or your preferred AI coding agent)
-2. Request that your AI Agent deploys the version to your preferred [environment](#common-environment-names) and paste the version ID.
+3. Open Claude Code (or your preferred AI coding agent)
+4. Request deployment to your preferred environment:
 
 ```
-I want to deploy anotherai/deployment/a9f1fc5ab11299a9fee5604e51fe7b6e to production.
+I want to deploy anotherai/deployment/acf2635be31cbd89f9363bfd3b2c6abc to production.
+```
+</Tab>
+
+<Tab>
+If you're making changes to your agent in your IDE, you can also just request to have a deployment created directly, without opening the web app.
+
+1. Ensure your code is already using the AnotherAI SDK with an `agent_id`
+2. Tell Claude (or your AI coding agent) to deploy your agent:
+
+```
+Deploy the version of my @travel-assistant.py that uses GPT-5 to production
 ```
 
-3. Optionally, you can request a specific name be used for the deployment. Otherwise, your AI coding agent will pick one for you automatically.
+Claude will create a version ID for you and deploy it. 
+
+</Tab>
+
+<Tab>
+If you find a version via the completions view on the web app, you can also deploy it directly from there.
+
+1. Open the detail view of the completion using the version you want to deploy
+2. Copy the version ID (located on the right side of the modal)
+
+![Completion Version Details](/images/completion-version-details.png)
+
+3. Paste the version ID into Claude Code (or your preferred AI coding agent) and ask it to deploy:
 
 ```
-I want to deploy anotherai/deployment/a9f1fc5ab11299a9fee5604e51fe7b6e to production.
-Name the deployment: "calendar-assistant/production-9-2"
+I want to deploy fc1ddfbb1cf220716ab7c999b3c89020 to production.
 ```
+</Tab>
+</Tabs>
 
 #### Common environment names
 
 - `dev` - for development testing
 - `staging` - for pre-production validation
 - `production` or `prod` - for live production use
+
+When deployed, these environments are combined with your agent name:
+- `travel-assistant/dev#1`
+- `calendar-assistant/staging#2` 
+- `customer-support/production#1`
+
+Optionally, you can request a specific name be used for the deployment. Otherwise, your AI coding agent will pick one for you automatically:
+
+```
+I want to deploy anotherai/deployment/a9f1fc5ab11299a9fee5604e51fe7b6e to production.
+Name the deployment: "calendar-assistant/production-9-2"
+```
+
 </Step>
+
 
 <Step>
 ### Update Your Code
@@ -68,17 +104,21 @@ const completion = await openai.chat.completions.create({
   messages: [
     {
       role: "system",
-      content: `You are an expert on {{ country }}. 
-                You are helping a customer traveling to {{ country }}. 
-                Answer questions in {{ language }}.`
-    },
-    { role: "user", content: userQuestion }
+      content: `You are an expert travel assistant specializing in {{ country }}.
+
+Key responsibilities:
+- Provide accurate information about {{ country }} including culture, customs, and travel tips
+- Consider the traveler's budget level: {{ budget_level }}
+- Recommend activities and restaurants appropriate for their interests and budget
+
+Always be helpful, accurate, and culturally sensitive.`
+    }
   ],
   temperature: 0.7,
   // Input variables
   input: {
     country: destination,
-    language: userLanguage
+    budget_level: travelerBudget
   },
   agent_id: "travel-assistant"
 });
@@ -91,17 +131,21 @@ completion = await openai.chat.completions.create(
     messages=[
         {
             "role": "system",
-            "content": """You are an expert on {{ country }}. 
-                         You are helping a customer traveling to {{ country }}. 
-                         Answer questions in {{ language }}."""
-        },
-        {"role": "user", "content": user_question}
+            "content": """You are an expert travel assistant specializing in {{ country }}.
+
+Key responsibilities:
+- Provide accurate information about {{ country }} including culture, customs, and travel tips
+- Consider the traveler's budget level: {{ budget_level }}
+- Recommend activities and restaurants appropriate for their interests and budget
+
+Always be helpful, accurate, and culturally sensitive."""
+        }
     ],
     temperature=0.7,
     extra_body={
         "input": {
             "country": destination,
-            "language": user_language
+            "budget_level": traveler_budget
         },
         "agent_id": "travel-assistant"
     }
@@ -116,15 +160,12 @@ completion = await openai.chat.completions.create(
 <Tab>
 ```js
 const completion = await openai.chat.completions.create({
-  //Static components are now stored in the deployment
+  // Static components are now stored in the deployment
   model: "anotherai/travel-assistant/production#1",
-  messages: [
-    // Dynamic user messages remain in code
-    { role: "user", content: userQuestion }
-  ],
+  messages: [],
   input: {
     country: destination,
-    language: userLanguage
+    budget_level: travelerBudget
   }
 });
 ```
@@ -134,14 +175,11 @@ const completion = await openai.chat.completions.create({
 completion = await openai.chat.completions.create(
     # Model, temperature, system message, and agent_id are now in the deployment
     model="anotherai/travel-assistant/production#1",
-    messages=[
-        # Only dynamic user messages remain in code
-        {"role": "user", "content": user_question}
-    ],
+    messages=[],
     extra_body={
         "input": {
             "country": destination,
-            "language": user_language
+            "budget_level": traveler_budget
         }
     }
 )
@@ -181,7 +219,7 @@ That's it! **No code changes needed** - your application automatically uses the 
 
 ### Breaking Changes (Create New Deployment)
 
-When your changes affect input variables or output schema, you must create a new deployment:
+When your changes affect input variables or output schema, you must create a new deployment. This is because changing these would cause mismatches between what the deployment expects and what your code provides - for example, if the deployment expects a new input variable that your code isn't passing, or if your code expects an output field that no longer exists.
 
 <Steps>
 <Step>
