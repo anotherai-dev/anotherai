@@ -16,9 +16,17 @@ interface CompletionsTableProps {
   error?: Error;
   maxHeight?: string;
   currentQuery?: string;
+  heightForEmptyState?: string;
 }
 
-export function CompletionsTable({ data, isLoading, error, maxHeight, currentQuery }: CompletionsTableProps) {
+export function CompletionsTable({
+  data,
+  isLoading,
+  error,
+  maxHeight,
+  currentQuery,
+  heightForEmptyState,
+}: CompletionsTableProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -73,11 +81,14 @@ export function CompletionsTable({ data, isLoading, error, maxHeight, currentQue
           title="No completions created yet."
           subtitle="Start by creating your first completion using the AnotherAI API and MCP."
           documentationUrl="https://docs.anotherai.dev"
+          height={heightForEmptyState}
         />
       );
     }
 
-    return <EmptyState title="No completions found." subtitle="Try adjusting your query." />;
+    return (
+      <EmptyState title="No completions found." subtitle="Try adjusting your query." height={heightForEmptyState} />
+    );
   }
 
   if (data.length === 0) {

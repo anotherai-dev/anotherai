@@ -1,13 +1,15 @@
 import { cn } from "@/lib/cn";
+import { HoverPopover } from "./HoverPopover";
 
 type Props = {
-  isActive: boolean;
+  completionsLast3Days: number;
 };
 
 export function ActivityIndicator(props: Props) {
-  const { isActive } = props;
+  const { completionsLast3Days } = props;
+  const isActive = completionsLast3Days > 0;
 
-  return (
+  const indicator = (
     <div className="relative">
       <div className={cn("w-[6px] h-[6px] rounded-full", isActive ? "bg-green-500 animate-pulse" : "bg-gray-300")} />
       <div
@@ -18,4 +20,17 @@ export function ActivityIndicator(props: Props) {
       />
     </div>
   );
+
+  if (isActive) {
+    const popoverText =
+      completionsLast3Days === 1 ? "1 run in last 3 days" : `${completionsLast3Days} runs in last 3 days`;
+
+    return (
+      <HoverPopover content={popoverText} position="top" popoverClassName="bg-gray-800 rounded-[2px]">
+        {indicator}
+      </HoverPopover>
+    );
+  }
+
+  return indicator;
 }
