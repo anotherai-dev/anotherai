@@ -3,10 +3,18 @@
 Ensure `.env` file exists with required API keys (OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.)
 
 ```bash
-# Start all services
-docker-compose up -d
+# Start all services in the background
+# Images that have changed will be rebuilt
+# Rebuilding images is necessary when dependencies change. By default, the docker-compose exposes "dev" target
+# That only contain the dependencies and use volumes for the source code
+# In rare cases, using the `--no-cache` can help fix build errors
+docker-compose up -d --build
 
-# Stop all services
+# Stop all services. They can be started again with `docker-compose up -d`
+docker-compose stop
+
+# Clean up
+# Careful, this will delete all data
 docker-compose down
 ```
 

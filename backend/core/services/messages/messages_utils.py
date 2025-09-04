@@ -1,8 +1,10 @@
 from collections.abc import Iterable
 from typing import Any
 
+from core.domain.exceptions import BadRequestError
 from core.domain.file import FileKind
 from core.domain.message import Message
+from core.utils.schema_gen import schema_from_data
 from core.utils.schema_sanitation import streamline_schema
 from core.utils.templates import InvalidTemplateError, extract_variable_schema
 
@@ -98,3 +100,26 @@ def json_schema_for_template(
                 last_templated_index = i
 
     return streamline_schema(schema) if schema else None, last_templated_index
+
+
+def json_schema_for_template_and_variables(
+    messages: list[Message],
+    variables: dict[str, Any] | None,
+) -> tuple[dict[str, Any] | None, int]:
+    if variables is None:
+        # No body was sent with the request, so we treat the messages as a raw string
+        return None, -1
+
+    schema_from_input: dict[str, Any] | None = schema_from_data(variables) if variables else None
+    schema_from_template, last_templated_index = json_schema_for_template(
+        messages,
+        base_schema=schema_from_input,
+    )
+    if not schema_from_template:
+        if schema_from_input:
+            raise BadRequestError("Input variables are provided but the messages do not contain a valid template")
+        return None, -1
+    if not schema_from_input:
+        raise BadRequestError("Messages are templated but no input variables are provided")
+
+    return streamline_schema(schema_from_template), last_templated_index

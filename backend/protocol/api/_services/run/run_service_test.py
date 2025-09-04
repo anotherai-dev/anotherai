@@ -270,27 +270,17 @@ class TestPrepareForModel:
 
         model_ref = _ModelRef(model=Model.GPT_4O_LATEST, agent_id="test-agent")
 
-        with (
-            patch(
-                "protocol.api._services.run.run_service.json_schema_for_template",
-                return_value=(None, -1),  # No template schema found
-            ),
-            patch(
-                "protocol.api._services.run.run_service.schema_from_data",
-                return_value={"type": "object"},  # Schema from variables exists
-            ),
-        ):
-            # This should trigger the BadRequestError when variables are provided but no template is found
-            with pytest.raises(BadRequestError) as excinfo:
-                await run_service._prepare_for_model(
-                    agent_ref=model_ref,
-                    messages=messages,
-                    variables={"key": "value"},
-                    response_format=None,
-                )
-            assert "Input variables are provided but the messages do not contain a valid template" in str(
-                excinfo.value,
+        # This should trigger the BadRequestError when variables are provided but no template is found
+        with pytest.raises(BadRequestError) as excinfo:
+            await run_service._prepare_for_model(
+                agent_ref=model_ref,
+                messages=messages,
+                variables={"key": "value"},
+                response_format=None,
             )
+        assert "Input variables are provided but the messages do not contain a valid template" in str(
+            excinfo.value,
+        )
 
     async def test_extract_output_schema_validation_error(self, run_service: RunService):
         """Test that invalid output schema raises validation error"""
@@ -346,25 +336,20 @@ class TestPrepareForModel:
         model_ref = _ModelRef(model=Model.GPT_4O_LATEST, agent_id="test-agent")
 
         # Mock the schema generation functions
-        mock_schema = {"type": "object", "properties": {"role": {"type": "string"}}}
 
-        with patch(
-            "protocol.api._services.run.run_service._json_schema_from_input",
-            return_value=(mock_schema, 0),
-        ):
-            result = await run_service._prepare_for_model(
-                agent_ref=model_ref,
-                messages=messages,
-                variables={"role": "helpful"},
-                response_format=None,
-            )
+        result = await run_service._prepare_for_model(
+            agent_ref=model_ref,
+            messages=messages,
+            variables={"role": "helpful"},
+            response_format=None,
+        )
 
-            assert result.agent_id == "test-agent"
-            assert result.version.model == Model.GPT_4O_LATEST
-            assert result.version.input_variables_schema == mock_schema
-            assert result.version.prompt == [messages[0]]  # First message should be in prompt
-            assert result.agent_input.messages == messages[1:]  # Rest should be in messages
-            assert result.agent_input.variables == {"role": "helpful"}
+        assert result.agent_id == "test-agent"
+        assert result.version.model == Model.GPT_4O_LATEST
+        assert result.version.input_variables_schema == {"type": "object", "properties": {"role": {"type": "string"}}}
+        assert result.version.prompt == [messages[0]]  # First message should be in prompt
+        assert result.agent_input.messages == messages[1:]  # Rest should be in messages
+        assert result.agent_input.variables == {"role": "helpful"}
 
     async def test_default_agent_id_when_none(self, run_service: RunService):
         """Test that default agent_id is used when model_ref.agent_id is None"""

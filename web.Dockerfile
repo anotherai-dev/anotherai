@@ -14,6 +14,8 @@ ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
 FROM base AS deps
 
 WORKDIR /app
+COPY .yarnrc.yml ./
+COPY .yarn ./.yarn
 COPY package.json yarn.lock ./
 COPY web/package.json ./web/
 COPY docs/package.json ./docs/

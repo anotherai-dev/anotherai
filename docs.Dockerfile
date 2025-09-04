@@ -10,6 +10,8 @@ RUN corepack prepare yarn@stable --activate
 FROM base AS sources
 
 WORKDIR /app
+COPY .yarnrc.yml ./
+COPY .yarn ./.yarn
 COPY package.json yarn.lock ./
 COPY web/package.json ./web/
 # We could optimize here but fumadocs needs the config file and all

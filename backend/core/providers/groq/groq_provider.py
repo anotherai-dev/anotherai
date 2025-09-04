@@ -17,7 +17,6 @@ from core.providers._base.provider_error import (
     ContentModerationError,
     FailedGenerationError,
     MaxTokensExceededError,
-    ProviderBadRequestError,
     ProviderInvalidFileError,
     UnknownProviderError,
 )
@@ -273,8 +272,9 @@ class GroqProvider(HTTPXProvider[GroqConfig, CompletionResponse]):
         if payload.error.message:
             lower_msg = payload.error.message.lower()
             match lower_msg:
-                case m if "localhost: no such host" in m:
-                    base_cls = ProviderBadRequestError
+                case m if m.startswith('get "') and ("read: connection reset by peer" in m or "no such host" in m):
+                    base_cls = ProviderInvalidFileError
+                    capture = False
                 case m if "failed to retrieve media" in m:
                     base_cls = ProviderInvalidFileError
                     capture = False
