@@ -6,7 +6,7 @@ import { SearchSection } from "@/app/completions/sections/SearchSection";
 import { CompletionsTable } from "@/app/completions/sections/table/CompletionsTable";
 import ErrorState from "@/components/ErrorState";
 import { HoverPopover } from "@/components/HoverPopover";
-import LoadingState from "@/components/LoadingState";
+import { LoadingState } from "@/components/LoadingState";
 import { PageHeader } from "@/components/PageHeader";
 import { CompletionsGraph } from "@/components/universal-charts/CompletionsGraph";
 import { useCompletionsListSync } from "@/hooks/useCompletionsListSync";

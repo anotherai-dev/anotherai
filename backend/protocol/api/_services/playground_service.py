@@ -12,6 +12,7 @@ from core.domain.models.model_data_mapping import get_model_id
 from core.domain.models.models import Model
 from core.domain.version import Version as DomainVersion
 from core.services.completion_runner import CompletionRunner
+from core.services.messages.messages_utils import json_schema_for_template_and_variables
 from core.storage.agent_storage import AgentStorage
 from core.storage.completion_storage import CompletionStorage
 from core.storage.experiment_storage import ExperimentStorage
@@ -67,10 +68,18 @@ class PlaygroundService:
         prompts: list[list[Message]],
         tool_lists: list[list[Tool]],
         output_schemas: list[dict[str, Any]],
+        variables: dict[str, Any] | None,
     ):
         for model in models:
             for temperature in temperatures or [1.0]:
                 for prompt in prompts or [None]:
+                    if prompt:
+                        domain_prompt = [message_to_domain(m) for m in prompt]
+                        variables_schema, _ = json_schema_for_template_and_variables(domain_prompt, variables)
+                    else:
+                        domain_prompt = None
+                        variables_schema = None
+
                     for tool_list in tool_lists or [None]:
                         for output_schema in output_schemas or [None]:
                             yield DomainVersion(
@@ -81,6 +90,7 @@ class PlaygroundService:
                                 output_schema=DomainVersion.OutputSchema(json_schema=output_schema)
                                 if output_schema
                                 else None,
+                                input_variables_schema=variables_schema,
                             )
 
     async def _run_version(
@@ -211,6 +221,9 @@ class PlaygroundService:
             prompts=prompts or [],
             tool_lists=tool_lists or [],
             output_schemas=output_schemas or [],
+            # Only considering the first input to determine the variables schema
+            # TODO: handle cases where the variable schemas are different accross inputs ?
+            variables=inputs[0].variables if inputs else None,
         ):
             for i in inputs:
                 completion_id = str(uuid7())

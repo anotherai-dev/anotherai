@@ -281,3 +281,50 @@ async def test_use_cache(test_api_client: IntegrationTestClient):
     res = await test_api_client.call_tool("playground", {**playground_payload, "use_cache": "never"})
     assert len(res["completions"]) == 8
     assert len(test_api_client.httpx_mock.get_requests()) == 20  # 8 + 8
+
+
+async def test_with_variables(test_api_client: IntegrationTestClient):
+    test_api_client.mock_provider_call("openai", "gpt-4.1", "openai/completion.json", is_reusable=True)
+
+    # Create an experiment via the playground tool
+    res = await test_api_client.call_tool(
+        "playground",
+        {
+            "models": "gpt-4.1",
+            "author_name": "user",
+            "agent_id": "test-agent",
+            "inputs": [
+                {
+                    "variables": {"name": "Toulouse"},
+                },
+                {
+                    "variables": {"name": "Pittsburgh"},
+                },
+            ],
+            "prompts": [
+                [
+                    {"role": "user", "content": "What is the capital of the country that has {{ name }}?"},
+                ],
+            ],
+            "experiment_title": "Capital Extractor Test Experiment",
+        },
+    )
+    await test_api_client.wait_for_background()
+
+    completions = res["completions"]
+    assert len(completions) == 2, "sanity"
+
+    # Pull the completions to check the associated version
+    completion1 = await test_api_client.get(f"/v1/completions/{completions[0]['id']}")
+    completion2 = await test_api_client.get(f"/v1/completions/{completions[1]['id']}")
+
+    # The versions should be the same
+    assert completion1["version"] == completion2["version"]
+    version = completion1["version"]
+    assert version["model"] == "gpt-4.1-latest"
+    assert version["temperature"] == 1.0
+
+    assert version["input_variables_schema"] == {
+        "type": "object",
+        "properties": {"name": {"type": "string"}},
+    }
