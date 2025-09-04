@@ -89,7 +89,9 @@ def tool_from_domain(tool: DomainTool | DomainHostedTool) -> Tool:
     )
 
 
-def tool_to_domain(tool: Tool) -> DomainTool:
+def tool_to_domain(tool: Tool) -> DomainTool | DomainHostedTool:
+    if tool.name.startswith("@") and tool.name in DomainHostedTool:
+        return DomainHostedTool(tool.name)
     return DomainTool(
         name=tool.name,
         description=tool.description,
