@@ -3,12 +3,14 @@ title: Modalities
 summary: Explanation on how different modalities are supported by AnotherAI
 ---
 
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+
 ## Completion API
 
 Just like OpenAI, AnotherAI supports passing images and audio to the completion endpoint.
 
-<Tabs>
-<Tab value="OpenAI SDK (js)">
+<Tabs items={["OpenAI SDK (js)"]}>
+<Tab>
 ```js
 const response = await openai.chat.completions.create({
   model: "gpt-4o-mini",
@@ -27,8 +29,8 @@ const response = await openai.chat.completions.create({
 
 AnotherAI supports passing audio URLs as opposed to base64 encoded audio data. Simply pass the URL in the data field and the format will be ignored.
 
-<Tabs>
-<Tab value="OpenAI SDK (js)">
+<Tabs items={["OpenAI SDK (js)"]}>
+<Tab>
 ```js
 const response = await openai.chat.completions.create({
   model: "gpt-4o-mini",
@@ -52,8 +54,8 @@ As described in the [Input Variables](/observability/input-variables) section, i
 
 However it is **not currently possible to use input variables to represent image or audio data or URLs**. Image and audio payloads should always be passed in the content of messages, in their respective fields.
 
-<Tabs>
-<Tab value="OpenAI SDK (js)">
+<Tabs items={["OpenAI SDK (js)"]}>
+<Tab>
 ```js
 // ✅ Do: Pass the image URL as a image URL content
 const response = await openai.chat.completions.create({

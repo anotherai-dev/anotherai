@@ -20,11 +20,20 @@ export interface ToolCallResult {
   error?: string;
 }
 
+export interface File {
+  content_type?: string;
+  data?: string;
+  url?: string;
+  format?: string;
+  storage_url?: string;
+}
+
 export interface MessageContent {
   text?: string;
   object?: Record<string, unknown> | unknown[];
   image_url?: string;
   audio_url?: string;
+  file?: File;
   tool_call_request?: ToolCallRequest;
   tool_call_result?: ToolCallResult;
   reasoning?: string;
