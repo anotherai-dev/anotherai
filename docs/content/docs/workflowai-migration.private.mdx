@@ -159,7 +159,7 @@ const { output, data: { duration_seconds, cost_usd }} = await analyzeBookCharact
 </Tab>
 </Tabs>
 
-#### First step: Fetch the version from an Imported completion
+**The only required step is to fetch the version from an Imported completion.**
 
 This can be done using the `query_completions` tool. You will retrieve the entire version that corresponds to the agent.
 
@@ -199,8 +199,9 @@ const AnalyzeBookCharactersTaskOutputSchema = z.object({
     outcome: z.string(),
   })),
 });
+export type AnalyzeBookCharactersTaskOutput = z.infer<typeof AnalyzeBookCharactersTaskOutputSchema>;
 
-export async function analyzeBookCharacters(input: AnalyzeBookCharactersTaskInput) {
+export async function analyzeBookCharacters(input: AnalyzeBookCharactersTaskInput): Promise<AnalyzeBookCharactersTaskOutput> {
     const completion = await client.beta.chat.completions.parse({
         model: "<agent_id>/<version.model>", // prefix the model by the agent id
         messages: [
@@ -219,3 +220,4 @@ export async function analyzeBookCharacters(input: AnalyzeBookCharactersTaskInpu
 </Tab>
 </Tabs>
 
+Once this code is executed once, the agent has properly been migrated to AnotherAI. Good next steps are to allow the user to create experiments via the playground tool and deploy their newly created versions.
