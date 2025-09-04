@@ -357,7 +357,7 @@ By providing these details, you make the task clearer for the LLM, reducing ambi
 
 ## Migrating to Structured Outputs
 
-### Using AnotherAI's AI Engineer
+### Using Claude Code
 
 ```
 Convert @customer-support-agent.py to use structured outputs instead of returning plain text responses.
@@ -690,7 +690,7 @@ Here are common examples showing how to migrate from traditional JSON prompting 
           model: "gpt-4o",
           messages: [
               {role: "system", content: "Extract resume information and return as JSON with: name, email, phone, skills (list), experience (list of objects with company, role, duration), education (list)"},
-              {role: "user", content: `Parse this resume: ${resumeText}`}
+              {role: "user", content: `Parse this resume: {{resumeText}}`}
           ],
           input: {
               resumeText: resumeText
@@ -739,7 +739,7 @@ Here are common examples showing how to migrate from traditional JSON prompting 
           model: "gpt-4o",
           messages: [
               {role: "system", content: "Extract structured information from the resume."},
-              {role: "user", content: `Parse this resume: ${resumeText}`}
+              {role: "user", content: `Parse this resume: {{resumeText}}`}
           ],
           response_format: zodResponseFormat(ResumeData, "ResumeData"),
           metadata: {
