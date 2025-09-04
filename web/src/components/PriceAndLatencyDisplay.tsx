@@ -62,7 +62,7 @@ export function PriceAndLatencyDisplay(props: PriceAndLatencyDisplayProps) {
 
   // Use comparison coloring if arrays are provided, otherwise use neutral styling
   const costBadgeInfo = allCosts
-    ? getMetricBadgeWithRelative(cost, allCosts, false)
+    ? getMetricBadgeWithRelative(cost, allCosts, false, "cost")
     : {
         color: "bg-transparent border border-gray-200 text-gray-700",
         relativeText: undefined,
@@ -71,7 +71,7 @@ export function PriceAndLatencyDisplay(props: PriceAndLatencyDisplayProps) {
       };
 
   const durationBadgeInfo = allDurations
-    ? getMetricBadgeWithRelative(duration, allDurations, false)
+    ? getMetricBadgeWithRelative(duration, allDurations, false, "duration")
     : {
         color: "bg-transparent border border-gray-200 text-gray-700",
         relativeText: undefined,
@@ -135,7 +135,7 @@ export function PriceAndLatencyDisplay(props: PriceAndLatencyDisplayProps) {
               {costBadgeInfo.relativeText && !costBadgeInfo.isBest && (
                 <span className="flex items-center text-xs font-medium text-red-500">
                   {costBadgeInfo.relativeText}
-                  <ArrowUp size={12} />
+                  {costBadgeInfo.showArrow && <ArrowUp size={12} />}
                 </span>
               )}
               <span className="font-medium">{formatCurrency(cost)}</span>
@@ -152,7 +152,7 @@ export function PriceAndLatencyDisplay(props: PriceAndLatencyDisplayProps) {
             {costBadgeInfo.relativeText && !costBadgeInfo.isBest && (
               <span className="flex items-center text-xs font-medium text-red-500">
                 {costBadgeInfo.relativeText}
-                <ArrowUp size={12} />
+                {costBadgeInfo.showArrow && <ArrowUp size={12} />}
               </span>
             )}
             <span className="font-medium">{formatCurrency(cost)}</span>
@@ -187,7 +187,7 @@ export function PriceAndLatencyDisplay(props: PriceAndLatencyDisplayProps) {
               {durationBadgeInfo.relativeText && !durationBadgeInfo.isBest && (
                 <span className="flex items-center text-xs font-medium text-red-500">
                   {durationBadgeInfo.relativeText}
-                  <ArrowUp size={12} />
+                  {durationBadgeInfo.showArrow && <ArrowUp size={12} />}
                 </span>
               )}
               <span className="font-medium">{formatDuration(duration)}</span>
@@ -204,7 +204,7 @@ export function PriceAndLatencyDisplay(props: PriceAndLatencyDisplayProps) {
             {durationBadgeInfo.relativeText && !durationBadgeInfo.isBest && (
               <span className="flex items-center text-xs font-medium text-red-500">
                 {durationBadgeInfo.relativeText}
-                <ArrowUp size={12} />
+                {durationBadgeInfo.showArrow && <ArrowUp size={12} />}
               </span>
             )}
             <span className="font-medium">{formatDuration(duration)}</span>

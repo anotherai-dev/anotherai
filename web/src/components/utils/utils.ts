@@ -27,7 +27,12 @@ export function getMetricBadgeColor(value: number, values: number[], isHigherBet
   return "bg-transparent border border-gray-200 text-gray-700";
 }
 
-export function getMetricBadgeWithRelative(value: number, values: number[], isHigherBetter: boolean = false) {
+export function getMetricBadgeWithRelative(
+  value: number,
+  values: number[],
+  isHigherBetter: boolean = false,
+  metricType?: "cost" | "duration"
+) {
   if (!values || values.length === 0) {
     return {
       color: "bg-transparent border border-gray-200 text-gray-700",
@@ -56,22 +61,38 @@ export function getMetricBadgeWithRelative(value: number, values: number[], isHi
   let isWorst = false;
   let relativeText: string | undefined;
 
+  // Determine comparison text based on metric type and whether this value is better or worse
+  const getComparisonText = (isBetterValue: boolean) => {
+    if (metricType === "cost") {
+      return isBetterValue ? "cheaper" : "more expensive";
+    }
+    if (metricType === "duration") {
+      return isBetterValue ? "faster" : "slower";
+    }
+    return "better";
+  };
+
   if (isHigherBetter) {
     isBest = value === max;
     isWorst = value === min;
 
     if (isBest) {
       color = "bg-green-200 border border-green-400 text-green-900";
-      relativeText = `${(max / min).toFixed(1)}x better`;
+      relativeText = `${(max / min).toFixed(1)}x ${getComparisonText(true)}`;
     } else if (isWorst) {
       color = "bg-red-200 border border-red-300 text-red-900";
+      relativeText = `${(value / min).toFixed(1)}x ${getComparisonText(false)}`;
     } else {
       color = "bg-transparent border border-gray-200 text-gray-700";
     }
 
     // For non-best values, show how much worse they are
     if (!isBest && max > 0) {
-      relativeText = `${(max / value).toFixed(1)}x`;
+      if (metricType) {
+        relativeText = `${(max / value).toFixed(1)}x ${getComparisonText(false)}`;
+      } else {
+        relativeText = `${(max / value).toFixed(1)}x`;
+      }
     }
   } else {
     isBest = value === min;
@@ -79,16 +100,21 @@ export function getMetricBadgeWithRelative(value: number, values: number[], isHi
 
     if (isBest) {
       color = "bg-green-200 border border-green-400 text-green-900";
-      relativeText = `${(max / min).toFixed(1)}x better`;
+      relativeText = `${(max / min).toFixed(1)}x ${getComparisonText(true)}`;
     } else if (isWorst) {
       color = "bg-red-200 border border-red-300 text-red-900";
+      relativeText = `${(value / min).toFixed(1)}x ${getComparisonText(false)}`;
     } else {
       color = "bg-transparent border border-gray-200 text-gray-700";
     }
 
     // For non-best values, show how much worse they are
     if (!isBest && min > 0) {
-      relativeText = `${(value / min).toFixed(1)}x`;
+      if (metricType) {
+        relativeText = `${(value / min).toFixed(1)}x ${getComparisonText(false)}`;
+      } else {
+        relativeText = `${(value / min).toFixed(1)}x`;
+      }
     }
   }
 
@@ -97,6 +123,7 @@ export function getMetricBadgeWithRelative(value: number, values: number[], isHi
     relativeText,
     isBest,
     isWorst,
+    showArrow: !metricType, // Only show arrows for non-cost/duration metrics
   };
 }
 
