@@ -17,8 +17,12 @@ export function CompletionConversationView(props: Props) {
     const allMessages: Message[] = [];
 
     // Add messages from completion.messages first
-    if (completion.messages) {
+    if (completion.messages && completion.messages.length > 0) {
       allMessages.push(...completion.messages);
+    } else {
+      if (completion.input?.messages && completion.input?.messages.length > 0) {
+        allMessages.push(...completion.input?.messages);
+      }
     }
 
     // Add messages from output.messages next
@@ -54,6 +58,7 @@ export function CompletionConversationView(props: Props) {
     completion.duration_seconds,
     annotations,
     completion.id,
+    completion.input?.messages,
   ]);
 
   return (
