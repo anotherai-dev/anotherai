@@ -130,7 +130,7 @@ export function VersionDetailsView({ version, showPrompt = false, showOutputSche
       {showOutputSchema && version.output_schema && (
         <div className="bg-white border border-gray-200 rounded-[2px] p-2">
           <div className="text-xs font-medium text-gray-700 mb-2">Output Schema</div>
-          <SchemaViewer schema={version.output_schema} />
+          <SchemaViewer schema={version.output_schema} showDescriptions={true} />
         </div>
       )}
     </div>
