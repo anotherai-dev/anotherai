@@ -244,7 +244,7 @@ def submit_user_feedback(completion_id: str, rating: int, comment: str, user_id:
     
     response = requests.post(
         f"{API_BASE_URL}/v1/annotations",
-        json=[annotation],  # API expects a direct list of annotations
+        json=[annotation],
         headers={
             "Authorization": f"Bearer {API_KEY}",
             "Content-Type": "application/json"
