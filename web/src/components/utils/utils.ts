@@ -394,7 +394,7 @@ export function getVersionWithDefaults(version: Version): ExtendedVersion {
     presence_penalty: extendedVersion.presence_penalty !== undefined ? extendedVersion.presence_penalty : 0,
     frequency_penalty: extendedVersion.frequency_penalty !== undefined ? extendedVersion.frequency_penalty : 0,
     stop: extendedVersion.stop !== undefined ? extendedVersion.stop : "none",
-    tool_choice: extendedVersion.tool_choice !== undefined ? extendedVersion.tool_choice : "auto",
+    tool_choice: extendedVersion.tool_choice !== undefined ? extendedVersion.tool_choice : "-",
   };
 }
 
