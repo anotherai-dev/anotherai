@@ -35,7 +35,7 @@ import os
 
 # Initialize the AnotherAI client
 client = AsyncOpenAI(
-    base_url="{{API_URL}}/v1",  # Automatically replaced with your AnotherAI endpoint
+    base_url="{{API_URL}}/v1",
     api_key=os.environ.get("ANOTHERAI_API_KEY")
 )
 
@@ -193,7 +193,7 @@ async def process_email(email, model, client, experiment_id):
     # Send annotations to AnotherAI API
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            "{{API_URL}}/v1/annotations",  # Automatically replaced with your endpoint
+            "{{API_URL}}/v1/annotations",
             json={"annotations": annotations},
             headers={"Authorization": f"Bearer {os.environ.get('ANOTHERAI_API_KEY')}"}
         )
@@ -252,7 +252,7 @@ After running your evaluation, review the results and use Claude to help analyze
 async def main():
     # Initialize the client
     client = AsyncOpenAI(
-        base_url="{{API_URL}}/v1",  # Automatically replaced with your endpoint
+        base_url="{{API_URL}}/v1",
         api_key=os.environ.get("ANOTHERAI_API_KEY")
     )
     
@@ -382,7 +382,7 @@ with open('test_emails.json', 'r') as f:
 
 # Initialize client
 client = AsyncOpenAI(
-    base_url="{{API_URL}}/v1",  # Automatically replaced with your endpoint
+    base_url="{{API_URL}}/v1",
     api_key=os.environ.get("ANOTHERAI_API_KEY")
 )
 
