@@ -11,6 +11,10 @@ import {
 import { Version } from "@/types/models";
 import { CompareSection } from "./CompareSection";
 
+function filterVersionKeys(keys: string[], keysToRemove: string[]): string[] {
+  return keys.filter(key => !keysToRemove.includes(key));
+}
+
 interface CompareVersionsViewProps {
   versionCurrentlyDeployed?: Version;
   versionToBeDeployed?: Version;
@@ -48,7 +52,9 @@ export function CompareVersionsView({ versionCurrentlyDeployed, versionToBeDeplo
 
     // Get unmatching keys by removing matching ones from all keys
     const unmatchingKeys = allKeys.filter((key) => !matchingKeys.includes(key));
-    const sortedUnmatchingKeys = sortVersionKeys(unmatchingKeys);
+
+    const sortedUnmatchingKeys = filterVersionKeys(sortVersionKeys(unmatchingKeys), ["tools", "tool_choice"]);
+    const sortedMatchingKeys = filterVersionKeys(sortVersionKeys(matchingKeys), ["tools", "tool_choice"]);
 
     // Apply defaults to both versions
     const currentDefaults = versionCurrentlyDeployed ? getVersionWithDefaults(versionCurrentlyDeployed) : undefined;
@@ -57,7 +63,7 @@ export function CompareVersionsView({ versionCurrentlyDeployed, versionToBeDeplo
     // Changed keys are the unmatching keys (values are different)
     const changed = sortedUnmatchingKeys;
     // Unchanged keys are the matching keys (values are the same)
-    const unchanged = sortVersionKeys(matchingKeys);
+    const unchanged = sortedMatchingKeys;
 
     return {
       changedKeys: changed,

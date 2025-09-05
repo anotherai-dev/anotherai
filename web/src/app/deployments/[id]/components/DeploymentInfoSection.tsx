@@ -26,9 +26,8 @@ export function DeploymentInfoSection({ deployment }: DeploymentInfoSectionProps
       "presence_penalty",
       "frequency_penalty",
       "stop",
-      "tool_choice",
     ];
-    const complex = ["prompt", "tools", "output_schema"];
+    const complex = ["prompt", "output_schema"];
 
     const allKeys = Object.keys(versionWithDefaults);
     const availableKeys = allKeys.filter((key) => !["id"].includes(key));
