@@ -11,7 +11,7 @@ WorkflowAI is a layer of abstraction on top of LLM providers, that similarly to 
 
 The main difference is that in most cases WorkflowAI has a "structured data in structured data out" approach and does not use the message primitive in its basic API.
 
-Also not the most common usage of WorkflowAI, WorkflowAI also offers an OpenAI completion API compatible endpoint. 
+While not the most common usage, WorkflowAI also offers an OpenAI completion API compatible endpoint. 
 
 > WorkflowAI and AnotherAI share the same authorization servers. So users of WorkflowAI can use the same account on AnotherAI. API Keys are however not transferable. WorkflowAI API keys start with `wai-` and AnotherAI API keys start with `aai-`.
 
@@ -56,7 +56,7 @@ client = OpenAI(
 </Tab>
 <Tab>
 ```
-POST {{ANOTHERAI_API_URL}}/v1/chat/completions
+POST {{API_URL}}/v1/chat/completions
 Authorization: Bearer aai-***
 ```
 </Tab>
@@ -88,15 +88,15 @@ When hitting the API directly, an http client is usually configured with the bas
 The exact client depends on the language and libraries that are used.
 
 Simply make sure that:
-- the base URL points to `{{ ANOTHERAI_API_URL }}`. The full completion URL should look like `{{ ANOTHERAI_API_URL }}/v1/chat/completions`
-- the Authoriation header looks like `Authorization: Bearer aai-***` where `aai-***` is the AnotherAI API key
+- the base URL points to `{{API_URL}}`. The full completion URL should look like `{{API_URL}}/v1/chat/completions`
+- the Authorization header looks like `Authorization: Bearer aai-***` where `aai-***` is the AnotherAI API key
 
 </Tab>
 </Tabs>
 
 You can tell whether or not the agent uses a deployment by checking the model in the OpenAI completion call.
 
-Any model with the format `<agent-id>/#<a number>/<environment, e-g:production|staging|dev>` is a WorkflowAI deployment.
+Any model with the format `<agent_id>/#<a number>/<environment, e-g:production|staging|dev>` is a WorkflowAI deployment.
 
 <Tabs items={['Node (OpenAI SDK)', 'API']}>
 <Tab>
@@ -119,7 +119,7 @@ const completion = await client.chat.completions.create({
 Uses deployments:
 
 ```sh
-POST {{ANOTHERAI_API_URL}}/v1/chat/completions
+POST {{API_URL}}/v1/chat/completions
 Authorization: Bearer aai-***
 Content-Type: application/json
 {
@@ -131,7 +131,7 @@ Content-Type: application/json
 
 Does not use deployments, calls a model directly
 ```sh
-POST {{ANOTHERAI_API_URL}}/v1/chat/completions
+POST {{API_URL}}/v1/chat/completions
 Authorization: Bearer aai-***
 Content-Type: application/json
 {
@@ -191,7 +191,7 @@ const analyzeBookCharacters: Agent<
 const input: AnalyzeBookCharactersTaskInput = {
   book_title: "The Shadow of the Wind",
 };
-// metadata is optional. most options that could be passed to the function are also available in AntotherAI
+// metadata is optional. most options that could be passed to the function are also available in AnotherAI
 const { output, data: { duration_seconds, cost_usd }} = await analyzeBookCharacters(input, { metadata: ...});
 // output is of type AnalyzeBookCharactersTaskOutput
 
@@ -199,9 +199,9 @@ const { output, data: { duration_seconds, cost_usd }} = await analyzeBookCharact
 </Tab>
 <Tab>
 
-WorkflowAI exposes a `run` endpoint per agent and schema. The full url will look like `https://workflowai.com/v1/agents/<agent-id>/schemas/<schema-id>/run` where:
-- `<agent-id>` is a slug that is the id of the agent
-- `<schema-id>` is an integer that identifies a schema (not used in AnotherAI)
+WorkflowAI exposes a `run` endpoint per agent and schema. The full url will look like `https://workflowai.com/v1/agents/<agent_id>/schemas/<schema_id>/run` where:
+- `<agent_id>` is a slug that is the id of the agent
+- `<schema_id>` is an integer that identifies a schema (not used in AnotherAI)
 
 The payload will look like:
 ```json
