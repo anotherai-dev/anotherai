@@ -119,7 +119,7 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
         const viewId = value.replace("view:", "");
         const view = views.find((v) => v.id === viewId);
         if (view) {
-          router.push(`/view/${view.id}`);
+          router.push(`/views/${view.id}`);
         }
       } else if (value.startsWith("agent:")) {
         const agentId = value.replace("agent:", "");
