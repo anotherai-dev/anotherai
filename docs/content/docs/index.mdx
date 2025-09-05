@@ -166,9 +166,10 @@ Use AnotherAI to help me find a faster model for @[your-agent-name-here] while s
 
 **It's easier to leave AnotherAI than to leave OpenAI directly.**
 
-Switching away is literally just changing one line:
+To switch away from AnotherAI:
 - Remove `base_url="{{API_URL}}/v1"`
-- Your code stays identical
+- If you're not using deployments: your code stays identical
+- If you are using deployments: simply ask Claude Code (or your preferred coding agent) to fetch your deployment configuration (static content and model) and recreate the equivalent configuration in your code.
 
 While using AnotherAI, you:
 - Get automatic fallbacks across providers
