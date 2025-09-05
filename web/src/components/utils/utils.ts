@@ -469,18 +469,15 @@ export function normalizeForComparison(value: unknown): string {
   return String(value);
 }
 
-export function getMatchingVersionKeys(versions: Version[]): string[] {
+export function getMatchingVersionKeys(versions: Version[], blackListedKeys: string[] = ["id"]): string[] {
   // For single version, return all keys (including defaults) except blacklisted ones
   if (versions.length === 1) {
-    const blackListedKeys: string[] = ["id"];
     const versionWithDefaults = getVersionWithDefaults(versions[0]);
     const allKeys = Object.keys(versionWithDefaults as unknown as Record<string, unknown>);
     return allKeys.filter((key) => !blackListedKeys.includes(key));
   }
 
   if (versions.length === 0) return [];
-
-  const blackListedKeys: string[] = ["id", "model"];
 
   // Apply defaults to all versions
   const versionsWithDefaults = versions.map(getVersionWithDefaults);
