@@ -129,6 +129,17 @@ class DocumentationSearch:
 
         scored_sections = []
 
+        if "workflowai" in query_lower:
+
+            def workflowai_adjustment(file_path: str) -> int:
+                if "workflowai" in file_path:
+                    return 100
+                return 0
+        else:
+
+            def workflowai_adjustment(file_path: str) -> int:
+                return 0
+
         for section in all_doc_sections:
             score = 0
             content_lower = section.content.lower()
@@ -151,6 +162,8 @@ class DocumentationSearch:
             path_words = set(path_lower.split("/"))
             path_matches = query_words.intersection(path_words)
             score += len(path_matches) * 5
+
+            score += workflowai_adjustment(path_lower)
 
             if score > 0:
                 scored_sections.append((section, score))

@@ -15,31 +15,33 @@ Also not the most common usage of WorkflowAI, WorkflowAI also offers an OpenAI c
 
 > WorkflowAI and AnotherAI share the same authorization servers. So users of WorkflowAI can use the same account on AnotherAI. API Keys are however not transferable. WorkflowAI API keys start with `wai-` and AnotherAI API keys start with `aai-`.
 
+
 ## Migration Steps
 
-The first step in migrating agents from WorkflowAI to AnotherAI is to set up a bridge that forwards data from WorkflowAI to AnotherAI. This bridge should be setup by the WorkflowAI team.
+Very important: Most WorkflowAI agents use deployments on WorkflowAI, meaning that the code does not contain the prompt. The prompt is stored and managed by the WorkflowAI backend. It is possible to setup a bridge that forwards data from WorkflowAI to AnotherAI which makes the prompt available in AnotherAI.
+The most important part of the migration is to **fetch the prompt that is behind the WorkflowAI deployment** and integrate it into the user's code.
 
-Once the bridge is setup, any new completion happening in WorkflowAI will be forwarded to AnotherAI and the corresponding agents will be created as needed. The `agent_id` in AnotherAI will be the same as the `agent_id` in WorkflowAI.
+The agent ids will be the same in AnotherAI as in WorkflowAI.
 
-The best way to know if the bridge is setup is to check whether the agent already has completions stored in AnotherAI which can be done using the `query_completions` tool.
+### Step 1: Fetch a completion for the agent
+
+If the bridge is setup, you can fetch a completion for the agent using the `query_completions` tool.
 
 ```
-query_completions(query="SELECT id FROM completions WHERE agent_id = 'your-agent-id' LIMIT 1")
+query_completions(query="SELECT version FROM completions WHERE agent_id = 'your-agent-id' LIMIT 1")
 ```
 
-The main things to consider when attempting a migration are:
-- is the WorkflowAI agent using the OpenAI completion API compatible endpoint or the WorkflowAI SDK or run endpoint (standard WorkflowAI agent)
-- is the WorkflowAI agent using a deployment ? If yes, the prompt will not be present in the code and should be imported.
+> If there is no completion, the bridge is not setup. Advise the user to contact WorkflowAI support.
 
-> Note: deployments do not work the same in AnotherAI as in WorkflowAI. In WorkflowAI, it was only possible to deploy to a environments `production`, `staging` and `dev`. And deployments were agent specific, meaning that you could have multiple agents deployed to the same environment. In AnotherAI, deployments are unique accross all agents. When generating deployment ids for AnotherAI, a good practice is to use the format `<agent-id>/<environment>#<number>` to ensure uniqueness.
+Once you have a version, you will be able to generate the entire completion call.
 
-### Configuring an OpenAI Client
+### Step 2: Configuring an OpenAI Client
 
 AnotherAI is OpenAI completion API compatible, so it should be configured just like any other OpenAI client. You can use the `create_api_key` tool to create an API key.
 
 > Note that API Keys are usually not stored in code directly, a common pattern is to use environment variables or a .env file
 
-<Tabs items={['Node (OpenAI SDK)']}>
+<Tabs items={['Node (OpenAI SDK)', 'API']}>
 <Tab>
 
 ```typescript
@@ -52,6 +54,12 @@ client = OpenAI(
 ```
 
 </Tab>
+<Tab>
+```
+POST {{ANOTHERAI_API_URL}}/v1/chat/completions
+Authorization: Bearer aai-***
+```
+</Tab>
 </Tabs>
 
 
@@ -61,7 +69,7 @@ A WorkflowAI agent that uses the completion API will also have a configured Open
 
 Example code to be converted:
 
-<Tabs items={['Node (OpenAI SDK)']}>
+<Tabs items={['Node (OpenAI SDK)', 'API']}>
 <Tab>
 
 ```typescript
@@ -74,13 +82,23 @@ client = OpenAI(
 ```
 
 </Tab>
+<Tab>
+
+When hitting the API directly, an http client is usually configured with the base URL and API key.
+The exact client depends on the language and libraries that are used.
+
+Simply make sure that:
+- the base URL points to `{{ ANOTHERAI_API_URL }}`. The full completion URL should look like `{{ ANOTHERAI_API_URL }}/v1/chat/completions`
+- the Authoriation header looks like `Authorization: Bearer aai-***` where `aai-***` is the AnotherAI API key
+
+</Tab>
 </Tabs>
 
 You can tell whether or not the agent uses a deployment by checking the model in the OpenAI completion call.
 
 Any model with the format `<agent-id>/#<a number>/<environment, e-g:production|staging|dev>` is a WorkflowAI deployment.
 
-<Tabs items={['Node (OpenAI SDK)']}>
+<Tabs items={['Node (OpenAI SDK)', 'API']}>
 <Tab>
 
 ```typescript
@@ -96,24 +114,43 @@ const completion = await client.chat.completions.create({
 ```
 
 </Tab>
+<Tab>
+
+Uses deployments:
+
+```sh
+POST {{ANOTHERAI_API_URL}}/v1/chat/completions
+Authorization: Bearer aai-***
+Content-Type: application/json
+{
+    "model": "travel-assistant/#1/production",
+    # messages are optional here
+    ...
+}
+```
+
+Does not use deployments, calls a model directly
+```sh
+POST {{ANOTHERAI_API_URL}}/v1/chat/completions
+Authorization: Bearer aai-***
+Content-Type: application/json
+{
+    "model": "gpt-4o",
+    # messages are required here
+    ...
+}
+```
+</Tab>
 </Tabs>
-
-#### The Completion API based Agent uses a deployment
-
-If the agent uses a deployment, you will have to follow the same steps as when [migrating a standard WorkflowAI agent](#migrating-a-standard-workflowai-agent).
-
-### The Completion API based Agent does not use a deployment
-
-Changing the configuration of the OpenAI client should be enough.
 
 
 ### Migrating a standard WorkflowAI agent
 
-A standard WorkflowAI agent is an agent that either uses the WorkflowAI SDK or the run endpoint. All WorkflowAI agents use deployments, meaning that the prompt is stored in the WorkflowAI backend and not in the code. When the bridge between WorkflowAI and AnotherAI is setup, you should be able to fetch an imported completion and determine the prompt.
+A standard WorkflowAI agent is an agent that either uses the WorkflowAI SDK or the run endpoint. All WorkflowAI agents use deployments, meaning that the prompt is stored in the WorkflowAI backend and not in the code. When the bridge between WorkflowAI and AnotherAI is setup, you should be able to fetch an imported completion and determine the prompt. The first step in migrating an agent to AnotherAI is to build an OpenAI completion call **without using a deployment**. Deployments will come after the agent has been migrated and the user is happy with the result.
 
 Example code to be converted:
 
-<Tabs items={['Node (WorkflowAI SDK)', 'Rest API']}>
+<Tabs items={['Node (WorkflowAI SDK)', 'API']}>
 <Tab>
 
 ```typescript
@@ -146,7 +183,7 @@ const analyzeBookCharacters: Agent<
 > = workflowAI.agent({
   id: "analyze-book-characters", // agent id, will be the same in AnotherAI
   schemaId: 1, // schema id, can be ignored, will no longer be used in AnotherAI
-  version: "production", // deployment_id.
+  version: "production", // deployment_id, in WorkflowAI deployments are unique per agent schema
 });
 
 
@@ -154,13 +191,31 @@ const analyzeBookCharacters: Agent<
 const input: AnalyzeBookCharactersTaskInput = {
   book_title: "The Shadow of the Wind",
 };
-const { output, data: { duration_seconds, cost_usd }} = await analyzeBookCharacters(input);
+// metadata is optional. most options that could be passed to the function are also available in AntotherAI
+const { output, data: { duration_seconds, cost_usd }} = await analyzeBookCharacters(input, { metadata: ...});
 // output is of type AnalyzeBookCharactersTaskOutput
 
 ```
 </Tab>
 <Tab>
-{/* TODO: */}
+
+WorkflowAI exposes a `run` endpoint per agent and schema. The full url will look like `https://workflowai.com/v1/agents/<agent-id>/schemas/<schema-id>/run` where:
+- `<agent-id>` is a slug that is the id of the agent
+- `<schema-id>` is an integer that identifies a schema (not used in AnotherAI)
+
+The payload will look like:
+```json
+{
+    "version": "production", // deployment_id, in WorkflowAI deployments are unique per agent schema
+    "task_input": {
+        "book_title": "The Shadow of the Wind"
+    },
+    "metadata": {
+        // metadata is optional
+    }
+} 
+```
+
 </Tab>
 </Tabs>
 
@@ -176,7 +231,7 @@ The version payload is a JSON string that contains all the information you need 
 
 Example of converted code:
 
-<Tabs items={['Node (OpenAI SDK)', 'Rest API']}>
+<Tabs items={['Node (OpenAI SDK)', 'API']}>
 <Tab>
 
 ```typescript
@@ -210,7 +265,7 @@ export async function analyzeBookCharacters(input: AnalyzeBookCharactersTaskInpu
     const completion = await client.beta.chat.completions.parse({
         model: "<agent_id>/<version.model>", // prefix the model by the agent id
         messages: [
-            // use version.prompt here. It will likely contain
+            // use version.prompt here. It will likely contain Jinja2 templates that refer to the input variables.
         ],
         response_format: zodTextFormat(AnalyzeBookCharactersTaskOutputSchema, "AnalyzeBookCharactersTaskOutput"),
         input: input, // input is AnotherAI specific. You may have to silence a TS error
@@ -221,7 +276,34 @@ export async function analyzeBookCharacters(input: AnalyzeBookCharactersTaskInpu
 
 </Tab>
 <Tab>
-{/* TODO: */}
+
+It is likely that an OpenAI SDK exists for the requested language. The OpenAI SDKs are usually more convenient to use, providing out of the box:
+- retries / error management
+- structured output parsing
+- tool calling
+
+It is also possible that the user already has an Agent framework setup that is compatible with the completion API. If re-using an existing Agent framework, it is a good idea to create a separate client as to avoid forcing the user to migrate the entirety of its completion calls.
+
+If hitting the API directly is needed, the payload will look like:
+```json
+{
+    // prefix the model with the agent_id 
+    "model": "<agent_id>/<version.model>",
+    "messages": [
+        // use version.prompt here. It will likely contain Jinja2 templates that refer to the input variables.
+    ],
+    "response_format": {
+        "type": "json_schema",
+        // You can use the json_schema from version.output_schema.json_schema
+        "json_schema": ...
+    },
+    "input": ..., // corresponds to task_input in WorkflowAI,
+    "metadata": {
+        // metadata is optional
+    }
+}
+```
+
 </Tab>
 </Tabs>
 
