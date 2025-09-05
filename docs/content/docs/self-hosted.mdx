@@ -19,7 +19,7 @@ claude "Please follow instructions in https://raw.githubusercontent.com/anothera
 
 AnotherAI is available as an MCP server in the IDEs below.
 
-<Tabs items={['Cursor', 'Claude Code', 'Cursor CLI']}>
+<Tabs items={['Cursor', 'Claude Code', 'Windsurf', 'Cursor CLI']}>
 
 <Tab value="Cursor">
 
@@ -81,6 +81,30 @@ Then type:
 
 You should see the AnotherAI server listed as "connected".
 
+</Tab>
+
+<Tab value="Windsurf">
+
+1. Open Windsurf
+2. Go to `Settings...`
+3. Select `Windsurf Settings`
+4. Navigate to `Cascade`
+5. Select `Manage MCPs`
+6. Select `View Raw Config`
+
+Add the following configuration to your MCP servers config:
+
+```json
+{
+  "mcpServers": {
+    "anotherai": {
+      "url": "http://127.0.0.1:8000/mcp/"
+    }
+  }
+}
+```
+
+Navigate back to Manage MCPs and refresh the page. The AnotherAI MCP should appear and show as enabled.
 </Tab>
 
 <Tab value="Cursor CLI">
