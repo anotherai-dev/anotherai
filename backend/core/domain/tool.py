@@ -9,7 +9,7 @@ class Tool(BaseModel):
     description: str | None = Field(default=None, description="The description of the tool")
 
     input_schema: dict[str, Any] = Field(description="The input class of the tool")
-    output_schema: dict[str, Any] | None = Field(description="The output class of the tool")
+    output_schema: dict[str, Any] | None = Field(default=None, description="The output class of the tool")
 
     strict: bool | None = Field(
         default=None,

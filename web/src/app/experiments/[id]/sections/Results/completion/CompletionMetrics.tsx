@@ -17,10 +17,18 @@ export function CompletionMetrics(props: CompletionMetricsProps) {
   return (
     <div className="space-y-1">
       {metrics.map(({ key, average }) => {
+        // Determine metric type and comparison logic
+        const metricType = key.includes("cost")
+          ? "cost"
+          : key.includes("duration") || key.includes("latency")
+            ? "duration"
+            : undefined;
+        const isHigherBetter = !metricType; // For cost/duration, lower is better; for other metrics, higher is better
+
         // Use row-based comparison coloring if available
         const badgeInfo =
           allMetricsPerKeyForRow && allMetricsPerKeyForRow[key]
-            ? getMetricBadgeWithRelative(average, allMetricsPerKeyForRow[key], true) // true = higher is better for most metrics
+            ? getMetricBadgeWithRelative(average, allMetricsPerKeyForRow[key], isHigherBetter, metricType)
             : {
                 color: "bg-transparent border border-gray-200 text-gray-700",
                 relativeText: undefined,
@@ -38,7 +46,7 @@ export function CompletionMetrics(props: CompletionMetricsProps) {
               {badgeInfo.relativeText && !badgeInfo.isBest && (
                 <span className="flex items-center text-xs font-medium text-red-500">
                   {badgeInfo.relativeText}
-                  <ArrowUp size={12} />
+                  {badgeInfo.showArrow && <ArrowUp size={12} />}
                 </span>
               )}
               <span className="font-medium">{average.toFixed(2)}</span>

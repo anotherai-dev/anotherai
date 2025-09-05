@@ -7,6 +7,7 @@ enableMapSet();
 
 interface DeploymentStats {
   completions_last_7_days: number;
+  completions_last_3_days: number;
   total_cost: number;
   active: boolean;
   last_completion_date: string | null;
@@ -15,6 +16,7 @@ interface DeploymentStats {
 interface DeploymentStatsResult {
   deployment_id: string;
   completions_last_7_days: number;
+  completions_last_3_days: number;
   total_cost: number;
   active: boolean;
   last_completion_date: string | null;
@@ -41,12 +43,14 @@ export const useDeploymentStats = create<DeploymentStatsState>((set, get) => ({
       return existing
         ? {
             completions_last_7_days: existing.completions_last_7_days,
+            completions_last_3_days: existing.completions_last_3_days,
             total_cost: existing.total_cost,
             active: existing.active,
             last_completion_date: existing.last_completion_date,
           }
         : {
             completions_last_7_days: 0,
+            completions_last_3_days: 0,
             total_cost: 0,
             active: false,
             last_completion_date: null,
@@ -61,12 +65,18 @@ export const useDeploymentStats = create<DeploymentStatsState>((set, get) => ({
     );
 
     try {
-      // Query completions where metadata contains anotherai/deployment_id for last 7 days
+      // Query completions where metadata contains anotherai/deployment_id for both 7 days and 3 days
       const query = `
         SELECT
-          COUNT(*) as total_completions,
+          COUNT(*) as total_completions_7d,
           COALESCE(SUM(cost_usd), 0) as total_cost,
-          MAX(created_at) as last_completion
+          MAX(created_at) as last_completion,
+          (
+            SELECT COUNT(*)
+            FROM completions c3
+            WHERE c3.metadata['anotherai/deployment_id'] = '${deploymentId}'
+              AND c3.created_at >= subtractDays(now(), 3)
+          ) as total_completions_3d
         FROM completions
         WHERE metadata['anotherai/deployment_id'] = '${deploymentId}'
           AND created_at >= subtractDays(now(), 7)
@@ -83,13 +93,15 @@ export const useDeploymentStats = create<DeploymentStatsState>((set, get) => ({
       }
 
       const statsData = (await response.json()) as {
-        total_completions: number;
+        total_completions_7d: number;
+        total_completions_3d: number;
         total_cost: number;
         last_completion: string | null;
       }[];
 
       const stats = statsData[0] || {
-        total_completions: 0,
+        total_completions_7d: 0,
+        total_completions_3d: 0,
         total_cost: 0,
         last_completion: null,
       };
@@ -102,7 +114,8 @@ export const useDeploymentStats = create<DeploymentStatsState>((set, get) => ({
 
       const deploymentStatsResult: DeploymentStatsResult = {
         deployment_id: deploymentId,
-        completions_last_7_days: stats.total_completions || 0,
+        completions_last_7_days: stats.total_completions_7d || 0,
+        completions_last_3_days: stats.total_completions_3d || 0,
         total_cost: stats.total_cost || 0,
         active: isActive,
         last_completion_date: stats.last_completion,
@@ -118,6 +131,7 @@ export const useDeploymentStats = create<DeploymentStatsState>((set, get) => ({
 
       return {
         completions_last_7_days: deploymentStatsResult.completions_last_7_days,
+        completions_last_3_days: deploymentStatsResult.completions_last_3_days,
         total_cost: deploymentStatsResult.total_cost,
         active: deploymentStatsResult.active,
         last_completion_date: deploymentStatsResult.last_completion_date,
@@ -134,6 +148,7 @@ export const useDeploymentStats = create<DeploymentStatsState>((set, get) => ({
 
       return {
         completions_last_7_days: 0,
+        completions_last_3_days: 0,
         total_cost: 0,
         active: false,
         last_completion_date: null,
@@ -160,13 +175,14 @@ export const useDeploymentStats = create<DeploymentStatsState>((set, get) => ({
       // Create IN clause with properly quoted deployment IDs
       const deploymentIdsString = deploymentIds.map((id) => `'${id}'`).join(", ");
 
-      // Single comprehensive query for all deployments (last 7 days only)
+      // Single comprehensive query for all deployments (both 7 days and 3 days)
       const query = `
         SELECT
           metadata['anotherai/deployment_id'] as deployment_id,
-          COUNT(*) as total_completions,
+          COUNT(*) as total_completions_7d,
           COALESCE(SUM(cost_usd), 0) as total_cost,
-          MAX(created_at) as last_completion
+          MAX(created_at) as last_completion,
+          COALESCE(SUM(CASE WHEN created_at >= subtractDays(now(), 3) THEN 1 ELSE 0 END), 0) as total_completions_3d
         FROM completions
         WHERE metadata['anotherai/deployment_id'] IN (${deploymentIdsString})
           AND created_at >= subtractDays(now(), 7)
@@ -183,7 +199,8 @@ export const useDeploymentStats = create<DeploymentStatsState>((set, get) => ({
 
       const statsData = (await response.json()) as {
         deployment_id: string;
-        total_completions: number;
+        total_completions_7d: number;
+        total_completions_3d: number;
         total_cost: number;
         last_completion: string | null;
       }[];
@@ -200,7 +217,8 @@ export const useDeploymentStats = create<DeploymentStatsState>((set, get) => ({
 
         const deploymentStatsResult: DeploymentStatsResult = {
           deployment_id: row.deployment_id,
-          completions_last_7_days: row.total_completions || 0,
+          completions_last_7_days: row.total_completions_7d || 0,
+          completions_last_3_days: row.total_completions_3d || 0,
           total_cost: row.total_cost || 0,
           active: isActive,
           last_completion_date: row.last_completion,
@@ -218,6 +236,7 @@ export const useDeploymentStats = create<DeploymentStatsState>((set, get) => ({
         // Add to return map
         statsMap.set(row.deployment_id, {
           completions_last_7_days: deploymentStatsResult.completions_last_7_days,
+          completions_last_3_days: deploymentStatsResult.completions_last_3_days,
           total_cost: deploymentStatsResult.total_cost,
           active: deploymentStatsResult.active,
           last_completion_date: deploymentStatsResult.last_completion_date,
@@ -230,6 +249,7 @@ export const useDeploymentStats = create<DeploymentStatsState>((set, get) => ({
           const deploymentStatsResult: DeploymentStatsResult = {
             deployment_id: deploymentId,
             completions_last_7_days: 0,
+            completions_last_3_days: 0,
             total_cost: 0,
             active: false,
             last_completion_date: null,
@@ -245,6 +265,7 @@ export const useDeploymentStats = create<DeploymentStatsState>((set, get) => ({
 
           statsMap.set(deploymentId, {
             completions_last_7_days: 0,
+            completions_last_3_days: 0,
             total_cost: 0,
             active: false,
             last_completion_date: null,
@@ -271,6 +292,7 @@ export const useDeploymentStats = create<DeploymentStatsState>((set, get) => ({
       deploymentIds.forEach((deploymentId) => {
         statsMap.set(deploymentId, {
           completions_last_7_days: 0,
+          completions_last_3_days: 0,
           total_cost: 0,
           active: false,
           last_completion_date: null,
@@ -335,6 +357,7 @@ export const useOrFetchMultipleDeploymentStats = (deploymentIds: string[]) => {
     if (stats) {
       allStats.set(deploymentId, {
         completions_last_7_days: stats.completions_last_7_days,
+        completions_last_3_days: stats.completions_last_3_days,
         total_cost: stats.total_cost,
         active: stats.active,
         last_completion_date: stats.last_completion_date,

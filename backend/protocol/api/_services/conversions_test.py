@@ -3,12 +3,15 @@ from unittest.mock import patch
 import pytest
 
 from core.domain.exceptions import BadRequestError
-from protocol.api._api_models import Message, ToolCallRequest, ToolCallResult
+from core.domain.tool import HostedTool as DomainHostedTool
+from core.domain.tool import Tool as DomainTool
+from protocol.api._api_models import Message, Tool, ToolCallRequest, ToolCallResult
 from protocol.api._services.conversions import (
     experiments_url,
     graph_from_domain,
     graph_to_domain,
     message_to_domain,
+    tool_to_domain,
     version_from_domain,
     version_to_domain,
     view_from_domain,
@@ -292,3 +295,15 @@ class TestVersionConversion:
             exclude_unset=True,
             exclude_none=True,
         ), "version_from_domain and version_to_domain are not inverses"
+
+
+class TestToolConversion:
+    def test_hosted_tool(self):
+        tool = Tool(name="@browser-text", input_schema={})
+        domain_tool = tool_to_domain(tool)
+        assert domain_tool == DomainHostedTool.WEB_BROWSER_TEXT
+
+    def test_tool(self):
+        tool = Tool(name="test", input_schema={})
+        domain_tool = tool_to_domain(tool)
+        assert domain_tool == DomainTool(name="test", input_schema={})

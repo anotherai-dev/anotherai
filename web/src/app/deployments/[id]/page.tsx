@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { CompletionsTable } from "@/app/completions/sections/table/CompletionsTable";
-import { LoadingIndicator } from "@/components/LoadingIndicator";
+import { LoadingState } from "@/components/LoadingState";
 import { PageError } from "@/components/PageError";
 import { PageHeader } from "@/components/PageHeader";
 import { useToast } from "@/components/ToastProvider";
@@ -58,20 +58,18 @@ export default function DeploymentDetailPage() {
     }
   };
 
-  if (error) {
+  if (isLoading || (!deployment && !error)) {
     return (
       <div className="flex flex-col w-full h-full mx-auto px-4 py-8 bg-gray-50 overflow-y-auto">
-        <PageError error={error.message} />
+        <LoadingState />
       </div>
     );
   }
 
-  if (isLoading) {
+  if (error) {
     return (
       <div className="flex flex-col w-full h-full mx-auto px-4 py-8 bg-gray-50 overflow-y-auto">
-        <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-          <LoadingIndicator />
-        </div>
+        <PageError error={error.message} />
       </div>
     );
   }
@@ -85,7 +83,7 @@ export default function DeploymentDetailPage() {
   }
 
   return (
-    <div className="flex flex-col w-full h-full mx-auto px-4 py-8 bg-gray-50 overflow-hidden">
+    <div className="flex flex-col w-full min-h-full mx-auto px-4 py-8 bg-gray-50">
       <PageHeader
         breadcrumbs={[{ label: "Deployments", href: "/deployments" }, { label: deploymentId }]}
         title={deployment.id}
@@ -102,8 +100,14 @@ export default function DeploymentDetailPage() {
         descriptionBottomContent={<DeploymentInfoTooltip deploymentId={deploymentId} agentId={deployment.agent_id} />}
       />
       <DeploymentInfoSection deployment={deployment} />
-      <div className="flex-1 flex flex-col min-h-0">
-        <CompletionsTable data={completionsData ?? []} isLoading={isLoadingCompletions} error={completionsError} />
+      <div>
+        <CompletionsTable
+          data={completionsData ?? []}
+          isLoading={isLoadingCompletions}
+          error={completionsError}
+          heightForEmptyState="120px"
+          maxHeight="600px"
+        />
       </div>
 
       <ArchiveDeploymentModal

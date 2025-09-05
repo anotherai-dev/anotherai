@@ -2,7 +2,7 @@ import { ActivityIndicator } from "@/components/ActivityIndicator";
 
 interface AgentCellData {
   name: string;
-  active: boolean | null;
+  completionsLast3Days: number;
 }
 
 interface AgentsTableAgentCellProps {
@@ -12,7 +12,7 @@ interface AgentsTableAgentCellProps {
 export function AgentsTableAgentCell({ value }: AgentsTableAgentCellProps) {
   return (
     <div className="flex items-center gap-2 text-xs text-gray-900 min-w-0 break-words font-semibold">
-      {value.active !== null && <ActivityIndicator isActive={value.active} />}
+      <ActivityIndicator completionsLast3Days={value.completionsLast3Days} />
       <span>{value.name}</span>
     </div>
   );
