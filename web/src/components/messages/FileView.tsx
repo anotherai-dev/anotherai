@@ -1,17 +1,43 @@
+import { AudioViewer } from "@/components/messages/AudioViewer";
 import { ImageViewer } from "@/components/messages/ImageViewer";
+import { PDFViewer } from "@/components/messages/PDFViewer";
 import { File } from "@/types/models";
 
 interface FileViewProps {
   file: File;
 }
 
-export function FileView({ file }: FileViewProps) {
-  const isJpeg = file.content_type === "image/jpeg";
-  const imageUrl = file.storage_url || file.url || "";
+function isImageType(contentType: string): boolean {
+  return contentType?.startsWith("image/") || false;
+}
 
-  // For JPEG, just show the ImageViewer without the container
-  if (isJpeg && imageUrl) {
-    return <ImageViewer imageUrl={imageUrl} alt="File attachment" />;
+function isPdfType(contentType: string): boolean {
+  return contentType === "application/pdf";
+}
+
+function isAudioType(contentType: string): boolean {
+  return contentType?.startsWith("audio/") || false;
+}
+
+export function FileView({ file }: FileViewProps) {
+  const isImage = file.content_type ? isImageType(file.content_type) : false;
+  const isPdf = file.content_type ? isPdfType(file.content_type) : false;
+  const isAudio = file.content_type ? isAudioType(file.content_type) : false;
+  const url = file.url || file.storage_url || "";
+
+  // For images, show the ImageViewer without the container
+  if (isImage && url) {
+    return <ImageViewer imageUrl={url} alt="File attachment" />;
+  }
+
+  // For PDFs, show the PDF viewer without the container
+  if (isPdf && url) {
+    return <PDFViewer pdfUrl={url} alt="PDF attachment" />;
+  }
+
+  // For audio, show the audio player without the container
+  if (isAudio && url) {
+    return <AudioViewer audioUrl={url} />;
   }
 
   return (
@@ -28,7 +54,16 @@ export function FileView({ file }: FileViewProps) {
         </div>
       )}
 
-      {file.url && <div className="text-xs text-gray-600 mt-2 break-all">{file.url}</div>}
+      {file.url && (
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-blue-600 hover:text-blue-800 underline mt-2 break-all inline-block"
+        >
+          {url}
+        </a>
+      )}
     </div>
   );
 }

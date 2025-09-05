@@ -1,8 +1,7 @@
 import { VariablesViewer } from "@/components/VariablesViewer/VariablesViewer";
-import { FileView } from "@/components/messages/FileView";
-import { ImageViewer } from "@/components/messages/ImageViewer";
 import { MessageTextView } from "@/components/messages/MessageTextView";
 import { ToolCallRequestView, ToolCallResultView } from "@/components/messages/ToolCallView";
+import { UniversalFileViewer } from "@/components/messages/UniversalFileViewer";
 import { Annotation, MessageContent } from "@/types/models";
 
 type MessageContentViewProps = {
@@ -101,11 +100,13 @@ export function MessageContentView(props: MessageContentViewProps) {
             )}
             {item.image_url && (
               <div className="mt-2">
-                <ImageViewer imageUrl={item.image_url} alt="Message attachment" />
+                <UniversalFileViewer url={item.image_url} />
               </div>
             )}
-            {item.file && <FileView file={item.file} />}
-            {item.audio_url && <div className="text-gray-600 italic">Audio attached</div>}
+            {item.file && (item.file.url || item.file.storage_url) && (
+              <UniversalFileViewer url={item.file.storage_url || item.file.url || ""} />
+            )}
+            {item.audio_url && <UniversalFileViewer url={item.audio_url} />}
             {item.tool_call_request && <ToolCallRequestView toolCallRequest={item.tool_call_request} />}
             {item.tool_call_result && <ToolCallResultView toolCallResult={item.tool_call_result} />}
           </div>
