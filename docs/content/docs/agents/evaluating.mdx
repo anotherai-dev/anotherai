@@ -30,6 +30,15 @@ Let's walk through evaluating an email summarization agent. In this example, our
 
 ```python
 # Example agent usage
+from openai import AsyncOpenAI
+import os
+
+# Initialize the AnotherAI client
+client = AsyncOpenAI(
+    base_url="{{API_URL}}/v1",  # Automatically replaced with your AnotherAI endpoint
+    api_key=os.environ.get("ANOTHERAI_API_KEY")
+)
+
 async def summarize_email(email_content, model="gpt-4o-mini"):
     """Summarize an email using the specified model"""
     response = await client.chat.completions.create(
@@ -62,6 +71,8 @@ To learn more about both approaches, see [Static Dataset Evaluation](#static-dat
 Define evaluation criteria and scoring structure:
 
 ```python
+from pydantic import BaseModel, Field
+
 class CriterionScore(BaseModel):
     """Score for a single evaluation criterion"""
     score: int = Field(ge=1, le=10, description="Score from 1-10")
@@ -107,6 +118,9 @@ Evaluate your agent across multiple models:
 
 ```python
 import asyncio
+import httpx
+import json
+import os
 from datetime import datetime
 
 async def process_email(email, model, client, experiment_id):
@@ -176,9 +190,15 @@ async def process_email(email, model, client, experiment_id):
         "author_name": "summary-judge"
     })
     
-    # Send annotations
-    await client.post("/v1/annotations", 
-                    json={"annotations": annotations})
+    # Send annotations to AnotherAI API
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            "{{API_URL}}/v1/annotations",  # Automatically replaced with your endpoint
+            json={"annotations": annotations},
+            headers={"Authorization": f"Bearer {os.environ.get('ANOTHERAI_API_KEY')}"}
+        )
+        if response.status_code != 200:
+            print(f"Failed to send annotations: {response.text}")
     
     return {
         "email_id": email['id'],
@@ -230,6 +250,12 @@ After running your evaluation, review the results and use Claude to help analyze
 ```python
 # Example usage
 async def main():
+    # Initialize the client
+    client = AsyncOpenAI(
+        base_url="{{API_URL}}/v1",  # Automatically replaced with your endpoint
+        api_key=os.environ.get("ANOTHERAI_API_KEY")
+    )
+    
     # Load test dataset
     with open('dataset.json', 'r') as f:
         emails = json.load(f)['emails']
@@ -348,8 +374,20 @@ Then load and use it in your evaluation:
 
 ```python
 # Load static dataset
+import json
+from openai import AsyncOpenAI
+
 with open('test_emails.json', 'r') as f:
     emails = json.load(f)['emails']
+
+# Initialize client
+client = AsyncOpenAI(
+    base_url="{{API_URL}}/v1",  # Automatically replaced with your endpoint
+    api_key=os.environ.get("ANOTHERAI_API_KEY")
+)
+
+# Define models to test
+models = ["gpt-4o-mini", "gpt-4.1-nano-latest"]
 
 # Run evaluation
 results = await evaluate_email_summaries(emails, models, client)
@@ -403,18 +441,9 @@ for completion in completions:
     })
 
 # Now run the evaluation pipeline from Step 3
-# Create experiment first
-experiment_response = await client.post(
-    "/v1/experiments",
-    json={
-        "title": "Production Email Summary Evaluation",
-        "description": "Evaluate recent production summaries",
-        "agent_id": "email-summarizer",
-        "author_name": "evaluation_pipeline"
-    }
-)
-
-experiment_id = experiment_response.json()['id']
+# Note: In AnotherAI, experiment_id is typically a string identifier you create
+# rather than something registered via API
+experiment_id = f"prod-eval-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
 # Run evaluation on the production data
 results = await evaluate_email_summaries(emails, ["gpt-4o-mini"], client)
