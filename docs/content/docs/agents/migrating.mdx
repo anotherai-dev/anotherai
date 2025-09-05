@@ -43,7 +43,7 @@ There are three main steps to migrating your agent to AnotherAI:
 from openai import OpenAI
 
 client = OpenAI(
-    base_url="https://api.anotherai.dev/v1",  # Or http://localhost:8000/v1 for self-hosted
+    base_url="{{API_URL}}/v1",  # Or http://localhost:8000/v1 for self-hosted
     api_key="aai-***", 
 )
 
@@ -66,7 +66,7 @@ response = client.chat.completions.create(
 import OpenAI from 'openai';
 
 const client = new OpenAI({
-  baseURL: 'https://api.anotherai.dev/v1',  // Or http://localhost:8000/v1 for self-hosted
+  baseURL: '{{API_URL}}/v1',  // Or http://localhost:8000/v1 for self-hosted
   apiKey: 'aai-***',  
 });
 
@@ -123,4 +123,4 @@ TODO once migration path work is complete
 
 We have a zero lock-in promise. If you're not happy with AnotherAI at any point, you can switch away just by changing your base URL.
 
-Learn more [here](/index#anotherais-zero-lock-in-promise).
+Learn more [here](/index#anotherais-zero-lock-in-promise).k

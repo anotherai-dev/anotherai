@@ -73,7 +73,7 @@ TRACE_ID=$(python3 -c "import uuid; print(uuid.uuid7())")  # Unique identifier f
 WORKFLOW_NAME="meeting-analysis"  # Type of workflow being executed
 
 # Agent call with workflow metadata
-curl -X POST https://api.anotherai.dev/v1/chat/completions \
+curl -X POST {{API_URL}}/v1/chat/completions \
   -H "Authorization: Bearer aai-***" \
   -H "Content-Type: application/json" \
   -d '{
@@ -163,7 +163,7 @@ TRACE_ID=$(python3 -c "import uuid; print(uuid.uuid7())")  # Generate once per w
 WORKFLOW_NAME="meeting-analysis"  # Same for all agents in this workflow type
 
 # Agent 1: Document processor
-curl -X POST https://api.anotherai.dev/v1/chat/completions \
+curl -X POST {{API_URL}}/v1/chat/completions \
   -H "Authorization: Bearer aai-***" \
   -H "Content-Type: application/json" \
   -d '{
@@ -177,7 +177,7 @@ curl -X POST https://api.anotherai.dev/v1/chat/completions \
   }'
 
 # Agent 2: Content analyzer (same trace_id and workflow_name)
-curl -X POST https://api.anotherai.dev/v1/chat/completions \
+curl -X POST {{API_URL}}/v1/chat/completions \
   -H "Authorization: Bearer aai-***" \
   -H "Content-Type: application/json" \
   -d '{
@@ -209,28 +209,10 @@ Show me all the completions for the workflow 'meeting-analysis', ordered by trac
 so I can see each workflow instance with its agents in chronological order.
 ```
 
-The equivalent SQL query would be:
-```sql
-SELECT * FROM completions 
-WHERE metadata['workflow_name'] = 'meeting-analysis' 
-ORDER BY metadata['trace_id'], created_at
-```
-
 ### Workflow performance analytics
 
 See daily cost for a specific workflow across all agents involved.
 
 ```
 Create a graph showing daily cost for workflow_name='meeting-analysis'
-```
-
-The equivalent SQL query would be:
-```sql
-SELECT 
-  DATE(created_at) as date,
-  SUM(cost_usd) as daily_cost
-FROM completions 
-WHERE metadata['workflow_name'] = 'meeting-analysis' 
-GROUP BY DATE(created_at)
-ORDER BY date
 ```

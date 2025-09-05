@@ -53,7 +53,7 @@ Add the following configuration to your MCP servers config:
 {
   "mcpServers": {
     "anotherai": {
-      "url": "https://api.anotherai.dev/mcp",
+      "url": "{{API_URL}}/mcp",
       "headers": {
         "Authorization": "Bearer <your_api_key_here>"
       }
@@ -76,7 +76,7 @@ Cursor UI should now look like this (note the green indicator and the number of 
   4. Type the following to install:
 
   ```bash
-  claude mcp add --scope user anotherai https://api.anotherai.dev/mcp --transport http --header "Authorization: Bearer YOUR_API_KEY_HERE"
+  claude mcp add --scope user anotherai {{API_URL}}/mcp --transport http --header "Authorization: Bearer YOUR_API_KEY_HERE"
   ```
 
   <Callout type="info">
@@ -113,7 +113,7 @@ Add the following configuration to your MCP servers config:
 {
   "mcpServers": {
     "anotherai": {
-      "url": "https://api.anotherai.dev/mcp",
+      "url": "{{API_URL}}/mcp",
       "headers": {
         "Authorization": "Bearer <your_api_key_here>"
       }
@@ -167,7 +167,7 @@ Use AnotherAI to help me find a faster model for @[your-agent-name-here] while s
 **It's easier to leave AnotherAI than to leave OpenAI directly.**
 
 Switching away is literally just changing one line:
-- Remove `base_url="https://api.anotherai.dev/v1"`
+- Remove `base_url="{{API_URL}}/v1"`
 - Your code stays identical
 
 While using AnotherAI, you:

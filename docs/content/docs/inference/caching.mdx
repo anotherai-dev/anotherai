@@ -200,19 +200,6 @@ Show me the cache hit rate for each of my agents over the last 7 days
 What's the total requests, cache hits, and cache hit rate percentage for all agents this week?
 ```
 
-Or query directly using SQL:
-
-```sql
--- Query cache performance via MCP
-query_completions SELECT 
-  agent_id,
-  COUNT(*) as total_requests,
-  SUM(CASE WHEN cost_usd = 0 THEN 1 ELSE 0 END) as cache_hits,
-  ROUND(SUM(CASE WHEN cost_usd = 0 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as cache_hit_rate
-FROM completions 
-WHERE created_at >= today() - INTERVAL 7 DAY 
-GROUP BY agent_id
-```
 
 ## Caching with images
 

@@ -380,9 +380,7 @@ Ask Claude to create an experiment with recent completions:
 
 ```
 Create an experiment using the playground tool that tests gpt-4o-mini on the last 50 
-completions from my email-summarizer agent. Use this completion query:
-SELECT * FROM completions WHERE metadata.agent_id = 'email-summarizer' 
-AND created_at > now() - INTERVAL 1 DAY ORDER BY created_at DESC LIMIT 50
+completions from my email-summarizer agent from the past day.
 ```
 
 **Option 2: Query and evaluate manually**
@@ -390,19 +388,8 @@ AND created_at > now() - INTERVAL 1 DAY ORDER BY created_at DESC LIMIT 50
 Modify the code from Step 3 to query recent completions first:
 
 ```python
-# Query recent completions
-response = await client.post(
-    "/v1/query/completions",
-    json={
-        "query": """
-            SELECT * FROM completions 
-            WHERE metadata.agent_id = 'email-summarizer' 
-            AND created_at > now() - INTERVAL 1 DAY 
-            ORDER BY created_at DESC 
-            LIMIT 50
-        """
-    }
-)
+# Query recent completions - ask Claude to fetch them
+# "Get the last 50 completions from my email-summarizer agent from the past day"
 
 completions = response.json()['results']
 
