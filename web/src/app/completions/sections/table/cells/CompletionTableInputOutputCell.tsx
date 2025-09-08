@@ -80,6 +80,7 @@ export function CompletionTableInputOutputCell({
     // Output: has messages property only
     if (hasMessages || hasInternalMessages) {
       const messages = hasMessages ? obj.messages : obj.internal_anotherai_messages;
+
       return (
         <div className={cx("max-h-full overflow-y-auto", maxWidth)}>
           <MessagesViewer

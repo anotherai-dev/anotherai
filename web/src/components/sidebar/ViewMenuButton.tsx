@@ -55,7 +55,7 @@ export default function ViewMenuButton({
       onRemove(viewId);
     } else {
       // Check if we're currently viewing this view's page
-      const isCurrentlyViewing = pathname === `/view/${viewId}`;
+      const isCurrentlyViewing = pathname === `/views/${viewId}`;
 
       await deleteView(viewId);
 

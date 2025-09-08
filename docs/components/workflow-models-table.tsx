@@ -54,23 +54,8 @@ export function WorkflowModelsTable({ models }: WorkflowModelsTableProps) {
             <th className="text-left p-2 font-semibold">Model</th>
             <th className="text-left p-2 font-semibold">Provider</th>
             <th className="text-left p-2 font-semibold">Released</th>
-            <th className="text-center p-2 font-semibold" title="Input Image">
-              🖼️
-            </th>
-            <th className="text-center p-2 font-semibold" title="Input PDF">
-              📄
-            </th>
-            <th className="text-center p-2 font-semibold" title="Input Audio">
-              🎵
-            </th>
-            <th className="text-center p-2 font-semibold" title="Output Image">
-              🎨
-            </th>
-            <th className="text-center p-2 font-semibold" title="Output Text">
-              💬
-            </th>
             <th className="text-center p-2 font-semibold" title="JSON Mode">
-              {}
+              📋
             </th>
             <th className="text-center p-2 font-semibold" title="Tool Calling">
               🔧
@@ -98,21 +83,6 @@ export function WorkflowModelsTable({ models }: WorkflowModelsTableProps) {
               <td className="p-2 text-sm">{model.owned_by}</td>
               <td className="p-2 text-sm text-muted-foreground">{formatDate(model.created)}</td>
               <td className="text-center p-2">
-                <FeatureIcon supported={model.supports.input_image} />
-              </td>
-              <td className="text-center p-2">
-                <FeatureIcon supported={model.supports.input_pdf} />
-              </td>
-              <td className="text-center p-2">
-                <FeatureIcon supported={model.supports.input_audio} />
-              </td>
-              <td className="text-center p-2">
-                <FeatureIcon supported={model.supports.output_image} />
-              </td>
-              <td className="text-center p-2">
-                <FeatureIcon supported={model.supports.output_text} />
-              </td>
-              <td className="text-center p-2">
                 <FeatureIcon supported={model.supports.json_mode} />
               </td>
               <td className="text-center p-2">
@@ -128,13 +98,8 @@ export function WorkflowModelsTable({ models }: WorkflowModelsTableProps) {
 
       <div className="mt-4 p-4 bg-muted rounded-lg">
         <h4 className="font-semibold mb-2">Legend:</h4>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-          <div>🖼️ Input Image</div>
-          <div>📄 Input PDF</div>
-          <div>🎵 Input Audio</div>
-          <div>🎨 Output Image</div>
-          <div>💬 Output Text</div>
-          <div>{} JSON Mode</div>
+        <div className="grid grid-cols-3 gap-2 text-sm">
+          <div>📋 JSON Mode</div>
           <div>🔧 Tool Calling</div>
           <div>📊 Structured Output</div>
         </div>
