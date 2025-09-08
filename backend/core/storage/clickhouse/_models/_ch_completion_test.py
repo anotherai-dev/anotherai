@@ -103,11 +103,11 @@ class TestClickhouseCompletion:
                         "completion": {
                             "cost_usd": 2.0,
                             "text_token_count": 100.0,
+                            "cached_token_count": 100.0,
+                            "reasoning_token_count": 100.0,
                         },
                         "prompt": {
-                            "cached_token_count": 100.0,
                             "cost_usd": 1.0,
-                            "reasoning_token_count": 100.0,
                         },
                     },
                 },

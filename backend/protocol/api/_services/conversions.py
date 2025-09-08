@@ -17,6 +17,9 @@ from core.domain.error import Error as DomainError
 from core.domain.exceptions import BadRequestError
 from core.domain.experiment import Experiment as DomainExperiment
 from core.domain.file import File
+from core.domain.inference_usage import CompletionUsage as DomainCompletionUsage
+from core.domain.inference_usage import InferenceUsage as DomainInferenceUsage
+from core.domain.inference_usage import TokenUsage as DomainTokenUsage
 from core.domain.message import Message as DomainMessage
 from core.domain.message import MessageContent as DomainMessageContent
 from core.domain.message import MessageRole as DomainMessageRole
@@ -28,6 +31,9 @@ from core.domain.tool import HostedTool as DomainHostedTool
 from core.domain.tool import Tool as DomainTool
 from core.domain.tool_call import ToolCallRequest as DomainToolCallRequest
 from core.domain.tool_call import ToolCallResult as DomainToolCallResult
+from core.domain.trace import LLMTrace as DomainLLMTrace
+from core.domain.trace import ToolTrace as DomainToolTrace
+from core.domain.trace import Trace as DomainTrace
 from core.domain.version import Version as DomainVersion
 from core.domain.view import Graph as DomainGraph
 from core.domain.view import View as DomainView
@@ -39,6 +45,7 @@ from protocol.api._api_models import (
     APIKey,
     CompleteAPIKey,
     Completion,
+    CompletionUsage,
     CreateAgentRequest,
     CreateExperimentRequest,
     CreateViewResponse,
@@ -46,6 +53,7 @@ from protocol.api._api_models import (
     Error,
     Experiment,
     Graph,
+    InferenceUsage,
     Input,
     Message,
     Model,
@@ -57,9 +65,11 @@ from protocol.api._api_models import (
     Output,
     OutputSchema,
     SupportsModality,
+    TokenUsage,
     Tool,
     ToolCallRequest,
     ToolCallResult,
+    Trace,
     Version,
     View,
     ViewFolder,
@@ -310,6 +320,7 @@ def completion_from_domain(completion: DomainCompletion) -> Completion:
         metadata=completion.metadata or None,
         cost_usd=completion.cost_usd or 0.0,
         duration_seconds=completion.duration_seconds or 0.0,
+        traces=[trace_from_domain(t) for t in completion.traces] if completion.traces else None,
     )
 
 
@@ -321,10 +332,10 @@ def completion_to_domain(completion: Completion) -> DomainCompletion:
         agent_input=input_to_domain(completion.input),
         agent_output=output_to_domain(completion.output),
         messages=[message_to_domain(m) for m in completion.messages] if completion.messages else [],
-        traces=[],  # TODO: ?
         metadata=completion.metadata or None,
         cost_usd=completion.cost_usd or 0.0,
         duration_seconds=completion.duration_seconds or 0.0,
+        traces=[trace_to_domain(t) for t in completion.traces] if completion.traces else [],
     )
 
 
@@ -656,3 +667,77 @@ def page_token_to_datetime(token: str | None):
 
 def page_token_from_datetime(dt: datetime) -> str:
     return str(int(dt.timestamp()))
+
+
+def usage_from_domain(usage: DomainInferenceUsage) -> InferenceUsage:
+    return InferenceUsage(
+        prompt=TokenUsage(
+            text_token_count=usage.prompt.text_token_count,
+            audio_token_count=usage.prompt.audio_token_count,
+            audio_count=usage.prompt.audio_count,
+            image_token_count=usage.prompt.image_token_count,
+            image_count=usage.prompt.image_count,
+            cost_usd=usage.prompt.cost_usd,
+        ),
+        completion=CompletionUsage(
+            text_token_count=usage.completion.text_token_count,
+            cost_usd=usage.completion.cost_usd,
+        ),
+    )
+
+
+def usage_to_domain(usage: InferenceUsage) -> DomainInferenceUsage:
+    return DomainInferenceUsage(
+        prompt=DomainTokenUsage(
+            text_token_count=usage.prompt.text_token_count,
+            audio_token_count=usage.prompt.audio_token_count,
+            audio_count=usage.prompt.audio_count,
+            image_token_count=usage.prompt.image_token_count,
+            image_count=usage.prompt.image_count,
+            cost_usd=usage.prompt.cost_usd,
+        ),
+        completion=DomainCompletionUsage(
+            text_token_count=usage.completion.text_token_count,
+            cost_usd=usage.completion.cost_usd,
+        ),
+    )
+
+
+def trace_from_domain(trace: DomainTrace) -> Trace:
+    if trace.kind == "llm":
+        return Trace(
+            kind=trace.kind,
+            duration_seconds=trace.duration_seconds,
+            cost_usd=trace.cost_usd,
+            model=trace.model,
+            provider=trace.provider,
+            usage=usage_from_domain(trace.usage) if trace.usage else None,
+        )
+    return Trace(
+        kind=trace.kind,
+        duration_seconds=trace.duration_seconds,
+        cost_usd=trace.cost_usd,
+        name=trace.name,
+        tool_input_preview=trace.tool_input_preview,
+        tool_output_preview=trace.tool_output_preview,
+    )
+
+
+def trace_to_domain(trace: Trace) -> DomainTrace:
+    if trace.kind == "llm":
+        return DomainLLMTrace(
+            kind="llm",
+            duration_seconds=trace.duration_seconds,
+            cost_usd=trace.cost_usd,
+            usage=usage_to_domain(trace.usage) if trace.kind == "llm" and trace.usage else None,
+            model=trace.model or "",
+            provider=trace.provider or "",
+        )
+    return DomainToolTrace(
+        kind="tool",
+        duration_seconds=trace.duration_seconds,
+        cost_usd=trace.cost_usd,
+        name=trace.name or "",
+        tool_input_preview=trace.tool_input_preview or "",
+        tool_output_preview=trace.tool_output_preview or "",
+    )
