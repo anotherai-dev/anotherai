@@ -46,17 +46,12 @@ export function remarkTemplateReplacement() {
   return (tree: Root) => {
     visit(tree, (node) => {
       if ("value" in node && typeof node.value === "string") {
-        const expressionContent = node.value;
+        let expressionContent = node.value;
+        for (const key in variables) {
+          expressionContent = expressionContent.replace(`{{${key}}}`, variables[key as keyof typeof variables]);
+        }
 
-        // Check if this is a template variable (with single braces like {API_URL})
-        Object.entries(variables).forEach(([key, value]) => {
-          if (expressionContent.trim() === `{${key}}`) {
-            console.log(`Replacing MDX expression {${key}} with text node containing ${value}`);
-            // Convert the mdxTextExpression to a regular text node
-            (node as { type: string; value: string }).type = "text";
-            node.value = value as string;
-          }
-        });
+        node.value = expressionContent;
       }
     });
   };

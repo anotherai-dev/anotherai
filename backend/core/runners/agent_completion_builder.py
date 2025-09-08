@@ -7,8 +7,8 @@ from core.domain.agent_completion import AgentCompletion
 from core.domain.agent_input import AgentInput
 from core.domain.agent_output import AgentOutput
 from core.domain.error import Error
-from core.domain.inference import Trace
 from core.domain.message import Message
+from core.domain.trace import Trace
 from core.domain.version import Version
 from core.providers._base.llm_completion import LLMCompletion
 from core.runners.runner_output import RunnerOutput

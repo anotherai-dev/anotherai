@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field
 
-from core.domain.inference_usage import InferenceUsage, PromptUsage, Usage
+from core.domain.inference_usage import CompletionUsage, InferenceUsage, TokenUsage
 
 
 # TODO: use domain model instead
@@ -45,13 +45,13 @@ class LLMUsage(LLMPromptUsage, LLMCompletionUsage):
 
     def to_domain(self) -> InferenceUsage:
         return InferenceUsage(
-            prompt=PromptUsage(
+            prompt=TokenUsage(
                 text_token_count=self.prompt_token_count,
-                cached_token_count=self.prompt_token_count_cached,
-                reasoning_token_count=self.reasoning_token_count,
                 cost_usd=self.prompt_cost_usd or 0,
             ),
-            completion=Usage(
+            completion=CompletionUsage(
+                cached_token_count=self.prompt_token_count_cached,
+                reasoning_token_count=self.reasoning_token_count,
                 text_token_count=self.completion_token_count,
                 cost_usd=self.completion_cost_usd or 0,
             ),

@@ -6,8 +6,8 @@ from pydantic import BaseModel, Field
 from core.domain.agent import Agent
 from core.domain.agent_input import AgentInput
 from core.domain.agent_output import AgentOutput
-from core.domain.inference import LLMTrace, Trace
 from core.domain.message import Message
+from core.domain.trace import LLMTrace, Trace
 from core.domain.version import Version
 from core.utils.fields import datetime_zero
 

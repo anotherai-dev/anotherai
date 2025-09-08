@@ -9,13 +9,13 @@ from core.domain.agent_output import AgentOutput
 from core.domain.annotation import Annotation
 from core.domain.deployment import Deployment
 from core.domain.experiment import Experiment
-from core.domain.inference import LLMTrace
-from core.domain.inference_usage import InferenceUsage, PromptUsage, Usage
+from core.domain.inference_usage import CompletionUsage, InferenceUsage, TokenUsage
 from core.domain.message import Message
 from core.domain.models._displayed_provider import DisplayedProvider
 from core.domain.models.model_data import MaxTokensData, ModelData, QualityData, SpeedData, SpeedIndex
 from core.domain.models.models import Model
 from core.domain.models.providers import Provider
+from core.domain.trace import LLMTrace
 from core.domain.version import Version
 from core.domain.view import Graph, View, ViewFolder
 from core.providers._base.llm_completion import LLMCompletion
@@ -49,12 +49,12 @@ def fake_completion(agent: Agent | None = None, id_rand: int = 1, **kwargs: Any)
                 duration_seconds=1.0,
                 cost_usd=3.0,
                 usage=InferenceUsage(
-                    prompt=PromptUsage(
-                        cached_token_count=100,
-                        reasoning_token_count=100,
+                    prompt=TokenUsage(
                         cost_usd=1.0,
                     ),
-                    completion=Usage(
+                    completion=CompletionUsage(
+                        cached_token_count=100,
+                        reasoning_token_count=100,
                         text_token_count=100,
                         cost_usd=2.0,
                     ),
