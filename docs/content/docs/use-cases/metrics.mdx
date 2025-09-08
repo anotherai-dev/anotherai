@@ -1,0 +1,162 @@
+---
+title: Accessing Metrics and Data
+summary: REST API endpoints for querying completion data and building custom dashboards.
+description: Query completion data directly via REST API
+---
+
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+
+TODO: add more details about creating views
+
+TODO: the following was taken from an example/use case, need to review to check if it still makes sense as is or how to rework it to fit the use case
+
+## Review Performance Metrics (Latency, Cost)
+
+This use case demonstrates how you can create specialized views to monitor different agent's performance metrics and completions.
+
+### Overview
+Suppose your calendar event extraction agent is becoming increasingly popular in your product. You want to keep an eye on the overall spend on that agent to ensure you don't go over budget. You also want to keep an eye on the speed of the models you're using, so that your customers aren't left with long wait times. 
+
+You can create custom views to monitor:
+- The cost of one or more agents
+- The average latency of one or more agents
+- Specific completions data from specific agents
+
+and more!
+
+To create a view:
+
+<Steps>
+<Step>
+Describe the view or goal you want to Claude (or your preferred AI agent)
+
+`Create a view in AnotherAI that shows me the daily cost of calendar_event_extractor.py`
+
+or 
+
+`Create a view in AnotherAI that shows me the total number of completions per day across all agents`
+
+or 
+
+`Create a view in AnotherAI that shows all the completion outputs and annotations for @calendar_event_extractor.py`
+</Step>
+<Step>
+After creating a view, you can always make adjustments to it
+
+`Update anotherai/views/calendar-event-extractor-completions to include the completion inputs as well`
+</Step>
+</Steps>
+
+
+
+## Query Completions
+
+Query completion data directly via REST API for building custom dashboards or integrations. This provides the same functionality as the `query_completions` MCP tool but through HTTP requests.
+
+### Endpoint
+
+```http
+GET {{API_URL}}/v1/completions/query
+```
+
+### Authentication
+
+Include your AnotherAI API key in the Authorization header:
+
+```http
+Authorization: Bearer aai-your-api-key
+```
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `query` | string | Yes | SQL query to execute on the `completions` table |
+
+### Response
+
+Returns an array of objects representing the query results:
+
+```json
+[
+  {
+    "completion_id": "comp_123",
+    "agent_id": "email-classifier",
+    "model": "gpt-4o",
+    "created_at": "2024-01-15T10:30:00Z",
+    "total_tokens": 150,
+    "cost_usd": 0.002
+  }
+]
+```
+
+### Example usage
+
+<Tabs items={["cURL", "Python", "JavaScript"]}>
+<Tab value="cURL">
+```bash
+curl -X GET "{{API_URL}}/v1/completions/query?query=SELECT%20*%20FROM%20completions%20WHERE%20agent_id%20%3D%20%27email-classifier%27%20LIMIT%2010" \
+  -H "Authorization: Bearer aai-your-api-key" \
+  -H "Content-Type: application/json"
+```
+</Tab>
+<Tab value="Python">
+```python
+import requests
+
+url = "{{API_URL}}/v1/completions/query"
+headers = {
+    "Authorization": "Bearer aai-your-api-key",
+    "Content-Type": "application/json"
+}
+params = {
+    "query": "SELECT * FROM completions WHERE agent_id = 'email-classifier' LIMIT 10"
+}
+
+response = requests.get(url, headers=headers, params=params)
+data = response.json()
+```
+</Tab>
+<Tab value="JavaScript">
+```javascript
+const url = new URL("{{API_URL}}/v1/completions/query");
+url.searchParams.append("query", "SELECT * FROM completions WHERE agent_id = 'email-classifier' LIMIT 10");
+
+const response = await fetch(url, {
+    headers: {
+        "Authorization": "Bearer aai-your-api-key",
+        "Content-Type": "application/json"
+    }
+});
+
+const data = await response.json();
+```
+</Tab>
+</Tabs>
+
+### Common queries
+
+Here are some useful SQL queries for analyzing your completion data:
+
+```sql
+-- Get completions for a specific agent in the last 24 hours
+SELECT * FROM completions 
+WHERE agent_id = 'my-agent' 
+AND created_at >= NOW() - INTERVAL 1 DAY
+ORDER BY created_at DESC;
+
+-- Analyze cost and token usage by model
+SELECT model, COUNT(*) as completion_count, 
+       SUM(total_tokens) as total_tokens, 
+       SUM(cost_usd) as total_cost
+FROM completions 
+GROUP BY model
+ORDER BY total_cost DESC;
+
+-- Find slow completions (over 5 seconds)
+SELECT completion_id, agent_id, model, duration_ms
+FROM completions 
+WHERE duration_ms > 5000
+ORDER BY duration_ms DESC;
+```

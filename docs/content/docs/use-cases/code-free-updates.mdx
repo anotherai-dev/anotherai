@@ -1,5 +1,5 @@
 ---
-title: Step-by-Step Deployment Guide
+title: Code-Free Model and Prompt Management
 summary: A practical guide to deploying versions from experiments in AnotherAI
 ---
 
@@ -239,3 +239,30 @@ Update my code to use travel-assistant/production#2 instead of travel-assistant/
 ```
 </Step>
 </Steps>
+
+TODO: the following was taken from an example/use case; pasting here to ensure that I utilize anything useful from it
+
+## Deploy Agent Fixes
+
+This use case demonstrates how to deploy prompt improvements and model changes without modifying your production code.
+
+### Overview
+Suppose you've identified and fixed issues with your calendar event extraction system message. Now you need to deploy the improvement to production. For non-breaking changes, AnotherAI's deployment feature lets you update your agent's behavior instantly without touching any production code.
+
+<Steps>
+<Step>
+After validating improvements in an experiment, deploy the best performing version
+
+`Deploy version anotherai/deployment/a9f1fc5ab11299a9fee5604e51fe7b6e to production for calendar_event_extractor.py`
+</Step>
+<Step>
+For [non-breaking changes](/deployments#what-updates-are-compatible-with-an-existing-deployment), you can deploy the new version to your existing deployment without making any code changes. Just ask Claude to update the deployment for you:
+
+`Update deployment calendar-event-extractor/production#1 to use anotherai/deployment/a9f1fc5ab11299a9fee5604e51fe7b6e`
+</Step>
+<Step>
+For [breaking changes](/deployments#creating-a-new-deployment), Claude will automatically create a new deployment for you. In these cases, you will need to update your code to use the new deployment id.
+
+</Step>
+</Steps>
+

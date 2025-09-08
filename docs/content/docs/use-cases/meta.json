@@ -1,0 +1,20 @@
+{
+  "title": "Use Cases",
+  "icon": "UserGroup",
+  "defaultOpen": true,
+  "pages": [
+    "building",
+    "migrating",
+    "improving",
+    "user-feedback",
+    "increasing-agent-reliability",
+    "evaluating",
+    "checking-new-models",
+    "lowering-costs",
+    "debugging",
+    "code-free-updates",
+    "connecting-agents",
+    "metrics",
+    "migrate-from-workflowai"
+  ]
+}

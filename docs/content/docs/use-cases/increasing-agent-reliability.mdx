@@ -1,6 +1,6 @@
 ---
-title: Reliability and fallback
-summary: Documentation on reliability features. Covers intelligent fallback systems, resilient infrastructure, and how to configure provider and model fallbacks.
+title: Increasing Agent Reliability
+summary: Documentation on reliability features. Covers how to configure provider and model fallbacks.
 description: How AnotherAI is designed to provide 100% uptime for your agents.
 ---
 
@@ -10,27 +10,7 @@ import StatusMonitor from '@/components/status-monitor';
 
 ## Goal
 
-We are committed to delivering 100% uptime for the API endpoints that power your agents, including:
-- `{{API_URL}}/v1/chat/completions` (compatible with OpenAI SDKs)
-- `{{API_URL}}/v1/[org-id]/tasks/[agent-id]/schemas/[schema-id]/run` (for AnotherAI SDKs)
-
-### Current system status
-
-<StatusMonitor />
-
-[TODO: add status monitor showing uptime metrics and tokens processed per day](https://blocks.tremor.so/blocks/status-monitoring)
-<Accordions>
-<Accordion title="How can I access the status page via RSS feed?">
-
-You can access the AnotherAI status page via RSS feed at:
-
-**RSS Feed URL:** `https://status.anotherai.com/feed.rss`
-
-This RSS feed provides real-time updates about system status, scheduled maintenance, and any service disruptions.
-
-</Accordion>
-</Accordions>
-
+We are committed to delivering 100% uptime for your agents. To achieve this, we've implemented model and provider fallback systems that automatically handle failures. When individual AI providers or models fail, your tasks continue running seamlessly without interruption.
 
 ## Intelligent fallback systems
 
@@ -38,17 +18,13 @@ AnotherAI implements multiple layers of fallback mechanisms to ensure your agent
 
 ### Provider fallback (automatic)
 
-![reliability-provider-fallback](/images/inference/reliability/provider-fallback.png)
-
 AnotherAI continuously monitors the health and performance of all integrated AI providers. When a provider experiences downtime or degraded performance, our system automatically switches to a healthy alternative provider without any manual intervention.
 
 For example, all OpenAI models are also available through Azure OpenAI Service. If the OpenAI API becomes unavailable, AnotherAI will automatically failover to Azure OpenAI within one second. This seamless transition ensures your agent runs continue without interruption, and you don't need to make any changes to your code.
-
+n
 This intelligent routing between providers happens behind the scenes, maintaining consistent response times and reliability for your applications even during provider outages.
 
 ### Model fallback (configurable)
-
-![reliability-model-fallback](/images/inference/reliability/model-fallback.png)
 
 Sometimes using the exact same model on a different provider won't ensure 100% uptime. Common scenarios include:
 - The model doesn't have provider redundancy and the unique provider is having issues
@@ -67,20 +43,12 @@ Configure model fallback using the `use_fallback` argument in the completion end
 | **Disable** | `"never"` | Disables fallback entirely. Useful when consistency matters more than success. |
 | **Custom** | `["model-1", "model-2"]` | Allows passing a list of models to try in order when the initial model fails. |
 
-<Callout type="info">
-Configuring model fallback is only available through code for now.
-</Callout>
-
 #### Automatic fallback logic
 
 The default fallback algorithm (i.e. when `use_fallback` is not provided or when `use_fallback="auto"`) assigns each model a fallback model based on the type of error that occurred:
 - for rate limit errors, we use a model of the same category (similar price and speed) that is supported by a different provider
 - structured generation errors can occur for models without native structured output. In this case, we use a model at the same price point that supports native structured output. For example, `GPT 4.1 Nano` would be used as a fallback for models like `Llama 4 Scout` and `Gemini 2.0 Flash`.
 - for content moderation errors, we use a model that has been historically more permissive. For example,  Llama 4 Maveric on Groq seems to be on the stricter side whereas non preview Gemini models on Vertex are often more permissive.
-
-<Callout type="info">
-The exhaustive fallback definitions are visible in the [codebase](https://github.com/AnotherAI/AnotherAI/blob/main/api/core/domain/models/model_data_mapping.py) 
-</Callout>
 
 #### Code examples
 
@@ -91,11 +59,8 @@ The exhaustive fallback definitions are visible in the [codebase](https://github
 ```python
 completion = client.chat.completions.create(
     model="gpt-4o",
-    messages=[{"role": "user", "content": "Extract the name and email"}],
-    extra_body={
-        "model_fallback": ["gpt-4o-mini", "claude-3-5-haiku-20241022"]
-    },
-    metadata={"agent_id": "user-extraction"}
+    messages=[{"role": "user", "content": "Extract the name and email from: John Doe <john@example.com>"}],
+    model_fallback=["gpt-4o-mini", "claude-3-5-haiku-20241022"]
 )
 ```
 </Tab>
@@ -103,10 +68,8 @@ completion = client.chat.completions.create(
 ```typescript
 const completion = await openai.chat.completions.create({
     model: "gpt-4o",
-    messages: [{"role": "user", "content": "Extract the name and email"}],
-    // @ts-ignore
-    model_fallback: ["gpt-4o-mini", "claude-3-5-haiku-20241022"],
-    metadata: {"agent_id": "user-extraction"}
+    messages: [{"role": "user", "content": "Extract the name and email from: John Doe <john@example.com>"}],
+    model_fallback: ["gpt-4o-mini", "claude-3-5-haiku-20241022"]
 });
 ```
 </Tab>
@@ -117,9 +80,8 @@ curl -X POST {{API_URL}}/v1/chat/completions \
 -H "Content-Type: application/json" \
 -d '{
     "model": "gpt-4o",
-    "messages": [{"role": "user", "content": "Extract the name and email"}],
-    "model_fallback": ["gpt-4o-mini", "claude-3-5-haiku-20241022"],
-    "metadata": {"agent_id": "user-extraction"}
+    "messages": [{"role": "user", "content": "Extract the name and email from: John Doe <john@example.com>"}],
+    "model_fallback": ["gpt-4o-mini", "claude-3-5-haiku-20241022"]
 }'
 ```
 </Tab>
@@ -192,6 +154,4 @@ Azure Front Door continuously monitors the health of our backend services in eac
 
 This multi-region architecture allows us to maintain high availability even during regional cloud provider outages, helping us achieve our goal of 100% uptime for the AnotherAI API.
 
-<Callout type="info">
-If you have any questions about our architecture, please [contact us](mailto:team@workflowai.support).
-</Callout>
+If you have any questions about our architecture, please reach out to us on [Slack](https://join.slack.com/t/anotherai-dev/shared_invite/zt-3av2prezr-Lz10~8o~rSRQE72m_PyIJA) or [email](mailto:team@workflowai.support).

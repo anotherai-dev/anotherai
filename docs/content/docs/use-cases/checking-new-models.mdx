@@ -1,0 +1,36 @@
+---
+title: Testing New Models on an Existing Agent
+summary: Use case for evaluating new AI models against your production model
+description: How to test and compare new models before switching
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+
+TODO: add use case of vibe checking a new model on an existing agent
+
+## Compare New Model vs Production Model
+
+This use case demonstrates how you can quickly evaluate new AI models against your current production model to help you make informed decisions about model updates
+
+### Overview
+Suppose you're currently using GPT-4o-mini for your calendar event extraction agent, but you've heard rave reviews about GPT-5 that was just released. You want to test whether the quality improvement justifies the higher cost before switching.
+
+<Steps>
+<Step>
+Ask Claude to create a experiment between your current and new model
+
+`Compare how @calendar_event_extractor.py performs using current GPT-4o-mini vs the new GPT-5 model`
+</Step>
+<Step>
+If you want to be sure to test with real data, you can modify your prompt to include that instruction
+
+`Compare how @calendar_event_extractor.py performs using current GPT-4o-mini vs the new GPT-5 model. Use the inputs from the last 20 completions.`
+
+Alternatively, if you have a dataset of standard test inputs you like to use to validate changes, you can modify your prompt to include that instruction:
+
+`Compare how @calendar_event_extractor.py performs using current GPT-4o-mini vs the new GPT-5 model. Use the inputs from @email_test_cases.txt`
+</Step>
+</Steps>
+
+### Tips:
+- Use real production data for testing, not artificial examples
