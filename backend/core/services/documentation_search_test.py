@@ -8,7 +8,7 @@ from unittest.mock import mock_open, patch
 import pytest
 
 from core.domain.documentation_section import DocumentationSection
-from core.services.documentation_search import DocumentationSearch
+from core.services.documentation_search import DocEnv, DocumentationSearch
 
 
 @pytest.fixture
@@ -35,7 +35,7 @@ def mock_config():
 @pytest.fixture
 def documentation_search(mock_config: dict[str, Any]):
     """Create a DocumentationSearch instance for testing."""
-    return DocumentationSearch(config=mock_config, current_env="production")
+    return DocumentationSearch(config=mock_config, current_env=DocEnv.PROD)
 
 
 class TestSubstituteVariables:
@@ -52,7 +52,7 @@ class TestSubstituteVariables:
 
     def test_substitute_variables_with_local_environment(self, documentation_search: DocumentationSearch):
         """Test variable substitution with local environment."""
-        documentation_search._current_env = "local"
+        documentation_search._current_env = DocEnv.LOCAL
 
         content = "Connect to {{API_URL}}/v1/chat/completions"
         result = documentation_search._substitute_variables(content)
@@ -103,7 +103,7 @@ class TestSubstituteVariables:
         assert result == "Visit the playground at https://anotherai.dev/agents/my-agent/playground"
 
         # Test with local environment
-        documentation_search._current_env = "local"
+        documentation_search._current_env = DocEnv.LOCAL
         result = documentation_search._substitute_variables(content)
 
         assert result == "Visit the playground at http://localhost:3000/agents/my-agent/playground"
