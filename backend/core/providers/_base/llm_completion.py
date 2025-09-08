@@ -1,9 +1,9 @@
 from pydantic import BaseModel
 
 from core.domain.error import Error
-from core.domain.inference import LLMTrace
 from core.domain.models.models import Model
 from core.domain.models.providers import Provider
+from core.domain.trace import LLMTrace
 from core.providers._base.llm_usage import LLMUsage
 
 

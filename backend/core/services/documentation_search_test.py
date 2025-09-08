@@ -201,6 +201,12 @@ class TestOfflineDocumentationSearch:
         # The authentication/guide should rank higher due to path matching
         assert results[0].file_path == "authentication/guide"
 
+    def test_offline_documentation_search_workflowai_migration(self, documentation_search: DocumentationSearch):
+        sections = documentation_search.get_all_doc_sections()
+        results = documentation_search._offline_documentation_search("Migrate from WorkflowAI to AnotherAI", sections)
+        assert len(results) > 0
+        assert results[0].file_path.endswith("migrate-from-workflowai")
+
 
 class TestLoadConfig:
     @patch("builtins.open", new_callable=mock_open)

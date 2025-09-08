@@ -11,7 +11,6 @@ from core.domain.agent_output import AgentOutput
 from core.domain.exceptions import BadRequestError
 from core.domain.fallback_option import FallbackOption
 from core.domain.file import File, FileKind
-from core.domain.inference import LLMTrace, Trace
 from core.domain.message import Message, MessageContent, MessageRole
 from core.domain.models.model_data_mapping import get_model_id
 from core.domain.reasoning_effort import ReasoningEffort
@@ -19,6 +18,7 @@ from core.domain.tenant_data import PublicOrganizationData
 from core.domain.tool import HostedTool, Tool
 from core.domain.tool_call import ToolCallRequest, ToolCallResult
 from core.domain.tool_choice import ToolChoiceFunction
+from core.domain.trace import LLMTrace, Trace
 from core.domain.version import Version
 from core.providers._base.provider_error import MissingModelError
 from protocol.api._run_models import (

@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 
-class Usage(BaseModel):
+class TokenUsage(BaseModel):
     text_token_count: float | None = None
     audio_token_count: float | None = None
     audio_count: int | None = None
@@ -10,11 +10,11 @@ class Usage(BaseModel):
     cost_usd: float
 
 
-class PromptUsage(Usage):
+class CompletionUsage(TokenUsage):
     cached_token_count: float | None = None
     reasoning_token_count: float | None = None
 
 
 class InferenceUsage(BaseModel):
-    prompt: PromptUsage
-    completion: Usage
+    prompt: TokenUsage
+    completion: CompletionUsage
