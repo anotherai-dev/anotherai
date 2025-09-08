@@ -17,12 +17,18 @@ import { CompletionNavigationButtons } from "./CompletionNavigationButtons";
 import { ImproveCompletionInstructions } from "./ImproveCompletionInstructions";
 import { CompletionTraceView } from "./completion-trace/CompletionTraceView";
 
-export function CompletionModal() {
+interface CompletionModalProps {
+  completionId?: string;
+  isRouteModal?: boolean;
+}
+
+export function CompletionModal({ completionId: propCompletionId, isRouteModal = false }: CompletionModalProps = {}) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { showToast } = useToast();
 
-  const completionId = searchParams.get("showCompletionModal") ?? undefined;
+  const queryCompletionId = searchParams.get("showCompletionModal") ?? undefined;
+  const completionId = isRouteModal ? propCompletionId : (propCompletionId ?? queryCompletionId);
   const isOpen = !!completionId;
 
   const { completion } = useOrFetchCompletion(completionId);
@@ -55,20 +61,32 @@ export function CompletionModal() {
   }, [hasTraceCompletions, hasInputVariables]);
 
   const closeModal = useCallback(() => {
-    const params = new URLSearchParams(searchParams);
-    params.delete("showCompletionModal");
-    const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
-    router.replace(newUrl, { scroll: false });
-  }, [searchParams, router]);
+    if (isRouteModal) {
+      // If using route-based modal, navigate back to completions page
+      router.push("/completions");
+    } else {
+      // If using query parameter modal, remove query parameter
+      const params = new URLSearchParams(searchParams);
+      params.delete("showCompletionModal");
+      const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
+      router.replace(newUrl, { scroll: false });
+    }
+  }, [searchParams, router, isRouteModal]);
 
   const navigateToCompletion = useCallback(
     (targetId: string) => {
-      const params = new URLSearchParams(searchParams);
-      params.set("showCompletionModal", targetId);
-      const newUrl = `${window.location.pathname}?${params.toString()}`;
-      router.replace(newUrl, { scroll: false });
+      if (isRouteModal) {
+        // If using route-based modal, navigate to new completion route
+        router.push(`/completions/${targetId}`);
+      } else {
+        // If using query parameter modal, update query parameter
+        const params = new URLSearchParams(searchParams);
+        params.set("showCompletionModal", targetId);
+        const newUrl = `${window.location.pathname}?${params.toString()}`;
+        router.replace(newUrl, { scroll: false });
+      }
     },
-    [searchParams, router]
+    [searchParams, router, isRouteModal]
   );
 
   const copyCompletionId = useCallback(() => {
@@ -94,7 +112,7 @@ export function CompletionModal() {
               <X size={16} />
             </button>
             <h2 className="text-base font-bold">Completion Details</h2>
-            <CompletionNavigationButtons completionId={completionId} />
+            <CompletionNavigationButtons completionId={completionId} onNavigateToCompletion={navigateToCompletion} />
           </div>
 
           <div className="flex items-center gap-2">
