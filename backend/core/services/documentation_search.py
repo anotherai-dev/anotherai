@@ -115,7 +115,7 @@ class DocumentationSearch:
 
         return found_sections
 
-    def _offline_documentation_search(
+    def _offline_documentation_search(  # noqa: C901
         self,
         query: str,
         all_doc_sections: list[DocumentationSection],

@@ -3,15 +3,29 @@ from unittest.mock import patch
 import pytest
 
 from core.domain.exceptions import BadRequestError
+from core.domain.inference_usage import CompletionUsage as DomainCompletionUsage
+from core.domain.inference_usage import InferenceUsage as DomainInferenceUsage
+from core.domain.inference_usage import TokenUsage as DomainTokenUsage
 from core.domain.tool import HostedTool as DomainHostedTool
 from core.domain.tool import Tool as DomainTool
-from protocol.api._api_models import Message, Tool, ToolCallRequest, ToolCallResult
+from core.domain.trace import LLMTrace as DomainLLMTrace
+from core.domain.trace import ToolTrace as DomainToolTrace
+from protocol.api._api_models import (
+    Message,
+    Tool,
+    ToolCallRequest,
+    ToolCallResult,
+)
 from protocol.api._services.conversions import (
     experiments_url,
     graph_from_domain,
     graph_to_domain,
     message_to_domain,
     tool_to_domain,
+    trace_from_domain,
+    trace_to_domain,
+    usage_from_domain,
+    usage_to_domain,
     version_from_domain,
     version_to_domain,
     view_from_domain,
@@ -307,3 +321,79 @@ class TestToolConversion:
         tool = Tool(name="test", input_schema={})
         domain_tool = tool_to_domain(tool)
         assert domain_tool == DomainTool(name="test", input_schema={})
+
+
+class TestTraceConversion:
+    def test_round_trip_conversion_llm_trace(self):
+        """Test that LLM trace conversion is consistent in both directions."""
+        original_domain = DomainLLMTrace(
+            duration_seconds=2.0,
+            cost_usd=0.02,
+            model="test-model",
+            provider="test-provider",
+            usage=None,
+        )
+
+        # Convert to API and back
+        api_trace = trace_from_domain(original_domain)
+        converted_domain = trace_to_domain(api_trace)
+
+        assert isinstance(converted_domain, DomainLLMTrace)
+        assert converted_domain.duration_seconds == original_domain.duration_seconds
+        assert converted_domain.cost_usd == original_domain.cost_usd
+        assert converted_domain.model == original_domain.model
+        assert converted_domain.provider == original_domain.provider
+        assert converted_domain.usage == original_domain.usage
+
+    def test_round_trip_conversion_tool_trace(self):
+        """Test that tool trace conversion is consistent in both directions."""
+        original_domain = DomainToolTrace(
+            duration_seconds=1.5,
+            cost_usd=0.005,
+            name="test-tool",
+            tool_input_preview='{"input": "test"}',
+            tool_output_preview='{"output": "result"}',
+        )
+
+        # Convert to API and back
+        api_trace = trace_from_domain(original_domain)
+        converted_domain = trace_to_domain(api_trace)
+
+        assert isinstance(converted_domain, DomainToolTrace)
+        assert converted_domain.duration_seconds == original_domain.duration_seconds
+        assert converted_domain.cost_usd == original_domain.cost_usd
+        assert converted_domain.name == original_domain.name
+        assert converted_domain.tool_input_preview == original_domain.tool_input_preview
+        assert converted_domain.tool_output_preview == original_domain.tool_output_preview
+
+
+class TestUsageConversion:
+    def test_usage_round_trip_conversion(self):
+        """Test that usage conversion is consistent in both directions."""
+        original_domain = DomainInferenceUsage(
+            prompt=DomainTokenUsage(
+                text_token_count=100,
+                audio_token_count=0,
+                audio_count=0,
+                image_token_count=10,
+                image_count=1,
+                cost_usd=0.02,
+            ),
+            completion=DomainCompletionUsage(
+                text_token_count=40,
+                cost_usd=0.008,
+            ),
+        )
+
+        # Convert to API and back
+        api_usage = usage_from_domain(original_domain)
+        converted_domain = usage_to_domain(api_usage)
+
+        assert converted_domain.prompt.text_token_count == original_domain.prompt.text_token_count
+        assert converted_domain.prompt.audio_token_count == original_domain.prompt.audio_token_count
+        assert converted_domain.prompt.audio_count == original_domain.prompt.audio_count
+        assert converted_domain.prompt.image_token_count == original_domain.prompt.image_token_count
+        assert converted_domain.prompt.image_count == original_domain.prompt.image_count
+        assert converted_domain.prompt.cost_usd == original_domain.prompt.cost_usd
+        assert converted_domain.completion.text_token_count == original_domain.completion.text_token_count
+        assert converted_domain.completion.cost_usd == original_domain.completion.cost_usd
