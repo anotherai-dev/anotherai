@@ -1,16 +1,5 @@
 {
   "title": "Observability",
   "icon": "ChartLine",
-  "pages": [
-    "index",
-    "runs",
-    "metadata",
-    "input-variables",
-    "conversations",
-    "versions",
-    "costs",
-    "insights",
-    "search",
-    "reports"
-  ]
+  "pages": ["index"]
 }

@@ -194,100 +194,59 @@ Provide a report on the accuracy scores for all completions of calendar-event-ex
 ```
 Which model has the best tone overall, based on annotations?
 ```
-# End-User Feedback
 
-Incorporating end-user feedback into your agent's development process can be invaluable when creating effective agents. We recommend setting up user feedback in your product to be added directly to completions via annotations. 
+TODO: the following was taken from an example/use case; pasting here to ensure that I utilize anything useful from it
 
-Below is an example of the process you might implement for collecting and incorporating end-user feedback:
+## Comparing Different Prompts and Models 
+
+This use case demonstrates how to compare different prompt variations and model performances using AnotherAI's playground feature.
+
+### Overview
+Suppose you're building a new AI agent that extracts calendar events from emails. You want to make sure you're agent performs well on a variety of emails, but you're not sure which model will work best or what your prompt needs to say to cover all the use cases. 
+In order to make the best agent possible, you may need to:
+- Compare performance across different models (GPT-4, Claude, Gemini, etc.)
+- Test multiple prompt variations to find the most effective approach
+- Optimize for specific metrics like cost, speed, and accuracy. 
+
+To compare performance across different models, use the playground feature to test your agent with different models and prompts.
 
 <Steps>
 <Step>
-### Set up user feedback collection in your product
+Ask Claude (or your preferred AI agent) to create an experiment that compares the content you're interested in. You can also ask Claude to pick the best models for you based on different criteria (e.g. cost, speed, intelligence, etc.), or create a new version of your prompt for you
 
-This will look different for each product. Generally we recommend allowing the user to provide a comment, so that they can provide nuanced feedback. You may also want to allow your user to leave a score - for example 1-5 stars, or a thumbs up/down - in these cases the feedback would be added as a metric in the annotations.
+`Use AnotherAI to compare how Claude Sonnet 4, GPT 4.1, and Gemini 2.5 Flash handle @calendar_event_extractor.py`
+
+or 
+
+`Use AnotherAI to compare how @calendar_event_extractor.py performs with @test_prompt_1 and @test_prompt_2`
 </Step>
-
 <Step>
-### Write a script to send user feedback to AnotherAI via the annotations endpoint 
-
-
-```python
-# Example: Send user feedback as annotations via API
-import requests
-from datetime import datetime
-
-# Configure your AnotherAI API endpoint and key
-API_BASE_URL = "{{API_URL}}"
-API_KEY = "your-api-key"
-
-def submit_user_feedback(completion_id: str, rating: int, comment: str, user_id: str = "end_user"):
-    """Submit user feedback as an annotation to AnotherAI"""
-    
-    annotation = {
-        "id": f"feedback_{completion_id}_{datetime.now().timestamp()}",
-        "target": {
-            "completion_id": completion_id,
-            # key_path can be used to annotate specific fields
-            "key_path": None  # Annotating the entire completion
-        },
-        "author_name": user_id,
-        "text": comment,
-        "metric": {
-            "name": "accuracy",
-            "value": rating  # e.g., 1-5 star rating
-        },
-        "metadata": {
-            "source": "feedback_widget",
-            "additionalProp1": {}
-        }
-    }
-    
-    response = requests.post(
-        f"{API_BASE_URL}/v1/annotations",
-        json=[annotation],
-        headers={
-            "Authorization": f"Bearer {API_KEY}",
-            "Content-Type": "application/json"
-        }
-    )
-    
-    if response.status_code == 200:
-        print(f"Feedback submitted successfully for completion {completion_id}")
-    else:
-        print(f"Error submitting feedback: {response.text}")
-    
-    return response
-
-# Example usage after getting a completion
-completion_id = "anotherai/completion/0198cd7c-2b1a-73b1-ce14-53da0b268569"
-accuracy = 4
-user_comment = "The response was helpful but could be more concise"
-submit_user_feedback(completion_id, accuracy, user_comment)
-```
+Once Claude has created the experiment, it will send you a link and you can view the results in the playground. Something like this:
 </Step>
+</Steps>
 
+### Tips:
+- Always reference the specific files of your agent when requesting experiments to avoid any ambiguity about what should be tested
+- Pick one variable to test with at a time (ex. models, prompts) to make sure that you can easily attribute a given variable on the agent's changes in performance.
+
+## AI-Powered Reviews and Improvements For Your Agent
+
+This use case demonstrates how to iteratively improve your agent by having your agent-builder review runs, leave feedback and suggest improvements. 
+
+### Overview
+Suppose you have created an experiment that compares two prompts for an agent that extracts calendar events from emails, and you want to understand which prompt version performs better. 
+
+To understand how your prompt performs:
+
+<Steps>
 <Step>
-### Create a custom view to easily review the feedback sent
+Ask Claude to review the completions in the experiment and leave feedback
 
-Ask Claude Code to create a view for you in AnotherAI to see all the feedback in one place.
-
-```
-Create a view that shows all completions of @[your-agent-name] with annotations. 
-The view should display the completion ID, input, outputs, and the annotation 
-left on the completion.
-```
+`Review the completions in anotherai/experiment/019885bb-24ea-70f8-c41b-0cbb22cc3c00 and leave feedback about the overall tone and accuracy of each completion, and give me a summary of your findings.`
 </Step>
-
 <Step>
-### Using Feedback for Improvements
+After Claude has provided feedback, you can ask it to create a new version of the agent that addresses any issues that you want to improve
 
-Ask Claude Code to analyze user feedback and suggest improvements:
-
-```
-Review the user feedback annotations for agent/email-writer from the last week 
-and suggest prompt improvements based on common complaints
-```
-
-Claude will query the annotations, identify patterns, and propose specific changes to improve user satisfaction.
+`Update calendar_event_extractor.py prompt to address all issues you found while reviewing`
 </Step>
 </Steps>
