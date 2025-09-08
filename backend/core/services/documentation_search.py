@@ -1,11 +1,13 @@
 import json
 import os
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
 import structlog
 
 from core.agents.search_documentation import search_documentation_agent
+from core.consts import ENV_NAME
 from core.domain.documentation_section import DocumentationSection
 
 _LOCAL_FILE_EXTENSIONS: list[str] = [".mdx", ".md"]
@@ -26,12 +28,33 @@ def _doc_directory():
 _LOCAL_DOCS_DIR: str = _doc_directory()
 
 
+class DocEnv(StrEnum):
+    LOCAL = "local"
+    PROD = "production"
+    STAGING = "staging"
+
+    @classmethod
+    def current(cls):
+        alias = {
+            "prod": cls.PROD,
+        }
+        env_str = os.getenv("ANOTHERAI_DOCS_ENV", "local") or ENV_NAME
+        env_str = alias.get(env_str, env_str)
+        try:
+            return cls(env_str)
+        except ValueError:
+            return cls.PROD
+
+
+_default_env = DocEnv.current()
+
+
 # TODO: test
 # TODO: find a better name
 class DocumentationSearch:
-    def __init__(self, config: dict[str, Any] | None = None, current_env: str | None = None):
+    def __init__(self, config: dict[str, Any] | None = None, current_env: DocEnv | None = None):
         self._config = config or self._load_config()
-        self._current_env = current_env or self._get_environment()
+        self._current_env = current_env or _default_env
 
     def get_available_pages_descriptions(self) -> str:
         """Generate formatted descriptions of all available documentation pages for MCP tool docstring."""
@@ -261,12 +284,10 @@ class DocumentationSearch:
             log.error("Error loading documentation config", path=str(config_path), error=str(e))
             return {}
 
-    def _get_environment(self) -> str:
-        """Get current environment from env var or default to local."""
-        return os.getenv("ANOTHERAI_DOCS_ENV", "local")
-
     def _substitute_variables(self, content: str) -> str:
         """Substitute variables in documentation content."""
+        # TODO: this is a mess and we recompute at each substitution.
+        # Doc search service should be
         # Check for environment variable override first
         api_url = os.getenv("ANOTHERAI_DOCS_API_URL")
 
@@ -289,7 +310,7 @@ class DocumentationSearch:
 
             if not web_app_url:
                 # Fall back to default
-                web_app_url = self._config.get("default", {}).get("WEB_APP_URL", "http://localhost:3000")
+                web_app_url = self._config.get("default", {}).get("WEB_APP_URL", "https://anotherai.dev")
 
         # Replace variables
         content = content.replace("{{API_URL}}", api_url)
