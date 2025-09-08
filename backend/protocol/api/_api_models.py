@@ -309,6 +309,42 @@ class Annotation(BaseModel):
     )
 
 
+class TokenUsage(BaseModel):
+    text_token_count: float | None = None
+    audio_token_count: float | None = None
+    audio_count: int | None = None
+    image_token_count: float | None = None
+    image_count: int | None = None
+    cost_usd: float
+
+
+class CompletionUsage(TokenUsage):
+    cached_token_count: float | None = None
+    reasoning_token_count: float | None = None
+
+
+class InferenceUsage(BaseModel):
+    prompt: TokenUsage
+    completion: CompletionUsage
+
+
+class Trace(BaseModel):
+    kind: Literal["llm", "tool"]
+    duration_seconds: float
+    cost_usd: float
+
+    model: str | None = None
+    provider: str | None = None
+    name: str | None = None
+    tool_input_preview: str | None = None
+    tool_output_preview: str | None = None
+
+    usage: InferenceUsage | None = Field(
+        default=None,
+        description="The usage of the trace. Only present for LLM traces.",
+    )
+
+
 class Completion(BaseModel):
     id: str = Field(
         default="",
@@ -352,6 +388,11 @@ class Completion(BaseModel):
     duration_seconds: float | None = Field(
         default=None,
         description="The duration of the inference in seconds.",
+    )
+
+    traces: list[Trace] | None = Field(
+        default=None,
+        description="The traces of the inference, including the LLM and tool traces.",
     )
 
 

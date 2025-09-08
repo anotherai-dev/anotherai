@@ -43,8 +43,8 @@ There are three main steps to migrating your agent to AnotherAI:
 from openai import OpenAI
 
 client = OpenAI(
-    base_url="https://api.anotherai.dev/v1",  # Or http://localhost:8000/v1 for self-hosted
-    api_key="aai-***",  # Update to your AnotherAI API key (not required if self-hosting)
+    base_url="{{API_URL}}/v1",  # Or http://localhost:8000/v1 for self-hosted
+    api_key="aai-***", 
 )
 
 # Your existing code works as-is
@@ -66,8 +66,8 @@ response = client.chat.completions.create(
 import OpenAI from 'openai';
 
 const client = new OpenAI({
-  baseURL: 'https://api.anotherai.dev/v1',  // Or http://localhost:8000/v1 for self-hosted
-  apiKey: 'aai-***',  // Update to your AnotherAI API key (not required if self-hosting)
+  baseURL: '{{API_URL}}/v1',  // Or http://localhost:8000/v1 for self-hosted
+  apiKey: 'aai-***',  
 });
 
 // Your existing code works as-is
@@ -116,4 +116,15 @@ Your agent is now integrated with AnotherAI, giving you access to:
 
 ## Migrating from WorkflowAI to AnotherAI
 
-TODO once migration path work is complete
+For migrating agents from WorkflowAI to AnotherAI, see our comprehensive [WorkflowAI Migration Guide](/migrate-from-workflowai). This guide covers:
+
+- Fetching prompts from WorkflowAI deployments
+- Converting WorkflowAI SDK calls to OpenAI completion calls
+- Setting up API keys and client configuration
+- Handling structured outputs and metadata
+
+The migration process ensures your existing WorkflowAI agents work seamlessly with AnotherAI while gaining access to additional features.
+
+## Migrating Away from AnotherAI
+
+We have a zero lock-in promise. If you're not happy with AnotherAI at any point, we make it easy to migrate away. Learn more [here](/index#anotherais-zero-lock-in-promise).

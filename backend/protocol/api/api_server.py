@@ -22,13 +22,21 @@ setup_logs()
 
 _log = get_logger(__name__)
 
+_INCLUDED_ROUTES = set(os.environ["INCLUDED_ROUTES"].split(",")) if os.environ.get("INCLUDED_ROUTES") else set()
+
+_MCP_ENABLED = not _INCLUDED_ROUTES or "mcp" in _INCLUDED_ROUTES
+
 # TODO: investigate why stateless_http is needed
-_mcp_app = mcp.http_app(transport="streamable-http", path="/mcp", stateless_http=True)
+_mcp_app = mcp.http_app(transport="streamable-http", path="/mcp", stateless_http=True) if _MCP_ENABLED else None
 
 
 # Separate function to allow patching in tests
 @asynccontextmanager
 async def _mcp_lifespan(app: FastAPI):
+    if not _mcp_app:
+        yield
+        return
+
     async with _mcp_app.lifespan(app):
         yield
 
@@ -101,20 +109,18 @@ async def get_model_ids() -> list[str]:
 
 api.include_router(probes_router.router)
 
-
-_INCLUDED_ROUTES = set(os.environ["INCLUDED_ROUTES"].split(",")) if os.environ.get("INCLUDED_ROUTES") else set()
-
-
 if not _INCLUDED_ROUTES or "api" in _INCLUDED_ROUTES:
     api.include_router(_api_router.router)
-    api.include_router(_well_known_router.router)
-    # Some MCP clients look for the .well-known after the /mcp prefix
-    api.include_router(_well_known_router.router, prefix="/mcp")
 
 if not _INCLUDED_ROUTES or "run" in _INCLUDED_ROUTES:
     api.include_router(_run_router.router)
 
-api.mount("/", _mcp_app)
+if _mcp_app:
+    api.mount("/", _mcp_app)
+    # Well known router is used for oauth
+    # Some MCP clients look for the .well-known after the /mcp prefix
+    api.include_router(_well_known_router.router)
+    api.include_router(_well_known_router.router, prefix="/mcp")
 
 if __name__ == "__main__":
     import uvicorn

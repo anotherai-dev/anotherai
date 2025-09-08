@@ -10,9 +10,9 @@ from core.domain.agent import Agent
 from core.domain.agent_completion import AgentCompletion
 from core.domain.agent_input import AgentInput
 from core.domain.agent_output import AgentOutput
-from core.domain.inference import LLMTrace, ToolTrace, Trace
 from core.domain.inference_usage import InferenceUsage
 from core.domain.message import Message
+from core.domain.trace import LLMTrace, ToolTrace, Trace
 from core.domain.version import Version
 from core.storage.clickhouse._models._ch_field_utils import (
     MAX_UINT_16,
@@ -67,6 +67,7 @@ class _Trace(BaseModel):
                 cost_usd=cost_usd,
                 model=self.model,
                 provider=self.provider,
+                # TODO: make completion more accessible
                 usage=InferenceUsage.model_validate_json(self.usage) if self.usage else None,
             )
         if self.kind == "tool":

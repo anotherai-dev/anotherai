@@ -19,7 +19,7 @@ By using AnotherAI, you won't pay more than your current inference costs. We pri
 
 ### Set Up
 
-To use AnotherAI's hosted service: sign up at anotherai.dev/signup [TODO: add link and/or additional steps once we have hosted set up]
+To use AnotherAI's hosted service: go to [https://anotherai.dev/](https://anotherai.dev/) and sign up to create a free account.
 <Callout>
 Are you interested in a self-hosted, [open-source](https://github.com/anotherai-dev/anotherai) set up? We have that too! You can learn how to get set up [here](/self-hosted). 
 </Callout>
@@ -28,7 +28,7 @@ Are you interested in a self-hosted, [open-source](https://github.com/anotherai-
 
 AnotherAI is available as an MCP server in the IDEs below.
 
-<Tabs items={['Cursor', 'Claude Code', 'Cursor CLI']}>
+<Tabs items={['Cursor', 'Claude Code', 'Windsurf', 'Cursor CLI']}>
 
 <Tab value="Cursor">
 
@@ -36,7 +36,6 @@ Quick setup (recommended):
 1. Complete the [set up](#set-up) steps above
 2. Tap on the button below
 
-TODO: confirm if this quick setup will work as is for hosted version as well.
 
 <a href="cursor://anysphere.cursor-deeplink/mcp/install?name=anotherai&config=eyJ1cmwiOiJodHRwczovL2FwaS5hbm90aGVyYWkuZGV2L21jcCJ9Cg=="><img src="https://cursor.com/deeplink/mcp-install-dark.svg" alt="Add anotherai MCP server to Cursor" height="32" /></a>
 
@@ -72,14 +71,12 @@ Cursor UI should now look like this (note the green indicator and the number of 
 <Tab value="Claude Code">
 
   1. Complete the set up above
-  2. Get your API key at anotherai.dev/... [TODO: add link and/or additional steps once we have hosted set up] 
+  2. Get your API key on [anotherai.dev/](https://anotherai.dev/completions?showManageKeysModal=true) 
   3. Open Claude Code in your preferred terminal (standalone or within your IDE).
   4. Type the following to install:
 
-TODO: confirm actual claude command for hosted version.
-
   ```bash
-  claude mcp add --scope user anotherai https://api.anotherai.dev/mcp --transport http --header "Authorization: Bearer YOUR_API_KEY_HERE"
+  claude mcp add --scope user anotherai {{API_URL}}/mcp --transport http --header "Authorization: Bearer YOUR_API_KEY_HERE"
   ```
 
   <Callout type="info">
@@ -98,6 +95,34 @@ Then type:
 ```
 
 You should see the AnotherAI server listed as "connected".
+
+</Tab>
+
+<Tab value="Windsurf">
+
+1. Open Windsurf
+2. Go to `Settings...`
+3. Select `Windsurf Settings`
+4. Navigate to `Cascade`
+5. Select `Manage MCPs`
+6. Select `View Raw Config`
+
+Add the following configuration to your MCP servers config:
+
+```json
+{
+  "mcpServers": {
+    "anotherai": {
+      "url": "{{API_URL}}/mcp",
+      "headers": {
+        "Authorization": "Bearer <your_api_key_here>"
+      }
+    }
+  }
+}
+```
+
+Navigate back to Manage MCPs and refresh the page. The AnotherAI MCP should appear and show as enabled.
 
 </Tab>
 
@@ -136,6 +161,24 @@ Create an experiment in AnotherAI that compares how GPT-5 mini and GPT-4 mini pe
 ```bash
 Use AnotherAI to help me find a faster model for @[your-agent-name-here] while still maintaining accuracy.
 ```
+
+### AnotherAI's Zero Lock-in Promise
+
+**It's easier to leave AnotherAI than to leave OpenAI directly.**
+
+To switch away from AnotherAI:
+- Remove `base_url="{{API_URL}}/v1"`
+- If you're not using deployments: your code stays identical
+- If you are using deployments: simply ask Claude Code (or your preferred coding agent) to fetch your deployment configuration (static content and model) and recreate the equivalent configuration in your code.
+
+While using AnotherAI, you:
+- Get automatic fallbacks across providers
+- Collect valuable performance data about your AI usage  
+- Can export everything when/if you leave
+
+We built AnotherAI this way because we've been burned by vendor lock-in too. The OpenAI-compatible design isn't just about easy onboarding - it's about respecting your right to walk away.
+
+**Bottom line:** Try AnotherAI risk-free. If it doesn't provide value, switching back takes minutes, not months.
 
 ## Join the community
 

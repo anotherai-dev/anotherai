@@ -7,8 +7,6 @@ description: Learn how to enable and configure caching in the AnotherAI API.
 import { Steps, Step } from 'fumadocs-ui/components/steps';
 import { Callout } from 'fumadocs-ui/components/callout';
 
-![Caching](/images/inference/caching/header.png)
-
 <Callout type="info">
 **Think of caching as free key-value storage**: The LLM input acts as the "key" and the generated output becomes the "value". Once cached, identical requests return the stored result instantly at no cost, effectively giving you a free key-value storage system backed by your LLM interactions.
 </Callout>
@@ -97,7 +95,13 @@ Therefore, a request will **not** use the cache unless you either:
 **Examples:**
 
 ```python
-# Assume 'client' is your configured OpenAI client pointing to AnotherAI
+import openai
+
+# Configure the OpenAI client to use AnotherAI
+client = openai.OpenAI(
+    api_key="YOUR_ANOTHERAI_API_KEY",
+    base_url="{{API_URL}}/v1"
+)
 
 # Example 1: Cache is NEVER hit (Default behavior)
 # Reason: temperature defaults to 1, and use_cache defaults to "auto"
@@ -119,21 +123,83 @@ completion = client.chat.completions.create(
 
 # Example 3: Cache CAN be hit (using Deployment and "always")
 # Reason: use_cache="always" forces a cache check regardless of temperature.
-# Assumes "my-agent/#1/production" defines a specific version (model + prompt).
 completion = client.chat.completions.create(
-  model="my-agent/#1/production", # Using a deployment
+  model="anotherai/travel-assistant/production#1", # Using an AnotherAI deployment
   # messages might be empty if the prompt is fully server-side
-  messages=[], # required by SDK so pass a empty array
+  messages=[], # required by SDK so pass an empty array
   extra_body={
-    "input": {"variable_name": "variable_value"}, # Example input variable
+    "input": {
+      "destination": "Paris",
+      "traveler_type": "business"
+    },
     "use_cache": "always" # Force cache check
   }
   # response_format=MyPydanticModel # If expecting structured output
 )
 
+# Example 4: Caching with structured outputs
+from pydantic import BaseModel
+
+class TravelAdvice(BaseModel):
+    destination: str
+    tips: list[str]
+    warnings: list[str]
+
+completion = client.beta.chat.completions.parse(
+  model="gpt-4o-mini",
+  messages=[
+    {"role": "user", "content": "Give me travel advice for Tokyo"}
+  ],
+  response_format=TravelAdvice,
+  temperature=0,  # Required for auto caching
+  extra_body={
+    "metadata": {"agent_id": "travel-advisor"}
+  }
+)
+
 ```
 
-[TODO: add caching with SDK from AnotherAI]
+## Caching with AnotherAI features
+
+### Caching and Deployments
+
+When using [deployments](/deployments), the version hash automatically includes all deployment parameters:
+
+```python
+# Both requests will use the same cache if inputs match
+# The deployment version determines model, temperature, and prompt
+completion1 = client.chat.completions.create(
+  model="anotherai/customer-support/production#1",
+  messages=[{"role": "user", "content": "How do I reset my password?"}],
+  extra_body={
+    "use_cache": "always"
+  }
+)
+
+# Subsequent identical request hits the cache
+completion2 = client.chat.completions.create(
+  model="anotherai/customer-support/production#1",
+  messages=[{"role": "user", "content": "How do I reset my password?"}],
+  extra_body={
+    "use_cache": "always"
+  }
+)
+```
+
+### Monitoring cache performance
+
+Track cache hit rates using AnotherAI's observability tools.
+
+Ask questions in natural language using Claude Code:
+
+```
+Show me the cache hit rate for each of my agents over the last 7 days
+```
+
+```
+What's the total requests, cache hits, and cache hit rate percentage for all agents this week?
+```
+
 
 ## Caching with images
 
@@ -163,7 +229,8 @@ completion1 = client.chat.completions.create(
             {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,/9j/4AAQ..."}}
         ]
     }],
-    temperature=0
+    temperature=0,
+    metadata={"agent_id": "image-analyzer"}
 )
 
 # Request 2: Using S3 URL for the same image
@@ -176,7 +243,8 @@ completion2 = client.chat.completions.create(
             {"type": "image_url", "image_url": {"url": "https://s3.amazonaws.com/bucket/image.jpg"}}
         ]
     }],
-    temperature=0
+    temperature=0,
+    metadata={"agent_id": "image-analyzer"}
 )
 
 # These will NOT hit the same cache entry
