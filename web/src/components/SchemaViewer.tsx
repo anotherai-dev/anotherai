@@ -1,11 +1,13 @@
 import React, { useMemo } from "react";
 import { Annotation, OutputSchema } from "@/types/models";
+import { ExamplesRenderer } from "./SchemaViewer/ExamplesRenderer";
 import { HoverContainer } from "./VariablesViewer/HoverContainer";
 import { JsonSchemaNode, resolveRef } from "./utils/utils";
 
 type SchemaViewerProps = {
   schema: OutputSchema;
   showDescriptions?: boolean;
+  showExamples?: boolean;
   className?: string;
   sharedKeypathsOfSchemas?: string[];
   annotations?: Annotation[];
@@ -17,6 +19,7 @@ export function SchemaViewer(props: SchemaViewerProps) {
   const {
     schema,
     showDescriptions = false,
+    showExamples = false,
     className = "",
     sharedKeypathsOfSchemas,
     annotations,
@@ -86,6 +89,11 @@ export function SchemaViewer(props: SchemaViewerProps) {
             {showDescriptions && resolvedNode.description && (
               <div className="text-xs text-gray-500 italic font-normal mt-1">{resolvedNode.description}</div>
             )}
+            <ExamplesRenderer
+              examples={resolvedNode.examples || []}
+              showExamples={showExamples}
+              variant="object-header"
+            />
           </div>
 
           <div className="bg-transparent">
@@ -119,6 +127,7 @@ export function SchemaViewer(props: SchemaViewerProps) {
               {showDescriptions && resolvedNode.description && (
                 <div className="text-xs text-gray-500 italic font-normal mt-1">{resolvedNode.description}</div>
               )}
+              <ExamplesRenderer examples={resolvedNode.examples || []} showExamples={showExamples} />
             </HoverContainer>
           </div>
 
@@ -153,6 +162,7 @@ export function SchemaViewer(props: SchemaViewerProps) {
           {showDescriptions && resolvedNode.description && (
             <div className="text-xs text-gray-500 italic font-normal mt-1">{resolvedNode.description}</div>
           )}
+          <ExamplesRenderer examples={resolvedNode.examples || []} showExamples={showExamples} />
         </HoverContainer>
       </div>
     );

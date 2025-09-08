@@ -11,9 +11,15 @@ type VersionDetailsViewProps = {
   version: Version;
   showPrompt?: boolean;
   showOutputSchema?: boolean;
+  showExamples?: boolean;
 };
 
-export function VersionDetailsView({ version, showPrompt = false, showOutputSchema = false }: VersionDetailsViewProps) {
+export function VersionDetailsView({
+  version,
+  showPrompt = false,
+  showOutputSchema = false,
+  showExamples = false,
+}: VersionDetailsViewProps) {
   const extendedVersion = getVersionWithDefaults(version);
   const [isAdvancedExpanded, setIsAdvancedExpanded] = useState(false);
 
@@ -130,7 +136,7 @@ export function VersionDetailsView({ version, showPrompt = false, showOutputSche
       {showOutputSchema && version.output_schema && (
         <div className="bg-white border border-gray-200 rounded-[2px] p-2">
           <div className="text-xs font-medium text-gray-700 mb-2">Output Schema</div>
-          <SchemaViewer schema={version.output_schema} showDescriptions={true} />
+          <SchemaViewer schema={version.output_schema} showDescriptions={true} showExamples={showExamples} />
         </div>
       )}
     </div>
