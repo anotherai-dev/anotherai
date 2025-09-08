@@ -115,7 +115,7 @@ class DocumentationSearch:
 
         return found_sections
 
-    def _offline_documentation_search(
+    def _offline_documentation_search(  # noqa: C901
         self,
         query: str,
         all_doc_sections: list[DocumentationSection],
@@ -128,6 +128,17 @@ class DocumentationSearch:
         query_words = set(query_lower.split())
 
         scored_sections = []
+
+        if "workflowai" in query_lower:
+
+            def workflowai_adjustment(file_path: str) -> int:
+                if "workflowai" in file_path:
+                    return 100
+                return 0
+        else:
+
+            def workflowai_adjustment(file_path: str) -> int:
+                return 0
 
         for section in all_doc_sections:
             score = 0
@@ -151,6 +162,8 @@ class DocumentationSearch:
             path_words = set(path_lower.split("/"))
             path_matches = query_words.intersection(path_words)
             score += len(path_matches) * 5
+
+            score += workflowai_adjustment(path_lower)
 
             if score > 0:
                 scored_sections.append((section, score))
