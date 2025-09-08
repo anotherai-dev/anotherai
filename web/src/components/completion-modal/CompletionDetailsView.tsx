@@ -97,7 +97,12 @@ export function CompletionDetailsView(props: Props) {
             copyable={true}
           />
 
-          <VersionDetailsView version={completion.version} showPrompt={true} showOutputSchema={true} />
+          <VersionDetailsView
+            version={completion.version}
+            showPrompt={true}
+            showOutputSchema={true}
+            showExamples={true}
+          />
         </div>
 
         <MetadataView metadata={completion.metadata} />
