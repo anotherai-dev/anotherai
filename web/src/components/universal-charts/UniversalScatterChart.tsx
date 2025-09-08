@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef } from "react";
 import { CartesianGrid, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis } from "recharts";
 import { CustomTooltip } from "./CustomTooltip";
+import { SeriesConfig, autoDetectSeries, ensureXFieldForChart } from "./utils";
 
 interface ChartData {
   x: string;
@@ -21,7 +22,9 @@ interface UniversalScatterChartProps {
   yAxisFormatter?: (value: number) => string;
   xAxisFormatter?: (value: number) => string;
   tooltipFormatter?: (value: number) => string;
-  dotColor?: string;
+  dotColor?: string; // For single series (backward compatibility)
+  series?: SeriesConfig[]; // For multi-series
+  showLegend?: boolean; // Whether to show legend
   emptyMessage?: string;
   height?: string;
   fontSize?: number;
@@ -38,6 +41,8 @@ export function UniversalScatterChart({
   xAxisFormatter = (value) => value.toString(),
   tooltipFormatter = (value) => value.toString(),
   dotColor = "#EF4444",
+  series,
+  showLegend = true,
   emptyMessage = "No data available",
   height = "400px",
   fontSize = 12,
@@ -49,6 +54,46 @@ export function UniversalScatterChart({
 }: UniversalScatterChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Transform data to ensure it has 'x' field (skip if already transformed by CompletionsGraph)
+  const transformedData = useMemo(() => {
+    // Check if data is already transformed by CompletionsGraph (has x field and is properly structured)
+    if (data.length > 0 && data[0] && typeof data[0] === "object" && "x" in data[0]) {
+      return data;
+    }
+    return ensureXFieldForChart(data);
+  }, [data]);
+
+  // Auto-detect series from transformed data if not provided (skip if already have series)
+  const autoDetectedSeries = useMemo(() => {
+    if (series && series.length > 0) {
+      return series;
+    }
+    return autoDetectSeries(transformedData, series);
+  }, [transformedData, series]);
+  const isMultiSeries = series && series.length > 0;
+
+  const finalSeries = useMemo(() => {
+    return isMultiSeries ? series : autoDetectedSeries || [];
+  }, [isMultiSeries, series, autoDetectedSeries]);
+
+  const isActuallyMultiSeries = finalSeries.length > 0;
+
+  // Get all series that have at least one defined value (including zero)
+  const filteredSeries = useMemo(() => {
+    if (!isActuallyMultiSeries) return (finalSeries || []).filter(Boolean);
+    if (!finalSeries || !Array.isArray(finalSeries)) return [];
+
+    return finalSeries
+      .filter(Boolean) // Remove any undefined/null items
+      .filter((seriesItem) => {
+        if (!seriesItem || !seriesItem.key) return false;
+        return transformedData.some((dataPoint) => {
+          const value = dataPoint[seriesItem.key];
+          return value !== undefined && value !== null;
+        });
+      });
+  }, [finalSeries, isActuallyMultiSeries, transformedData]);
 
   // Axis tick formatters (no units on axis ticks)
   const xAxisTickFormatter = xAxisFormatter;
@@ -105,8 +150,8 @@ export function UniversalScatterChart({
           {
             value: scatterData.y,
             payload: { x: scatterData.originalName || scatterData.name }, // Use originalName for tooltip if available
-            dataKey: "y",
-            color: dotColor,
+            dataKey: String(scatterData.seriesName || "y"),
+            color: String(scatterData.color || dotColor),
           },
         ];
         return (
@@ -116,12 +161,13 @@ export function UniversalScatterChart({
             mousePos={mousePosRef.current}
             formatter={tooltipFormatterWithUnit}
             iconBorderRadius="50%"
+            isChartMultiSeries={isActuallyMultiSeries}
           />
         );
       }
       return null;
     },
-    [tooltipFormatterWithUnit, dotColor]
+    [tooltipFormatterWithUnit, dotColor, isActuallyMultiSeries]
   );
 
   // Mouse move handler that updates ref without causing re-renders
@@ -131,7 +177,7 @@ export function UniversalScatterChart({
 
   // Memoized data transformation and calculations
   const { scatterData, xMin, xMax, yMin, yMax, xPadding, yPadding, leftMargin } = useMemo(() => {
-    if (data.length === 0) {
+    if (transformedData.length === 0) {
       return {
         scatterData: [],
         xMin: 0,
@@ -143,31 +189,56 @@ export function UniversalScatterChart({
         leftMargin: 20,
       };
     }
-    // Transform data for scatter chart and truncate long labels
-    // For scatter charts, we need numeric x values, so we'll convert or use index
-    const scatterData: ScatterData[] = data.map((item, index) => {
-      // Try to parse x as number, fallback to index if it's not numeric
-      const numericX = parseFloat(String(item.x));
-      const originalName = String(item.x);
 
-      const truncatedName = originalName.length > 20 ? originalName.substring(0, 20) + "..." : originalName;
+    let scatterData: ScatterData[] = [];
 
-      const transformedItem: ScatterData = {
-        x: isNaN(numericX) ? index : numericX,
-        y: item.y,
-        name: truncatedName, // Use truncated name for display
-        originalName: originalName, // Keep original for tooltip
-      };
+    if (isActuallyMultiSeries) {
+      // Multi-series: create scatter points for each series
+      transformedData.forEach((item, dataIndex) => {
+        const numericX = parseFloat(String(item.x));
+        const xValue = isNaN(numericX) ? dataIndex : numericX;
+        const originalName = String(item.x);
+        const truncatedName = originalName.length > 20 ? originalName.substring(0, 20) + "..." : originalName;
 
-      // Add other properties from original item, excluding x and y to avoid conflicts
-      Object.keys(item).forEach((key) => {
-        if (key !== "x" && key !== "y") {
-          (transformedItem as Record<string, unknown>)[key] = item[key];
-        }
+        filteredSeries.forEach((seriesItem) => {
+          const yValue = Number(item[seriesItem.key] || 0);
+
+          scatterData.push({
+            x: xValue,
+            y: yValue,
+            name: truncatedName,
+            originalName: originalName,
+            seriesName: seriesItem.name || seriesItem.key,
+            seriesKey: seriesItem.key,
+            color: seriesItem.color,
+          });
+        });
       });
+    } else {
+      // Single series: transform data for scatter chart
+      scatterData = transformedData.map((item, index) => {
+        // Try to parse x as number, fallback to index if it's not numeric
+        const numericX = parseFloat(String(item.x));
+        const originalName = String(item.x);
+        const truncatedName = originalName.length > 20 ? originalName.substring(0, 20) + "..." : originalName;
 
-      return transformedItem;
-    });
+        const transformedItem: ScatterData = {
+          x: isNaN(numericX) ? index : numericX,
+          y: Number(item.y || 0),
+          name: truncatedName, // Use truncated name for display
+          originalName: originalName, // Keep original for tooltip
+        };
+
+        // Add other properties from original item, excluding x and y to avoid conflicts
+        Object.keys(item).forEach((key) => {
+          if (key !== "x" && key !== "y") {
+            (transformedItem as Record<string, unknown>)[key] = item[key];
+          }
+        });
+
+        return transformedItem;
+      });
+    }
 
     // Calculate axis domains
     const xValues = scatterData.map((d) => d.x);
@@ -203,9 +274,9 @@ export function UniversalScatterChart({
       yPadding,
       leftMargin,
     };
-  }, [data, yAxisTickFormatter, fontSize, measureTextWidth]);
+  }, [transformedData, isActuallyMultiSeries, filteredSeries, yAxisTickFormatter, fontSize, measureTextWidth]);
 
-  if (data.length === 0) {
+  if (transformedData.length === 0) {
     return <p className="text-gray-500 text-sm">{emptyMessage}</p>;
   }
 
@@ -272,14 +343,43 @@ export function UniversalScatterChart({
             allowEscapeViewBox={{ x: true, y: true }}
             isAnimationActive={false}
           />
-          <Scatter
-            data={scatterData}
-            fill={dotColor}
-            isAnimationActive={!disableAnimation}
-            animationDuration={disableAnimation ? 0 : 400}
-          />
+          {filteredSeries.length > 0 ? (
+            filteredSeries
+              .filter((seriesItem) => seriesItem && seriesItem.key) // Extra safety check
+              .map((seriesItem) => (
+                <Scatter
+                  key={seriesItem.key}
+                  data={scatterData.filter((d) => d.seriesKey === seriesItem.key)}
+                  fill={seriesItem.color}
+                  name={seriesItem.name || seriesItem.key}
+                  isAnimationActive={!disableAnimation}
+                  animationDuration={disableAnimation ? 0 : 400}
+                />
+              ))
+          ) : (
+            <Scatter
+              data={scatterData}
+              fill={dotColor}
+              isAnimationActive={!disableAnimation}
+              animationDuration={disableAnimation ? 0 : 400}
+            />
+          )}
         </ScatterChart>
       </ResponsiveContainer>
+
+      {/* Legend Below Scatter Chart */}
+      {showLegend && filteredSeries.length > 0 && (
+        <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 px-4 py-3 border-t border-gray-100">
+          {filteredSeries.map((seriesItem, index) => (
+            <div key={`legend-${index}`} className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: seriesItem.color }} />
+              <span className="text-gray-700 whitespace-nowrap" style={{ fontSize: `${fontSize}px` }}>
+                {seriesItem.name || seriesItem.key}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
