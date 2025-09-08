@@ -143,7 +143,7 @@ export interface AnalyzeBookCharactersTaskOutput {
 
 export async function analyzeBookCharacters(input: AnalyzeBookCharactersTaskInput): Promise<AnalyzeBookCharactersTaskOutput> {
     const completion = await client.chat.completions.create({
-        model: "analyze-book-characters/production#1", // use the deployment id here
+        model: "anotherai/deployment/analyze-book-characters/production#1", // use the "anotherai/deployment/<deployment_id>" id here
         messages: [], // messages should remain empty since the prompt is stored in AnotherAI
         // response_format is not needed here since it is handled by the deployment
         input: input, // input is AnotherAI specific. You may have to silence a TS error
@@ -169,7 +169,7 @@ export type AnalyzeBookCharactersTaskOutput = z.infer<typeof AnalyzeBookCharacte
 export async function analyzeBookCharacters(input: AnalyzeBookCharactersTaskInput): Promise<AnalyzeBookCharactersTaskOutput> {
   // Use .parse() instead of .create() when using the beta client
   const completion = await client.beta.chat.completions.parse({
-      model: "analyze-book-characters/production#1", // use the deployment id here
+      model: "anotherai/deployment/analyze-book-characters/production#1", // use the "anotherai/deployment/<deployment_id>" id here
       messages: [], // messages should remain empty since the prompt is stored in AnotherAI
       response_format: zodTextFormat(AnalyzeBookCharactersTaskOutputSchema, "AnalyzeBookCharactersTaskOutput"),
       input: input, // input is AnotherAI specific. You may have to silence a TS error
@@ -192,7 +192,7 @@ If hitting the API directly is needed, the payload will look like:
 ```json
 {
     // prefix the model with the agent_id 
-    "model": "analyze-book-characters/production#1",
+    "model": "anotherai/deployment/analyze-book-characters/production#1", // use the "anotherai/deployment/<deployment_id>" id here
     "messages": [],
     // no need to pass the response_format here, it is handle by the deployment
     "input": ..., // corresponds to task_input in WorkflowAI,
@@ -289,6 +289,6 @@ Content-Type: application/json
 </Tabs>
 
 If the agent uses a model directly, there is nothing to do. Changing the OpenAI client config will be enough.
-If the agent uses a deployment, you will need to adjust the `deployment_id` to match the imported one.
+If the agent uses a deployment, you will need to adjust the `deployment_id` to match the imported one, don't forget to prefix it with `anotherai/deployment/`.
 
 
