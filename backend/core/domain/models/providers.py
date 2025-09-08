@@ -12,10 +12,9 @@ class Provider(StrEnum):
     # Which is very inconvenient
     ANTHROPIC = "anthropic"
     AMAZON_BEDROCK = "amazon_bedrock"
-    # OpenAI is the default provider for OpenAI models
-    # We tried Azure for a while but it is no way reliable
-    OPEN_AI = "openai"
+    # Azure OpenAI is the default provider for OpenAI models
     AZURE_OPEN_AI = "azure_openai"
+    OPEN_AI = "openai"
     GOOGLE = "google"
     MISTRAL_AI = "mistral_ai"
     GOOGLE_GEMINI = "google_gemini"
