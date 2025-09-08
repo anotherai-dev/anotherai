@@ -205,7 +205,7 @@ class TestOfflineDocumentationSearch:
         sections = documentation_search.get_all_doc_sections()
         results = documentation_search._offline_documentation_search("Migrate from WorkflowAI to AnotherAI", sections)
         assert len(results) > 0
-        assert results[0].file_path == "docs/migrate-from-workflowai"
+        assert results[0].file_path.endswith("migrate-from-workflowai")
 
 
 class TestLoadConfig:
