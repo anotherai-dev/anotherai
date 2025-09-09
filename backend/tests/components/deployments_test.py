@@ -4,7 +4,8 @@ from urllib.parse import quote
 
 import pytest
 from fastmcp.exceptions import ToolError
-from openai import BaseModel, OpenAIError
+from openai import BaseModel as OpenAIBaseModel  # noqa: TID251
+from openai import OpenAIError
 
 from tests.components._common import IntegrationTestClient
 
@@ -401,7 +402,7 @@ async def test_response_formats(test_api_client: IntegrationTestClient):
     assert json.loads(res5.choices[0].message.content) == {"name": "John Doe", "age": 30}
 
     # Using a pydantic model
-    class Output(BaseModel):
+    class Output(OpenAIBaseModel):
         name: str
         age: int
 
