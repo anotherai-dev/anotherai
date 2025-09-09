@@ -175,6 +175,8 @@ body {
   font-family: "Lato", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Safari scroll optimization */
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Hide scrollbars while keeping scroll functionality */
@@ -182,8 +184,26 @@ body {
   .scrollbar-hide {
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: none; /* Firefox */
+    -webkit-overflow-scrolling: touch; /* Safari smooth scrolling */
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none; /* Safari and Chrome */
+  }
+
+  /* Safari scroll optimization utilities */
+  .safari-scroll-smooth {
+    -webkit-overflow-scrolling: touch;
+    transform: translateZ(0); /* Force GPU acceleration */
+    will-change: scroll-position;
+    contain: layout style paint; /* CSS containment for performance */
+  }
+
+  /* Additional Safari performance optimizations */
+  .safari-optimized {
+    -webkit-transform: translate3d(0, 0, 0); /* Force GPU layer */
+    -webkit-backface-visibility: hidden;
+    -webkit-perspective: 1000px;
+    contain: layout style paint;
+    isolation: isolate;
   }
 }
