@@ -1,41 +1,27 @@
 # pyright: reportPrivateUsage=false
 
-import json
-import os
-from typing import Any
-from unittest.mock import mock_open, patch
+
+from pathlib import Path
 
 import pytest
 
 from core.domain.documentation_section import DocumentationSection
-from core.services.documentation_search import DocEnv, DocumentationSearch
+from core.services.documentation.documentation_config import DocumentationConfig
+from core.services.documentation.documentation_search import DocumentationSearch
 
 
 @pytest.fixture
-def mock_config():
-    """Mock configuration data."""
-    return {
-        "environments": {
-            "production": {
+def documentation_search():
+    """Create a DocumentationSearch instance for testing."""
+    return DocumentationSearch(
+        config=DocumentationConfig(
+            directory=str(Path(__file__).parent.parent.parent.parent / "docs"),
+            variables={
                 "API_URL": "https://api.anotherai.dev",
                 "WEB_APP_URL": "https://anotherai.dev",
             },
-            "local": {
-                "API_URL": "http://localhost:8000",
-                "WEB_APP_URL": "http://localhost:3000",
-            },
-        },
-        "default": {
-            "API_URL": "http://localhost:8000",
-            "WEB_APP_URL": "http://localhost:3000",
-        },
-    }
-
-
-@pytest.fixture
-def documentation_search(mock_config: dict[str, Any]):
-    """Create a DocumentationSearch instance for testing."""
-    return DocumentationSearch(config=mock_config, current_env=DocEnv.PROD)
+        ),
+    )
 
 
 class TestSubstituteVariables:
@@ -49,33 +35,6 @@ class TestSubstituteVariables:
         result = documentation_search._substitute_variables(content)
 
         assert result == "API endpoint: https://api.anotherai.dev/v1/models"
-
-    def test_substitute_variables_with_local_environment(self, documentation_search: DocumentationSearch):
-        """Test variable substitution with local environment."""
-        documentation_search._current_env = DocEnv.LOCAL
-
-        content = "Connect to {{API_URL}}/v1/chat/completions"
-        result = documentation_search._substitute_variables(content)
-
-        assert result == "Connect to http://localhost:8000/v1/chat/completions"
-
-    @patch.dict(os.environ, {"ANOTHERAI_DOCS_API_URL": "http://custom.example.com"})
-    def test_substitute_variables_with_env_override(self, documentation_search: DocumentationSearch):
-        """Test that environment variables override config values."""
-
-        content = "API: {{API_URL}}"
-        result = documentation_search._substitute_variables(content)
-
-        # Environment variable should take precedence
-        assert result == "API: http://custom.example.com"
-
-    def test_substitute_variables_no_placeholder(self, documentation_search: DocumentationSearch):
-        """Test content without placeholders remains unchanged."""
-
-        content = "This is regular content without any variables."
-        result = documentation_search._substitute_variables(content)
-
-        assert result == content
 
     def test_substitute_variables_multiple_occurrences(self, documentation_search: DocumentationSearch):
         """Test substitution with multiple occurrences of the same variable."""
@@ -101,29 +60,6 @@ class TestSubstituteVariables:
         result = documentation_search._substitute_variables(content)
 
         assert result == "Visit the playground at https://anotherai.dev/agents/my-agent/playground"
-
-        # Test with local environment
-        documentation_search._current_env = DocEnv.LOCAL
-        result = documentation_search._substitute_variables(content)
-
-        assert result == "Visit the playground at http://localhost:3000/agents/my-agent/playground"
-
-    def test_substitute_variables_unknown_variable(self, documentation_search: DocumentationSearch):
-        """Test that unknown variables are left unchanged."""
-
-        content = "Known: {{API_URL}}, Unknown: {{UNKNOWN_VAR}}"
-        result = documentation_search._substitute_variables(content)
-
-        assert result == "Known: https://api.anotherai.dev, Unknown: {{UNKNOWN_VAR}}"
-
-    def test_substitute_variables_with_missing_environment(self, documentation_search: DocumentationSearch):
-        """Test fallback to default when environment is not in config."""
-
-        content = "API: {{API_URL}}"
-        result = documentation_search._substitute_variables(content)
-
-        # Should fall back to default
-        assert result == "API: https://api.anotherai.dev"
 
 
 class TestOfflineDocumentationSearch:
@@ -206,26 +142,3 @@ class TestOfflineDocumentationSearch:
         results = documentation_search._offline_documentation_search("Migrate from WorkflowAI to AnotherAI", sections)
         assert len(results) > 0
         assert results[0].file_path.endswith("migrate-from-workflowai")
-
-
-class TestLoadConfig:
-    @patch("builtins.open", new_callable=mock_open)
-    @patch("pathlib.Path.exists")
-    def test_load_config_success(self, mock_exists, mock_file, documentation_search, mock_config):
-        """Test successful config loading from file."""
-        mock_exists.return_value = True
-        mock_file.return_value.read.return_value = json.dumps(mock_config)
-
-        config = documentation_search._load_config()
-        assert config == mock_config
-        mock_file.assert_called_once()
-
-    @patch("pathlib.Path.exists")
-    def test_load_config_file_not_found(self, mock_exists, documentation_search):
-        """Test config loading when file doesn't exist."""
-        mock_exists.return_value = False
-
-        config = documentation_search._load_config()
-
-        # Should return empty dict when config file not found
-        assert config == {}

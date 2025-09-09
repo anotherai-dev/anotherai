@@ -1,3 +1,5 @@
+import json
+import os
 from typing import Any
 
 from fastmcp import Client as MCPClient
@@ -110,3 +112,20 @@ class IntegrationTestClient:
     async def call_tool(self, tool_name: str, arguments: dict[str, Any]) -> Any:
         res = await self.mcp.call_tool(tool_name, arguments)
         return res.structured_content
+
+    async def mock_internal_agent(self, content: str | dict[str, Any]):
+        if isinstance(content, dict):
+            content = json.dumps(content)
+
+        self.httpx_mock.add_response(
+            url=f"{os.environ['ANOTHERAI_API_URL']}/v1/chat/completions",
+            json={
+                "choices": [
+                    {
+                        "message": {
+                            "content": content,
+                        },
+                    },
+                ],
+            },
+        )
