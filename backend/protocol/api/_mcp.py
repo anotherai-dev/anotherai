@@ -6,7 +6,7 @@ from typing import Annotated, Any
 from pydantic import Field
 
 from core.domain.cache_usage import CacheUsage
-from core.services.documentation_search import DocumentationSearch
+from core.services.documentation.documentation_search import DocumentationSearch
 from protocol.api import _mcp_utils
 from protocol.api._api_models import (
     Agent,
