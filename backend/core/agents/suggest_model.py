@@ -11,7 +11,7 @@ class ModelSuggestionOutput(BaseModel):
 
 async def suggest_model(model: str) -> str | None:
     completion = await client.beta.chat.completions.parse(
-        model="gemini-2.5-flash",
+        model="suggest-model/gemini-2.5-flash",
         messages=[
             {
                 "role": "system",
@@ -35,7 +35,6 @@ Available models: {{available_models}}
                 "model": model,
                 "available_models": AVAILABLE_MODELS,
             },
-            "agent_id": "suggest-model",
         },
         temperature=0.0,
     )
