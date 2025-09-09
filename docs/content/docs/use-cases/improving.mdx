@@ -6,9 +6,14 @@ description: Learn how to improve your agents using annotations and debuging pro
 
 import { Step, Steps } from 'fumadocs-ui/components/steps';
 
-# Experiments
+# Experiments 
 
-Experiments allow you to systematically compare different configurations of your agent to find the optimal setup for your use case across one or more inputs. By testing variations of prompts, models, and other parameters, you can make data-driven decisions to improve your agent's performance.
+Throughout the process of creating a new agent, in order to make the best agent possible, you may need to:
+- Compare performance across different models (GPT-4, Claude, Gemini, etc.)
+- Test multiple prompt variations to find the most effective approach
+- Optimize for specific metrics like cost, speed, and accuracy. 
+
+Experiments allow you to systematically compare each of these different parameters of your agent to find the optimal setup for your use case across one or more inputs.
 
 ### Creating Experiments
 
@@ -16,13 +21,13 @@ To create an experiment:
 
 <Steps>
 <Step>
-### Configure MCP
+#### Configure MCP
 Make sure you have the AnotherAI MCP configured and enabled. You can view the set up steps [here](/docs).
 </Step>
 
 <Step>
-### Create Experiment
-Then just ask Claude Code (or the AI coding agent you're using) to set up experiments for you
+#### Create Experiment
+Then just ask Claude Code (or the AI coding agent you're using) to set up experiments for you. We'll cover some common examples and sample messages you can use below.
 </Step>
 </Steps>
 
@@ -44,7 +49,7 @@ the tone lists in the input
 
 Different models excel at different tasks. AnotherAI supports over 100 different models, and experiments can help you choose the right model for your agent, depending on its needs.
 
-For example:
+Example:
 
 ```
 Create an AnotherAI experiment to help me find a faster model for @email-rewriter.py,
@@ -53,7 +58,7 @@ but still maintains the same tone and verbosity considerations as my current mod
 
 If you have a specific model in mind that you want to try - **for example, a newly released model** - you can ask Claude to help you test that model against your existing agent version. You can always request that Claude use inputs from existing completions, to ensure that you're testing with real, production data. 
 
-For example:
+Example:
 
 ```
 Can you retry the last 5 completions of @email-rewriter.py and compare the outputs with 
@@ -84,10 +89,16 @@ Temperature is the most important parameter to experiment with after prompts and
   - Brainstorming
   - Generating diverse options
 
+Example:
+
 ```
 Test my email-rewriter agent with temperatures 0.2, 0.5, and 0.8 to find 
 the right balance between creativity and professionalism
 ```
+
+### Tips:
+- Always reference the specific files of your agent when requesting experiments to avoid any ambiguity about what should be tested
+- Pick one variable to test with at a time (ex. models, prompts) to make sure that you can easily attribute a given variable on the agent's changes in performance.
 
 ### Analyzing Experiment Results
 
@@ -101,7 +112,6 @@ Once your experiment has collected enough completions, you can:
 Analyze the results of experiment/019885bb-24ea-70f8-c41b-0cbb22cc3c00 
 and recommend which configuration performs best specifically for both accuracy and cost
 ```
-
 
 # Annotations
 
@@ -194,59 +204,3 @@ Provide a report on the accuracy scores for all completions of calendar-event-ex
 ```
 Which model has the best tone overall, based on annotations?
 ```
-
-TODO: the following was taken from an example/use case; pasting here to ensure that I utilize anything useful from it
-
-## Comparing Different Prompts and Models 
-
-This use case demonstrates how to compare different prompt variations and model performances using AnotherAI's playground feature.
-
-### Overview
-Suppose you're building a new AI agent that extracts calendar events from emails. You want to make sure you're agent performs well on a variety of emails, but you're not sure which model will work best or what your prompt needs to say to cover all the use cases. 
-In order to make the best agent possible, you may need to:
-- Compare performance across different models (GPT-4, Claude, Gemini, etc.)
-- Test multiple prompt variations to find the most effective approach
-- Optimize for specific metrics like cost, speed, and accuracy. 
-
-To compare performance across different models, use the playground feature to test your agent with different models and prompts.
-
-<Steps>
-<Step>
-Ask Claude (or your preferred AI agent) to create an experiment that compares the content you're interested in. You can also ask Claude to pick the best models for you based on different criteria (e.g. cost, speed, intelligence, etc.), or create a new version of your prompt for you
-
-`Use AnotherAI to compare how Claude Sonnet 4, GPT 4.1, and Gemini 2.5 Flash handle @calendar_event_extractor.py`
-
-or 
-
-`Use AnotherAI to compare how @calendar_event_extractor.py performs with @test_prompt_1 and @test_prompt_2`
-</Step>
-<Step>
-Once Claude has created the experiment, it will send you a link and you can view the results in the playground. Something like this:
-</Step>
-</Steps>
-
-### Tips:
-- Always reference the specific files of your agent when requesting experiments to avoid any ambiguity about what should be tested
-- Pick one variable to test with at a time (ex. models, prompts) to make sure that you can easily attribute a given variable on the agent's changes in performance.
-
-## AI-Powered Reviews and Improvements For Your Agent
-
-This use case demonstrates how to iteratively improve your agent by having your agent-builder review runs, leave feedback and suggest improvements. 
-
-### Overview
-Suppose you have created an experiment that compares two prompts for an agent that extracts calendar events from emails, and you want to understand which prompt version performs better. 
-
-To understand how your prompt performs:
-
-<Steps>
-<Step>
-Ask Claude to review the completions in the experiment and leave feedback
-
-`Review the completions in anotherai/experiment/019885bb-24ea-70f8-c41b-0cbb22cc3c00 and leave feedback about the overall tone and accuracy of each completion, and give me a summary of your findings.`
-</Step>
-<Step>
-After Claude has provided feedback, you can ask it to create a new version of the agent that addresses any issues that you want to improve
-
-`Update calendar_event_extractor.py prompt to address all issues you found while reviewing`
-</Step>
-</Steps>

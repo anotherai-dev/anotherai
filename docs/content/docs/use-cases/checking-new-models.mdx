@@ -5,16 +5,13 @@ description: How to test and compare new models before switching
 ---
 
 import { Steps, Step } from 'fumadocs-ui/components/steps';
+import { Callout } from 'fumadocs-ui/components/callout';
 
-TODO: add use case of vibe checking a new model on an existing agent
+Suppose you're currently using GPT-4o-mini for a given agent, but you've heard rave reviews about GPT-5 that was just released. You want to test whether the quality improvement justifies the higher cost before switching.
 
-## Compare New Model vs Production Model
+With how often new models are released, the above scenario is extremely common, so we wanted to make it as easy as possible for our users to test new models on existing agents.
 
-This use case demonstrates how you can quickly evaluate new AI models against your current production model to help you make informed decisions about model updates
-
-### Overview
-Suppose you're currently using GPT-4o-mini for your calendar event extraction agent, but you've heard rave reviews about GPT-5 that was just released. You want to test whether the quality improvement justifies the higher cost before switching.
-
+### Creating a side by side model comparison
 <Steps>
 <Step>
 Ask Claude to create a experiment between your current and new model
@@ -32,5 +29,6 @@ Alternatively, if you have a dataset of standard test inputs you like to use to 
 </Step>
 </Steps>
 
-### Tips:
-- Use real production data for testing, not artificial examples
+<Callout type="info">
+**Tip:** Use real production data for testing, not artificial examples to ensure you're testing the new model with real-life scenarios.
+</Callout>

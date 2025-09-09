@@ -1,31 +1,33 @@
 ---
 title: Accessing Metrics and Data
-summary: REST API endpoints for querying completion data and building custom dashboards.
-description: Query completion data directly via REST API
+summary: Create custom views and query your AI agent data using SQL to monitor performance, costs, and usage patterns
+description: Build dashboards and analyze completion data through views and direct SQL queries
 ---
 
 import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
 import { Steps, Step } from 'fumadocs-ui/components/steps';
 
-TODO: add more details about creating views
+One of the core features we wanted to unlock with AnotherAI was to allow users to access all their agent data in a way that would allow them to see the information that was important to *them*. 
 
-TODO: the following was taken from an example/use case, need to review to check if it still makes sense as is or how to rework it to fit the use case
+For that reason we've enabled you to query your agent and organization-wide data both using the MCP and directly via REST API, and create custom views in the web app to visualize the retrieved data.
 
-## Review Performance Metrics (Latency, Cost)
+## What sorts of data can I query?
 
-This use case demonstrates how you can create specialized views to monitor different agent's performance metrics and completions.
+- Organization-wide data. This can include data about:
+  - your overall spending across all agents
+  - the most used agents
+  - the agents that have the most failed completions
+- Agent-level data. This can include data about:
+  - the cost of a specific agent
+  - the latency of a specific agent
+  - user feedback on a specific agent
 
-### Overview
-Suppose your calendar event extraction agent is becoming increasingly popular in your product. You want to keep an eye on the overall spend on that agent to ensure you don't go over budget. You also want to keep an eye on the speed of the models you're using, so that your customers aren't left with long wait times. 
 
-You can create custom views to monitor:
-- The cost of one or more agents
-- The average latency of one or more agents
-- Specific completions data from specific agents
+## How do I create a view in AnotherAI?
 
-and more!
+The easiest way to create a view is to ask Claude Code to do it for you via the MCP by describing the data you want to see visualized.
 
-To create a view:
+For example: suppose you have an agent is becoming increasingly popular in your product. You want to keep an eye on the overall spend on that agent to ensure you don't go over budget. You also want to keep an eye on the speed of the models you're using, so that your customers aren't left with long wait times. You may ask Claude to create the following views as such:
 
 <Steps>
 <Step>
@@ -49,10 +51,9 @@ After creating a view, you can always make adjustments to it
 </Steps>
 
 
+## Can I access this data outside of the web app?
 
-## Query Completions
-
-Query completion data directly via REST API for building custom dashboards or integrations. This provides the same functionality as the `query_completions` MCP tool but through HTTP requests.
+Yes! If you want to integrate AnotherAI data into your existing business intelligence tools, you can also access the data via the `/v1/completions/query` endpoint. This provides the same functionality as the `query_completions` MCP tool but through HTTP requests, enabling you to further customize how you utilize the data available to you.
 
 ### Endpoint
 
