@@ -175,6 +175,8 @@ body {
   font-family: "Lato", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Safari scroll optimization */
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Hide scrollbars while keeping scroll functionality */
@@ -182,8 +184,49 @@ body {
   .scrollbar-hide {
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: none; /* Firefox */
+    -webkit-overflow-scrolling: touch; /* Safari smooth scrolling */
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none; /* Safari and Chrome */
+  }
+
+  /* Always show scrollbars */
+  .scrollbar-always-visible {
+    scrollbar-width: auto; /* Firefox - show scrollbar */
+    -ms-overflow-style: scrollbar; /* IE and Edge */
+  }
+  .scrollbar-always-visible::-webkit-scrollbar {
+    display: block; /* Safari and Chrome - always show */
+    width: 16px; /* Standard scrollbar width */
+    height: 16px; /* Standard scrollbar height */
+  }
+  .scrollbar-always-visible::-webkit-scrollbar-track {
+    background: #f1f1f1; /* Light grey track */
+    border-radius: 8px;
+  }
+  .scrollbar-always-visible::-webkit-scrollbar-thumb {
+    background: #c1c1c1; /* Grey thumb */
+    border-radius: 8px;
+    border: 2px solid #f1f1f1; /* Padding around thumb */
+  }
+  .scrollbar-always-visible::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8; /* Darker on hover */
+  }
+
+  /* Safari scroll optimization utilities */
+  .safari-scroll-smooth {
+    -webkit-overflow-scrolling: touch;
+    transform: translateZ(0); /* Force GPU acceleration */
+    will-change: scroll-position;
+    contain: layout style paint; /* CSS containment for performance */
+  }
+
+  /* Additional Safari performance optimizations */
+  .safari-optimized {
+    -webkit-transform: translate3d(0, 0, 0); /* Force GPU layer */
+    -webkit-backface-visibility: hidden;
+    -webkit-perspective: 1000px;
+    contain: layout style paint;
+    isolation: isolate;
   }
 }

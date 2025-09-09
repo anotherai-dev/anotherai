@@ -71,12 +71,12 @@ Suppose you've identified and fixed issues with your calendar event extraction s
 <Step>
 After validating improvements in an experiment, deploy the best performing version
 
-`Deploy version anotherai/deployment/a9f1fc5ab11299a9fee5604e51fe7b6e to production for calendar_event_extractor.py`
+`Deploy version anotherai/version/a9f1fc5ab11299a9fee5604e51fe7b6e to production for calendar_event_extractor.py`
 </Step>
 <Step>
 For [non-breaking changes](/deployments#what-updates-are-compatible-with-an-existing-deployment), you can deploy the new version to your existing deployment without making any code changes. Just ask Claude to update the deployment for you:
 
-`Update deployment calendar-event-extractor/production#1 to use anotherai/deployment/a9f1fc5ab11299a9fee5604e51fe7b6e`
+`Update deployment calendar-event-extractor/production#1 to use anotherai/version/a9f1fc5ab11299a9fee5604e51fe7b6e`
 </Step>
 <Step>
 For [breaking changes](/deployments#creating-a-new-deployment), Claude will automatically create a new deployment for you. In these cases, you will need to update your code to use the new deployment id.

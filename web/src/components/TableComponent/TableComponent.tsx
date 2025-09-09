@@ -1,5 +1,6 @@
 import { cx } from "class-variance-authority";
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode, useRef } from "react";
+import { useScrollbarPositioning } from "./useScrollbarPositioning";
 
 export interface TableProps {
   // Column headers (first row)
@@ -14,6 +15,8 @@ export interface TableProps {
   className?: string;
   // Minimum height for headers (default: 200px)
   minHeaderHeight?: number;
+  // Hide scrollbar (default: true)
+  hideScrollbar?: boolean;
 }
 
 export function TableComponent({
@@ -23,24 +26,21 @@ export function TableComponent({
   minColumnWidth = 200,
   className = "",
   minHeaderHeight = 150,
+  hideScrollbar = true,
 }: TableProps) {
   const headerRowWidth = "240px";
-  const [containerWidth, setContainerWidth] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Measure container width
-  useEffect(() => {
-    const updateWidth = () => {
-      if (containerRef.current) {
-        const width = containerRef.current.offsetWidth;
-        setContainerWidth(width);
-      }
-    };
-
-    updateWidth();
-    window.addEventListener("resize", updateWidth);
-    return () => window.removeEventListener("resize", updateWidth);
-  }, []);
+  const {
+    containerRef,
+    containerWidth,
+    containerLeft,
+    isHovering,
+    isScrolling,
+    isTableBottomVisible,
+    handleMouseEnter,
+    handleMouseLeave,
+    handleScroll,
+    hoverTimeoutRef,
+  } = useScrollbarPositioning();
 
   // Calculate column width based on available space and number of columns
   const calculateColumnWidth = () => {
@@ -62,17 +62,80 @@ export function TableComponent({
 
   const columnWidth = calculateColumnWidth();
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const topScrollRef = useRef<HTMLDivElement>(null);
+
+  // Sync scroll positions between top and main scroll areas
+  const handleMainScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (topScrollRef.current) {
+      topScrollRef.current.scrollLeft = e.currentTarget.scrollLeft;
+    }
+    handleScroll(); // Show scrollbar when scrolling occurs
+  };
+
+  const handleTopScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollLeft = e.currentTarget.scrollLeft;
+    }
+    handleScroll(); // Show scrollbar when scrolling occurs
+  };
+
   return (
     <div
       ref={containerRef}
       className={cx("bg-white border border-gray-200 rounded-lg overflow-hidden relative", className)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       {/* Border overlay after sticky header column - fixed position */}
       <div
         className="absolute top-0 bottom-0 border-r border-gray-200 z-20 pointer-events-none"
         style={{ left: headerRowWidth }}
       />
-      <div className="overflow-x-auto scrollbar-hide">
+
+      {/* Scrollbar - shows at bottom of viewport when table extends beyond screen, otherwise at bottom of table */}
+      {!hideScrollbar && (
+        <div
+          ref={topScrollRef}
+          className={cx(
+            "z-50 overflow-x-scroll overflow-y-hidden h-4 bg-white border-t border-gray-200 scrollbar-always-visible",
+            // Show at viewport bottom when table bottom is not visible, otherwise stick to table bottom
+            !isTableBottomVisible ? "fixed" : "absolute bottom-0"
+          )}
+          style={{
+            ...(!isTableBottomVisible
+              ? {
+                  bottom: 0, // At bottom of viewport
+                  left: containerLeft + 240, // Add space for the sticky header column
+                  width: containerWidth - 240, // Reduce width by header column width
+                }
+              : {
+                  left: 240, // Add space for the sticky header column
+                  right: 0, // Extend to the right edge of the container
+                }),
+            // Force scrollbar to always be visible
+            scrollbarWidth: "auto", // For Firefox
+            msOverflowStyle: "scrollbar", // For IE/Edge
+          }}
+          onScroll={handleTopScroll}
+          onMouseEnter={() => {
+            // Keep scrollbar visible when hovering over it
+            if (hoverTimeoutRef.current) {
+              clearTimeout(hoverTimeoutRef.current);
+            }
+          }}
+          onMouseLeave={() => {
+            // Delay hiding when leaving scrollbar
+            hoverTimeoutRef.current = setTimeout(() => {
+              handleMouseLeave();
+            }, 100);
+          }}
+        >
+          <div style={{ width: `${columnHeaders.length * columnWidth}px`, height: "1px" }} />
+        </div>
+      )}
+
+      <div ref={scrollRef} className={cx("overflow-x-auto", "scrollbar-hide")} onScroll={handleMainScroll}>
         <table className="w-full">
           {/* Header row */}
           <thead className="bg-gray-50">
