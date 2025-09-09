@@ -409,6 +409,8 @@ async def query_completions(
     agent_id String,
     -- Version ID
     version_id FixedString(32),
+    -- Model ID that generated this completion (matches the 'id' field from list_models())
+    -- Use list_models() to see available model IDs and their capabilities/pricing
     version_model LowCardinality(String),
     -- Full version object, serialized as a json string
     version String,
