@@ -3,4 +3,48 @@ title: API Keys
 description: Managing API keys for authentication
 ---
 
-TODO: add details about creating, viewing, and deleting api keys
+## What are AnotherAI API keys used for?
+
+AnotherAI API key enable you to:
+
+- Connect your IDE to AnotherAI via MCP (Model Context Protocol)
+- Run your agents using AnotherAI's API
+- Access 100+ different models from providers like OpenAI, Anthropic, DeepSeek, and more without managing individual API keys
+
+## Creating API Keys
+
+### Via Web App
+
+If you're just setting up AnotherAI and don't have the MCP connected yet, you'll need to create your first API key through the web app.
+
+1. Log in to AnotherAI (or sign up if you haven't already)
+2. Select **API Keys** in the left sidebar
+3. Select the **+ New API Key** button
+4. Copy and save the generated API key
+
+You can learn more about setting up AnotherAI [here](/#get-started)
+
+<Callout type="warning">
+  API keys are only displayed once. Store your key securely as you won't be able to view it again after leaving the
+  page.
+</Callout>
+
+### Via MCP
+
+Once you have the AnotherAI MCP set up, you can simply ask Claude Code (or your preferred coding agent) to create an API key for you using the AnotherAI MCP.
+
+This method is particularly useful when developing agents, as it eliminates the need to switch to the web app to create a new API key manually.
+
+## Deleting API Keys
+
+API keys can only be deleted through the web app:
+
+1. Log in to AnotherAI
+2. Navigate to **API Keys** in the left sidebar
+3. Select the API key you want to delete
+4. Click **Delete**
+
+<Callout type="warning">
+  Before deleting an API key, ensure it's not being used by any active agents or integrations. Deletion will immediately
+  break any services using that key.
+</Callout>
