@@ -181,7 +181,7 @@ async def list_models() -> list[Model]:
     """List all available AI models with their capabilities, pricing, and metadata.
 
     Returns a list of Model objects containing:
-    - id: Unique identifier to use in the 'models' parameter of playground and API calls
+    - id: Model identifier to use in the 'models' parameter of playground/API calls (corresponds to version_model in query_completions)
     - display_name: Human-readable name of the model
     - icon_url: URL to the model's icon image
     - supports: Capabilities including:
