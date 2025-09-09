@@ -4,7 +4,7 @@ from urllib.parse import quote
 
 import pytest
 from fastmcp.exceptions import ToolError
-from openai import OpenAIError
+from openai import BaseModel, OpenAIError
 
 from tests.components._common import IntegrationTestClient
 
@@ -312,3 +312,104 @@ async def test_deployment_from_playground(test_api_client: IntegrationTestClient
         extra_body={"input": {"name": "Toulouse"}},
     )
     assert response.version_id == completion1["version"]["id"]  # pyright: ignore[reportAttributeAccessIssue]
+
+
+async def test_response_formats(test_api_client: IntegrationTestClient):
+    test_api_client.mock_provider_call("openai", "gpt-4.1", "openai/structured_output.json", is_reusable=True)
+    # First post a version with a structured output by going through the API to make sure
+    # that the openai sdk does not temper with it
+
+    optional_schema = {
+        "type": "object",
+        # All fields are optional here
+        "properties": {"name": {"type": "string"}, "age": {"type": "integer"}},
+    }
+
+    res1 = await test_api_client.post(
+        "/v1/chat/completions",
+        json={
+            "model": "test-agent/gpt-4.1",
+            "messages": [{"role": "user", "content": "Hello, world!"}],
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {"schema": optional_schema},
+            },
+        },
+    )
+    assert json.loads(res1["choices"][0]["message"]["content"]) == {"name": "John Doe", "age": 30}, "sanity"
+
+    # Wait for the run to be stored and deploy the associated version
+    await test_api_client.wait_for_background()
+    completion = await test_api_client.get(f"/v1/completions/{res1['id']}")
+    version_id = completion["version"]["id"]
+    assert completion["version"]["output_schema"]["json_schema"] == optional_schema
+
+    # Now deploy the version
+    await _create_deployment_via_mcp(test_api_client, version_id, agent_id="test-agent")
+
+    # For sanity reasons, let's try to use the deployment via the API
+    res2 = await test_api_client.post(
+        "/v1/chat/completions",
+        json={
+            "model": "anotherai/deployment/test-agent:production#1",
+            "messages": [{"role": "user", "content": "Hello, world!"}],
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {"schema": optional_schema},
+            },
+        },
+    )
+    assert res2["id"] != res1["id"]
+    assert res2["version_id"] == res1["version_id"]
+
+    # We can also try without the response format
+    res3 = await test_api_client.post(
+        "/v1/chat/completions",
+        json={
+            "model": "anotherai/deployment/test-agent:production#1",
+            "messages": [{"role": "user", "content": "Hello, world!"}],
+        },
+    )
+    assert res3["id"] != res2["id"]
+    assert res3["version_id"] == res1["version_id"]
+
+    # Now let's try via the SDK
+    client = test_api_client.openai_client()
+    res4 = await client.chat.completions.create(
+        model="anotherai/deployment/test-agent:production#1",
+        messages=[{"role": "user", "content": "Hello, world!"}],
+        # Omitting the response format
+    )
+    # here the version is untouched
+    assert res4.version_id == res1["version_id"]  # pyright: ignore[reportAttributeAccessIssue]
+    assert res4.choices[0].message.content
+    assert json.loads(res4.choices[0].message.content) == {"name": "John Doe", "age": 30}
+
+    # Passing the response format as a JSON
+    res5 = await client.chat.completions.create(
+        model="anotherai/deployment/test-agent:production#1",
+        messages=[{"role": "user", "content": "Hello, world!"}],
+        response_format={
+            "type": "json_schema",
+            "json_schema": {
+                "name": "hello",
+                "schema": optional_schema,
+            },
+        },
+    )
+    assert res5.choices[0].message.content
+    assert json.loads(res5.choices[0].message.content) == {"name": "John Doe", "age": 30}
+
+    # Using a pydantic model
+    class Output(BaseModel):
+        name: str
+        age: int
+
+    res6 = await client.beta.chat.completions.parse(
+        model="anotherai/deployment/test-agent:production#1",
+        messages=[{"role": "user", "content": "Hello, world!"}],
+        response_format=Output,
+    )
+    assert res6.choices[0].message.parsed == Output(name="John Doe", age=30)
+
+    assert len(test_api_client.get_provider_requests("openai", "gpt-4.1")) == 6
