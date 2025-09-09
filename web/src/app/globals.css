@@ -190,6 +190,29 @@ body {
     display: none; /* Safari and Chrome */
   }
 
+  /* Always show scrollbars */
+  .scrollbar-always-visible {
+    scrollbar-width: auto; /* Firefox - show scrollbar */
+    -ms-overflow-style: scrollbar; /* IE and Edge */
+  }
+  .scrollbar-always-visible::-webkit-scrollbar {
+    display: block; /* Safari and Chrome - always show */
+    width: 16px; /* Standard scrollbar width */
+    height: 16px; /* Standard scrollbar height */
+  }
+  .scrollbar-always-visible::-webkit-scrollbar-track {
+    background: #f1f1f1; /* Light grey track */
+    border-radius: 8px;
+  }
+  .scrollbar-always-visible::-webkit-scrollbar-thumb {
+    background: #c1c1c1; /* Grey thumb */
+    border-radius: 8px;
+    border: 2px solid #f1f1f1; /* Padding around thumb */
+  }
+  .scrollbar-always-visible::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8; /* Darker on hover */
+  }
+
   /* Safari scroll optimization utilities */
   .safari-scroll-smooth {
     -webkit-overflow-scrolling: touch;

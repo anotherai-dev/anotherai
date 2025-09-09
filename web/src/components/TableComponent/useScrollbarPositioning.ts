@@ -5,7 +5,9 @@ export function useScrollbarPositioning() {
   const [containerLeft, setContainerLeft] = useState(0);
   const [containerBottom, setContainerBottom] = useState(0);
   const [isHovering, setIsHovering] = useState(false);
+  const [isScrolling, setIsScrolling] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Check if table bottom is visible in viewport
@@ -34,6 +36,9 @@ export function useScrollbarPositioning() {
       clearTimeout(timeoutId);
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current);
+      }
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
       }
       window.removeEventListener("resize", updateDimensions);
       window.removeEventListener("scroll", updateDimensions);
@@ -87,15 +92,41 @@ export function useScrollbarPositioning() {
     }, 100);
   };
 
+  const handleScroll = () => {
+    // Show scrollbar during scroll events
+    setIsScrolling(true);
+    
+    // Clear any existing scroll timeout
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+    }
+    
+    // Hide scrollbar after scroll ends (with delay)
+    scrollTimeoutRef.current = setTimeout(() => {
+      setIsScrolling(false);
+    }, 1000); // Keep visible for 1 second after scrolling stops
+    
+    // Update dimensions during scroll
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setContainerWidth(containerRef.current.offsetWidth);
+      setContainerLeft(rect.left);
+      setContainerBottom(rect.bottom);
+    }
+  };
+
   return {
     containerRef,
     containerWidth,
     containerLeft,
     containerBottom,
     isHovering,
+    isScrolling,
     isTableBottomVisible,
     handleMouseEnter,
     handleMouseLeave,
+    handleScroll,
     hoverTimeoutRef,
+    scrollTimeoutRef,
   };
 }

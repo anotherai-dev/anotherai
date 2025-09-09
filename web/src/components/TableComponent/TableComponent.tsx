@@ -34,9 +34,11 @@ export function TableComponent({
     containerWidth,
     containerLeft,
     isHovering,
+    isScrolling,
     isTableBottomVisible,
     handleMouseEnter,
     handleMouseLeave,
+    handleScroll,
     hoverTimeoutRef,
   } = useScrollbarPositioning();
 
@@ -68,12 +70,14 @@ export function TableComponent({
     if (topScrollRef.current) {
       topScrollRef.current.scrollLeft = e.currentTarget.scrollLeft;
     }
+    handleScroll(); // Show scrollbar when scrolling occurs
   };
 
   const handleTopScroll = (e: React.UIEvent<HTMLDivElement>) => {
     if (scrollRef.current) {
       scrollRef.current.scrollLeft = e.currentTarget.scrollLeft;
     }
+    handleScroll(); // Show scrollbar when scrolling occurs
   };
 
   return (
@@ -90,16 +94,16 @@ export function TableComponent({
       />
 
       {/* Scrollbar - shows at bottom of viewport when table extends beyond screen, otherwise at bottom of table */}
-      {!hideScrollbar && isHovering && (
+      {!hideScrollbar && (
         <div
           ref={topScrollRef}
           className={cx(
-            "z-50 overflow-x-auto overflow-y-hidden h-4 bg-white border-t border-gray-200",
+            "z-50 overflow-x-scroll overflow-y-hidden h-4 bg-white border-t border-gray-200 scrollbar-always-visible",
             // Show at viewport bottom when table bottom is not visible, otherwise stick to table bottom
             !isTableBottomVisible ? "fixed" : "absolute bottom-0"
           )}
-          style={
-            !isTableBottomVisible
+          style={{
+            ...(!isTableBottomVisible
               ? {
                   bottom: 0, // At bottom of viewport
                   left: containerLeft + 240, // Add space for the sticky header column
@@ -108,8 +112,11 @@ export function TableComponent({
               : {
                   left: 240, // Add space for the sticky header column
                   right: 0, // Extend to the right edge of the container
-                }
-          }
+                }),
+            // Force scrollbar to always be visible
+            scrollbarWidth: "auto", // For Firefox
+            msOverflowStyle: "scrollbar", // For IE/Edge
+          }}
           onScroll={handleTopScroll}
           onMouseEnter={() => {
             // Keep scrollbar visible when hovering over it
