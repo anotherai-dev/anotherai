@@ -161,6 +161,15 @@ class PlaygroundService:
             out.append(_input)
         return out
 
+    def _check_compatibility(self, versions: list[DomainVersion], inputs: list[Input]):
+        # check for empty prompt and messages
+        # If at least one version has no prompt AND at least one input has no messages, raise an error
+
+        if any(not v.prompt for v in versions) and any(not i.messages for i in inputs):
+            raise BadRequestError("""At least a combination of input and prompt resulted in empty messages.
+            - If you do not provide a prompt, make sure all inputs have messages
+            - If at least one input does not contain messages, make sure all prompts have messages""")
+
     async def run(  # noqa: C901
         self,
         author_name: str,
@@ -185,7 +194,7 @@ class PlaygroundService:
             inputs = await self._extract_inputs_from_query(completion_query)
         elif not inputs:
             if not prompts:
-                raise ValueError("Either prompts, inputs or input_query must be provided")
+                raise BadRequestError("Either prompts, inputs or input_query must be provided")
             prompts, inputs = _extract_input_from_prompts(prompts)
 
         if not agent_id and metadata:
@@ -215,16 +224,23 @@ class PlaygroundService:
         tasks: list[Coroutine[Any, Any, PlaygroundOutput.Completion]] = []
         start_time = time.time()
         run_ids: list[str] = []
-        for version in self._version_iterator(
-            models=self._parse_models(models),
-            temperatures=self._parse_temperatures(temperatures),
-            prompts=prompts or [],
-            tool_lists=tool_lists or [],
-            output_schemas=output_schemas or [],
-            # Only considering the first input to determine the variables schema
-            # TODO: handle cases where the variable schemas are different accross inputs ?
-            variables=inputs[0].variables if inputs else None,
-        ):
+        # Not using the iterator directly to account for cases where a version has an error
+        versions = list(
+            self._version_iterator(
+                models=self._parse_models(models),
+                temperatures=self._parse_temperatures(temperatures),
+                prompts=prompts or [],
+                tool_lists=tool_lists or [],
+                output_schemas=output_schemas or [],
+                # Only considering the first input to determine the variables schema
+                # TODO: handle cases where the variable schemas are different accross inputs ?
+                variables=inputs[0].variables if inputs else None,
+            ),
+        )
+
+        self._check_compatibility(versions, inputs)
+
+        for version in versions:
             for i in inputs:
                 completion_id = str(uuid7())
                 tasks.append(
