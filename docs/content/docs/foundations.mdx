@@ -125,9 +125,12 @@ Building an AI agent is the process of picking the right value for each paramete
 
 ```python
 completion = client.chat.completions.create(  # or client.beta.chat.completions.parse for structured outputs
-    model="<agent_id>/..", # prefix model with agent_id to group completions
+    model="..",
     messages=[...],
-    metadata={"key": "value"}, # user provided metadata
+    metadata={
+        "agent_id": "...",
+        "key": "value", # user provided metadata
+    },
     extra_body={
         # AnotherAI specific parameters
         "input": {
@@ -144,11 +147,15 @@ print(completion.choices[0].duration_seconds)
 <Tab value="TypeScript (OpenAI SDK)">
 ```typescript
 const completion = await openai.chat.completions.create({
-    model="<agent_id>/..", // prefix model with agent_id to group completions
+    model="..",
     messages=[...],
-    metadata={"key": "value"}, // user provided metadata
+    metadata={
+        "agent_id": "...",
+        "key": "value", // user provided metadata
+    }, 
     input: { // AnotherAI specific parameter. Might need to silence a TS error
         "variable_name": "variable_value"
+        
     },
 })
 console.log(completion.choices[0].message.content)
@@ -160,9 +167,10 @@ console.log(completion.choices[0].duration_seconds)
 <Tab value="Go (OpenAI SDK)">
 ```go
 params :=  openai.ChatCompletionNewParams{
-    model: "<agent_id>/..", // prefix model with agent_id to group completions
+    model: "..",
     metadata: map[string]string{
-        "key": "value",
+        "agent_id": "...",
+        "key": "value", // user provided metadata
     },
 }
 params.SetExtraFields(map[string]any{
@@ -183,7 +191,6 @@ one of the model.id from the `list_models` MCP tool, or `curl {{API_URL}}/v1/mod
 AnotherAI allows non-OpenAI models to be used via a OpenAI SDK.
 each model listed by AnotherAI includes information about its price, its intelligence (quality_index), its capabilities, its context window.
 
-> Prefixing the model with an `agent_id` is a good practice to group completions for a given agent.
 
 #### messages
 
@@ -217,7 +224,7 @@ Learn more about deployments by reading the [Deployments](/deployments) section.
 
 Any key-value pair can be passed to the `metadata` parameter. Runs are searchable by metadata keys (list all the metadata keys for a given agent using the `query_completions` MCP tool). For example, "customer_id": "1234567890", "user_email": "john.doe@example.com".
 
-> Only for libraries that do not give access to the model, it is possible to pass the `agent_id` in the `metadata` parameter.
+> **Recommended**: Include `agent_id` in the `metadata` parameter to identify your agent and organize observability data. This is the preferred method for agent identification.
 
 #### max_tokens
 

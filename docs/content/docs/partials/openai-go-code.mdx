@@ -10,21 +10,94 @@ import (
 	"context"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
+	"github.com/invopop/jsonschema" // library to generate JSON schemas
 )
 
-func main() {
-	// setup AnotherAI client
-	client := openai.NewClient(
-		option.WithBaseURL("{{API_URL}}/v1"), // [!code highlight]
-		option.WithAPIKey("aai-***"), // use create_api_key MCP tool // [!code highlight]
-	)
+// setup AnotherAI client
+var client = openai.NewClient(
+	option.WithBaseURL("{{API_URL}}/v1"), // [!code highlight]
+	option.WithAPIKey("aai-***"), // use create_api_key MCP tool, should be stored in an environment variable ANOTHERAI_API_KEY // [!code highlight]
+)
 
+func MyPlainAgent() {
 	chatCompletion, err := client.Chat.Completions.New(
 		context.TODO(),
 		openai.ChatCompletionNewParams{
-			// your existing code
+			Model: "gpt-4o-mini",
+			Messages: []openai.ChatCompletionMessage{
+				{
+					Role:    "user",
+					Content: "Hello, how are you?",
+				},
+			},
+			Metadata: map[string]string{
+				"agent_id": "my-plain-agent",
+			},
 		},
 	)
+	// handle err if needed
+	// Cost and latency are available in the response as extra JSON fields on the choice object
+	// the Raw() method returns the raw JSON string that can be parsed as a float if needed
+	fmt.Printf("Cost USD: %s", chatCompletion.choices[0].JSON.ExtraFields["cost_usd"].Raw())
+	fmt.Printf("Duration Seconds: %s", chatCompletion.choices[0].JSON.ExtraFields["duration_seconds"].Raw())
+}
+
+func AgentWithTemplatedMessages() {
+	params := openai.ChatCompletionNewParams{
+		Model: "gpt-4o-mini",
+		Messages: []openai.ChatCompletionMessage{
+			{
+				Role:    "system",
+				Content: "You are a helpful assistant that is named {{name}}.",
+			}
+			{
+				Role:    "user",
+				Content: "What is your name ?",
+			},
+		},
+		Metadata: map[string]string{
+			"agent_id": "my-templated-messages-agent",
+		},
+	}
+	// Set AnotherAI specific fields using SetExtraFields
+	params.SetExtraFields(map[string]any{
+		"input": map[string]any{
+			"name": "John",
+		},
+	})
+	chatCompletion, err := client.Chat.Completions.New(context.TODO(), params)
+}
+
+func AgentWithStructuredOutput() {
+	type UserInfo struct {
+		Name string `json:"name"`
+		Age  int    `json:"age"`
+	}
+	UserInfoSchema := jsonschema.Reflect(&UserInfo{})
+	params := openai.ChatCompletionNewParams{
+		Model: "gpt-4o-mini",
+		Messages: []openai.ChatCompletionMessage{
+			{
+				Role:    "system",
+				Content: "Extract user information from the provided text.",
+			},
+			{
+				Role:    "user",
+				Content: "{{text}}",
+			},
+		},
+		Metadata: map[string]string{
+			"agent_id": "my-structured-output-agent",
+		},
+		ResponseFormat: openai.ChatCompletionNewParamsResponseFormatUnion{
+			OfJSONSchema: &openai.ResponseFormatJSONSchemaParam{
+				JSONSchema: openai.ResponseFormatJSONSchemaJSONSchemaParam{
+					Name:   "user_info_schema",
+					Schema: UserInfoSchema,
+				},
+			},
+		},
+	}
 }
 ```
 
