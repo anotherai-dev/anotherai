@@ -13,9 +13,11 @@ from core.services.documentation.documentation_search import DocumentationSearch
 @pytest.fixture
 def documentation_search():
     """Create a DocumentationSearch instance for testing."""
+    doc_path = Path(__file__).parent.parent.parent.parent.parent / "docs" / "content" / "docs"
+    assert doc_path.exists()
     return DocumentationSearch(
         config=DocumentationConfig(
-            directory=str(Path(__file__).parent.parent.parent.parent / "docs"),
+            directory=doc_path,
             variables={
                 "API_URL": "https://api.anotherai.dev",
                 "WEB_APP_URL": "https://anotherai.dev",
