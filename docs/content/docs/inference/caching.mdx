@@ -124,7 +124,7 @@ completion = client.chat.completions.create(
 # Example 3: Cache CAN be hit (using Deployment and "always")
 # Reason: use_cache="always" forces a cache check regardless of temperature.
 completion = client.chat.completions.create(
-  model="anotherai/travel-assistant/production#1", # Using an AnotherAI deployment
+  model="anotherai/deployment/travel-assistant:production#1", # Using an AnotherAI deployment
   # messages might be empty if the prompt is fully server-side
   messages=[], # required by SDK so pass an empty array
   extra_body={
@@ -169,7 +169,7 @@ When using [deployments](/deployments), the version hash automatically includes 
 # Both requests will use the same cache if inputs match
 # The deployment version determines model, temperature, and prompt
 completion1 = client.chat.completions.create(
-  model="anotherai/customer-support/production#1",
+  model="anotherai/deployment/customer-support:production#1",
   messages=[{"role": "user", "content": "How do I reset my password?"}],
   extra_body={
     "use_cache": "always"
@@ -178,7 +178,7 @@ completion1 = client.chat.completions.create(
 
 # Subsequent identical request hits the cache
 completion2 = client.chat.completions.create(
-  model="anotherai/customer-support/production#1",
+  model="anotherai/deployment/customer-support:production#1",
   messages=[{"role": "user", "content": "How do I reset my password?"}],
   extra_body={
     "use_cache": "always"

@@ -161,7 +161,7 @@ Always be helpful, accurate, and culturally sensitive."""
 ```js
 const completion = await openai.chat.completions.create({
   // Static components are now stored in the deployment
-  model: "anotherai/travel-assistant/production#1",
+  model: "anotherai/deployment/travel-assistant:production#1",
   messages: [],
   input: {
     country: destination,
@@ -174,7 +174,7 @@ const completion = await openai.chat.completions.create({
 ```python
 completion = await openai.chat.completions.create(
     # Model, temperature, system message, and agent_id are now in the deployment
-    model="anotherai/travel-assistant/production#1",
+    model="anotherai/deployment/travel-assistant:production#1",
     messages=[],
     extra_body={
         "input": {
