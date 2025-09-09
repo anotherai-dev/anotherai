@@ -80,14 +80,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </SignedOut>
             <SignedIn>
               <LayoutContent>{children}</LayoutContent>
+              <Suspense fallback={null}>
+                <CompletionModal />
+                <DeploymentModal />
+                <ApiKeysModal />
+              </Suspense>
             </SignedIn>
           </AuthProvider>
-
-          <Suspense fallback={null}>
-            <CompletionModal />
-            <DeploymentModal />
-            <ApiKeysModal />
-          </Suspense>
         </ToastProvider>
       </body>
     </html>
