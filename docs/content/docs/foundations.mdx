@@ -17,31 +17,54 @@ By using AnotherAI, you won't pay more than your current inference costs. We pri
 
 ### Inference
 
-AnotherAI exposes a compatible OpenAI API endpoint to `/v1/chat/completions`, which means that all SDKs that support OpenAI API will work with AnotherAI by simply changing the base URL and the API key. The list of models supported can be listed by calling the `list_models` MCP tool, or `curl {{API_URL}}/v1/models`.
+AnotherAI exposes a compatible OpenAI API endpoint to `/v1/chat/completions`, which means that all SDKs that support OpenAI API will work with AnotherAI by simply changing the base URL and the API key.
 
+> The API Key is usually stored in an environment variable (e-g `ANOTHERAI_API_KEY`). AnotherAI API keys start with `aai-...`. API Keys can be created in the UI or using the `create_api_key` MCP tool.
+
+<Tabs items={['Python (OpenAI SDK)', 'TypeScript (OpenAI SDK)', 'Go (OpenAI SDK)']}>
+<Tab>
 ```python
 import openai
 
 client = openai.OpenAI(
     base_url="{{API_URL}}/v1",
-    api_key="aai-***", # use create_api_key MCP tool to create an API key
+    api_key="aai-***", 
 )
 ```
+</Tab>
+<Tab>
+```typescript
+import OpenAI from 'openai';
 
-The primary benefit of using AnotherAI's API is gaining access to a unified interface for all AI models across the market. This eliminates the complexity of managing multiple API keys and switching between different provider SDKs - you can seamlessly use any model through a single, consistent API.
+const client = new OpenAI({
+    baseURL: '{{API_URL}}/v1',
+    apiKey: 'aai-***', 
+})
+```
+</Tab>
+<Tab>
+```go
+import (
+	"github.com/openai/openai-go/v2"
+	"github.com/openai/openai-go/v2/option"
+)
+
+var client = openai.NewClient(
+	option.WithBaseURL("{{API_URL}}/v1"),
+	option.WithAPIKey("aai-***"),
+)
+```
+</Tab>
+</Tabs>
+
+The primary benefit of using AnotherAI's API is gaining access to a unified interface for all AI models across the market. The list of models supported can be listed by calling the `list_models` MCP tool, or `curl {{API_URL}}/v1/models`. This eliminates the complexity of managing multiple API keys and switching between different provider SDKs - you can seamlessly use any model through a single, consistent API.
 
 Technical details:
 - all requests are proxied by AnotherAI, then sent to an AI provider.
 
-#### API keys
-
-- Check first if any `ANOTHERAI_API_KEY` is set in the environment variables.
-- To create a new API key, use the `create_api_key` MCP tool.
-
 ### API
 
 You can interact with the API directly, read the [OpenAPI spec]({{API_URL}}/openapi.json)
-
 
 ### Observability
 
@@ -97,25 +120,70 @@ Deployments allow you to update an agent's prompt or model without changing the 
 
 Building an AI agent is the process of picking the right value for each parameter of the `/v1/chat/completions` API. Let's go through each parameter one by one.
 
+<Tabs items={['Python (OpenAI SDK)', 'TypeScript (OpenAI SDK)', 'Go (OpenAI SDK)']}>
+<Tab>
+
 ```python
 completion = client.chat.completions.create(  # or client.beta.chat.completions.parse for structured outputs
-    model="..",
+    model="<agent_id>/..", # prefix model with agent_id to group completions
     messages=[...],
-    metadata={"agent_id": "...", "key": "value"},
+    metadata={"key": "value"}, # user provided metadata
     extra_body={
+        # AnotherAI specific parameters
         "input": {
             "variable_name": "variable_value"
         },
     },
     max_tokens=1000,
 )
+print(completion.choices[0].message.content)
+print(completion.choices[0].cost_usd)
+print(completion.choices[0].duration_seconds)
 ```
+</Tab>
+<Tab>
+```typescript
+const completion = await openai.chat.completions.create({
+    model="<agent_id>/..", // prefix model with agent_id to group completions
+    messages=[...],
+    metadata={"key": "value"}, // user provided metadata
+    input: { // AnotherAI specific parameter. Might need to silence a TS error
+        "variable_name": "variable_value"
+    },
+})
+console.log(completion.choices[0].message.content)
+console.log(completion.choices[0].cost_usd)
+console.log(completion.choices[0].duration_seconds)
+```
+</Tab>
+
+<Tab>
+```go
+params :=  openai.ChatCompletionNewParams{
+    model: "<agent_id>/..", // prefix model with agent_id to group completions
+    metadata: map[string]string{
+        "key": "value",
+    },
+}
+params.SetExtraFields(map[string]any{
+    "input": map[string]any{
+        ...
+    },
+})
+completion, err := client.Chat.Completions.New(context.TODO(), params)
+fmt.Printf("Cost USD: %s", completion.choices[0].JSON.ExtraFields["cost_usd"].Raw())
+fmt.Printf("Duration Seconds: %s", completion.choices[0].JSON.ExtraFields["duration_seconds"].Raw())
+```
+</Tab>
+</Tabs>
 
 #### model
 
 one of the model.id from the `list_models` MCP tool, or `curl {{API_URL}}/v1/models`
 AnotherAI allows non-OpenAI models to be used via a OpenAI SDK.
 each model listed by AnotherAI includes information about its price, its intelligence (quality_index), its capabilities, its context window.
+
+> Prefixing the model with an `agent_id` is a good practice to group completions for a given agent.
 
 #### messages
 
@@ -130,7 +198,7 @@ messages = [
 There are a few differences between the OpenAI API and AnotherAI API:
 - **[Input variables](/observability/input-variables) (strongly recommended)**: Use Jinja2 template syntax to separate static instructions from dynamic data. This is a best practice that significantly improves observability, debugging, and prompt management.
 
-```json
+```
 messages=[{
     "role": "user", 
     "content": "Analyze this email: {{email_content}}"
@@ -147,9 +215,9 @@ Learn more about deployments by reading the [Deployments](/deployments) section.
 
 #### metadata
 
-`metadata.agent_id`: (highly recommended) Use a descriptive agent_id to identify the agent in the logs. For example: `email-classifier`, `product-review-sentiment-analyzer`, `customer-support-chatbot`, etc. 
-
 Any key-value pair can be passed to the `metadata` parameter. Runs are searchable by metadata keys (list all the metadata keys for a given agent using the `query_completions` MCP tool). For example, "customer_id": "1234567890", "user_email": "john.doe@example.com".
+
+> Only for libraries that do not give access to the model, it is possible to pass the `agent_id` in the `metadata` parameter.
 
 #### max_tokens
 
@@ -159,6 +227,8 @@ Any key-value pair can be passed to the `metadata` parameter. Runs are searchabl
 
 `input`: (strongly recommended for most use cases) provides variables to the LLM when using [input variables](/observability/input-variables). **Always use input variables instead of string concatenation** when you have dynamic content - it dramatically improves debugging, observability, and prompt management.
 
+<Tabs items={['Python (OpenAI SDK)', 'TypeScript (OpenAI SDK)', 'Go (OpenAI SDK)']}>
+<Tab language="python">
 ```python
 completion = client.chat.completions.create(
     messages=[{"role": "user", "content": "Analyze this email: {{email_content}}"}],
@@ -169,12 +239,42 @@ completion = client.chat.completions.create(
     }
 )
 ```
+</Tab>
+<Tab language="typescript">
+```typescript
+const completion = await openai.chat.completions.create({
+    messages=[{"role": "user", "content": "Analyze this email: {{email_content}}"}],
+    input: { // AnotherAI specific parameter. Might need to silence a TS error
+        email_content: "Dear team, please review the quarterly report...",
+    },
+})
+```
+</Tab>
+<Tab language="go">
+```go
+params :=  openai.ChatCompletionNewParams{
+    // OpenAI supported fields
+}
+// AnotherAI specific fields
+params.SetExtraFields(map[string]any{
+    "input": map[string]any{
+        "email_content": "Dear team, please review the quarterly report...",
+    },
+})
+```
+</Tab>
+</Tabs>
+
+
 
 **Best practice:** Use input variables for any dynamic content rather than concatenating strings in your code. This separates your prompt logic from your application logic and makes debugging much easier.
 
 #### response_format
 
 `response_format`: (optional) ensures AI models generate responses that perfectly match your defined JSON Schema. Instead of hoping the model follows formatting instructions, you get guaranteed compliance with your data structure. Use structured outputs when you need reliable data extraction, classification, or any scenario requiring consistent JSON format.
+
+<Tabs items={['Python (OpenAI SDK)', 'TypeScript (OpenAI SDK)', 'Go (OpenAI SDK)']}>
+<Tab language="python">
 
 ```python
 from pydantic import BaseModel
@@ -193,12 +293,63 @@ completion = client.beta.chat.completions.parse(
 user = completion.choices[0].message.parsed  # Direct access to typed object
 ```
 
+</Tab>
+<Tab language="typescript">
+```typescript
+import { z } from "zod";
+import { zodResponseFormat } from "openai/helpers/zod";
+
+const UserInfo = z.object({
+    name: z.string(),
+    age: z.number(),
+    email: z.string()
+})
+
+const completion = await openai.beta.chat.completions.parse({
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Extract user info: John Doe, 30, john@example.com"}],
+    response_format: zodResponseFormat(UserInfo, "UserInfo"),
+})
+
+user = completion.output_parsed
+```
+</Tab>
+<Tab language="go">
+```go
+import "github.com/invopop/jsonschema"
+
+type UserInfo struct {
+    Name string `json:"name"`
+    Age  int    `json:"age"`
+    Email string `json:"email"`
+}
+
+UserInfoSchema := jsonschema.Reflect(&UserInfo{})
+
+chatCompletion, err := client.Chat.Completions.New(context.TODO(), openai.ChatCompletionNewParams{
+    Model: "autopilot-openai-beta-parse/" + model,
+    Messages: ...,
+    ResponseFormat: openai.ChatCompletionNewParamsResponseFormatUnion{
+        OfJSONSchema: &openai.ResponseFormatJSONSchemaParam{
+            JSONSchema: openai.ResponseFormatJSONSchemaJSONSchemaParam{
+                Name:   "user_info",
+                Schema: UserInfo,
+            },
+        },
+    },
+})
+```
+</Tab>
+</Tabs>
+
 Learn more about structured outputs in the [Structured Outputs](/inference/structured-outputs) section.
 
 ### Response
 
 AnotherAI returns the same response format as the OpenAI API, ensuring full compatibility with existing code while adding additional fields for enhanced functionality.
 
+<Tabs items={['Python (OpenAI SDK)', 'TypeScript (OpenAI SDK)', 'Go (OpenAI SDK)']}>
+<Tab language="python">
 ```python
 completion = client.chat.completions.create(...)
 content = completion.choices[0].message.content
@@ -207,14 +358,53 @@ content = completion.choices[0].message.content
 completion = client.beta.chat.completions.parse(..., response_format=...)
 parsed_output = completion.choices[0].message.parsed
 ```
+</Tab>
+<Tab language="typescript">
+```typescript
+const completion = await openai.chat.completions.create(...)
+const content = completion.choices[0].message.content
+```
+</Tab>
+<Tab language="go">
+```go
+completion, err := client.Chat.Completions.New(context.TODO(), openai.ChatCompletionNewParams{...})
+if err != nil {
+    ...
+}
+content := completion.Choices[0].Message.Content
+```
+</Tab>
+</Tabs>
 
 #### cost and latency
 
 AnotherAI adds cost and latency to the response. Learn more about cost and latency in the [Cost Metadata](/inference/cost) section.
 
+<Tabs items={['Python (OpenAI SDK)', 'TypeScript (OpenAI SDK)', 'Go (OpenAI SDK)']}>
+<Tab language="python">
 ```python
 cost = getattr(completion.choices[0], 'cost_usd', None)
 latency = getattr(completion.choices[0], 'duration_seconds', None)
 print(f"Latency (s): {latency:.2f}")
 print(f"Cost   ($): ${cost:.6f}")
 ```
+</Tab>
+<Tab language="typescript">
+```typescript
+const cost = completion.choices[0].cost_usd
+const latency = completion.choices[0].duration_seconds
+console.log(`Cost: $${cost.toFixed(6)}`)
+console.log(`Latency: ${latency.toFixed(2)}s`)
+```
+</Tab>
+<Tab language="go">
+```go
+completion, _ := client.Chat.Completions.New(context.TODO(), openai.ChatCompletionNewParams{...})
+cost := strconv.ParseFloat(completion.Choices[0].JSON.ExtraFields["cost_usd"].Raw(), 32)
+latency := strconv.ParseFloat(completion.Choices[0].JSON.ExtraFields["duration_seconds"].Raw(), 32)
+fmt.Printf("Cost: $%f", cost)
+fmt.Printf("Latency: %fs", latency)
+
+```
+</Tab>
+</Tabs>
