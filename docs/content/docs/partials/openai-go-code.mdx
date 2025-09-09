@@ -8,8 +8,10 @@ package main
 
 import (
 	"context"
-	"github.com/openai/openai-go"
-	"github.com/openai/openai-go/option"
+	// Make sure to use the v2
+	"github.com/openai/openai-go/v2"
+	"github.com/openai/openai-go/v2/option"
+	"github.com/openai/openai-go/v2/shared"
 	"github.com/invopop/jsonschema" // library to generate JSON schemas
 )
 
@@ -30,7 +32,7 @@ func MyPlainAgent() {
 					Content: "Hello, how are you?",
 				},
 			},
-			Metadata: map[string]string{
+			Metadata: shared.Metadata{
 				"agent_id": "my-plain-agent",
 			},
 		},
@@ -55,7 +57,7 @@ func AgentWithTemplatedMessages() {
 				Content: "What is your name ?",
 			},
 		},
-		Metadata: map[string]string{
+		Metadata: shared.Metadata{
 			"agent_id": "my-templated-messages-agent",
 		},
 	}
@@ -86,7 +88,7 @@ func AgentWithStructuredOutput() {
 				Content: "{{text}}",
 			},
 		},
-		Metadata: map[string]string{
+		Metadata: shared.Metadata{
 			"agent_id": "my-structured-output-agent",
 		},
 		ResponseFormat: openai.ChatCompletionNewParamsResponseFormatUnion{
@@ -98,6 +100,24 @@ func AgentWithStructuredOutput() {
 			},
 		},
 	}
+}
+
+func AgentUsingADeployment() {
+	params := openai.ChatCompletionNewParams{
+		// Pass the deployment id as a plain string in the Model
+		Model: "anotherai/deployment/my-structured-output-agent:production#1",
+		// No need to pass messages unless there are some messages as part of the input
+		Metadata: shared.Metadata{
+			// No need to pass agent_id here since it will be passed by the deployment
+		},
+	}
+	// pass the input variables as needed
+	params.SetExtraFields(map[string]any{
+		"input": map[string]any{
+			"text": "John is 30 years old.",
+		},
+	})
+	chatCompletion, err := client.Chat.Completions.New(context.TODO(), params)
 }
 ```
 
