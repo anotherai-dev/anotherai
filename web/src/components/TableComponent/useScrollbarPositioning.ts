@@ -95,17 +95,17 @@ export function useScrollbarPositioning() {
   const handleScroll = () => {
     // Show scrollbar during scroll events
     setIsScrolling(true);
-    
+
     // Clear any existing scroll timeout
     if (scrollTimeoutRef.current) {
       clearTimeout(scrollTimeoutRef.current);
     }
-    
+
     // Hide scrollbar after scroll ends (with delay)
     scrollTimeoutRef.current = setTimeout(() => {
       setIsScrolling(false);
     }, 1000); // Keep visible for 1 second after scrolling stops
-    
+
     // Update dimensions during scroll
     if (containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
