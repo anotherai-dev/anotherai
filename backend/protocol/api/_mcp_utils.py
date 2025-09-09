@@ -11,10 +11,10 @@ from mcp.types import CallToolRequestParams
 from pydantic import AnyHttpUrl, BaseModel, ValidationError
 from structlog import get_logger
 
-from core.consts import ANOTHERAI_API_ROOT_URL, AUTHORIZATION_SERVER
+from core.consts import ANOTHERAI_API_URL, AUTHORIZATION_SERVER
 from core.domain.exceptions import InvalidTokenError
 from core.domain.tenant_data import TenantData
-from core.services.documentation_search import DocumentationSearch
+from core.services.documentation.documentation_search import DocumentationSearch
 from protocol.api._dependencies._lifecycle import lifecyle_dependencies
 from protocol.api._dependencies._services import completion_runner
 from protocol.api._services.agent_service import AgentService
@@ -166,5 +166,5 @@ def build_auth_provider() -> AuthProvider:
     return RemoteAuthProvider(
         token_verifier=CustomTokenVerifier(),
         authorization_servers=[AnyHttpUrl(AUTHORIZATION_SERVER)],
-        resource_server_url=f"{ANOTHERAI_API_ROOT_URL}/mcp",
+        resource_server_url=f"{ANOTHERAI_API_URL}/mcp",
     )

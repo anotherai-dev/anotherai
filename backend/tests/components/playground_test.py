@@ -1,3 +1,6 @@
+import pytest
+from fastmcp.exceptions import ToolError
+
 from core.domain.models.models import Model
 from core.domain.models.providers import Provider
 from tests.components._common import IntegrationTestClient
@@ -328,3 +331,26 @@ async def test_with_variables(test_api_client: IntegrationTestClient):
         "type": "object",
         "properties": {"name": {"type": "string"}},
     }
+
+
+async def test_playground_empty_messages(test_api_client: IntegrationTestClient):
+    with pytest.raises(ToolError):
+        await test_api_client.call_tool(
+            "playground",
+            {
+                "models": "gpt-4.1",
+                "author_name": "user",
+                "agent_id": "test-agent",
+                "inputs": [
+                    {
+                        "variables": {"name": "Toulouse"},
+                    },
+                    {
+                        "variables": {"name": "Pittsburgh"},
+                    },
+                ],
+                "experiment_title": "Capital Extractor Test Experiment",
+            },
+        )
+
+    assert not test_api_client.httpx_mock.get_requests()

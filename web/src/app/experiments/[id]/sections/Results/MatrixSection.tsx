@@ -146,6 +146,7 @@ export function MatrixSection(props: Props) {
         rowHeaders={tableData.rowHeaders}
         data={tableData.data}
         minColumnWidth={400}
+        hideScrollbar={false}
       />
     </div>
   );

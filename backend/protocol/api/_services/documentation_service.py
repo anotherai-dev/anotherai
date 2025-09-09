@@ -1,7 +1,7 @@
 from typing import final
 
 from core.domain.exceptions import BadRequestError, ObjectNotFoundError
-from core.services.documentation_search import DocumentationSearch
+from core.services.documentation.documentation_search import DocumentationSearch
 from protocol.api._api_models import SearchDocumentationResponse
 
 

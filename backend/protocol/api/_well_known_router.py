@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse, RedirectResponse
 
-from core.consts import ANOTHERAI_API_ROOT_URL, AUTHORIZATION_SERVER
+from core.consts import ANOTHERAI_API_URL, AUTHORIZATION_SERVER
 
 router = APIRouter(prefix="/.well-known", include_in_schema=False)
 
@@ -12,11 +12,11 @@ router = APIRouter(prefix="/.well-known", include_in_schema=False)
 async def oauth_protected_resource():
     return JSONResponse(
         {
-            "resource": f"{ANOTHERAI_API_ROOT_URL}/mcp",
+            "resource": f"{ANOTHERAI_API_URL}/mcp",
             "authorization_servers": [AUTHORIZATION_SERVER],
             "scopes_supported": ["openid", "email", "profile"],
             "resource_name": "Another AI",
-            "resource_documentation": f"{ANOTHERAI_API_ROOT_URL}/mcp",
+            "resource_documentation": f"{ANOTHERAI_API_URL}/mcp",
             "bearer_methods_supported": ["header"],
         },
     )
