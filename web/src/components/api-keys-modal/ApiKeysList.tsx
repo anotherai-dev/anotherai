@@ -62,20 +62,14 @@ export function ApiKeysList({ apiKeys }: ApiKeysListProps) {
     );
   }
 
-  const columnHeaders = ["Name", "Created by", "Created on", "Last used", "Key", ""];
+  const columnHeaders = ["Name", "Created on", "Key", ""];
 
   const tableData = apiKeys.map((apiKey) => [
     <span key="name" className="font-medium text-gray-900">
       {apiKey.name}
     </span>,
-    <span key="created-by" className="text-gray-700">
-      {apiKey.created_by}
-    </span>,
     <span key="created-on" className="text-gray-700">
       {formatDate(apiKey.created_at)}
-    </span>,
-    <span key="last-used" className="text-gray-700">
-      {apiKey.last_used_at ? formatDate(apiKey.last_used_at) : "Never"}
     </span>,
     <code key="key" className="text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-700">
       {apiKey.partial_key}
@@ -95,7 +89,7 @@ export function ApiKeysList({ apiKeys }: ApiKeysListProps) {
       <SimpleTableComponent
         columnHeaders={columnHeaders}
         data={tableData}
-        columnWidths={[undefined, "120px", "120px", "120px", "150px", "40px"]}
+        columnWidths={[undefined, "120px", "150px", "40px"]}
         maxHeight="100%"
         cellVerticalAlign="middle"
         className="text-sm"
