@@ -21,8 +21,8 @@ AnotherAI exposes a compatible OpenAI API endpoint to `/v1/chat/completions`, wh
 
 > The API Key is usually stored in an environment variable (e-g `ANOTHERAI_API_KEY`). AnotherAI API keys start with `aai-...`. API Keys can be created in the UI or using the `create_api_key` MCP tool.
 
-<Tabs items={['Python (OpenAI SDK)', 'TypeScript (OpenAI SDK)', 'Go (OpenAI SDK)']}>
-<Tab>
+<Tabs groupId="framework" items={['Python (OpenAI SDK)', 'TypeScript (OpenAI SDK)', 'Go (OpenAI SDK)']}>
+<Tab value="Python (OpenAI SDK)">
 ```python
 import openai
 
@@ -32,7 +32,7 @@ client = openai.OpenAI(
 )
 ```
 </Tab>
-<Tab>
+<Tab value="TypeScript (OpenAI SDK)">
 ```typescript
 import OpenAI from 'openai';
 
@@ -42,7 +42,7 @@ const client = new OpenAI({
 })
 ```
 </Tab>
-<Tab>
+<Tab value="Go (OpenAI SDK)">
 ```go
 import (
 	"github.com/openai/openai-go/v2"
@@ -120,8 +120,8 @@ Deployments allow you to update an agent's prompt or model without changing the 
 
 Building an AI agent is the process of picking the right value for each parameter of the `/v1/chat/completions` API. Let's go through each parameter one by one.
 
-<Tabs items={['Python (OpenAI SDK)', 'TypeScript (OpenAI SDK)', 'Go (OpenAI SDK)']}>
-<Tab>
+<Tabs groupId="framework" items={['Python (OpenAI SDK)', 'TypeScript (OpenAI SDK)', 'Go (OpenAI SDK)']}>
+<Tab value="Python (OpenAI SDK)">
 
 ```python
 completion = client.chat.completions.create(  # or client.beta.chat.completions.parse for structured outputs
@@ -141,7 +141,7 @@ print(completion.choices[0].cost_usd)
 print(completion.choices[0].duration_seconds)
 ```
 </Tab>
-<Tab>
+<Tab value="TypeScript (OpenAI SDK)">
 ```typescript
 const completion = await openai.chat.completions.create({
     model="<agent_id>/..", // prefix model with agent_id to group completions
@@ -157,7 +157,7 @@ console.log(completion.choices[0].duration_seconds)
 ```
 </Tab>
 
-<Tab>
+<Tab value="Go (OpenAI SDK)">
 ```go
 params :=  openai.ChatCompletionNewParams{
     model: "<agent_id>/..", // prefix model with agent_id to group completions
@@ -227,8 +227,8 @@ Any key-value pair can be passed to the `metadata` parameter. Runs are searchabl
 
 `input`: (strongly recommended for most use cases) provides variables to the LLM when using [input variables](/observability/input-variables). **Always use input variables instead of string concatenation** when you have dynamic content - it dramatically improves debugging, observability, and prompt management.
 
-<Tabs items={['Python (OpenAI SDK)', 'TypeScript (OpenAI SDK)', 'Go (OpenAI SDK)']}>
-<Tab language="python">
+<Tabs groupId="framework" items={['Python (OpenAI SDK)', 'TypeScript (OpenAI SDK)', 'Go (OpenAI SDK)']}>
+<Tab value="Python (OpenAI SDK)">
 ```python
 completion = client.chat.completions.create(
     messages=[{"role": "user", "content": "Analyze this email: {{email_content}}"}],
@@ -240,7 +240,7 @@ completion = client.chat.completions.create(
 )
 ```
 </Tab>
-<Tab language="typescript">
+<Tab value="TypeScript (OpenAI SDK)">
 ```typescript
 const completion = await openai.chat.completions.create({
     messages=[{"role": "user", "content": "Analyze this email: {{email_content}}"}],
@@ -250,7 +250,7 @@ const completion = await openai.chat.completions.create({
 })
 ```
 </Tab>
-<Tab language="go">
+<Tab value="Go (OpenAI SDK)">
 ```go
 params :=  openai.ChatCompletionNewParams{
     // OpenAI supported fields
@@ -273,8 +273,8 @@ params.SetExtraFields(map[string]any{
 
 `response_format`: (optional) ensures AI models generate responses that perfectly match your defined JSON Schema. Instead of hoping the model follows formatting instructions, you get guaranteed compliance with your data structure. Use structured outputs when you need reliable data extraction, classification, or any scenario requiring consistent JSON format.
 
-<Tabs items={['Python (OpenAI SDK)', 'TypeScript (OpenAI SDK)', 'Go (OpenAI SDK)']}>
-<Tab language="python">
+<Tabs groupId="framework" items={['Python (OpenAI SDK)', 'TypeScript (OpenAI SDK)', 'Go (OpenAI SDK)']}>
+<Tab value="Python (OpenAI SDK)">
 
 ```python
 from pydantic import BaseModel
@@ -294,7 +294,7 @@ user = completion.choices[0].message.parsed  # Direct access to typed object
 ```
 
 </Tab>
-<Tab language="typescript">
+<Tab value="TypeScript (OpenAI SDK)">
 ```typescript
 import { z } from "zod";
 import { zodResponseFormat } from "openai/helpers/zod";
@@ -314,7 +314,7 @@ const completion = await openai.beta.chat.completions.parse({
 user = completion.output_parsed
 ```
 </Tab>
-<Tab language="go">
+<Tab value="Go (OpenAI SDK)">
 ```go
 import "github.com/invopop/jsonschema"
 
@@ -348,8 +348,8 @@ Learn more about structured outputs in the [Structured Outputs](/inference/struc
 
 AnotherAI returns the same response format as the OpenAI API, ensuring full compatibility with existing code while adding additional fields for enhanced functionality.
 
-<Tabs items={['Python (OpenAI SDK)', 'TypeScript (OpenAI SDK)', 'Go (OpenAI SDK)']}>
-<Tab language="python">
+<Tabs groupId="framework" items={['Python (OpenAI SDK)', 'TypeScript (OpenAI SDK)', 'Go (OpenAI SDK)']}>
+<Tab value="Python (OpenAI SDK)">
 ```python
 completion = client.chat.completions.create(...)
 content = completion.choices[0].message.content
@@ -359,13 +359,13 @@ completion = client.beta.chat.completions.parse(..., response_format=...)
 parsed_output = completion.choices[0].message.parsed
 ```
 </Tab>
-<Tab language="typescript">
+<Tab value="TypeScript (OpenAI SDK)">
 ```typescript
 const completion = await openai.chat.completions.create(...)
 const content = completion.choices[0].message.content
 ```
 </Tab>
-<Tab language="go">
+<Tab value="Go (OpenAI SDK)">
 ```go
 completion, err := client.Chat.Completions.New(context.TODO(), openai.ChatCompletionNewParams{...})
 if err != nil {
@@ -380,8 +380,8 @@ content := completion.Choices[0].Message.Content
 
 AnotherAI adds cost and latency to the response. Learn more about cost and latency in the [Cost Metadata](/inference/cost) section.
 
-<Tabs items={['Python (OpenAI SDK)', 'TypeScript (OpenAI SDK)', 'Go (OpenAI SDK)']}>
-<Tab language="python">
+<Tabs groupId="framework" items={['Python (OpenAI SDK)', 'TypeScript (OpenAI SDK)', 'Go (OpenAI SDK)']}>
+<Tab value="Python (OpenAI SDK)">
 ```python
 cost = getattr(completion.choices[0], 'cost_usd', None)
 latency = getattr(completion.choices[0], 'duration_seconds', None)
@@ -389,7 +389,7 @@ print(f"Latency (s): {latency:.2f}")
 print(f"Cost   ($): ${cost:.6f}")
 ```
 </Tab>
-<Tab language="typescript">
+<Tab value="TypeScript (OpenAI SDK)">
 ```typescript
 const cost = completion.choices[0].cost_usd
 const latency = completion.choices[0].duration_seconds
@@ -397,7 +397,7 @@ console.log(`Cost: $${cost.toFixed(6)}`)
 console.log(`Latency: ${latency.toFixed(2)}s`)
 ```
 </Tab>
-<Tab language="go">
+<Tab value="Go (OpenAI SDK)">
 ```go
 completion, _ := client.Chat.Completions.New(context.TODO(), openai.ChatCompletionNewParams{...})
 cost := strconv.ParseFloat(completion.Choices[0].JSON.ExtraFields["cost_usd"].Raw(), 32)
