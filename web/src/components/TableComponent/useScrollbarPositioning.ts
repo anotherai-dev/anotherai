@@ -5,7 +5,7 @@ export function useScrollbarPositioning() {
   const [containerLeft, setContainerLeft] = useState(0);
   const [containerBottom, setContainerBottom] = useState(0);
   const [isHovering, setIsHovering] = useState(false);
-  const hoverTimeoutRef = useRef<NodeJS.Timeout>();
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Check if table bottom is visible in viewport
