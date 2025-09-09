@@ -17,7 +17,6 @@ from core.services.messages.messages_utils import json_schema_for_template_and_v
 from core.services.models_service import suggest_model
 from core.storage.deployment_storage import DeploymentStorage
 from core.utils.schema_sanitation import streamline_schema, validate_schema
-from core.utils.schemas import IncompatibleSchemaError, JsonSchema
 from protocol.api._run_models import (
     CHAT_COMPLETION_REQUEST_UNSUPPORTED_FIELDS,
     OpenAIProxyChatCompletionRequest,
@@ -350,10 +349,17 @@ def _check_output_schema_compatibility(
             "Please create a new deployment with the response format you want to use.",
         )
 
-    try:
-        JsonSchema(deployment_schema.json_schema).check_compatible(JsonSchema(requested_schema.json_schema))
-    except IncompatibleSchemaError as e:
-        raise BadRequestError(
-            f"The requested response format is not compatible with the deployment's response format.\n{e}",
-        ) from None
+    # It is actually a bad idea to check for schema compatibility here.
+    # OpenAI SDKs tend to do werid stuff with schemas before sending them, meaning that schemas imported from a
+    # deployment might not be compatible with a schema sent from the SDK.
+    # TODO: we could try to be smarter here:
+    # - accept deployments where the only difference is the "required" field or nullable fields
+    # - change streamline_schema to make all fields required as expected by the OpenAI SDK
+    # In any case, the `deployment_tests.test_response_formats` should pass
+    # try:
+    #     JsonSchema(deployment_schema.json_schema).check_compatible(JsonSchema(requested_schema.json_schema))
+    # except IncompatibleSchemaError as e:
+    #     raise BadRequestError(
+    #         f"The requested response format is not compatible with the deployment's response format.\n{e}",
+    #     ) from None
     return requested_schema

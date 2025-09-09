@@ -97,9 +97,11 @@ In WorkflowAI, deployments are unique per agent schema. In AnotherAI, deployment
 
 You can fetch all existing deployments for a given agent using the `list_deployments` tool with the agent_id parameter.
 
-A migrated deployment will have the shape: `<agent_id>/<deployment_deployment_environment>#<deployment_number>`
+A migrated deployment will likely have the shape: `<agent_id>:<deployment_deployment_environment>#<deployment_number>`
 
-In the example above, the migrated deployment will have the shape: `analyze-book-characters/production#1`
+In the example above, the migrated deployment will look like: `analyze-book-characters:production#1`.
+
+> It is possible that a deployment was created with a slightly different format. Check the available deployments using the `list_deployments` tool and make sure to adjust the deployment id accordingly.
 
 If the deployment has not been migrated, tell the user to contact the WorkflowAI support.
 
@@ -143,7 +145,7 @@ export interface AnalyzeBookCharactersTaskOutput {
 
 export async function analyzeBookCharacters(input: AnalyzeBookCharactersTaskInput): Promise<AnalyzeBookCharactersTaskOutput> {
     const completion = await client.chat.completions.create({
-        model: "anotherai/deployment/analyze-book-characters/production#1", // use the "anotherai/deployment/<deployment_id>" id here
+        model: "anotherai/deployment/analyze-book-characters:production#1", // use the "anotherai/deployment/<deployment_id>" id here
         messages: [], // messages should remain empty since the prompt is stored in AnotherAI
         // response_format is not needed here since it is handled by the deployment
         input: input, // input is AnotherAI specific. You may have to silence a TS error
@@ -169,7 +171,7 @@ export type AnalyzeBookCharactersTaskOutput = z.infer<typeof AnalyzeBookCharacte
 export async function analyzeBookCharacters(input: AnalyzeBookCharactersTaskInput): Promise<AnalyzeBookCharactersTaskOutput> {
   // Use .parse() instead of .create() when using the beta client
   const completion = await client.beta.chat.completions.parse({
-      model: "anotherai/deployment/analyze-book-characters/production#1", // use the "anotherai/deployment/<deployment_id>" id here
+      model: "anotherai/deployment/analyze-book-characters:production#1", // use the "anotherai/deployment/<deployment_id>" id here
       messages: [], // messages should remain empty since the prompt is stored in AnotherAI
       response_format: zodTextFormat(AnalyzeBookCharactersTaskOutputSchema, "AnalyzeBookCharactersTaskOutput"),
       input: input, // input is AnotherAI specific. You may have to silence a TS error
@@ -192,7 +194,7 @@ If hitting the API directly is needed, the payload will look like:
 ```json
 {
     // prefix the model with the agent_id 
-    "model": "anotherai/deployment/analyze-book-characters/production#1", // use the "anotherai/deployment/<deployment_id>" id here
+    "model": "anotherai/deployment/analyze-book-characters:production#1", // use the "anotherai/deployment/<deployment_id>" id here
     "messages": [],
     // no need to pass the response_format here, it is handle by the deployment
     "input": ..., // corresponds to task_input in WorkflowAI,
