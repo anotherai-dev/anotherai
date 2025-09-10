@@ -10,7 +10,10 @@ interface ImproveAgentAnnotationsInstructionsProps {
   experimentId: string;
 }
 
-export function ImproveAgentAnnotationsInstructions({ agentId, experimentId }: ImproveAgentAnnotationsInstructionsProps) {
+export function ImproveAgentAnnotationsInstructions({
+  agentId,
+  experimentId,
+}: ImproveAgentAnnotationsInstructionsProps) {
   const { showToast } = useToast();
 
   const promptText = `Adjust anotherai/agent/${agentId} based on the annotations that have been added in anotherai/experiment/${experimentId}. `;
