@@ -4,6 +4,8 @@ summary: Learn how to build AI agents with AnotherAI's unified API and observabi
 description: Step-by-step guide to creating, configuring, and deploying AI agents using AnotherAI
 ---
 
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
 ## Getting Started
 
 Because AnotherAI is an OpenAI-compatible proxy, building an agent has minimal configuration changes from standard OpenAI implementations. There are a few things you need to know to make sure your agent is AnotherAI-compatible.
@@ -22,9 +24,15 @@ Build an agent using AnotherAI that extracts structured data from invoices
 
 Claude Code will automatically set up the proper configuration and best practices for you.
 
+[IMAGE TODO: PROMPT SENT TO CLAUDE CODE??]
+
 ### Manual Setup
 
 If you prefer to build manually or want to understand the configuration details, follow the guide below.
+
+<Steps>
+
+<Step>
 
 ### Base URL and AnotherAI API Key Setup
 
@@ -67,6 +75,10 @@ client = openai.OpenAI(
 
 </Tabs>
 
+</Step>
+
+<Step>
+
 ### Setting up Provider Keys
 
 Provider keys determine which AI provider credentials AnotherAI uses to make requests to models.
@@ -82,6 +94,9 @@ GOOGLE_API_KEY=...
 
 **For cloud users**: AnotherAI provides default provider access, but you can optionally bring your own keys for cost control or quota management through the web interface.
 
+</Step>
+
+<Step>
 
 ### Metadata
 
@@ -113,6 +128,9 @@ completion = client.chat.completions.create(
 )
 ```
 
+</Step>
+
+<Step>
 
 ### Input and Output Design
 
@@ -178,6 +196,10 @@ completion = client.beta.chat.completions.parse(
 
 result = completion.choices[0].message.parsed
 ```
+
+</Step>
+
+</Steps>
 
 ### Next Steps
 

@@ -1,5 +1,0 @@
-{
-  "title": "Agents",
-  "icon": "UserGroup",
-  "pages": ["index", "building", "migrating", "improving", "evaluating", "debugging", "tools", "memory"]
-}

@@ -6,9 +6,14 @@ description: Learn how to improve your agents using annotations and debuging pro
 
 import { Step, Steps } from 'fumadocs-ui/components/steps';
 
-# Experiments
+# Experiments 
 
-Experiments allow you to systematically compare different configurations of your agent to find the optimal setup for your use case across one or more inputs. By testing variations of prompts, models, and other parameters, you can make data-driven decisions to improve your agent's performance.
+Throughout the process of creating a new agent, in order to make the best agent possible, you may need to:
+- Compare performance across different models (GPT-4, Claude, Gemini, etc.)
+- Test multiple prompt variations to find the most effective approach
+- Optimize for specific metrics like cost, speed, and accuracy. 
+
+Experiments allow you to systematically compare each of these different parameters of your agent to find the optimal setup for your use case across one or more inputs.
 
 ### Creating Experiments
 
@@ -16,15 +21,17 @@ To create an experiment:
 
 <Steps>
 <Step>
-### Configure MCP
+#### Configure MCP
 Make sure you have the AnotherAI MCP configured and enabled. You can view the set up steps [here](/docs).
 </Step>
 
 <Step>
-### Create Experiment
-Then just ask Claude Code (or the AI coding agent you're using) to set up experiments for you
+#### Create Experiment
+Then just ask Claude Code (or the AI coding agent you're using) to set up experiments for you. We'll cover some common examples and sample messages you can use below.
 </Step>
 </Steps>
+
+[IMAGE TODO: SCREENSHOT OF PROMPT IN CLAUDE CODE ASKING FOR AN EXPERIMENT]
 
 The most common parameters to experiment with are prompts and models, however you can also experiment with changes to other parameters like temperature. 
 
@@ -40,11 +47,13 @@ that compares the current prompt with a new prompt that better emphasizes adopti
 the tone lists in the input 
 ```
 
+[IMAGE TODO: SCREENSHOT OF EXPERIMENT VIEW SHOWING TWO PROMPTS SIDE BY SIDE]
+
 ### Models
 
 Different models excel at different tasks. AnotherAI supports over 100 different models, and experiments can help you choose the right model for your agent, depending on its needs.
 
-For example:
+Example:
 
 ```
 Create an AnotherAI experiment to help me find a faster model for @email-rewriter.py,
@@ -53,12 +62,14 @@ but still maintains the same tone and verbosity considerations as my current mod
 
 If you have a specific model in mind that you want to try - **for example, a newly released model** - you can ask Claude to help you test that model against your existing agent version. You can always request that Claude use inputs from existing completions, to ensure that you're testing with real, production data. 
 
-For example:
+Example:
 
 ```
 Can you retry the last 5 completions of @email-rewriter.py and compare the outputs with 
 GPT 5 mini?
 ```
+
+[IMAGE TODO: SCREENSHOT OF EXPERIMENT VIEW SHOWING TWO MODELS SIDE BY SIDE]
 
 ### Other Parameters
 
@@ -84,10 +95,18 @@ Temperature is the most important parameter to experiment with after prompts and
   - Brainstorming
   - Generating diverse options
 
+Example:
+
 ```
 Test my email-rewriter agent with temperatures 0.2, 0.5, and 0.8 to find 
 the right balance between creativity and professionalism
 ```
+
+[IMAGE TODO: SCREENSHOT OF EXPERIMENT VIEW SHOWING 3 versions with different temperatures]
+
+### Tips:
+- Always reference the specific files of your agent when requesting experiments to avoid any ambiguity about what should be tested
+- Pick one variable to test with at a time (ex. models, prompts) to make sure that you can easily attribute a given variable on the agent's changes in performance.
 
 ### Analyzing Experiment Results
 
@@ -102,6 +121,7 @@ Analyze the results of experiment/019885bb-24ea-70f8-c41b-0cbb22cc3c00
 and recommend which configuration performs best specifically for both accuracy and cost
 ```
 
+[IMAGE TODO: SCREENSHOT OF CLAUDE CODE ANALYSIS OF EXPERIMENT RESULTS?]
 
 # Annotations
 
@@ -124,12 +144,16 @@ Using text-based annotations allow you to provide thorough, nuanced feedback in 
 
 However if you would like to incorporate more quantitative ratings, you can do that by using scores, which are described below!
 
+[IMAGE TODO: SCREENSHOT OF TEXT-BASED ANNOTATIONS IN ANOTHERAI]
+
 #### Scores
 Scores can be added to annotations to provide quantitative evaluations. There are no predefined scores keys, you can add whatever is important to you. Some examples of common score metrics are:
 - Accuracy (does the content match what was expected?)
 - Tone (how appropriate is the tone given the context?)
 - Clarity (does the output make sense?)
 - Formatting (is markdown used appropriately and is the markdown correct?)
+
+[IMAGE TODO: SCREENSHOT OF ANNOTATION WITH SCORES IN ANOTHERAI]
 
 <Callout type="info">
 Currently, scores can only be added:
@@ -189,105 +213,10 @@ Claude can also leverage annotations to provide you with insights about your age
 ```
 Provide a report on the accuracy scores for all completions of calendar-event-extractor that used GPT-5. 
 ```
+[IMAGE TODO: SCREENSHOT OF VIEW CREATED FROM THIS PROMPT]
 
 #### 2. **Compare Model Performance**
 ```
 Which model has the best tone overall, based on annotations?
 ```
-# End-User Feedback
-
-Incorporating end-user feedback into your agent's development process can be invaluable when creating effective agents. We recommend setting up user feedback in your product to be added directly to completions via annotations. 
-
-Below is an example of the process you might implement for collecting and incorporating end-user feedback:
-
-<Steps>
-<Step>
-### Set up user feedback collection in your product
-
-This will look different for each product. Generally we recommend allowing the user to provide a comment, so that they can provide nuanced feedback. You may also want to allow your user to leave a score - for example 1-5 stars, or a thumbs up/down - in these cases the feedback would be added as a metric in the annotations.
-</Step>
-
-<Step>
-### Write a script to send user feedback to AnotherAI via the annotations endpoint 
-
-
-```python
-# Example: Send user feedback as annotations via API
-import requests
-from datetime import datetime
-
-# Configure your AnotherAI API endpoint and key
-API_BASE_URL = "{{API_URL}}"
-API_KEY = "your-api-key"
-
-def submit_user_feedback(completion_id: str, rating: int, comment: str, user_id: str = "end_user"):
-    """Submit user feedback as an annotation to AnotherAI"""
-    
-    annotation = {
-        "id": f"feedback_{completion_id}_{datetime.now().timestamp()}",
-        "target": {
-            "completion_id": completion_id,
-            # key_path can be used to annotate specific fields
-            "key_path": None  # Annotating the entire completion
-        },
-        "author_name": user_id,
-        "text": comment,
-        "metric": {
-            "name": "accuracy",
-            "value": rating  # e.g., 1-5 star rating
-        },
-        "metadata": {
-            "source": "feedback_widget",
-            "additionalProp1": {}
-        }
-    }
-    
-    response = requests.post(
-        f"{API_BASE_URL}/v1/annotations",
-        json=[annotation],
-        headers={
-            "Authorization": f"Bearer {API_KEY}",
-            "Content-Type": "application/json"
-        }
-    )
-    
-    if response.status_code == 200:
-        print(f"Feedback submitted successfully for completion {completion_id}")
-    else:
-        print(f"Error submitting feedback: {response.text}")
-    
-    return response
-
-# Example usage after getting a completion
-completion_id = "anotherai/completion/0198cd7c-2b1a-73b1-ce14-53da0b268569"
-accuracy = 4
-user_comment = "The response was helpful but could be more concise"
-submit_user_feedback(completion_id, accuracy, user_comment)
-```
-</Step>
-
-<Step>
-### Create a custom view to easily review the feedback sent
-
-Ask Claude Code to create a view for you in AnotherAI to see all the feedback in one place.
-
-```
-Create a view that shows all completions of @[your-agent-name] with annotations. 
-The view should display the completion ID, input, outputs, and the annotation 
-left on the completion.
-```
-</Step>
-
-<Step>
-### Using Feedback for Improvements
-
-Ask Claude Code to analyze user feedback and suggest improvements:
-
-```
-Review the user feedback annotations for agent/email-writer from the last week 
-and suggest prompt improvements based on common complaints
-```
-
-Claude will query the annotations, identify patterns, and propose specific changes to improve user satisfaction.
-</Step>
-</Steps>
+[IMAGE TODO: SCREENSHOT OF VIEW CREATED FROM THIS PROMPT]

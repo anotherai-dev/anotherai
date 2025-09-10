@@ -13,8 +13,8 @@ export default function Layout({ children }: { children: ReactNode }) {
     <html lang="en" className={inter.className} suppressHydrationWarning>
       <body className="flex flex-col min-h-screen">
         <Banner>
-          <a href="https://workflowai.com" target="_blank" rel="noopener noreferrer" className="underline">
-            WorkflowAI
+          <a href="https://anotherai.dev" target="_blank" rel="noopener noreferrer" className="underline">
+            AnotherAI
           </a>
         </Banner>
         <RootProvider>{children}</RootProvider>
