@@ -223,6 +223,7 @@ class TestSanitizeReadonlyPrivileges:
                     column_names=["id", "tenant_uid"],
                     data=[[uuid.uuid7(), tenant_uid]],
                 )
+
         finally:
             # Cleanup
             await user_client_after.close()

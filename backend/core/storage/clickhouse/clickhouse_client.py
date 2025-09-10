@@ -1,5 +1,6 @@
+import re
 from collections.abc import Iterable, Iterator, Sequence
-from typing import Any, cast, final, override
+from typing import Any, NamedTuple, cast, final, override
 from uuid import UUID
 
 import structlog
@@ -11,7 +12,7 @@ from pydantic.main import BaseModel
 from core.domain.agent_completion import AgentCompletion
 from core.domain.agent_output import AgentOutput
 from core.domain.annotation import Annotation
-from core.domain.exceptions import BadRequestError, ObjectNotFoundError
+from core.domain.exceptions import BadRequestError, InvalidQueryError, ObjectNotFoundError
 from core.domain.experiment import Experiment
 from core.domain.version import Version
 from core.storage.clickhouse._models._ch_annotation import ClickhouseAnnotation
@@ -21,11 +22,18 @@ from core.storage.clickhouse._models._ch_field_utils import data_and_columns, zi
 from core.storage.clickhouse._utils import clone_client, sanitize_readonly_privileges
 from core.storage.completion_storage import CompletionField, CompletionStorage
 from core.utils.iter_utils import safe_map
+from core.utils.strings import remove_urls
 
 _log = structlog.get_logger(__name__)
 
 _MAX_MEMORY_USAGE = 1024 * 1024 * 1024  # 1GB
 _MAX_EXECUTION_TIME = 60  # 60 seconds
+
+
+class ParsedClickhouseError(NamedTuple):
+    code: str
+    message: str
+    error_type: str
 
 
 @final
@@ -172,14 +180,25 @@ class ClickhouseClient(CompletionStorage):
             "max_execution_time": _MAX_EXECUTION_TIME,
         }
 
-        # TODO: likely need to wrap the error in a more specific one in case the clickhouse exceptions
-        # is not descriptive enough
+        async def _perform_query():
+            try:
+                return await readonly_client.query(query, settings=query_settings)
+            except DatabaseError as e:
+                err = _extract_clickhouse_error(str(e))
+                if err.code in {"497"}:
+                    # Not enough privileges, we should santitize and retry once
+                    raise e
+                raise InvalidQueryError(
+                    f"{err.error_type}: {err.message}",
+                    details={"code": err.code, "error_type": err.error_type},
+                ) from None
+
         try:
-            result = await readonly_client.query(query, settings=query_settings)
+            result = await _perform_query()
         except DatabaseError:
             # Can happen after a new table was created, in which case we try sanitizing the privileges again
             await sanitize_readonly_privileges(self._client, self.tenant_uid, user=None)  # using default tenant user
-            result = await readonly_client.query(query, settings=query_settings)
+            result = await _perform_query()
 
         column_names = cast(tuple[str, ...], result.column_names)
 
@@ -232,3 +251,24 @@ def _map_field(field: CompletionField) -> str:
 def _map_fields(fields: Iterable[CompletionField]) -> Iterator[str]:
     for f in fields:
         yield _map_field(f)
+
+
+_CK_ERROR_REGEXP = re.compile(
+    r"HTTPDriver for .* received Click[hH]ouse error code \d+ +Code: (\d+)\. DB::Exception: (.*) \(([A-Z_0-9]+)\) \(version \d+\.\d+\.\d+\.\d+ \(official build\)\)",
+)
+_CK_ERROR_CODE_REGEXP = re.compile(r"Code: (\d+)")
+
+
+def _extract_clickhouse_error(e: str):
+    e = e.replace("\n", " ")
+    match = _CK_ERROR_REGEXP.match(e)
+    if not match:
+        _log.error("Failed to extract clickhouse error", error=str(e))
+        code_match = _CK_ERROR_CODE_REGEXP.search(e)
+        message = remove_urls(e)
+        return ParsedClickhouseError(code_match.group(1) if code_match else "0", message, "UNKNOWN")
+    code = match.group(1)
+    message = match.group(2)
+    error_type = match.group(3)
+
+    return ParsedClickhouseError(code, message, error_type)

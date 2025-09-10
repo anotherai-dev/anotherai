@@ -1,6 +1,7 @@
 from uuid import UUID
 
 import pytest
+from fastmcp.exceptions import ToolError
 from httpx import HTTPStatusError
 
 from core.utils.uuid import uuid7
@@ -84,3 +85,15 @@ async def test_import_completion(test_api_client: IntegrationTestClient):
     agent = agent["items"][0]
     assert agent["id"] == base_completion_payload["agent_id"]
     assert agent["uid"]
+
+
+async def test_query_completion_errors(test_api_client: IntegrationTestClient):
+    with pytest.raises(HTTPStatusError) as e:
+        await test_api_client.get("/v1/completions/query?query=SELECT * FROM whatnot")
+    assert e.value.response.status_code == 400
+    assert e.value.response.json()["error"]["message"].startswith("UNKNOWN_TABLE: ")
+
+    # Same thing with the MCP
+    with pytest.raises(ToolError) as e:
+        await test_api_client.mcp.call_tool("query_completions", {"query": "SELECT * FROM whatnot"})
+    assert "UNKNOWN_TABLE:" in str(e.value)
