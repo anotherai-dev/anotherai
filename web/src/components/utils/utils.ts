@@ -191,7 +191,7 @@ export function formatDate(
   const dateString = String(value);
   const hasTimeComponent = /T\d{2}:\d{2}|[ ]\d{2}:\d{2}/.test(dateString);
   const hasTimezone = /[Z+\-]\d{2}:?\d{2}?$/.test(dateString);
-  const utcDateString = (hasTimeComponent && !hasTimezone) ? dateString + "Z" : dateString;
+  const utcDateString = hasTimeComponent && !hasTimezone ? dateString + "Z" : dateString;
 
   // Try UTC date first, fallback to original if parsing fails
   let date = new Date(utcDateString);
