@@ -19,7 +19,13 @@ from protocol.api._run_models import (
     OpenAIProxyMessage,
     OpenAIProxyResponseFormat,
 )
-from protocol.api._services.run.run_service import RunService, _EnvironmentRef, _extract_references, _ModelRef
+from protocol.api._services.run.run_service import (
+    RunService,
+    _EnvironmentRef,
+    _extract_input,
+    _extract_references,
+    _ModelRef,
+)
 
 
 def _proxy_request(**kwargs: Any):
@@ -259,8 +265,98 @@ class TestPrepareForDeployment:
         assert result.agent_input.variables == {"key": "value"}
         assert result.metadata["anotherai/deployment_id"] == "test-deployment"
 
+    async def test_filters_dash_messages(self, run_service: RunService, mock_deployments_storage: Mock):
+        """Messages with single dash should be filtered out before running deployment"""
+        mock_version = Mock(spec=Version)
+        mock_version.id = "test-version-id"
+        mock_version.output_schema = None
+        mock_version.validate_input.return_value = None
+
+        mock_deployment = Deployment(
+            id="test-deployment",
+            agent_id="test-agent",
+            version=mock_version,
+            created_by="test-user",
+            metadata=None,
+        )
+
+        mock_deployments_storage.get_deployment.return_value = mock_deployment
+
+        messages = [
+            Message.with_text("-", "user"),
+            Message.with_text("keep me", "user"),
+            Message.with_text("-", "assistant"),
+            Message.with_text("You are a helper.", "system"),
+        ]
+
+        result = await run_service._prepare_for_deployment(
+            deployment_id="test-deployment",
+            messages=messages,
+            variables=None,
+            response_format=None,
+        )
+
+        assert result.agent_input.messages
+        # Only non-dash messages should remain, preserving order
+        assert [c.content[0].text for c in result.agent_input.messages] == [
+            "keep me",
+            "You are a helper.",
+        ]
+
+    async def test_all_dash_messages_results_in_none(self, run_service: RunService, mock_deployments_storage: Mock):
+        """If all messages are single dashes, agent_input.messages should be None"""
+        mock_version = Mock(spec=Version)
+        mock_version.id = "test-version-id"
+        mock_version.output_schema = None
+        mock_version.validate_input.return_value = None
+
+        mock_deployment = Deployment(
+            id="test-deployment",
+            agent_id="test-agent",
+            version=mock_version,
+            created_by="test-user",
+            metadata=None,
+        )
+
+        mock_deployments_storage.get_deployment.return_value = mock_deployment
+
+        messages = [
+            Message.with_text("-", "user"),
+            Message.with_text("-", "assistant"),
+            Message.with_text("-", "system"),
+        ]
+
+        result = await run_service._prepare_for_deployment(
+            deployment_id="test-deployment",
+            messages=messages,
+            variables=None,
+            response_format=None,
+        )
+
+        assert result.agent_input.messages is None
+
 
 class TestPrepareForModel:
+    async def test_dashes_are_not_filtered(self, run_service: RunService):
+        """_prepare_for_model should not filter out single-dash messages"""
+        messages = [
+            Message.with_text("-", "user"),
+            Message.with_text("keep me", "user"),
+            Message.with_text("-", "assistant"),
+        ]
+
+        model_ref = _ModelRef(model=Model.GPT_4O_LATEST, agent_id="test-agent")
+
+        result = await run_service._prepare_for_model(
+            agent_ref=model_ref,
+            messages=[m.model_copy() for m in messages],
+            variables=None,
+            response_format=None,
+        )
+
+        assert len(messages) == 3
+        assert result.agent_input.messages == messages
+
     async def test_variables_provided_no_template(self, run_service: RunService):
         """Test that variables provided without templated messages raises BadRequestError"""
         # Create messages without templates
@@ -364,3 +460,79 @@ class TestPrepareForModel:
         )
 
         assert result.agent_id == "default"
+
+
+class TestExtractInput:
+    def test_extract_input_from_request_field(self):
+        """Test that input is extracted from request.input when present"""
+        request = _proxy_request(input={"key": "value", "number": 42})
+
+        result = _extract_input(request)
+
+        assert result == {"key": "value", "number": 42}
+
+    def test_extract_input_from_metadata_dict(self):
+        """Test that input is extracted from metadata.input when it's a dict and removed from metadata"""
+        request = _proxy_request(metadata={"input": {"name": "test", "count": 5}, "other": "data"})
+
+        result = _extract_input(request)
+
+        assert result == {"name": "test", "count": 5}
+        # Verify input was removed from metadata but other keys remain
+        assert request.metadata == {"other": "data"}
+
+    def test_extract_input_from_metadata_non_dict(self):
+        """Test that input is not extracted from metadata.input when it's not a dict"""
+        request = _proxy_request(metadata={"input": "not_a_dict", "other": "data"})
+
+        result = _extract_input(request)
+
+        assert result is None
+        # Verify metadata was not modified
+        assert request.metadata == {"input": "not_a_dict", "other": "data"}
+
+    def test_extract_input_none_metadata(self):
+        """Test that None is returned when metadata is None"""
+        request = _proxy_request()  # No metadata by default
+
+        result = _extract_input(request)
+
+        assert result is None
+
+    def test_extract_input_no_input_key_in_metadata(self):
+        """Test that None is returned when metadata exists but no input key"""
+        request = _proxy_request(metadata={"other": "data", "more": "values"})
+
+        result = _extract_input(request)
+
+        assert result is None
+        # Verify metadata was not modified
+        assert request.metadata == {"other": "data", "more": "values"}
+
+    def test_extract_input_request_takes_priority(self):
+        """Test that request.input takes priority over metadata.input"""
+        request = _proxy_request(input={"from": "request"}, metadata={"input": {"from": "metadata"}, "other": "data"})
+
+        result = _extract_input(request)
+
+        assert result == {"from": "request"}
+        # Verify metadata was not modified when request.input is present
+        assert request.metadata == {"input": {"from": "metadata"}, "other": "data"}
+
+    def test_extract_input_empty_dict_from_request(self):
+        """Test that None is returned when request.input is empty dict (empty dict = no variables)"""
+        request = _proxy_request(input={})
+
+        result = _extract_input(request)
+
+        assert result is None
+
+    def test_extract_input_empty_dict_from_metadata(self):
+        """Test that None is returned when metadata.input is empty dict (empty dict = no variables)"""
+        request = _proxy_request(metadata={"input": {}, "other": "data"})
+
+        result = _extract_input(request)
+
+        assert result is None
+        # Verify metadata was not modified since empty dict is treated as falsy
+        assert request.metadata == {"input": {}, "other": "data"}

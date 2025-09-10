@@ -6,7 +6,7 @@ import structlog
 from core.domain.agent import Agent
 from core.domain.agent_input import AgentInput
 from core.domain.exceptions import BadRequestError, JSONSchemaValidationError, ObjectNotFoundError
-from core.domain.message import Message
+from core.domain.message import Message, MessageContent
 from core.domain.models.model_data_mapping import MODEL_COUNT, get_model_id
 from core.domain.models.models import Model
 from core.domain.tenant_data import TenantData
@@ -114,19 +114,20 @@ To list all models programmatically: Use the list_models tool""",
             raise await self.missing_model_error(e.extras.get("model")) from None
 
         messages = list(request_messages_to_domain(request))
+        input = _extract_input(request)
 
         if isinstance(agent_ref, _EnvironmentRef):
             prepared_run = await self._prepare_for_deployment(
                 deployment_id=agent_ref.deployment_id,
                 messages=messages,
-                variables=request.input,
+                variables=input,
                 response_format=request.response_format,
             )
         else:
             prepared_run = await self._prepare_for_model(
                 agent_ref=agent_ref,
                 messages=messages,
-                variables=request.input,
+                variables=input,
                 response_format=request.response_format,
             )
         request_apply_to_version(request, prepared_run.version)
@@ -174,6 +175,9 @@ To list all models programmatically: Use the list_models tool""",
                 capture=True,
             ) from None
 
+        # Filtering out the - messages
+        messages = [m for m in messages if not _should_skip_message(m)]
+
         # Check compatibility of response_format:
         output_schema = _extract_output_schema(response_format)
         output_schema = _check_output_schema_compatibility(deployment.version.output_schema, output_schema)
@@ -188,7 +192,7 @@ To list all models programmatically: Use the list_models tool""",
             agent_id=deployment.agent_id,
             version=deployment.version,
             agent_input=AgentInput(
-                messages=messages,
+                messages=messages or None,
                 variables=variables,
             ),
             metadata={
@@ -262,7 +266,7 @@ def _reference_from_metadata(
 
     # Overriding if the agent_id is None or not provided directly in the request
     if not agent_id or not request.agent_id:
-        agent_id = request.metadata.get("agent_id")
+        agent_id = request.metadata.pop("agent_id", None)
     if not agent_id:
         return None
 
@@ -363,3 +367,17 @@ def _check_output_schema_compatibility(
     #         f"The requested response format is not compatible with the deployment's response format.\n{e}",
     #     ) from None
     return requested_schema
+
+
+def _extract_input(request: OpenAIProxyChatCompletionRequest) -> dict[str, Any] | None:
+    if request.input:
+        return request.input
+    if request.metadata and (from_metadata := request.metadata.get("input", None)) and isinstance(from_metadata, dict):
+        del request.metadata["input"]
+        return from_metadata
+
+    return None
+
+
+def _should_skip_message(message: Message) -> bool:
+    return message.content == "-" or message.content == [MessageContent(text="-")]
