@@ -7,12 +7,13 @@ import { useToast } from "@/components/ToastProvider";
 
 interface ImproveAgentAnnotationsInstructionsProps {
   agentId: string;
+  experimentId: string;
 }
 
-export function ImproveAgentAnnotationsInstructions({ agentId }: ImproveAgentAnnotationsInstructionsProps) {
+export function ImproveAgentAnnotationsInstructions({ agentId, experimentId }: ImproveAgentAnnotationsInstructionsProps) {
   const { showToast } = useToast();
 
-  const promptText = `Adjust anotherai/agent/${agentId} based on the annotations that have been added. `;
+  const promptText = `Adjust anotherai/agent/${agentId} based on the annotations that have been added in anotherai/experiment/${experimentId}. `;
 
   const handleCopyPrompt = async () => {
     try {
@@ -56,7 +57,7 @@ export function ImproveAgentAnnotationsInstructions({ agentId }: ImproveAgentAnn
         </div>
 
         <div className="mt-3 italic font-bold w-full whitespace-pre-wrap">
-          Adjust anotherai/agent/{agentId} based on the annotations that have been added....[describe the specific
+          Adjust {agentId} based on the annotations that have been added in {experimentId}....[describe the specific
           improvements you want here]
         </div>
       </div>

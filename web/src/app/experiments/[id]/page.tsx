@@ -43,7 +43,7 @@ export default function ExperimentDetailPage() {
           title={experiment.title}
           description={experiment.description}
           copyablePrefixAndId={`anotherai/experiment/${experimentId}`}
-          descriptionBottomContent={<ImproveAgentAnnotationsInstructions agentId={experiment.agent_id} />}
+          descriptionBottomContent={<ImproveAgentAnnotationsInstructions agentId={experiment.agent_id} experimentId={experimentId} />}
         />
         <OriginalResultsSection experiment={experiment} />
         <MatrixSection experiment={experiment} annotations={annotations} />
