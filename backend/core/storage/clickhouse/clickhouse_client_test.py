@@ -17,7 +17,7 @@ from core.domain.agent_input import AgentInput
 from core.domain.agent_output import AgentOutput
 from core.domain.annotation import Annotation
 from core.domain.error import Error
-from core.domain.exceptions import BadRequestError, ObjectNotFoundError
+from core.domain.exceptions import BadRequestError, InvalidQueryError, ObjectNotFoundError
 from core.domain.experiment import Experiment
 from core.domain.message import Message
 from core.domain.version import Version
@@ -25,7 +25,11 @@ from core.storage.clickhouse._models._ch_annotation import ClickhouseAnnotation
 from core.storage.clickhouse._models._ch_completion import ClickhouseCompletion
 from core.storage.clickhouse._models._ch_experiment import ClickhouseExperiment
 from core.storage.clickhouse._models._ch_field_utils import data_and_columns
-from core.storage.clickhouse.clickhouse_client import _CACHED_OUTPUT_QUERY, ClickhouseClient
+from core.storage.clickhouse.clickhouse_client import (
+    _CACHED_OUTPUT_QUERY,
+    ClickhouseClient,
+    _extract_clickhouse_error,
+)
 from core.utils.uuid import uuid7
 from tests.fake_models import fake_annotation, fake_completion, fake_experiment
 from tests.utils import fixtures_json
@@ -732,6 +736,30 @@ LIMIT 1 BY input_id
             },
         ]
 
+    @pytest.mark.parametrize(
+        ("query", "code", "error_type"),
+        [
+            pytest.param(
+                "SELECT * FROM non_existent_table",
+                "60",
+                "UNKNOWN_TABLE",
+                id="non_existent_table",
+            ),
+            pytest.param(
+                "SELECT * FROM completions WHERE id = 'invalid-uuid'",
+                "376",
+                "CANNOT_PARSE_UUID",
+                id="invalid_uuid",
+            ),
+        ],
+    )
+    async def test_invalid_query(self, client: ClickhouseClient, query: str, code: str, error_type: str):
+        """Test that an invalid query raises InvalidQueryError."""
+        with pytest.raises(InvalidQueryError) as e:
+            await client.raw_query(query)
+        assert e.value.details["code"] == code
+        assert e.value.details["error_type"] == error_type
+
 
 class TestAddCompletionToExperiment:
     async def test_add_completion_to_experiment_basic(self, client: ClickhouseClient):
@@ -963,3 +991,128 @@ class TestCachedOutput:
         )
         explain_res = " ".join(r[0].strip() for r in res.result_rows)
         assert "Skip Name: input_id_index Description: bloom_filter GRANULARITY 1 Parts: 1/2" in explain_res
+
+
+class TestExtractClickhouseError:
+    def test_extract_main_regex_match_example(self):
+        """Test the main regex pattern with the provided example string"""
+        error_string = "HTTPDriver for http://localhost:8123 received Clickhouse error code 60\n Code: 60. DB::Exception: Unknown table expression identifier 'non_existent_table' in scope SELECT * FROM non_existent_table. (UNKNOWN_TABLE) (version 25.3.2.39 (official build))"
+
+        result = _extract_clickhouse_error(error_string)
+
+        assert result.code == "60"
+        assert (
+            result.message
+            == "Unknown table expression identifier 'non_existent_table' in scope SELECT * FROM non_existent_table."
+        )
+        assert result.error_type == "UNKNOWN_TABLE"
+
+    def test_extract_main_regex_match_different_error(self):
+        """Test the main regex pattern with a different error format"""
+        error_string = """HTTPDriver for http://clickhouse:8123 received Clickhouse error code 47\n Code: 47. DB::Exception: Missing columns: 'invalid_column' while processing query. (UNKNOWN_IDENTIFIER) (version 23.1.1.1 (official build))"""
+
+        result = _extract_clickhouse_error(error_string)
+
+        assert result.code == "47"
+        assert result.message == "Missing columns: 'invalid_column' while processing query."
+        assert result.error_type == "UNKNOWN_IDENTIFIER"
+
+    def test_extract_main_regex_match_syntax_error(self):
+        """Test the main regex pattern with a syntax error"""
+        error_string = (
+            "HTTPDriver for https://clickhouse.company.com:8443 received ClickHouse error code 62\n "
+            "Code: 62. DB::Exception: Syntax error: failed at position 15: SELECT * FRON completions. "
+            "Expected one of: FROM, FROM INFILE, FROM INPUT (SYNTAX_ERROR) (version 24.8.5.115 (official build))\n"
+        )
+
+        result = _extract_clickhouse_error(error_string)
+
+        assert result.code == "62"
+        assert (
+            result.message
+            == "Syntax error: failed at position 15: SELECT * FRON completions. Expected one of: FROM, FROM INFILE, FROM INPUT"
+        )
+        assert result.error_type == "SYNTAX_ERROR"
+
+    def test_extract_fallback_with_code_match(self):
+        """Test fallback parsing when main regex fails but code regex succeeds"""
+        error_string = "Some malformed error message Code: 123 but without the expected format"
+
+        result = _extract_clickhouse_error(error_string)
+
+        assert result.code == "123"
+        assert result.message == error_string  # Should use the whole string
+        assert result.error_type == "UNKNOWN"
+
+    def test_extract_fallback_with_url_removal(self):
+        """Test fallback parsing removes URLs from the message"""
+        error_string = "https://dangerous-url.com/secret Code: 456 some error with embedded URL"
+
+        result = _extract_clickhouse_error(error_string)
+
+        assert result.code == "456"
+        assert result.message == "https://*** Code: 456 some error with embedded URL"  # URL should be obfuscated
+        assert result.error_type == "UNKNOWN"
+
+    def test_extract_complete_fallback_no_code(self):
+        """Test complete fallback when both regexes fail (no code found)"""
+        error_string = "This is a completely unrecognized error format with no code"
+
+        result = _extract_clickhouse_error(error_string)
+
+        assert result.code == "0"  # Default when no code is found
+        assert result.message == error_string
+        assert result.error_type == "UNKNOWN"
+
+    def test_extract_empty_string(self):
+        """Test with empty string"""
+        error_string = ""
+
+        result = _extract_clickhouse_error(error_string)
+
+        assert result.code == "0"
+        assert result.message == ""
+        assert result.error_type == "UNKNOWN"
+
+    def test_extract_code_at_beginning(self):
+        """Test fallback when code appears at the beginning of the string"""
+        error_string = "Code: 999 at the beginning of error message"
+
+        result = _extract_clickhouse_error(error_string)
+
+        assert result.code == "999"
+        assert result.message == error_string
+        assert result.error_type == "UNKNOWN"
+
+    def test_extract_multiple_codes_uses_first(self):
+        """Test that when multiple codes exist, the first one is used"""
+        error_string = "Code: 111 first code and then Code: 222 second code"
+
+        result = _extract_clickhouse_error(error_string)
+
+        assert result.code == "111"  # Should use the first match
+        assert result.message == error_string
+        assert result.error_type == "UNKNOWN"
+
+    @pytest.mark.parametrize(
+        ("error_code", "error_message", "error_type"),
+        [
+            pytest.param("60", "Table not found", "UNKNOWN_TABLE", id="table_not_found"),
+            pytest.param("47", "Column missing", "UNKNOWN_IDENTIFIER", id="column_missing"),
+            pytest.param("62", "Syntax error in query", "SYNTAX_ERROR", id="syntax_error"),
+            pytest.param("81", "Database connection failed", "NETWORK_ERROR", id="network_error"),
+        ],
+    )
+    def test_extract_main_regex_parametrized(self, error_code: str, error_message: str, error_type: str):
+        """Test main regex with various error codes and types"""
+        error_string = (
+            f"HTTPDriver for http://localhost:8123 received ClickHouse error code {error_code}\n "
+            f"Code: {error_code}. DB::Exception: {error_message} ({error_type}) "
+            f"(version 25.3.2.39 (official build))"
+        )
+
+        result = _extract_clickhouse_error(error_string)
+
+        assert result.code == error_code
+        assert result.message == error_message
+        assert result.error_type == error_type

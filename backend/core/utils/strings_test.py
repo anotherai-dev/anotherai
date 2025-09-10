@@ -9,6 +9,7 @@ from .strings import (
     obfuscate,
     remove_accents,
     remove_empty_lines,
+    remove_urls,
     slugify,
     split_words,
     to_pascal_case,
@@ -186,6 +187,45 @@ class TestObfuscate:
     )
     def test_obfuscate(self, input_str: str, max_chars: int, expected_output: str):
         assert obfuscate(input_str, max_chars) == expected_output
+
+
+@pytest.mark.parametrize(
+    ("input_str", "expected_output"),
+    [
+        # Basic URL replacement
+        ("https://example.com", "https://***"),
+        ("http://example.com", "https://***"),
+        # URLs in the middle of text (should NOT be replaced due to ^ anchor)
+        ("Visit https://example.com for more info", "Visit https://example.com for more info"),
+        ("Check out http://test.org today", "Check out http://test.org today"),
+        # URLs with paths and query parameters
+        ("https://example.com/path/to/resource?param=value", "https://***"),
+        ("http://test.org/api/users?id=123&name=john", "https://***"),
+        # URLs with fragments
+        ("https://example.com#section1", "https://***"),
+        ("http://docs.example.com/guide#getting-started", "https://***"),
+        # URLs with ports
+        ("https://localhost:3000", "https://***"),
+        ("http://192.168.1.1:8080", "https://***"),
+        # Text without URLs (should remain unchanged)
+        ("This is just plain text", "This is just plain text"),
+        ("ftp://example.com should not match", "ftp://example.com should not match"),
+        ("mailto:user@example.com should not match", "mailto:user@example.com should not match"),
+        # Empty string
+        ("", ""),
+        # URLs with subdomains
+        ("https://api.example.com/v1/users", "https://***"),
+        ("http://blog.test.org", "https://***"),
+        pytest.param(
+            "https://dangerous-url.com/secret Code: 456 some error with embedded URL",
+            "https://*** Code: 456 some error with embedded URL",
+            id="text_after_url",
+        ),
+    ],
+)
+def test_remove_urls(input_str: str, expected_output: str) -> None:
+    """Test that remove_urls correctly replaces URLs starting with http:// or https:// with https://***."""
+    assert remove_urls(input_str) == expected_output
 
 
 class TestIsValidUnicode:

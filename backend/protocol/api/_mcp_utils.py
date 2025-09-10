@@ -2,6 +2,7 @@ import contextlib
 import json
 from typing import Any, override
 
+from fastmcp.exceptions import ToolError
 from fastmcp.server import FastMCP
 from fastmcp.server.auth import AccessToken, AuthProvider, RemoteAuthProvider, TokenVerifier
 from fastmcp.server.dependencies import get_access_token
@@ -12,8 +13,9 @@ from pydantic import AnyHttpUrl, BaseModel, ValidationError
 from structlog import get_logger
 
 from core.consts import ANOTHERAI_API_URL, AUTHORIZATION_SERVER
-from core.domain.exceptions import InvalidTokenError
+from core.domain.exceptions import DefaultError, InvalidTokenError
 from core.domain.tenant_data import TenantData
+from core.providers._base.provider_error import ProviderError
 from core.services.documentation.documentation_search import DocumentationSearch
 from protocol.api._dependencies._lifecycle import lifecyle_dependencies
 from protocol.api._dependencies._services import completion_runner
@@ -47,8 +49,31 @@ class BaseMiddleware(Middleware):
         try:
             return await call_next(context)
         except ValidationError as e:
-            _log.error(f"Validation error: {e}")
+            _log.error("Validation error", exc_info=e)
             raise e
+
+    async def on_message(self, context: MiddlewareContext[Any], call_next: CallNext[Any, Any]) -> Any:
+        try:
+            return await call_next(context)
+        except ToolError as e:
+            cause = e.__cause__
+            if isinstance(cause, (ProviderError, DefaultError)):
+                if cause.capture:
+                    _log.exception(f"Error in tool call {context.message.name}", exc_info=e)
+                # We can re-raise the original error as is. FastMCP will handle the formatting
+                raise e
+            if isinstance(cause, ValidationError):
+                # Tracking of when
+                _log.error(f"Validation error in tool call {context.message.name}", exc_info=e)
+                raise e
+            # Anything else should not permeate to the outside so we raise an opaque error
+            _log.exception(f"Unknown Error in tool call {context.message.name}", exc_info=e)
+            raise Exception("An unknown error occurred") from None
+
+        except Exception as e:  # noqa: BLE001
+            # That would be unexpected
+            _log.exception("Unknown Error in message not wrapped in tool error", exc_info=e)
+            raise Exception("An unknown error occurred") from None
 
 
 def tool_serializer(value: Any) -> str:

@@ -116,6 +116,13 @@ class MissingEnvVariablesError(Exception):
         return f"Missing environment variables: {', '.join(self.names)}"
 
 
+class InvalidQueryError(DefaultError):
+    default_status_code = 400
+    default_message = "Invalid query"
+    code = "invalid_query"
+    default_capture = False
+
+
 class MissingCacheError(DefaultError):
     default_status_code = 400
     default_message = "Missing cache"
