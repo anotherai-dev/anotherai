@@ -20,7 +20,7 @@ Following with the [example above](#understanding-versions-and-input), if we dep
 <Tab>
 ```js
 const completion = await openai.chat.completions.create({
-    model: "anotherai/travel-assistant/production#1",
+    model: "anotherai/deployment/travel-assistant:production#1",
     messages: [
         { role: "user", content: "Any customs I should be mindful about at the dinner table ?" },
     ],
@@ -153,7 +153,7 @@ to:
 ```js
 const completion = await openai.chat.completions.create({
   // model and temperature are stored in the deployment
-  model: "anotherai/travel-assistant/production#1",
+  model: "anotherai/deployment/travel-assistant:production#1",
   messages: [
     // System message template is stored in the deployment
     // User message is dynamic here so it is not stored in the deployment
@@ -437,7 +437,7 @@ When a new deployment is created, you will need to update your code to point to 
 ```js
 // Before - using old deployment
 const completion = await openai.chat.completions.create({
-    model: "anotherai/travel-assistant/production#1",
+    model: "anotherai/deployment/travel-assistant:production#1",
     input: {
         country: "France"
     }
@@ -445,7 +445,7 @@ const completion = await openai.chat.completions.create({
 
 // After - using new deployment with breaking changes
 const completion = await openai.chat.completions.create({
-model: "anotherai/travel-assistant/production#2", // new deployment
+model: "anotherai/deployment/travel-assistant:production#2", // new deployment
 input: {
 destination: "France", // variable renamed: country -> destination
 traveler_type: "business" // new required variable added
@@ -469,7 +469,7 @@ The code allows targeting a deployment but still provide completion parameters. 
 <Tab>
 ```js
 const completion = await openai.chat.completions.create({
-    model: "anotherai/travel-assistant/production#1",
+    model: "anotherai/deployment/travel-assistant:production#1",
     input: {
         country: "France"
     }
@@ -499,7 +499,7 @@ Consider a deployment `travel-assistant/production#1` created with:
 ```js
 // Accepted since the version is compatible with the deployment
 const completion = await openai.chat.completions.create({
-    model: "anotherai/travel-assistant/production#1",
+    model: "anotherai/deployment/travel-assistant:production#1",
     input: {
         country: "France"
     }
@@ -509,7 +509,7 @@ const completion = await openai.chat.completions.create({
 
 // Rejected since the version is incompatible with the deployment
 const completion = await openai.chat.completions.create({
-model: "anotherai/travel-assistant/production#1",
+model: "anotherai/deployment/travel-assistant:production#1",
 input: {
 country: "France"
 }
