@@ -1,7 +1,10 @@
 import { Plus } from "lucide-react";
+import { Info } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { Annotation } from "@/types/models";
 import { useAnnotationActions } from "../../store/annotations";
+import { HoverPopover } from "../HoverPopover";
+import { ImproveAgentAnnotationsInstructionsContent } from "../experiment/ImproveAgentAnnotationsInstructionsContent";
 import { AnnotationFilters, filterAnnotations } from "../utils/utils";
 import { AddAnnotationForm } from "./AddAnnotationForm";
 import { AnnotationView } from "./AnnotationView";
@@ -91,14 +94,31 @@ export function AnnotationsView({
 
       {showAddButton && !isAdding && !alwaysShowAddForm && (
         <div className="mb-2 flex flex-row justify-between items-center w-full">
-          <button
-            onClick={handleAddAnnotation}
-            className="text-xs px-2 py-1 bg-transparent border border-indigo-200 text-indigo-700 rounded-sm transition-colors flex items-center gap-1 cursor-pointer hover:bg-indigo-50 flex-shrink-0"
-            title="Add annotation"
-          >
-            <Plus size={12} />
-            Add Annotation
-          </button>
+          <div className="flex flex-row">
+            <button
+              onClick={handleAddAnnotation}
+              className="text-xs px-2 py-1 bg-transparent border border-indigo-200 text-indigo-700 rounded-l-sm transition-colors flex items-center gap-1 cursor-pointer hover:bg-indigo-50 flex-shrink-0"
+              title="Add annotation"
+            >
+              <Plus size={12} />
+              Add Annotation
+            </button>
+            {agentId && (
+              <HoverPopover
+                content={<ImproveAgentAnnotationsInstructionsContent agentId={agentId} />}
+                position="bottom"
+                popoverClassName="bg-gray-900 text-white rounded-[4px]"
+                className=""
+              >
+                <button
+                  className=" flex h-full text-xs px-1.5 py-1 bg-transparent border-l-0 border border-indigo-200 text-indigo-700 rounded-r-sm transition-colors items-center gap-1 cursor-pointer hover:bg-indigo-50 flex-shrink-0"
+                  title="Annotation prompt"
+                >
+                  <Info size={12} />
+                </button>
+              </HoverPopover>
+            )}
+          </div>
 
           {agentId && <AnnotationsPromptLabel annotations={filteredAnnotations} agentId={agentId} />}
         </div>
