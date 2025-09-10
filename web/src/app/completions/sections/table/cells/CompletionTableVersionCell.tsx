@@ -97,6 +97,8 @@ export function CompletionTableVersionCell({ value }: CompletionTableVersionCell
               modelId={String(obj.model)}
               size={12}
               nameClassName="text-xs text-gray-900 font-medium"
+              reasoningEffort={obj.reasoning_effort as "disabled" | "low" | "medium" | "high" | undefined}
+              reasoningBudget={obj.reasoning_budget as number | undefined}
             />
           </div>
           {nonDefaultEntries.map(({ key, value }, index) => (
