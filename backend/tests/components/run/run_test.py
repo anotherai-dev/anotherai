@@ -1,13 +1,15 @@
+import json
 from typing import Any
 
 import pytest
 from pydantic import BaseModel
 
 from tests.components._common import IntegrationTestClient
-from tests.components.run._base import OpenAITestCase, ProviderTestCase
+from tests.components.run._base import GroqTestCase, OpenAITestCase, ProviderTestCase
 
 _test_cases = [
     pytest.param(OpenAITestCase(), id="openai"),
+    pytest.param(GroqTestCase(), id="groq"),
 ]
 
 
@@ -79,6 +81,10 @@ async def test_structured_output(test_case: ProviderTestCase, test_api_client: I
     assert response.choices[0].cost_usd > 0  # pyright: ignore [reportUnknownMemberType,reportAttributeAccessIssue]
 
     await test_api_client.wait_for_background()
+
+    reqs = test_api_client.get_provider_requests(test_case.provider(), test_case.model())
+    assert len(reqs) == 1
+    test_case.validate_structured_output_request(json.loads(reqs[0].content), reqs[0])
 
     # Now fetching the run
     run = await test_api_client.get(f"/v1/completions/{response.id}")
