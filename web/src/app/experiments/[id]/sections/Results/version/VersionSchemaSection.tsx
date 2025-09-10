@@ -31,6 +31,8 @@ export function VersionSchemaSection(props: VersionSchemaSectionProps) {
         annotations={annotations}
         annotationPrefix={prefix}
         onKeypathSelect={handleKeypathSelect}
+        showDescriptions={true}
+        showExamples={true}
       />
       <AnnotationsView
         annotations={annotations}

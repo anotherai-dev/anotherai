@@ -61,6 +61,8 @@ export interface Version {
   prompt?: Message[];
   input_variables_schema?: Record<string, unknown>;
   output_schema?: OutputSchema;
+  reasoning_effort?: "disabled" | "low" | "medium" | "high";
+  reasoning_budget?: number;
 }
 
 // Extended version type to include optional properties with defaults
