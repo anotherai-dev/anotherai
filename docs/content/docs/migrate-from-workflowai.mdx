@@ -28,8 +28,8 @@ You will first need to identify:
 
 They both can be extracted from the code.
 
-<Tabs items={['Node (OpenAI SDK)', 'API']}>
-<Tab>
+<Tabs groupId="framework" items={['TypeScript (OpenAI SDK)', 'API']}>
+<Tab value="TypeScript (OpenAI SDK)">
 
 ```typescript
 // WorkflowAI client setup
@@ -66,9 +66,10 @@ const analyzeBookCharacters: Agent<
 ```
 
 </Tab>
-<Tab>
 
-WorkflowAI exposes a `run` endpoint per agent and schema. The full url will look like `https://workflowai.com/v1/agents/<agent_id>/schemas/<schema_id>/run` where:
+<Tab value="API">
+
+WorkflowAI exposes a `run` endpoint per agent and schema. The full url will look like `https://run.workflowai.com/v1/agents/<agent_id>/schemas/<schema_id>/run` or `https://run.workflowai.com/v1/tasks/<agent_id>/schemas/<schema_id>/run` where:
 - `<agent_id>` is a slug that is the id of the agent
 - `<schema_id>` is an integer that identifies a schema (not used in AnotherAI)
 
@@ -97,9 +98,11 @@ In WorkflowAI, deployments are unique per agent schema. In AnotherAI, deployment
 
 You can fetch all existing deployments for a given agent using the `list_deployments` tool with the agent_id parameter.
 
-A migrated deployment will have the shape: `<agent_id>/<deployment_deployment_environment>#<deployment_number>`
+A migrated deployment will likely have the shape: `<agent_id>:<deployment_deployment_environment>#<deployment_number>`
 
-In the example above, the migrated deployment will have the shape: `analyze-book-characters/production#1`
+In the example above, the migrated deployment will look like: `analyze-book-characters:production#1`.
+
+> It is possible that a deployment was created with a slightly different format. Check the available deployments using the `list_deployments` tool and make sure to adjust the deployment id accordingly.
 
 If the deployment has not been migrated, tell the user to contact the WorkflowAI support.
 
@@ -110,8 +113,8 @@ AnotherAI is compatible with the OpenAI completion API, so it should be configur
 
 To use a deployment, simply use the deployment id in the model parameter in the completion call.
 
-<Tabs items={['Node (OpenAI SDK)', 'API']}>
-<Tab>
+<Tabs groupId="framework" items={['TypeScript (OpenAI SDK)',  'Go (OpenAI SDK)', 'API']}>
+<Tab value="TypeScript (OpenAI SDK)">
 
 ```typescript
 import OpenAI from "openai";
@@ -143,7 +146,7 @@ export interface AnalyzeBookCharactersTaskOutput {
 
 export async function analyzeBookCharacters(input: AnalyzeBookCharactersTaskInput): Promise<AnalyzeBookCharactersTaskOutput> {
     const completion = await client.chat.completions.create({
-        model: "anotherai/deployment/analyze-book-characters/production#1", // use the "anotherai/deployment/<deployment_id>" id here
+        model: "anotherai/deployment/analyze-book-characters:production#1", // use the "anotherai/deployment/<deployment_id>" id here
         messages: [], // messages should remain empty since the prompt is stored in AnotherAI
         // response_format is not needed here since it is handled by the deployment
         input: input, // input is AnotherAI specific. You may have to silence a TS error
@@ -169,7 +172,7 @@ export type AnalyzeBookCharactersTaskOutput = z.infer<typeof AnalyzeBookCharacte
 export async function analyzeBookCharacters(input: AnalyzeBookCharactersTaskInput): Promise<AnalyzeBookCharactersTaskOutput> {
   // Use .parse() instead of .create() when using the beta client
   const completion = await client.beta.chat.completions.parse({
-      model: "anotherai/deployment/analyze-book-characters/production#1", // use the "anotherai/deployment/<deployment_id>" id here
+      model: "anotherai/deployment/analyze-book-characters:production#1", // use the "anotherai/deployment/<deployment_id>" id here
       messages: [], // messages should remain empty since the prompt is stored in AnotherAI
       response_format: zodTextFormat(AnalyzeBookCharactersTaskOutputSchema, "AnalyzeBookCharactersTaskOutput"),
       input: input, // input is AnotherAI specific. You may have to silence a TS error
@@ -179,7 +182,85 @@ export async function analyzeBookCharacters(input: AnalyzeBookCharactersTaskInpu
 ```
 
 </Tab>
-<Tab>
+<Tab value="Go (OpenAI SDK)">
+
+```go
+
+import (
+	"context"
+	// Make sure to use the v2
+	"github.com/openai/openai-go/v2"
+	"github.com/openai/openai-go/v2/option"
+	"github.com/openai/openai-go/v2/shared"
+	"github.com/invopop/jsonschema" // library to generate JSON schemas if needed
+)
+
+// setup AnotherAI client
+var client = openai.NewClient(
+	option.WithBaseURL("{{API_URL}}/v1"),
+	option.WithAPIKey(os.Getenv("ANOTHERAI_API_KEY")),
+)
+
+// types are likely already present in the users' code
+type AnalyzeBookCharactersTaskInput struct {
+	BookTitle string `json:"book_title"`
+}
+
+type AnalyzeBookCharactersTaskOutput struct {
+	Characters []struct {
+		Name       string   `json:"name"`
+		Goals      []string `json:"goals"`
+		Weaknesses []string `json:"weaknesses"`
+		Outcome    string   `json:"outcome"`
+	} `json:"characters"`
+}
+
+// Generate the JSON schema for the output
+var AnalyzeBookCharactersTaskOutput = jsonschema.Reflect(&AnalyzeBookCharactersTaskOutput{})
+
+
+func AnalyzeBookCharacters(input AnalyzeBookCharactersTaskInput) (AnalyzeBookCharactersTaskOutput, error) {
+  params := openai.ChatCompletionNewParams{
+    // Pass a plain string here
+    Model: "anotherai/deployment/analyze-book-characters:production#1",
+    // No need to pass messages
+    Metadata: shared.Metadata{
+      //...any user provided metadata. No need to pass agent_id here since it will be passed by the deployment
+    },
+    ResponseFormat: openai.ChatCompletionNewParamsResponseFormatUnion{
+      OfJSONSchema: &openai.ResponseFormatJSONSchemaParam{
+        JSONSchema: openai.ResponseFormatJSONSchemaJSONSchemaParam{
+          Name:   "analyze-book-characters-task-output",
+          Schema: AnalyzeBookCharactersTaskOutput,
+        },
+      },
+    },
+  }
+  // input is AnotherAI specific
+  params.SetExtraFields(map[string]any{
+    "input": input, // will be serialized as JSON
+  })
+	chatCompletion, err := client.Chat.Completions.New(
+		context.TODO(),
+		params,
+	)
+  out := AnalyzeBookCharactersTaskOutput{}
+  if err != nil {
+    // handle error if needed
+    return out, err
+  }
+  content := chatCompletion.choices[0].message.content
+  
+  if err := json.Unmarshal([]byte(content), &out); err != nil {
+    // handle error if needed
+    return out, err
+  }
+  return out, nil
+}
+```
+
+</Tab>
+<Tab value="API">
 
 It is likely that an OpenAI SDK exists for the requested language. The OpenAI SDKs are usually more convenient to use, providing out of the box:
 - retries / error management
@@ -191,8 +272,7 @@ It is also possible that the user already has an Agent framework setup that is c
 If hitting the API directly is needed, the payload will look like:
 ```json
 {
-    // prefix the model with the agent_id 
-    "model": "anotherai/deployment/analyze-book-characters/production#1", // use the "anotherai/deployment/<deployment_id>" id here
+    "model": "anotherai/deployment/analyze-book-characters:production#1", // use the "anotherai/deployment/<deployment_id>" id here
     "messages": [],
     // no need to pass the response_format here, it is handle by the deployment
     "input": ..., // corresponds to task_input in WorkflowAI,

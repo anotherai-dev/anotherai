@@ -1,4 +1,10 @@
-import { DEFAULT_CHART_COLORS, SeriesConfig, autoDetectSeries } from "../utils";
+import {
+  DEFAULT_CHART_COLORS,
+  SeriesConfig,
+  autoDetectSeries,
+  ensureXFieldForChart,
+  transformDataForCompletionsGraph,
+} from "../utils";
 
 describe("Chart Utilities", () => {
   describe("DEFAULT_CHART_COLORS", () => {
@@ -293,6 +299,127 @@ describe("Chart Utilities", () => {
         expect(result.map((s) => s.key)).toContain("series2");
         expect(result.map((s) => s.key)).not.toContain("series3");
       });
+    });
+  });
+
+  describe("ensureXFieldForChart", () => {
+    it("should transform data with date field to use x field", () => {
+      const data = [
+        { date: "2025-09-03", actor_movies_cost: 0.6567310000000002, movie_similarity_cost: 0.0 },
+        { date: "2025-09-04", actor_movies_cost: 0.020062, movie_similarity_cost: 0.0 },
+        { date: "2025-09-08", actor_movies_cost: 0.014131999999999999, movie_similarity_cost: 0.097382 },
+      ];
+
+      const result = ensureXFieldForChart(data);
+
+      expect(result[0]).toHaveProperty("x", "2025-09-03");
+      expect(result[0]).toHaveProperty("date", "2025-09-03");
+      expect(result[0]).toHaveProperty("actor_movies_cost", 0.6567310000000002);
+      expect(result[0]).toHaveProperty("movie_similarity_cost", 0.0);
+    });
+
+    it("should detect multiple series from date-based data", () => {
+      const data = [
+        { date: "2025-09-03", actor_movies_cost: 0.6567310000000002, movie_similarity_cost: 0.0 },
+        { date: "2025-09-04", actor_movies_cost: 0.020062, movie_similarity_cost: 0.0 },
+      ];
+
+      const transformedData = ensureXFieldForChart(data);
+      const series = autoDetectSeries(transformedData);
+
+      expect(series).toHaveLength(2);
+      expect(series.map((s) => s.key)).toContain("actor_movies_cost");
+      expect(series.map((s) => s.key)).toContain("movie_similarity_cost");
+      expect(series.map((s) => s.key)).not.toContain("date");
+    });
+
+    it("should handle data that already has x field", () => {
+      const data = [{ x: "test", value: 123 }];
+
+      const result = ensureXFieldForChart(data);
+
+      expect(result).toBe(data); // Should return same reference if x already exists
+    });
+
+    it("should handle empty data", () => {
+      const result = ensureXFieldForChart([]);
+
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe("transformDataForCompletionsGraph", () => {
+    it("should handle multi-series data with date field", () => {
+      const data = [
+        { date: "2025-09-03", actor_movies_cost: 0.6567310000000002, movie_similarity_cost: 0.0 },
+        { date: "2025-09-04", actor_movies_cost: 0.020062, movie_similarity_cost: 0.0 },
+      ];
+
+      const graph = { type: "bar" as const };
+      const result = transformDataForCompletionsGraph({ data, graph });
+
+      expect(result[0]).toHaveProperty("x", "2025-09-03");
+      expect(result[0]).toHaveProperty("actor_movies_cost", 0.6567310000000002);
+      expect(result[0]).toHaveProperty("movie_similarity_cost", 0.0);
+    });
+
+    it("should handle single series data", () => {
+      const data = [
+        { category: "A", value: 100 },
+        { category: "B", value: 200 },
+      ];
+
+      const graph = { type: "bar" as const };
+      const result = transformDataForCompletionsGraph({ data, graph });
+
+      expect(result[0]).toEqual({ x: "A", y: 100 });
+      expect(result[1]).toEqual({ x: "B", y: 200 });
+    });
+
+    it("should handle multi-Y axis line charts", () => {
+      const data = [
+        { date: "2025-01-01", revenue: 1000, expenses: 500, profit: 500 },
+        { date: "2025-01-02", revenue: 1200, expenses: 600, profit: 600 },
+      ];
+
+      const graph = {
+        type: "line" as const,
+        y: [{ field: "revenue" }, { field: "expenses" }, { field: "profit" }],
+      };
+      const result = transformDataForCompletionsGraph({ data, graph });
+
+      expect(result[0]).toEqual({
+        x: "2025-01-01",
+        revenue: 1000,
+        expenses: 500,
+        profit: 500,
+      });
+    });
+
+    it("should handle empty data", () => {
+      const result = transformDataForCompletionsGraph({
+        data: [],
+        graph: { type: "bar" as const },
+      });
+
+      expect(result).toEqual([]);
+    });
+
+    it("should handle agent_id series transformation", () => {
+      const data = [
+        { agent_id: "actor-movies-experiment", date: "2025-09-03", total_cost: 0.6567310000000002 },
+        { agent_id: "actor-movies-experiment", date: "2025-09-04", total_cost: 0.020062 },
+        { agent_id: "new-politician-info-experiment", date: "2025-09-05", total_cost: 0.001438 },
+        { agent_id: "movie-similarity-experiment", date: "2025-09-08", total_cost: 0.09738200000000001 },
+      ];
+
+      const graph = { type: "bar" as const, y: [{ field: "total_cost" }] };
+      const result = transformDataForCompletionsGraph({ data, graph });
+
+      // Should group by date (x-axis) and agent_id (series)
+      expect(result.length).toBeGreaterThan(0);
+      expect(result[0]).toHaveProperty("x");
+      expect(result[0]).toHaveProperty("actor-movies-experiment");
     });
   });
 });

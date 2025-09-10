@@ -147,6 +147,9 @@ def setup_environment(test_jwk: dict[str, Any]):
             "PERPLEXITY_API_KEY": "perplexity-api-key",
             "ENRICH_SO_API_KEY": "enrich-so-api-key",
             "CLICKHOUSE_PASSWORD_SALT": "test",
+            "ENV_NAME": "staging",  # Using staging env to test variable substitution
+            "ANOTHERAI_API_URL": "http://localhost:8000",
+            "ANOTHERAI_API_KEY": "aai-my-key",
             "JWK": json.dumps(test_jwk, separators=(",", ":")),
         },
         clear=True,

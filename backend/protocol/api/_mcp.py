@@ -6,7 +6,7 @@ from typing import Annotated, Any
 from pydantic import Field
 
 from core.domain.cache_usage import CacheUsage
-from core.services.documentation_search import DocumentationSearch
+from core.services.documentation.documentation_search import DocumentationSearch
 from protocol.api import _mcp_utils
 from protocol.api._api_models import (
     Agent,
@@ -178,6 +178,24 @@ async def playground(
 
 @mcp.tool()
 async def list_models() -> list[Model]:
+    """List all available AI models with their capabilities, pricing, and metadata.
+
+    Returns a list of Model objects containing:
+    - id: Model identifier to use in the 'models' parameter of playground/API calls (corresponds to version_model in query_completions)
+    - display_name: Human-readable name of the model
+    - icon_url: URL to the model's icon image
+    - supports: Capabilities including:
+      - input/output modalities (text, image, audio, pdf support)
+      - parallel_tool_calls: Whether model can make multiple tool calls in one inference
+      - response_format: JSON schema support
+      - tools: Function calling support
+      - temperature: Whether temperature parameter is supported
+    - pricing: Cost information per token (input_token_usd, output_token_usd)
+    - release_date: When the model was released on the platform
+    - reasoning: Optional reasoning configuration with token budgets for different effort levels
+
+    Use this tool before calling playground() to see available model IDs and their capabilities.
+    """
     return await models_service.list_models()
 
 
@@ -391,6 +409,8 @@ async def query_completions(
     agent_id String,
     -- Version ID
     version_id FixedString(32),
+    -- Model ID that generated this completion (matches the 'id' field from list_models())
+    -- Use list_models() to see available model IDs and their capabilities/pricing
     version_model LowCardinality(String),
     -- Full version object, serialized as a json string
     version String,

@@ -986,6 +986,7 @@ export type JsonSchemaNode = {
   description?: string;
   enum?: unknown[];
   default?: unknown;
+  examples?: unknown[];
   $ref?: string;
   $defs?: Record<string, JsonSchemaNode>;
 };
