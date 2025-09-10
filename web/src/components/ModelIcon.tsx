@@ -37,6 +37,8 @@ export function ModelIcon({ modelId, className = "", size = 12 }: ModelIconProps
 interface ModelIconWithNameProps extends ModelIconProps {
   showName?: boolean;
   nameClassName?: string;
+  reasoningEffort?: "disabled" | "low" | "medium" | "high";
+  reasoningBudget?: number;
 }
 
 export function ModelIconWithName({
@@ -45,6 +47,8 @@ export function ModelIconWithName({
   size = 12,
   showName = true,
   nameClassName = "text-sm text-gray-900",
+  reasoningEffort,
+  reasoningBudget,
 }: ModelIconWithNameProps) {
   const { getModelById } = useOrFetchModels();
   const [imageError, setImageError] = useState(false);
@@ -53,6 +57,9 @@ export function ModelIconWithName({
 
   // Check if we should show the icon
   const shouldShowIcon = model && !imageError && model.icon_url;
+
+  // Format reasoning effort display
+  const reasoningDisplay = reasoningEffort ? reasoningEffort : reasoningBudget?.toString();
 
   return (
     <div className={`flex items-start ${shouldShowIcon ? "gap-1.5" : ""}`}>
@@ -69,7 +76,16 @@ export function ModelIconWithName({
           unoptimized // Since these are external SVG URLs from blob storage
         />
       )}
-      {showName && <span className={nameClassName}>{model?.display_name || modelId}</span>}
+      {showName && (
+        <div className="flex items-center gap-1">
+          <span className={nameClassName}>{model?.display_name || modelId}</span>
+          {reasoningDisplay && (
+            <span className="text-xs text-gray-500 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded-[2px]">
+              {reasoningDisplay}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
