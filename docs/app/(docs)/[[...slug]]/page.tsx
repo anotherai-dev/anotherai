@@ -5,7 +5,6 @@ import { notFound } from "next/navigation";
 import { sendFeedbackToSlack } from "@/app/actions/slack-feedback";
 import { CopyMarkdownButton } from "@/components/copy-markdown-button";
 import { Rate } from "@/components/rate";
-import { TOCDropdown } from "@/components/toc-dropdown";
 import { getLLMText } from "@/lib/get-llm-text";
 import { source } from "@/lib/source";
 import { getMDXComponents } from "@/mdx-components";
@@ -21,13 +20,7 @@ export default async function Page(props: { params: Promise<{ slug?: string[] }>
   const llmContent = await getLLMText(page);
 
   return (
-    <DocsPage
-      toc={page.data.toc}
-      full={page.data.full}
-      tableOfContent={{
-        header: <TOCDropdown />,
-      }}
-    >
+    <DocsPage toc={page.data.toc} full={page.data.full}>
       <div className="mb-4 flex items-center justify-between">
         <DocsTitle>{page.data.title}</DocsTitle>
         <CopyMarkdownButton content={llmContent} />
