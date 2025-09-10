@@ -113,7 +113,7 @@ AnotherAI is compatible with the OpenAI completion API, so it should be configur
 
 To use a deployment, simply use the deployment id in the model parameter in the completion call.
 
-<Tabs groupId="framework" items={['TypeScript (OpenAI SDK)',  'Go (OpenAI SDK)', 'API']}>
+<Tabs groupId="framework" items={['TypeScript (OpenAI SDK)',  'Go (OpenAI SDK)', 'API', 'TypeScript (Vercel AI)']}>
 <Tab value="TypeScript (OpenAI SDK)">
 
 ```typescript
@@ -280,6 +280,51 @@ If hitting the API directly is needed, the payload will look like:
         // metadata is optional
     }
 }
+```
+
+</Tab>
+<Tab value="TypeScript (Vercel AI)">
+
+AnotherAI is accessible in the Vercel AI through an OpenAI integration. Important considerations:
+- The Vercel AI SDK is very restrictive on what fields are allowed in the request body, so most WorkflowAI specific fields are passed through the metadata instead.
+- Empty prompt and messages are not allowed by the Vercel AI SDK, so it is needed to pass a prompt with a "-" which will be ignored by AnotherAI.
+
+```typescript
+import { createOpenAI } from "@ai-sdk/openai";
+import { generateObject, generateText } from "ai";
+
+
+const openai = createOpenAI({
+  apiKey: process.env["ANOTHERAI_API_KEY"],
+  baseURL: "{{API_URL}}/v1/",
+});
+
+const { object } = await generateObject({
+  model: openai(
+    "anotherai/deployment/analyze-book-characters:production#1"
+  ),
+  prompt: "-", // the agent sdk requires a system prompt
+  schema: z.object({
+    characters: z.array(z.object({
+      name: z.string().optional().nullable(),
+      goals: z.array(z.string()).optional().nullable(),
+      weaknesses: z.array(z.string()).optional().nullable(),
+      outcome: z.string().optional().nullable(),
+    })),
+  }),
+  providerOptions: {
+    openai: {
+      metadata: {
+        // no need to pass agent_id here since it will be passed by the deployment
+        // Pass the input here instead of the root since VercelAI removes custom fields
+        input: {
+          book_title: "The Shadow of the Wind",
+        },
+      },
+    },
+  },
+});
+// object has the correct type
 ```
 
 </Tab>
