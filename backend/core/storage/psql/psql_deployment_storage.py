@@ -127,6 +127,12 @@ class PsqlDeploymentStorage(PsqlBaseStorage, DeploymentStorage):
             for row in rows:
                 yield self._validate(_DeploymentRow, row).to_domain()
 
+    async def list_deployment_ids(self) -> AsyncIterable[str]:
+        async with self._connect() as connection:
+            rows = await connection.fetch("SELECT slug FROM deployments WHERE deleted_at IS NULL")
+            for row in rows:
+                yield row["slug"]
+
     async def get_deployment(self, deployment_id: str) -> Deployment:
         async with self._connect() as connection:
             row = await connection.fetchrow(
