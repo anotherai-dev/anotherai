@@ -1,5 +1,4 @@
 import re
-from collections.abc import AsyncIterable, Callable
 from typing import Any, NamedTuple
 
 import structlog
@@ -64,35 +63,22 @@ class RunService:
     async def missing_model_error(
         cls,
         model: str | None,
-        list_deployment_ids: Callable[[], AsyncIterable[str]] | None,
+        deployment_ids: list[str] | None,
     ):
         if not model:
             return BadRequestError(
                 """Missing model. To list all models programmatically: Use the list_models tool""",
             )
 
-        deployments = [d async for d in list_deployment_ids()] if list_deployment_ids else None
-
         components = [
-            f"{model} does not refer to a valid model {f'or deployment {deployments}' if deployments else ''}. The accepted formats are:",
-            "- <model>: a valid model name or alias",
-            "- <agent_id>/<model>: passing an agent_id as a prefix",
+            _invalid_model_error_msg(model),
+            "",
+            "To list all models programmatically: Use the list_models tool",
+            "To list all deployments programmatically: Use the list_deployments tool",
         ]
 
-        if deployments:
-            components.append("- anotherai/deployment/<deployment_id>: passing a deployment id")
-
-        components.extend(
-            [
-                "",
-                "To list all models programmatically: Use the list_models tool",
-            ],
-        )
-
-        if deployments:
-            components.append("To list all deployments programmatically: Use the list_deployments tool")
-        if suggested := await suggest_model(model, deployments or []):
-            components.insert(4, f"Did you mean {suggested}?")
+        if suggested := await suggest_model(model, deployment_ids or []):
+            components.insert(1, f"Did you mean {suggested}?")
         return BadRequestError("\n".join(components))
 
     @classmethod
@@ -130,7 +116,7 @@ class RunService:
         except MissingModelError as e:
             raise await self.missing_model_error(
                 e.extras.get("model"),
-                self._deployments_storage.list_deployment_ids,
+                [d async for d in self._deployments_storage.list_deployment_ids()],
             ) from None
 
         messages = list(request_messages_to_domain(request))
@@ -319,14 +305,12 @@ def _extract_references(request: OpenAIProxyChatCompletionRequest) -> _Environme
     if not model:
         if len(splits) > 2:
             # This is very likely an invalid environment error so we should raise an explicit BadRequestError
+            msg = _invalid_model_error_msg(request.model)
             raise BadRequestError(
-                f"""'{request.model}' does not refer to a valid model or deployment. The accepted formats are:
-                - <model>: a valid model name or alias
-                - <agent_id>/<model>: passing an agent_id as a prefix
-                - anotherai/deployment/<deployment_id>: passing a deployment id
+                f"""'{msg}
 
-                If the model cannot be changed, it is also possible to pass the agent_id or deployment_id in the
-                body of the request.""",
+If the model cannot be changed, it is also possible to pass the agent_id or deployment_id in the
+body of the request.""",
                 capture=True,
                 extras={"model": request.model},
             )
@@ -387,3 +371,10 @@ def _check_output_schema_compatibility(
     #         f"The requested response format is not compatible with the deployment's response format.\n{e}",
     #     ) from None
     return requested_schema
+
+
+def _invalid_model_error_msg(model: str):
+    return f"""'{model}' does not refer to a valid model or deployment. The accepted formats are:
+- <model>: a valid model name or alias
+- <agent_id>/<model>: passing an agent_id as a prefix
+- anotherai/deployment/<deployment_id>: passing a deployment id"""

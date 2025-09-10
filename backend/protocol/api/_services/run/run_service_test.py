@@ -20,7 +20,6 @@ from protocol.api._run_models import (
     OpenAIProxyResponseFormat,
 )
 from protocol.api._services.run.run_service import RunService, _EnvironmentRef, _extract_references, _ModelRef
-from tests.utils import mock_aiter
 
 
 def _proxy_request(**kwargs: Any):
@@ -368,23 +367,23 @@ class TestPrepareForModel:
 
 
 class TestMissingModelError:
-    async def test_missing_model_none(self, mock_deployments_storage: Mock):
+    async def test_missing_model_none(self):
         """Test that missing model (None) returns appropriate error"""
 
         result = await RunService.missing_model_error(
             model=None,
-            list_deployment_ids=mock_deployments_storage.list_deployment_ids,
+            deployment_ids=[],
         )
         assert isinstance(result, BadRequestError)
         expected_message = "Missing model. To list all models programmatically: Use the list_models tool"
         assert str(result) == expected_message
 
-    async def test_missing_model_empty_string(self, mock_deployments_storage: Mock):
+    async def test_missing_model_empty_string(self):
         """Test that missing model (empty string) returns appropriate error"""
 
         result = await RunService.missing_model_error(
             model="",
-            list_deployment_ids=mock_deployments_storage.list_deployment_ids,
+            deployment_ids=[],
         )
         assert isinstance(result, BadRequestError)
         expected_message = "Missing model. To list all models programmatically: Use the list_models tool"
@@ -394,18 +393,17 @@ class TestMissingModelError:
     async def test_invalid_model_no_deployments_no_suggestion(
         self,
         mock_suggest_model: AsyncMock,
-        mock_deployments_storage: Mock,
     ):
         """Test invalid model with no deployments and no suggestion"""
         mock_suggest_model.return_value = None
-        mock_deployments_storage.list_deployment_ids.return_value = mock_aiter("deployment-1", "deployment-2")
+        deployment_ids = ["deployment-1", "deployment-2"]
 
         result = await RunService.missing_model_error(
             model="invalid-model",
-            list_deployment_ids=mock_deployments_storage.list_deployment_ids,
+            deployment_ids=deployment_ids,
         )
         assert isinstance(result, BadRequestError)
-        expected_message = """invalid-model does not refer to a valid model or deployment ['deployment-1', 'deployment-2']. The accepted formats are:
+        expected_message = """'invalid-model' does not refer to a valid model or deployment. The accepted formats are:
 - <model>: a valid model name or alias
 - <agent_id>/<model>: passing an agent_id as a prefix
 - anotherai/deployment/<deployment_id>: passing a deployment id
@@ -419,19 +417,18 @@ To list all deployments programmatically: Use the list_deployments tool"""
     async def test_invalid_model_with_deployments_no_suggestion(
         self,
         mock_suggest_model: AsyncMock,
-        mock_deployments_storage: Mock,
     ):
         """Test invalid model with deployments available but no suggestion"""
         mock_suggest_model.return_value = None
 
-        mock_deployments_storage.list_deployment_ids.return_value = mock_aiter("deployment-1", "deployment-2")
+        deployment_ids = ["deployment-1", "deployment-2"]
 
         result = await RunService.missing_model_error(
             model="invalid-model",
-            list_deployment_ids=mock_deployments_storage.list_deployment_ids,
+            deployment_ids=deployment_ids,
         )
         assert isinstance(result, BadRequestError)
-        expected_message = """invalid-model does not refer to a valid model or deployment ['deployment-1', 'deployment-2']. The accepted formats are:
+        expected_message = """'invalid-model' does not refer to a valid model or deployment. The accepted formats are:
 - <model>: a valid model name or alias
 - <agent_id>/<model>: passing an agent_id as a prefix
 - anotherai/deployment/<deployment_id>: passing a deployment id
@@ -442,42 +439,20 @@ To list all deployments programmatically: Use the list_deployments tool"""
         mock_suggest_model.assert_called_once_with("invalid-model", ["deployment-1", "deployment-2"])
 
     @patch("protocol.api._services.run.run_service.suggest_model")
-    async def test_invalid_model_with_suggestion(self, mock_suggest_model: AsyncMock, mock_deployments_storage: Mock):
-        """Test invalid model with suggestion provided"""
-        mock_suggest_model.return_value = "gpt-4o"
-
-        mock_deployments_storage.list_deployment_ids.return_value = mock_aiter()
-
-        result = await RunService.missing_model_error(
-            model="gpt4o",
-            list_deployment_ids=mock_deployments_storage.list_deployment_ids,
-        )
-        assert isinstance(result, BadRequestError)
-        expected_message = """gpt4o does not refer to a valid model . The accepted formats are:
-- <model>: a valid model name or alias
-- <agent_id>/<model>: passing an agent_id as a prefix
-
-Did you mean gpt-4o?
-To list all models programmatically: Use the list_models tool"""
-        assert str(result) == expected_message
-        mock_suggest_model.assert_called_once_with("gpt4o", [])
-
-    @patch("protocol.api._services.run.run_service.suggest_model")
     async def test_invalid_model_with_deployments_and_suggestion(
         self,
         mock_suggest_model: AsyncMock,
-        mock_deployments_storage: Mock,
     ):
         """Test invalid model with both deployments and suggestion"""
         mock_suggest_model.return_value = "claude-3-sonnet"
-        mock_deployments_storage.list_deployment_ids.return_value = mock_aiter("my-agent:prod", "my-agent:dev")
+        deployment_ids = ["my-agent:prod", "my-agent:dev"]
 
         result = await RunService.missing_model_error(
             model="claude-sonnet",
-            list_deployment_ids=mock_deployments_storage.list_deployment_ids,
+            deployment_ids=deployment_ids,
         )
         assert isinstance(result, BadRequestError)
-        expected_message = """claude-sonnet does not refer to a valid model or deployment ['my-agent:prod', 'my-agent:dev']. The accepted formats are:
+        expected_message = """'claude-sonnet' does not refer to a valid model or deployment. The accepted formats are:
 - <model>: a valid model name or alias
 - <agent_id>/<model>: passing an agent_id as a prefix
 - anotherai/deployment/<deployment_id>: passing a deployment id
@@ -487,17 +462,3 @@ To list all models programmatically: Use the list_models tool
 To list all deployments programmatically: Use the list_deployments tool"""
         assert str(result) == expected_message
         mock_suggest_model.assert_called_once_with("claude-sonnet", ["my-agent:prod", "my-agent:dev"])
-
-    async def test_no_deployment_list_function(self):
-        """Test when list_deployment_ids is None"""
-        result = await RunService.missing_model_error(
-            model="invalid-model",
-            list_deployment_ids=None,
-        )
-        assert isinstance(result, BadRequestError)
-        expected_message = """invalid-model does not refer to a valid model . The accepted formats are:
-- <model>: a valid model name or alias
-- <agent_id>/<model>: passing an agent_id as a prefix
-
-To list all models programmatically: Use the list_models tool"""
-        assert str(result) == expected_message
