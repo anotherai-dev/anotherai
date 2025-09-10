@@ -6,6 +6,7 @@ import { ActivityIndicator } from "@/components/ActivityIndicator";
 import { EmptyState } from "@/components/EmptyState";
 import { LoadingState } from "@/components/LoadingState";
 import { PageError } from "@/components/PageError";
+import { Pagination } from "@/components/Pagination";
 import { SimpleTableComponent } from "@/components/SimpleTableComponent";
 import { formatDate, formatTotalCost } from "@/components/utils/utils";
 import { Deployment } from "@/types/models";
@@ -33,12 +34,16 @@ interface DeploymentStats {
 interface DeploymentsTableProps {
   deployments: Deployment[];
   deploymentStats?: Map<string, DeploymentStats>;
+  total: number;
+  currentPage: number;
+  pageSize: number;
   isLoading: boolean;
   error?: Error;
+  onPageChange: (page: number) => void;
 }
 
 export function DeploymentsTable(props: DeploymentsTableProps) {
-  const { deployments, deploymentStats, isLoading, error } = props;
+  const { deployments, deploymentStats, total, currentPage, pageSize, isLoading, error, onPageChange } = props;
   const router = useRouter();
 
   // Define display columns
@@ -122,13 +127,24 @@ export function DeploymentsTable(props: DeploymentsTableProps) {
   }
 
   return (
-    <SimpleTableComponent
-      columnHeaders={columnHeaders}
-      data={data}
-      onRowClick={handleRowClick}
-      minCellWidth={120}
-      cellVerticalAlign="middle"
-      columnWidths={["auto", "auto", "120px", "140px", "180px"]}
-    />
+    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+      <SimpleTableComponent
+        columnHeaders={columnHeaders}
+        data={data}
+        onRowClick={handleRowClick}
+        minCellWidth={120}
+        cellVerticalAlign="middle"
+        columnWidths={["auto", "auto", "120px", "140px", "180px"]}
+        className="border-0 rounded-none"
+      />
+
+      <Pagination
+        currentPage={currentPage}
+        totalItems={total}
+        pageSize={pageSize}
+        onPageChange={onPageChange}
+        isLoading={isLoading}
+      />
+    </div>
   );
 }
