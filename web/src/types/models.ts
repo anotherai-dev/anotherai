@@ -92,6 +92,32 @@ export interface Output {
   error?: Error;
 }
 
+export interface InferenceUsage {
+  input_tokens: number;
+  output_tokens: number;
+  total_tokens: number;
+}
+
+export interface LLMTrace {
+  kind: "llm";
+  duration_seconds: number;
+  cost_usd: number;
+  model: string;
+  provider: string;
+  usage?: InferenceUsage;
+}
+
+export interface ToolTrace {
+  kind: "tool";
+  duration_seconds: number;
+  cost_usd: number;
+  name: string;
+  tool_input_preview: string;
+  tool_output_preview: string;
+}
+
+export type Trace = LLMTrace | ToolTrace;
+
 export interface Annotation {
   id: string;
   created_at: string;
@@ -134,6 +160,7 @@ export interface Completion {
   metadata: Record<string, unknown>;
   cost_usd: number;
   duration_seconds?: number;
+  traces?: Trace[];
 }
 
 export interface Experiment {
