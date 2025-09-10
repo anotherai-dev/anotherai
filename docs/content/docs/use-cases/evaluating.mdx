@@ -28,6 +28,8 @@ Let's walk through evaluating an email summarization agent. In this example, our
 - Takes an email as input
 - Returns a summary
 
+[IMAGE TODO: SCREENSHOT OF EMAIL SUMMARIZER AGENT COMPLETION IN ANOTHERAI (to be clearer to non-technical users)]
+
 ```python
 # Example agent usage
 from openai import AsyncOpenAI
@@ -283,6 +285,8 @@ This code:
 2. Runs the judge agent to evaluate each summary
 3. Stores the evaluation scores as annotations on the summarizer's completions in AnotherAI
 
+[IMAGE TODO: SCREENSHOT OF LLM AS A JUDGE RESULTS???]
+
 You can then ask Claude to analyze these evaluation results by querying the annotations:
 
 ```
@@ -304,6 +308,7 @@ If you want to run your evaluation regularly and monitor the results over time, 
 Create a view that shows all completions of @[your-agent-name] with annotations. 
 The view should display the completion ID, input, outputs, and the annotation left on the completion.
 ```
+[IMAGE TODO: SCREENSHOT OF VIEW CREATED FROM THIS PROMPT]
 </Step>
 </Steps>
 
@@ -420,6 +425,8 @@ Ask Claude to create an experiment with recent completions:
 Create an experiment using the playground tool that tests gpt-4o-mini on the last 50 
 completions from my email-summarizer agent from the past day.
 ```
+
+[IMAGE TODO: SCREENSHOT OF EXPERIMENT CREATED FROM THIS PROMPT]
 
 **Option 2: Query and evaluate manually**
 

@@ -15,16 +15,28 @@ Suppose you have an agent that is working well, but is used in your product very
 <Step>
 Ask Claude to create an experiment comparing your current model against cheaper alternatives
 
-`Help me find the most cost effeective model to use on @calendar_event_extractor.py. Compare the cheaper models with my current model to assess the cost difference and quality drop.`
+```
+Help me find the most cost effeective model to use on @calendar_event_extractor.py. 
+Compare the cheaper models with my current model to assess the cost difference and 
+quality drop.
+```
 </Step>
 <Step>
 If you want to be sure to test with real data, you can modify your prompt to include that instruction
 
-`Help me find the most cost effeective model to use on @calendar_event_extractor.py. Compare the cheaper models with my current model to assess the cost difference and quality drop. Use the inputs from the last 50 production completions.`
+```
+Help me find the most cost effeective model to use on @calendar_event_extractor.py. 
+Compare the cheaper models with my current model to assess the cost difference and 
+quality drop. Use the inputs from the last 50 production completions.
+```
 
 Alternatively, if you have a dataset of standard test inputs you like to use to validate changes, you can modify your prompt to include that instruction:
 
-`Help me find the most cost effeective model to use on @calendar_event_extractor.py. Compare the cheaper models with my current model to assess the cost difference and quality drop. Use the inputs from @email_test_cases.txt`
-
+```
+Help me find the most cost effeective model to use on @calendar_event_extractor.py. 
+Compare the cheaper models with my current model to assess the cost difference and 
+quality drop. Use the inputs from @email_test_cases.txt
+```
+[IMAGE TODO: SCREENSHOT OF EXPERIMENT CREATED FROM ONE OF THE ABOVE PROMPTS]
 </Step>
 </Steps>
