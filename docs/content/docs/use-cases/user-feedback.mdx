@@ -19,6 +19,8 @@ Below is an example of the process you might implement for collecting and incorp
 This will look different for each product. Generally we recommend allowing the user to provide a comment, so that they can provide nuanced feedback. You may also want to allow your user to leave a score - for example 1-5 stars, or a thumbs up/down - in these cases the feedback would be added as a metric in the annotations.
 </Step>
 
+[IMAGE TODO: SCREENSHOT OF USER FEEDBACK COMPONENT IN M1 OR WORKFLOWAI???]
+
 <Step>
 ### Write a script to send user feedback to AnotherAI via the annotations endpoint 
 
@@ -88,6 +90,9 @@ Create a view that shows all completions of @[your-agent-name] with annotations.
 The view should display the completion ID, input, outputs, and the annotation 
 left on the completion.
 ```
+
+[IMAGE TODO: SCREENSHOT OF VIEW CREATED FROM THIS PROMPT]
+
 </Step>
 
 <Step>
@@ -101,5 +106,7 @@ and suggest prompt improvements based on common complaints
 ```
 
 Claude will query the annotations, identify patterns, and propose specific changes to improve user satisfaction.
+
+[IMAGE TODO: SCREENSHOTS OF PROMPT IN CLAUDE CODE AND/OR EXPERIEMENT OF AGENT BEFORE AND AFTER FEEDBACK]
 </Step>
 </Steps>

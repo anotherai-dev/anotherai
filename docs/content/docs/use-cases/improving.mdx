@@ -31,6 +31,8 @@ Then just ask Claude Code (or the AI coding agent you're using) to set up experi
 </Step>
 </Steps>
 
+[IMAGE TODO: SCREENSHOT OF PROMPT IN CLAUDE CODE ASKING FOR AN EXPERIMENT]
+
 The most common parameters to experiment with are prompts and models, however you can also experiment with changes to other parameters like temperature. 
 
 ### Prompts
@@ -44,6 +46,8 @@ Look at the prompt of @email-rewriter.py and create an experiment in AnotherAI
 that compares the current prompt with a new prompt that better emphasizes adopting 
 the tone lists in the input 
 ```
+
+[IMAGE TODO: SCREENSHOT OF EXPERIMENT VIEW SHOWING TWO PROMPTS SIDE BY SIDE]
 
 ### Models
 
@@ -64,6 +68,8 @@ Example:
 Can you retry the last 5 completions of @email-rewriter.py and compare the outputs with 
 GPT 5 mini?
 ```
+
+[IMAGE TODO: SCREENSHOT OF EXPERIMENT VIEW SHOWING TWO MODELS SIDE BY SIDE]
 
 ### Other Parameters
 
@@ -96,6 +102,8 @@ Test my email-rewriter agent with temperatures 0.2, 0.5, and 0.8 to find
 the right balance between creativity and professionalism
 ```
 
+[IMAGE TODO: SCREENSHOT OF EXPERIMENT VIEW SHOWING 3 versions with different temperatures]
+
 ### Tips:
 - Always reference the specific files of your agent when requesting experiments to avoid any ambiguity about what should be tested
 - Pick one variable to test with at a time (ex. models, prompts) to make sure that you can easily attribute a given variable on the agent's changes in performance.
@@ -112,6 +120,8 @@ Once your experiment has collected enough completions, you can:
 Analyze the results of experiment/019885bb-24ea-70f8-c41b-0cbb22cc3c00 
 and recommend which configuration performs best specifically for both accuracy and cost
 ```
+
+[IMAGE TODO: SCREENSHOT OF CLAUDE CODE ANALYSIS OF EXPERIMENT RESULTS?]
 
 # Annotations
 
@@ -134,12 +144,16 @@ Using text-based annotations allow you to provide thorough, nuanced feedback in 
 
 However if you would like to incorporate more quantitative ratings, you can do that by using scores, which are described below!
 
+[IMAGE TODO: SCREENSHOT OF TEXT-BASED ANNOTATIONS IN ANOTHERAI]
+
 #### Scores
 Scores can be added to annotations to provide quantitative evaluations. There are no predefined scores keys, you can add whatever is important to you. Some examples of common score metrics are:
 - Accuracy (does the content match what was expected?)
 - Tone (how appropriate is the tone given the context?)
 - Clarity (does the output make sense?)
 - Formatting (is markdown used appropriately and is the markdown correct?)
+
+[IMAGE TODO: SCREENSHOT OF ANNOTATION WITH SCORES IN ANOTHERAI]
 
 <Callout type="info">
 Currently, scores can only be added:
@@ -199,8 +213,10 @@ Claude can also leverage annotations to provide you with insights about your age
 ```
 Provide a report on the accuracy scores for all completions of calendar-event-extractor that used GPT-5. 
 ```
+[IMAGE TODO: SCREENSHOT OF VIEW CREATED FROM THIS PROMPT]
 
 #### 2. **Compare Model Performance**
 ```
 Which model has the best tone overall, based on annotations?
 ```
+[IMAGE TODO: SCREENSHOT OF VIEW CREATED FROM THIS PROMPT]

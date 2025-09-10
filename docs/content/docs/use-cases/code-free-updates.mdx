@@ -107,7 +107,7 @@ A Version also refers to a specific response format and set of variables. That's
 </Accordion>
 </Accordions>
 
-## Why Use Deployments?
+## Why Use Deployments? [ANYA TODO: I WANT TO REWORK THIS SECTION IN GENERAL]
 
 At heart, deployments are simply a way to manage some completion parameters that would traditionally be committed and deployed with the codebase. With the speed at which LLMs are evolving, re-deploying code any time a prompt needs to be adjusted or a model needs to be changed is not sustainable.
 
@@ -193,6 +193,7 @@ If you're using experiments to make improvements to your agent, you can always d
 I want to deploy anotherai/version/acf2635be31cbd89f9363bfd3b2c6abc to production.
 ```
 
+[IMAGE TODO: SCREENSHOT OF DEPLOYMENT LIST OR INDIVIDUAL DEPLOYMENTS VIEW??]
 </Tab>
 
 <Tab>
@@ -395,14 +396,22 @@ When your changes don't affect the input variables or output schema, you can upd
 <Steps>
 <Step>
 Copy the new version ID you want to deploy from [AnotherAI](https://anotherai.dev).
+
+[IMAGE TODO: SCREENSHOT OF WHERE A VERSION IS LOCATED IN THE WEB APP]
 </Step>
 
 <Step>
-  Ask Claude to update the existing deployment: ``` Update deployment travel-assistant/production#1 to use
-  anotherai/version/a9f1fc5ab11299a9fee5604e51fe7b6e ```
+  Ask Claude to update the existing deployment: 
+  ``` 
+  Update deployment travel-assistant/production#1 to use
+  anotherai/version/a9f1fc5ab11299a9fee5604e51fe7b6e 
+  ```
 </Step>
 
-<Step>Confirm the update in the AnotherAI web app when prompted.</Step>
+<Step>
+Confirm the update in the AnotherAI web app when prompted.
+[IMAGE TODO: SCREENSHOT OF DEPLOYMENT UPDATE CONFIRMATION IN THE WEB APP]
+</Step>
 
 <Step>
 That's it! **No code changes needed** - your application automatically uses the updated version.
@@ -523,4 +532,4 @@ json_schema: ... // response format is incompatible with the deployment
 </Tab>
 </Tabs>
 
-```
+

@@ -16,16 +16,27 @@ With how often new models are released, the above scenario is extremely common, 
 <Step>
 Ask Claude to create a experiment between your current and new model
 
-`Compare how @calendar_event_extractor.py performs using current GPT-4o-mini vs the new GPT-5 model`
+```
+Compare how @calendar_event_extractor.py performs using current GPT-4o-mini 
+vs the new GPT-5 model
+```
 </Step>
 <Step>
 If you want to be sure to test with real data, you can modify your prompt to include that instruction
 
-`Compare how @calendar_event_extractor.py performs using current GPT-4o-mini vs the new GPT-5 model. Use the inputs from the last 20 completions.`
+```
+Compare how @calendar_event_extractor.py performs using current GPT-4o-mini 
+vs the new GPT-5 model. Use the inputs from the last 20 completions.
+```
 
 Alternatively, if you have a dataset of standard test inputs you like to use to validate changes, you can modify your prompt to include that instruction:
 
-`Compare how @calendar_event_extractor.py performs using current GPT-4o-mini vs the new GPT-5 model. Use the inputs from @email_test_cases.txt`
+```
+Compare how @calendar_event_extractor.py performs using current GPT-4o-mini 
+vs the new GPT-5 model. Use the inputs from @email_test_cases.txt
+```
+
+[IMAGE TODO: SCREENSHOT OF EXPERIMENT CREATED FROM ONE OF THE ABOVE PROMPTS]
 </Step>
 </Steps>
 
