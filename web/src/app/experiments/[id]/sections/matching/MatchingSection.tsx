@@ -14,7 +14,7 @@ export function MatchingSection(props: Props) {
   const { experiment, annotations, experimentId, completionId } = props;
 
   const matchingContentKeys = useMemo(() => {
-    const keys = getMatchingVersionKeys(experiment.versions);
+    const keys = getMatchingVersionKeys(experiment.versions, ["id", "model"]);
     return sortVersionKeys(keys);
   }, [experiment.versions]);
 
