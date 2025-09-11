@@ -436,6 +436,75 @@ class TestListDeployments:
         assert deployment.id not in retrieved_ids
 
 
+class TestListDeploymentIds:
+    async def test_list_deployment_ids_empty(
+        self,
+        deployment_storage: PsqlDeploymentStorage,
+    ):
+        # Test with no deployments
+        ids = [deployment_id async for deployment_id in deployment_storage.list_deployment_ids()]
+        assert len(ids) == 0
+
+    async def test_list_deployment_ids(
+        self,
+        deployment_storage: PsqlDeploymentStorage,
+        test_agent: Agent,
+    ):
+        # Create multiple deployments
+        created_deployments: list[Deployment] = []
+        for i in range(3):
+            deployment = fake_deployment(id=f"deployment-{i}-{uuid.uuid4().hex[:8]}", agent_id=test_agent.id)
+            created_deployments.append(deployment)
+            await deployment_storage.create_deployment(deployment)
+
+        # List deployment IDs
+        ids = [deployment_id async for deployment_id in deployment_storage.list_deployment_ids()]
+
+        # Should include all our created deployment IDs
+        created_ids = [dep.id for dep in created_deployments]
+        for created_id in created_ids:
+            assert created_id in ids
+
+    async def test_list_deployment_ids_does_not_include_archived(
+        self,
+        deployment_storage: PsqlDeploymentStorage,
+        test_agent: Agent,
+    ):
+        # Create deployments
+        active_deployment = fake_deployment(id=f"active-{uuid.uuid4().hex[:8]}", agent_id=test_agent.id)
+        archived_deployment = fake_deployment(id=f"archived-{uuid.uuid4().hex[:8]}", agent_id=test_agent.id)
+
+        await deployment_storage.create_deployment(active_deployment)
+        await deployment_storage.create_deployment(archived_deployment)
+
+        # Archive one deployment
+        await deployment_storage.archive_deployment(archived_deployment.id)
+
+        # List deployment IDs
+        ids = [deployment_id async for deployment_id in deployment_storage.list_deployment_ids()]
+
+        # Should include both active and archived deployment IDs
+        assert active_deployment.id in ids
+        assert archived_deployment.id not in ids
+
+    async def test_list_deployment_ids_different_tenant(
+        self,
+        psql_pool: asyncpg.Pool,
+        test_agent: Agent,
+        deployment_storage: PsqlDeploymentStorage,
+    ):
+        # Create deployment in tenant 1
+        deployment = fake_deployment(id=f"deployment-{uuid.uuid4().hex[:8]}", agent_id=test_agent.id)
+        await deployment_storage.create_deployment(deployment)
+
+        # List IDs from tenant 2
+        storage_tenant2 = PsqlDeploymentStorage(tenant_uid=2, pool=psql_pool)
+        ids = [deployment_id async for deployment_id in storage_tenant2.list_deployment_ids()]
+
+        # Should not include the deployment from tenant 1
+        assert deployment.id not in ids
+
+
 class TestGetDeployment:
     async def test_get_deployment(
         self,
