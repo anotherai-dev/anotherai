@@ -1,16 +1,28 @@
 ---
 title: Building a New Agent
 summary: Learn how to build AI agents with AnotherAI's unified API and observability features
-description: Step-by-step guide to creating, configuring, and deploying AI agents using AnotherAI
+description: Step-by-step guide to creating, configuring, and deploying AI agents using AnotherAI THIS NEEDS TO BE UPDATED
 ---
 
 import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+<Callout type="error">
+This description (above) needs to be updated to reflect the new value proposition of using AnotherAI + Agentic coding tools for building agents.
+</Callout>
 
 ## Getting Started
 
 Because AnotherAI is an OpenAI-compatible proxy, building an agent has minimal configuration changes from standard OpenAI implementations. There are a few things you need to know to make sure your agent is AnotherAI-compatible.
 
 ### Recommended: Use Claude Code for Quick Agent Creation
+
+<Callout type="error">
+Should we completely assume that users will use a MCP client to build agents? And go all in on that?
+
+We should keep the integrations documentation available with the code examples, but mostly for the MCP clients reading the documentation, not as much the end-user. 
+
+Currently, on this page, most of the content is dedicated to the manual setup, which is not the recommended approach.
+</Callout>
 
 The easiest way to create a new agent is to ask Claude Code (or your preferred AI coding agent) to build it for you:
 
@@ -22,11 +34,39 @@ Create a new AnotherAI agent that analyzes customer sentiment from support ticke
 Build an agent using AnotherAI that extracts structured data from invoices
 ```
 
+<Callout type="error">
+Do we currently support PDF as input well? I thought we had issues with images for example in the playground tool.
+</Callout>
+
 Claude Code will automatically set up the proper configuration and best practices for you.
 
 [IMAGE TODO: PROMPT SENT TO CLAUDE CODE??]
 
+<Callout type="error">
+This page currently misses the core value proposition of using AnotherAI + Agentic coding tools for building agents.
+
+**The Experimentation Flow**
+When building a new agent with AnotherAI, the key value is automatic experimentation:
+- Show how AnotherAI/Claude Code can automatically tests 100+ models (of course, we don't expect that 100 models will be tested, but at least the reader reading the page should understand that AnotherAI can test different models from different providers)
+- Include screenshots of the experimentation page showing model/prompts side-by-side comparisons
+- Comparing outputs quality, but also cost and latency that are automatically computed by AnotherAI
+- Demonstrate how users can provide feebdack on outputs, and feedback loop to find the right models/prompts?
+
+**Also, we shoud include an example of prompts that showcase how constraints can be specified during agent creation**
+- How to specify performance requirements (max p50 latency)
+- How to set budget constraints
+- How AnotherAI automatically finds the best model within constraints
+- Example prompts: "Create agent with less than 1s latency and under $0.xx for 1000 requests"
+the goal is to show that AnotherAI can automatically find the best model within constraints, and that the user can just specify the constraints.
+</Callout>
+
 ### Manual Setup
+
+<Callout type="error">
+- Should this section link to the integrations page instead? Since the code is actually different for each integration. 
+
+I think too much of this page is dedicated to the manual setup, which is not the recommended approach.
+</Callout>
 
 If you prefer to build manually or want to understand the configuration details, follow the guide below.
 
