@@ -1,27 +1,31 @@
 import asyncio
-from collections.abc import Coroutine, Sequence
-from typing import Any, Concatenate, NamedTuple
+from collections.abc import Sequence
+from typing import Generic, NamedTuple, TypeVar
 
 from structlog import get_logger
-from taskiq import AsyncTaskiqDecoratedTask
 
-from core.domain.events import Event, StoreCompletionEvent
+from core.domain.events import Event, StoreCompletionEvent, UserConnectedEvent
+from protocol.worker.tasks._types import TASK
 
 _log = get_logger(__name__)
 
-
-class _TaskListing[T: Event](NamedTuple):
-    event: type[T]
-    jobs: Sequence[AsyncTaskiqDecoratedTask[Concatenate[T, ...], Coroutine[Any, Any, None]]]
+# Using old generic syntax to force the type to be covariant
+_T_co = TypeVar("_T_co", bound=Event, covariant=True)
 
 
-def _tasks() -> list[_TaskListing[Event]]:
+class _TaskListing(NamedTuple, Generic[_T_co]):  # noqa: UP046
+    event: type[_T_co]
+    jobs: Sequence[TASK[_T_co]]
+
+
+def _tasks() -> Sequence[_TaskListing[Event]]:
     # Importing here to avoid circular dependency
-    from protocol.worker.tasks import store_completion_tasks
+    from protocol.worker.tasks import store_completion_tasks, user_connected_tasks
 
     # We use an array to have correct typing
     return [
         _TaskListing(StoreCompletionEvent, store_completion_tasks.TASKS),
+        _TaskListing(UserConnectedEvent, user_connected_tasks.TASKS),
     ]
 
 
@@ -33,7 +37,7 @@ class SystemEventRouter:
     @classmethod
     async def _send_task[T: Event](
         cls,
-        job: AsyncTaskiqDecoratedTask[[T], Coroutine[Any, Any, None]],
+        job: TASK[T],
         event: T,
         delay: float | None = None,
     ):
@@ -53,7 +57,7 @@ class SystemEventRouter:
 
     def _schedule_task(
         self,
-        job: AsyncTaskiqDecoratedTask[[Event], Coroutine[Any, Any, None]],
+        job: TASK[Event],
         event: Event,
         delay: float | None = None,
     ):

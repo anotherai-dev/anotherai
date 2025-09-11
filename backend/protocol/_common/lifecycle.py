@@ -32,12 +32,14 @@ class LifecycleDependencies:
         self.storage_builder = storage_builder
         self.provider_factory = provider_factory
         self._user_manager = user_manager
+        self._system_event_router = SystemEventRouter()
         self.security_service = SecurityService(
             self.storage_builder.tenants(-1),
             _default_verifier(),
             self._user_manager,
+            user_storage=self.storage_builder.users(-1),
+            event_router=self._system_event_router,
         )
-        self._system_event_router = SystemEventRouter()
 
     async def close(self):
         # TODO: not great ownership here, the objects are passed as parameters but we are closing them here

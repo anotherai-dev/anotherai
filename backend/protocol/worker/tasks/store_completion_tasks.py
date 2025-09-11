@@ -1,5 +1,6 @@
 from core.domain.events import StoreCompletionEvent
 from protocol.worker._dependencies import CompletionStorerDep, PaymentServiceDep
+from protocol.worker.tasks._types import TASK
 from protocol.worker.worker import broker
 
 
@@ -14,4 +15,4 @@ async def decrement_credits(event: StoreCompletionEvent, payment_service: Paymen
         await payment_service.decrement_credits(event.completion.cost_usd)
 
 
-TASKS = [store_completion, decrement_credits]
+TASKS: list[TASK[StoreCompletionEvent]] = [store_completion, decrement_credits]
