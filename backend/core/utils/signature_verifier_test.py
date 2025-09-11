@@ -68,7 +68,7 @@ class TestJWKSignatureVerifier:
     @pytest.mark.parametrize(
         ("invalid_token", "expected_message"),
         [
-            pytest.param("", "Token does not have a valid header", id="empty"),
+            pytest.param("", "Invalid bearer token. Provide either an API key (aai-***) or a JWT", id="empty"),
             pytest.param("abc.def.ghi", "Token does not have a valid header", id="not-base64"),  # not base64
             pytest.param(
                 "eyJhbGciOiJSUzI1NiJ9..",
@@ -121,7 +121,7 @@ class TestJWKSetSignatureVerifier:
     @pytest.mark.parametrize(
         ("invalid_token", "expected_message"),
         [
-            pytest.param("", "Token does not have a valid header", id="empty"),
+            pytest.param("", "Invalid bearer token. Provide either an API key (aai-***) or a JWT", id="empty"),
             pytest.param("abc.def.ghi", "Token does not have a valid header", id="not-base64"),  # not base64
             pytest.param(
                 "eyJhbGciOiJSUzI1NiJ9..",
