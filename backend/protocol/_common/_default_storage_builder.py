@@ -20,9 +20,11 @@ from core.storage.psql.psql_annotation_storage import PsqlAnnotationStorage
 from core.storage.psql.psql_deployment_storage import PsqlDeploymentStorage
 from core.storage.psql.psql_experiment_storage import PsqlExperimentStorage
 from core.storage.psql.psql_tenant_storage import PsqlTenantStorage
+from core.storage.psql.psql_user_storage import PsqlUserStorage
 from core.storage.psql.psql_view_storage import PsqlViewStorage
 from core.storage.storage_builder import StorageBuilder
 from core.storage.tenant_storage import TenantStorage
+from core.storage.user_storage import UserStorage
 from core.storage.view_storage import ViewStorage
 
 
@@ -69,6 +71,10 @@ class DefaultStorageBuilder(StorageBuilder):
     @override
     def deployments(self, tenant_uid: int) -> DeploymentStorage:
         return PsqlDeploymentStorage(tenant_uid, self._psql_pool)
+
+    @override
+    def users(self, tenant_uid: int) -> UserStorage:
+        return PsqlUserStorage(tenant_uid, self._psql_pool)
 
     @classmethod
     async def create(cls):
