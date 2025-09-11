@@ -3,6 +3,7 @@
 
 from typing import Annotated, Any
 
+from mcp.types import ToolAnnotations
 from pydantic import Field
 
 from core.domain.cache_usage import CacheUsage
@@ -36,7 +37,7 @@ mcp = _mcp_utils.CustomFastMCP(
 )
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(openWorldHint=True))
 async def playground(
     models: str = Field(
         description="A comma separated list of models to use for the playground. Use list_models first to see available model IDs before selecting models",
@@ -176,7 +177,7 @@ async def playground(
 # Models
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def list_models() -> list[Model]:
     """List all available AI models with their capabilities, pricing, and metadata.
 
@@ -203,7 +204,7 @@ async def list_models() -> list[Model]:
 # Agents
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def list_agents() -> Page[Agent]:
     return await (await _mcp_utils.agent_service()).list_agents()
 
@@ -212,12 +213,12 @@ async def list_agents() -> Page[Agent]:
 # Experiments
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def get_experiment(id: str) -> Experiment:
     return await (await _mcp_utils.experiment_service()).get_experiment(id)
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(idempotentHint=True))
 async def add_experiment_result(id: str, result: str):
     await (await _mcp_utils.experiment_service()).set_experiment_result(id, result)
     return "success"
@@ -227,7 +228,7 @@ async def add_experiment_result(id: str, result: str):
 # Annotations
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def get_annotations(
     experiment_id: str | None = None,
     completion_id: str | None = None,
@@ -269,7 +270,7 @@ async def get_annotations(
     )
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(idempotentHint=True))
 async def add_annotations(
     annotations: list[Annotation] = Field(
         description="List of Annotation objects to add.",
@@ -360,7 +361,7 @@ Search AnotherAI documentation OR fetch a specific documentation page.
 
 
 # TODO: generate the tool description dynamically
-@mcp.tool(description=_get_description_search_documentation_tool())
+@mcp.tool(description=_get_description_search_documentation_tool(), annotations=ToolAnnotations(readOnlyHint=True))
 async def search_documentation(
     query: str | None = Field(
         default=None,
@@ -387,7 +388,7 @@ async def search_documentation(
 
 
 # TODO: we should add comments to fields so that they show when describing the table
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def query_completions(
     query: str = Field(
         description="SQL query to execute. Must use ClickHouse SQL syntax.",
@@ -511,19 +512,20 @@ async def query_completions(
 
 
 # TODO: add pagination and limit
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def list_views() -> Page[View]:
     """List all views"""
     return await (await _mcp_utils.view_service()).list_views()
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def get_view(id: str) -> View:
     """Get a view by id"""
     return await (await _mcp_utils.view_service()).get_view(id)
 
 
 @mcp.tool(
+    annotations=ToolAnnotations(idempotentHint=True),
     description=f"""Create a new view or update an existing view. If no dashboard id is provided, the "default" dashboard is used.  # nosec B608
 If a dashboard with the provided id does not exist, it will be created.
 
@@ -581,7 +583,7 @@ async def create_api_key(name: str) -> CompleteAPIKey:
 # Deployments
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def list_deployments(
     agent_id: str | None = Field(
         default=None,
@@ -605,7 +607,7 @@ async def list_deployments(
     )
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(idempotentHint=True))
 async def create_or_update_deployment(
     agent_id: str = Field(
         description="The agent id to deploy the version to",
