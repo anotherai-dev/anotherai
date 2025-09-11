@@ -16,6 +16,9 @@ class StoreCompletionEvent(Event):
 class UserConnectedEvent(Event):
     """Event sent when a user connected with a JWT"""
 
+    # Change the default value. the user connected event should not have a tenant_uid
+    tenant_uid: int = -1
+
     user_id: str
     organization_id: str | None
 
