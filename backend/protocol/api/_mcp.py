@@ -101,8 +101,13 @@ async def playground(
     ),
 ) -> PlaygroundOutput:
     """
-    Agent Reuse Policy:
-    -------------------
+    Returns:
+    - completions: List of completion data
+    - experiment_url: URL for visual side-by-side comparison where:
+      * Each input becomes a ROW in the comparison table
+      * Each variation (model, temperature, prompt, tool_list, output_schema) becomes a COLUMN (Version 1, Version 2, etc.)
+
+    ## Agent Reuse Policy
     When creating a new experiment, always check for existing agents that perform similar tasks or have matching functionality.
     - Step 1: Use the list_agents tool to retrieve all available agents.
     - Step 2: If an agent exists whose purpose, configuration, or name matches the requested task, reuse that agent by specifying its agent_id in the experiment.
@@ -134,25 +139,36 @@ async def playground(
     Supports structured output via response_format parameter.
     Supports metadata attachment for tracking and observability.
 
+    ## Input Options
     For providing inputs, you have two options:
     - inputs parameter: provide a list of inputs directly (for new experiments with custom data)
-    - completion_query parameter: 🔄 PREFERRED for re-running experiments - provide a SQL query to fetch inputs from existing completions
 
     ✅ USE the completion_query parameter when:
     - "retry the last 50 completions"
     - "repeat the last 50 completions with positive user feedback"
-    - Re-running any existing completions with different models/settings
+    - Re-running any existing completions with different models/prompts/settings
     - Comparing performance across different model versions
 
     ❌ AVOID using the query_completions() tool to fetch data and then passing it to inputs parameter
 
-    Examples:
+    ### SQL Query Examples for completion_query
     - Repeat the last 50 unique inputs completions:
     SELECT * FROM completions LIMIT 50 ORDER BY created_at DESC LIMIT 1 BY input_id LIMIT 50
     - Use all the runs from a specific experiment:
     SELECT * FROM completions WHERE id IN (SELECT arrayJoin(completion_ids) FROM experiments WHERE id = 'exp-billing-analysis')
-    - Use all the runs that have been annotated today
+    - Use all the runs that have been annotated today:
     SELECT input_variables, input_messages FROM completions JOIN annotations ON completions.id = annotations.completion_id WHERE annotations.created_at >= now() - INTERVAL 1 DAY
+
+    ## Designing Experiments for Comparison
+    When setting up playground experiments, choose parameters that enable meaningful side-by-side comparison
+    in the experiment_url. Include all variations you want reviewers to compare directly.
+
+    For example, when iterating on a prompt based on feedback:
+    - Include the original prompt as a baseline
+    - Add improved prompts (v1, v2, etc.) as additional variations
+    - This allows reviewers to see the progression and improvements clearly
+
+    The same principle applies to all variation parameters: models, temperatures, tools, and output schemas.
     """
 
     return await (await _mcp_utils.playground_service()).run(
