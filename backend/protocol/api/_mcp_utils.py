@@ -187,8 +187,16 @@ class CustomTokenVerifier(TokenVerifier):
         )
 
 
+class CustomRemoteAuthProvider(RemoteAuthProvider):
+    @override
+    def get_routes(self):
+        # We handle the protected routes manually. It seems that some MCP clients require
+        # some weird routes
+        return []
+
+
 def build_auth_provider() -> AuthProvider:
-    return RemoteAuthProvider(
+    return CustomRemoteAuthProvider(
         token_verifier=CustomTokenVerifier(),
         authorization_servers=[AnyHttpUrl(AUTHORIZATION_SERVER)],
         resource_server_url=f"{ANOTHERAI_API_URL}/mcp",

@@ -116,11 +116,12 @@ if not _INCLUDED_ROUTES or "run" in _INCLUDED_ROUTES:
     api.include_router(_run_router.router)
 
 if _mcp_app:
-    api.mount("/", _mcp_app)
     # Well known router is used for oauth
     # Some MCP clients look for the .well-known after the /mcp prefix
     api.include_router(_well_known_router.router)
     api.include_router(_well_known_router.router, prefix="/mcp")
+
+    api.mount("/", _mcp_app)
 
 if __name__ == "__main__":
     import uvicorn
