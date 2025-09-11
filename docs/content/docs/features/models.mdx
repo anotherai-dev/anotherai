@@ -1,7 +1,7 @@
 ---
 title: Models
 summary: Documentation for using and switching between different AI models. Covers how to list available models and manage versions for agents.
-description: AnotherAI connects you to 100+ models from leading AI providers including OpenAI, Anthropic, Google, Meta, DeepSeek, Mistral, and more — all through a single, unified API.
+description: A unified API for 100+ models from leading AI providers including OpenAI, Anthropic, Google, Meta, DeepSeek, Mistral, and more.
 ---
 
 import { WorkflowModelsWrapper } from '@/components/workflow-models-wrapper';
@@ -13,10 +13,6 @@ import { WorkflowModelCount } from '@/components/workflow-model-count';
 ## Switching between models
 
 To use a specific model, simply change the `model` parameter in your API call.
-
-<Callout type="info">
-  To properly organize your observability data, you can identify your agent by adding `agent_id` to your metadata (preferred method) or by using an agent prefix in the model parameter when metadata editing isn't possible. This helps you track and debug runs for specific agents. Learn more about [identifying your agent](/observability#identify-your-agent).
-</Callout>
 
 <Tabs items={["Python", "JavaScript", "curl"]}>
   <Tab>
@@ -30,23 +26,23 @@ To use a specific model, simply change the `model` parameter in your API call.
 
   # Using GPT-4
   response = client.chat.completions.create(
-      model="gpt-4o",
+      model="gpt-4o", # [!code highlight]
       messages=[{"role": "user", "content": "Hello!"}],
-      metadata={"agent_id": "my-agent"} # [!code highlight]
+      metadata={"agent_id": "my-agent"}
   )
 
   # Switching to Claude
   response = client.chat.completions.create(
-      model="claude-3-7-sonnet-latest",
+      model="claude-3-7-sonnet-latest", # [!code highlight]
       messages=[{"role": "user", "content": "Hello!"}],
-      metadata={"agent_id": "my-agent"} # [!code highlight]
+      metadata={"agent_id": "my-agent"}
   )
 
   # Using Llama
   response = client.chat.completions.create(
-      model="llama4-maverick-instruct-fast",
+      model="llama4-maverick-instruct-fast", # [!code highlight]
       messages=[{"role": "user", "content": "Hello!"}],
-      metadata={"agent_id": "my-agent"} # [!code highlight]
+      metadata={"agent_id": "my-agent"}
   )
   ```
   </Tab>
@@ -61,23 +57,23 @@ To use a specific model, simply change the `model` parameter in your API call.
 
   // Using GPT-4
   let response = await client.chat.completions.create({
-    model: 'gpt-4o',
+    model: 'gpt-4o', // [!code highlight]
     messages: [{ role: 'user', content: 'Hello!' }],
-    metadata: { agent_id: 'my-agent' } // [!code highlight]
+    metadata: { agent_id: 'my-agent' }
   });
 
   // Switching to Claude
   response = await client.chat.completions.create({
-    model: 'claude-3-7-sonnet-latest',
+    model: 'claude-3-7-sonnet-latest', // [!code highlight]
     messages: [{ role: 'user', content: 'Hello!' }],
-    metadata: { agent_id: 'my-agent' } // [!code highlight]
+    metadata: { agent_id: 'my-agent' }
   });
 
   // Using Llama
   response = await client.chat.completions.create({
-    model: 'llama4-maverick-instruct-fast',
+    model: 'llama4-maverick-instruct-fast', // [!code highlight]
     messages: [{ role: 'user', content: 'Hello!' }],
-    metadata: { agent_id: 'my-agent' } // [!code highlight]
+    metadata: { agent_id: 'my-agent' }
   });
   ```
   </Tab>
@@ -88,9 +84,9 @@ To use a specific model, simply change the `model` parameter in your API call.
     -H "Authorization: Bearer YOUR_ANOTHERAI_API_KEY" \
     -H "Content-Type: application/json" \
     -d '{
-      "model": "gpt-4o",
+      "model": "gpt-4o", // [!code highlight]
       "messages": [{"role": "user", "content": "Hello!"}],
-      "metadata": {"agent_id": "my-agent"} // [!code highlight]
+      "metadata": {"agent_id": "my-agent"}
     }'
 
   # Switching to Claude
@@ -98,9 +94,9 @@ To use a specific model, simply change the `model` parameter in your API call.
     -H "Authorization: Bearer YOUR_ANOTHERAI_API_KEY" \
     -H "Content-Type: application/json" \
     -d '{
-      "model": "claude-3-7-sonnet-latest",
+      "model": "claude-3-7-sonnet-latest", // [!code highlight]
       "messages": [{"role": "user", "content": "Hello!"}],
-      "metadata": {"agent_id": "my-agent"} // [!code highlight]
+      "metadata": {"agent_id": "my-agent"}
     }'
   ```
   </Tab>
