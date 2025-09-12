@@ -6,14 +6,74 @@ description: How to reduce agent costs while maintaining quality
 
 import { Steps, Step } from 'fumadocs-ui/components/steps';
 import { Callout } from 'fumadocs-ui/components/callout';
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
 
-Suppose you have an agent that is working well, but is used in your product very often and racking up costs. With AnotherAI your AI coding agent gets instant access to 100+ different models, so it can help you find a cheaper model that can deliver the same quality at a fraction of the cost.
+Suppose you have an agent that is working well, but is used in your product very often and racking up costs. With AnotherAI your AI assistant gets instant access to 100+ different models, so it can help you find a cheaper model that can deliver the same quality at a fraction of the cost.
 
-### Finding a cost-effective model
+## Identifying Cost Issues
+
+Before optimizing costs, you need to understand your current spending. Ask your AI assistant to analyze your agent's usage:
+
+```
+Show me the cost breakdown for anotherai/agent/calendar-event-extractor over the last week. 
+How much am I spending per day and what's the average cost per completion?
+```
+
+Your AI assistant can also help identify cost trends and anomalies:
+
+```
+Compare the costs of my agents and identify which ones are the most expensive to run. 
+Show me any agents where costs have increased significantly recently.
+```
+
+<Accordions>
+<Accordion title="Example response">
+⏺ Cost Analysis Summary
+
+**Most Expensive Agents (Total Cost)**
+
+Top 5 by Total Spend:
+1. email-subject-generator - $314.60 (241K runs)
+2. task-extractor - $240.41 (329K runs)
+3. daily-summary-writer - $229.95 (324K runs)
+4. content-summarizer - $120.80 (168K runs)
+5. document-analyzer - $72.78 (168K runs)
+
+Top 5 by Cost Per Run:
+1. research-assistant - $0.0095/run
+2. customer-chat-bot - $0.0093/run
+3. data-extractor - $0.0054/run
+4. draft-generator - $0.0044/run
+5. report-builder - $0.0043/run
+
+**Agents with Significant Recent Cost Increases**
+
+Massive Increases (>1000% daily average):
+- contact-finder: +5,343% increase (from $0.33 to $13.57 in last 3 days)
+- data-extractor: +2,038% increase (from $0.22 to $3.56)
+- query-parser: +2,018% increase (from $0.16 to $2.52)
+- customer-chat-bot: +1,822% increase (from $1.76 to $25.40)
+- entity-extractor: +1,712% increase (from $0.35 to $4.76)
+
+High-volume agents with large increases (>500%):
+- daily-summary-writer: +1,228% increase (294K runs in last 3 days)
+- task-extractor: +560% increase (274K runs in last 3 days)
+- email-subject-generator: +527% increase (198K runs in last 3 days)
+- content-summarizer: +570% increase (140K runs in last 3 days)
+
+The cost increases appear to be primarily driven by increased usage volume rather than per-run cost changes, as most agents show stable or only slightly increased average costs per run.
+</Accordion>
+</Accordions>
+
+<Callout type="info">
+AnotherAI automatically tracks costs for every completion, making it easy to identify which agents and models are driving your expenses. Learn more about [metrics and tracking](/use-cases/fundamentals/metrics).
+</Callout>
+
+## Finding a cost-effective model
 
 <Steps>
 <Step>
-Ask Claude to create an experiment comparing your current model against cheaper alternatives
+Ask your AI assistant to create an experiment comparing your current model against cheaper alternatives
 
 ```
 Help me find the most cost effeective model to use on anotherai/agent/calendar-event-extractor. 

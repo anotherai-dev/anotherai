@@ -6,6 +6,7 @@ description: Collect and integrate end-user feedback to improve your agents
 
 import { Steps, Step } from 'fumadocs-ui/components/steps';
 import { Card, Cards } from 'fumadocs-ui/components/card';
+import { Callout } from 'fumadocs-ui/components/callout';
 import { FlaskRound, MessageSquare } from 'lucide-react';
 
 # End-User Feedback
@@ -110,16 +111,20 @@ and suggest prompt improvements based on common complaints
 Claude will query the annotations, identify patterns, and propose specific changes to improve user satisfaction.
 
 [IMAGE TODO: SCREENSHOTS OF PROMPT IN CLAUDE CODE AND/OR EXPERIEMENT OF AGENT BEFORE AND AFTER FEEDBACK]
+
+<Callout type="info">
+Once you've validated improvements through experiments, you can deploy them instantly without code changes using [deployments](/use-cases/fundamentals/deployments). This allows your team to rapidly iterate on agent improvements based on user feedback - no engineering bottlenecks, no deployment delays.
+</Callout>
 </Step>
 </Steps>
 
 ## Other Ways to Improve your Agents
 
 <Cards>
-  <Card title="Using Experiments" href="/use-cases/fundementals/improving_w_experiments" icon={<FlaskRound />}>
+  <Card title="Using Experiments" href="/use-cases/fundamentals/experiments" icon={<FlaskRound />}>
     Systematically compare prompts, models, and parameters to find the optimal agent configuration
   </Card>
-  <Card title="Using Annotations" href="/use-cases/fundementals/improving_w_annotations" icon={<MessageSquare />}>
+  <Card title="Using Annotations" href="/use-cases/fundamentals/annotations" icon={<MessageSquare />}>
     Add specific feedback to completions and experiments to guide agent improvements
   </Card>
 </Cards>

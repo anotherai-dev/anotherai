@@ -1,15 +1,21 @@
 ---
-title: Accessing Metrics and Data
-summary: Create custom views and query your AI agent data using SQL to monitor performance, costs, and usage patterns
-description: Build dashboards and analyze completion data through views and direct SQL queries
+title: Metrics and Views
+summary: Ask questions in natural language, build custom views, and access your AI agent data to monitor performance, costs, and usage patterns
+description: Query data with natural language, create persistent dashboards, and integrate with your tools via API for advanced use cases
 ---
 
 import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
 import { Steps, Step } from 'fumadocs-ui/components/steps';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
 
 One of the core features we wanted to unlock with AnotherAI was to allow users to access all their agent data in a way that would allow them to see the information that was important to *them*. 
 
-For that reason we've enabled you to query your agent and organization-wide data both using the MCP and directly via REST API, and create custom views in the web app to visualize the retrieved data.
+You can start by asking questions directly in natural language through the MCP, build persistent views in the web app for metrics you want to monitor regularly, and for more advanced use cases, access the data directly via REST API to integrate with your existing tools or build your own customizable dashboards.
+
+<Callout type="warning">
+**Documentation feedback:** The sections "What sorts of data can I query?" and "How do I query and visualize my data?" overlap significantly. Consider merging these sections or restructuring to avoid redundancy.
+</Callout>
 
 ## What sorts of data can I query?
 
@@ -26,9 +32,39 @@ For that reason we've enabled you to query your agent and organization-wide data
 
 [IMAGE TODO: SCREENSHOT OF AGENT-LEVEL DATA QUERY/OR COMPLETIONS LIST IN A VIEW]
 
-## How do I create a view in AnotherAI?
+## How do I query and visualize my data?
 
-The easiest way to create a view is to ask Claude Code to do it for you via the MCP by describing the data you want to see visualized.
+### Using Natural Language with MCP
+
+The AnotherAI MCP allows you to ask questions about your completions data in plain English. Your AI assistant will automatically translate your request into the appropriate SQL query and retrieve the results. This means you don't need to know SQL to analyze your data.
+
+For example, you can ask questions like:
+- "What's my total spend this week?"
+
+<Accordions>
+<Accordion title="Example response">
+This Week's Total Spend: $1,123.18
+
+Daily Breakdown:
+- Monday 9/8: $164.87
+- Tuesday 9/9: $232.25
+- Wednesday 9/10: $249.97
+- Thursday 9/11: $240.29
+- Friday 9/12: $235.78 (today, partial day)
+
+You've run 1.45 million completions this week at an average cost of $0.00078 per run.
+</Accordion>
+</Accordions>
+
+- "Which agents are failing most often?"
+- "Show me the average latency for each model"
+- "How many completions did we process yesterday?"
+
+Your AI assistant will handle the query and present the results in a clear format.
+
+### Creating Views in AnotherAI
+
+You can also create persistent views in the web app to monitor important metrics over time. Simply describe what you want to see visualized.
 
 For example: suppose you have an agent is becoming increasingly popular in your product. You want to keep an eye on the overall spend on that agent to ensure you don't go over budget. You also want to keep an eye on the speed of the models you're using, so that your customers aren't left with long wait times. You may ask Claude to create the following views as such:
 
@@ -67,6 +103,15 @@ Update anotherai/views/calendar-event-extractor-completions to include the compl
 ## Can I access this data outside of the web app?
 
 Yes! If you want to integrate AnotherAI data into your existing business intelligence tools, you can also access the data via the `/v1/completions/query` endpoint. This provides the same functionality as the `query_completions` MCP tool but through HTTP requests, enabling you to further customize how you utilize the data available to you.
+
+<Callout type="info">
+**Recommended approach:** For building integrations with the AnotherAI API, we recommend using an AI coding assistant with the AnotherAI MCP connected. The MCP gives your AI assistant direct access to:
+- Complete API documentation
+- The ability to explore the SQL schema using `query_completions` with DESCRIBE statements
+- Real-time testing of queries before implementing them in code
+
+This approach significantly speeds up development and ensures your integration uses the API correctly. See the [Getting Started guide](/getting-started) for MCP setup instructions.
+</Callout>
 
 ### Endpoint
 

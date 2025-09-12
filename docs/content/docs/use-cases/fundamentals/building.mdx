@@ -5,8 +5,14 @@ description: Step-by-step guide to creating, configuring, and deploying AI agent
 ---
 
 import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
 
 **Our goal with building with AnotherAI is to turn your AI coding assistant into your AI engineer.** Instead of manually testing different models and prompts, AnotherAI gives your AI coding agent the tools to automatically find the optimal configuration for your specific use case. Here is how to get started building a new agent with AnotherAI.
+
+<Callout type="warning">
+Before you begin, make sure you have the AnotherAI MCP server configured with your AI assistant. Your AI assistant needs this connection to create agents, run experiments, and manage deployments. See the [Getting Started guide](/getting-started) for setup instructions.
+</Callout>
 
 <Callout type="info">
 Need an extra hand with building agents? We're happy to help. Reach us at [team@workflowai.support](mailto:team@workflowai.support) or on [Slack](https://join.slack.com/t/anotherai-dev/shared_invite/zt-3av2prezr-Lz10~8o~rSRQE72m_PyIJA).
@@ -105,8 +111,8 @@ GPT 5 mini?
 
 Beyond prompts and models, fine-tuning other parameters can impact your agent's behavior and output quality. Temperature in particular can have a significant impact on the quality of the output.
 
-#### Temperature
-
+<Accordions>
+<Accordion title="Temperature">
 Temperature is the most important parameter to experiment with after prompts and models. It controls the randomness of the model's output:
 
 - **Low temperature (0.0 - 0.3)**: More deterministic, consistent outputs. Best for:
@@ -133,6 +139,8 @@ the right balance between creativity and professionalism
 ```
 
 [IMAGE TODO: SCREENSHOT OF EXPERIMENT VIEW SHOWING 3 versions with different temperatures]
+</Accordion>
+</Accordions>
 
 ## Adding Feedback to your Experiments
 
@@ -147,7 +155,7 @@ To add annotations:
 When your coding agent creates an experiment for you, it will automatically send you a URL to the experiment. Use that URL to open the page for the experiments. 
 
 Or if adding annotations to an experiment later:
-- Go to anotherai.dev/experiments
+- Go to [anotherai.dev/experiments](https://anotherai.dev/experiments)
 - Select the experiment you want to add annotations to
 </Step>
 
