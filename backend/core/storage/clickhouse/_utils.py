@@ -79,3 +79,8 @@ async def clone_client(client: AsyncClient, tenant_uid: int) -> AsyncClient:
             return await _create_readonly_user(client, tenant_uid, user, password, client.client.database)
 
         raise e
+
+def sanitize_query(query: str) -> str:
+    # ORDER BY created_at does not get picked up by clickhouse
+    # as matching the default ordering even if created_at is determined from the id
+    return query.replace("ORDER BY created_at DESC", "ORDER BY toDate(UUIDv7ToDateTime(id)) DESC, toUInt128(id) DESC")
