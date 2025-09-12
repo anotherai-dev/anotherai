@@ -7,8 +7,8 @@ from fastmcp.server import FastMCP
 from fastmcp.server.auth import AccessToken, AuthProvider, TokenVerifier
 from fastmcp.server.dependencies import get_access_token
 from fastmcp.server.middleware import CallNext, Middleware, MiddlewareContext
-from fastmcp.tools.tool import ToolResult, default_serializer
-from mcp.types import CallToolRequestParams
+from fastmcp.tools.tool import Tool, ToolResult, default_serializer
+from mcp.types import CallToolRequestParams, ListToolsRequest
 from pydantic import BaseModel, ValidationError
 from structlog import get_logger
 from structlog.contextvars import bind_contextvars
@@ -53,6 +53,21 @@ class BaseMiddleware(Middleware):
             _log.error("Validation error", exc_info=e)
             raise e
 
+    @override
+    async def on_list_tools(
+        self,
+        context: MiddlewareContext[ListToolsRequest],
+        call_next: CallNext[ListToolsRequest, list[Tool]],
+    ) -> list[Tool]:
+        all_tools = await call_next(context)
+        # Some LLMs are hellbent on sending objects as stringified JSON. So we add strings as an acceptable type
+        # For array and objects
+        for tool in all_tools:
+            if tool.parameters:
+                tool.parameters = _add_string_as_acceptable_type(tool.parameters)
+
+        return all_tools
+
     async def on_message(self, context: MiddlewareContext[Any], call_next: CallNext[Any, Any]) -> Any:
         tool_name = getattr(context.message, "name", None)
         bind_contextvars(tool_name=tool_name)
@@ -78,6 +93,43 @@ class BaseMiddleware(Middleware):
             # That would be unexpected
             _log.exception("Unknown Error in message not wrapped in tool error", exc_info=e)
             raise Exception("An unknown error occurred") from None
+
+
+def _add_string_to_property_type(property: dict[str, Any]) -> dict[str, Any]:
+    if (t := property.get("type")) and isinstance(t, str) and t in {"array", "object"}:
+        return {
+            **property,
+            "type": [t, "string"],
+        }
+    if (
+        (any_of := property.get("anyOf"))
+        and isinstance(any_of, list)
+        and not any(item.get("type") == "string" for item in any_of)
+    ):
+        return {
+            **property,
+            "anyOf": [
+                *any_of,
+                {
+                    "type": "string",
+                },
+            ],
+        }
+    return property
+
+
+def _add_string_as_acceptable_type(parameters: dict[str, Any]) -> dict[str, Any]:
+    # We only add to root level
+    properties: dict[str, Any] = parameters.get("properties", {})
+    if not properties or not isinstance(properties, dict):
+        return parameters
+
+    new_properties = {k: _add_string_to_property_type(v) for k, v in properties.items()}
+
+    return {
+        **parameters,
+        "properties": new_properties,
+    }
 
 
 def tool_serializer(value: Any) -> str:
