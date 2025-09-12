@@ -7,12 +7,16 @@ import { ImproveAgentAnnotationsInstructionsContent } from "./ImproveAgentAnnota
 
 interface ImproveAgentAnnotationsInstructionsProps {
   agentId: string;
+  experimentId: string;
 }
 
-export function ImproveAgentAnnotationsInstructions({ agentId }: ImproveAgentAnnotationsInstructionsProps) {
+export function ImproveAgentAnnotationsInstructions({
+  agentId,
+  experimentId,
+}: ImproveAgentAnnotationsInstructionsProps) {
   return (
     <HoverPopover
-      content={<ImproveAgentAnnotationsInstructionsContent agentId={agentId} />}
+      content={<ImproveAgentAnnotationsInstructionsContent agentId={agentId} experimentId={experimentId} />}
       position="bottom"
       popoverClassName="bg-gray-900 text-white rounded-[4px]"
     >
