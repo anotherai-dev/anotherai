@@ -17,7 +17,7 @@ With how often new models are released, the above scenario is extremely common, 
 Ask Claude to create a experiment between your current and new model
 
 ```
-Compare how @calendar_event_extractor.py performs using current GPT-4o-mini 
+Compare how anotherai/agent/calendar-event-extractor performs using current GPT-4o-mini 
 vs the new GPT-5 model
 ```
 </Step>
@@ -25,16 +25,19 @@ vs the new GPT-5 model
 If you want to be sure to test with real data, you can modify your prompt to include that instruction
 
 ```
-Compare how @calendar_event_extractor.py performs using current GPT-4o-mini 
+Compare how anotherai/agent/calendar-event-extractor performs using current GPT-4o-mini 
 vs the new GPT-5 model. Use the inputs from the last 20 completions.
 ```
 
 Alternatively, if you have a dataset of standard test inputs you like to use to validate changes, you can modify your prompt to include that instruction:
 
 ```
-Compare how @calendar_event_extractor.py performs using current GPT-4o-mini 
+Compare how anotherai/agent/calendar-event-extractor performs using current GPT-4o-mini 
 vs the new GPT-5 model. Use the inputs from @email_test_cases.txt
 ```
+<Callout type="info">
+**Tip:** Based on our testing, we've found that using Claude Opus to be our preferred model for evaluating the side by side performance of two other models.
+</Callout>
 
 [IMAGE TODO: SCREENSHOT OF EXPERIMENT CREATED FROM ONE OF THE ABOVE PROMPTS]
 </Step>

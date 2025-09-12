@@ -5,6 +5,8 @@ description: Collect and integrate end-user feedback to improve your agents
 ---
 
 import { Steps, Step } from 'fumadocs-ui/components/steps';
+import { Card, Cards } from 'fumadocs-ui/components/card';
+import { FlaskRound, MessageSquare } from 'lucide-react';
 
 # End-User Feedback
 
@@ -86,7 +88,7 @@ submit_user_feedback(completion_id, accuracy, user_comment)
 Ask Claude Code to create a view for you in AnotherAI to see all the feedback in one place.
 
 ```
-Create a view that shows all completions of @[your-agent-name] with annotations. 
+Create a view that shows all completions of anotherai/agent/[your-agent-name] with annotations. 
 The view should display the completion ID, input, outputs, and the annotation 
 left on the completion.
 ```
@@ -110,3 +112,14 @@ Claude will query the annotations, identify patterns, and propose specific chang
 [IMAGE TODO: SCREENSHOTS OF PROMPT IN CLAUDE CODE AND/OR EXPERIEMENT OF AGENT BEFORE AND AFTER FEEDBACK]
 </Step>
 </Steps>
+
+## Other Ways to Improve your Agents
+
+<Cards>
+  <Card title="Using Experiments" href="/use-cases/fundementals/improving_w_experiments" icon={<FlaskRound />}>
+    Systematically compare prompts, models, and parameters to find the optimal agent configuration
+  </Card>
+  <Card title="Using Annotations" href="/use-cases/fundementals/improving_w_annotations" icon={<MessageSquare />}>
+    Add specific feedback to completions and experiments to guide agent improvements
+  </Card>
+</Cards>
