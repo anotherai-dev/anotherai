@@ -1079,7 +1079,7 @@ class TestComplete:
             "core.providers.google.vertex_base_config.VertexBaseConfig._get_random_region",
             side_effect=lambda _: next(location_iter),  # pyright: ignore [reportUnknownLambdaType]
         ):
-            with pytest.raises(ProviderError, match="No available regions left to retry."):
+            with pytest.raises(ProviderError, match=r"No available regions left to retry."):
                 await google_provider.complete(
                     [Message.with_text("Hello")],
                     options=ProviderOptions(model=Model.GEMINI_1_5_PRO_001, max_tokens=10, temperature=0),

@@ -10,21 +10,21 @@ dependencies = [
     "asyncpg-stubs>=0.30.2",
     "audioop-lts>=0.2.1",
     "azure-storage-blob>=12.25.1",
-    "boto3>=1.39.5",
+    "boto3>=1.40.29",
     "clickhouse-connect>=0.8.18",
     "fastapi>=0.104.0",
-    "fastmcp>=2.12.0",
+    "fastmcp>=2.12.2",
     "google-auth>=2.40.3",
     "hiredis>=3.2.1",
     "jinja2>=3.0.0",
     "jsonschema>=4.24.0",
-    "mcp>=1.0.0",
+    "mcp>=1.14.0",
     "openai>=1.93.1",
     "pydantic>=2.0.0",
     "pydub>=0.25.1",
     "pyjwt>=2.9.0",
     "pyyaml>=6.0.0",
-    "sentry-sdk[fastapi]>=2.34.1",
+    "sentry-sdk[fastapi]>=2.37.1",
     "sqlparse>=0.5.3",
     "starlette>=0.27.0",
     "structlog>=25.4.0",
@@ -37,14 +37,14 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest >=8.1.1,<9",
-    "pytest>=7.0.0",
-    "pytest-asyncio>=0.21.0",
+    "pytest>=8.4.2",
+    "pytest-asyncio>=1.1.1",
     "python-dotenv[cli]>=1.0.0",
-    "pyright>=1.1.403",
+    "pyright>=1.1.405",
     "pytest-httpx>=0.35.0",
-    "typer>=0.16.0",
+    "typer>=0.17.4",
     "locust>=2.37.13",
-    "ruff>=0.12.3",
+    "ruff>=0.13.0",
     "ty>=0.0.1a14",
     "freezegun>=1.5.3",
     "pre-commit>=4.2.0",
@@ -125,6 +125,13 @@ lint.fixable = ["ALL"]
 "litellm.OpenAI".msg = "Import from anthropic instead"
 "litellm.BaseModel".msg = "Import from pydantic instead"
 "litellm.Field".msg = "Import from pydantic instead"
+
+[tool.ruff.lint.isort]
+force-to-top = ["core.logs.global_setup"]
+
+[tool.ruff.lint.pyflakes]
+allowed-unused-imports = ["core.logs.global_setup"]
+
 
 [tool.pyright]
 include = ["backend", "scripts"]
