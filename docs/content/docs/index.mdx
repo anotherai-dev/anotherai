@@ -42,7 +42,7 @@ Are you interested in a self-hosted, [open-source](https://github.com/anotherai-
 
 AnotherAI is available as an MCP server in the IDEs below.
 
-<Tabs items={['Cursor', 'Claude Code', 'Windsurf', 'Cursor CLI']}>
+<Tabs items={['Cursor', 'Claude Code', 'ChatGPT','Windsurf', 'Cursor CLI']}>
 
 <Tab value="Cursor">
 
@@ -51,8 +51,29 @@ AnotherAI is available as an MCP server in the IDEs below.
 3. Navigate to `Cursor Settings`
 4. Select `Tools and Integrations`
 5. Select `+ New MCP Server`
+6. Choose your authentication method:
+
+### OAuth Authentication (Recommended)
 
 Add the following configuration to your MCP servers config:
+
+```json
+{
+  "mcpServers": {
+    "AnotherAI": {
+      "url": "{{API_URL}}/mcp"
+    }
+  }
+}
+```
+
+7. Return to the MCP Tools settings screen and enable the MCP, the indicator should be yellow with the message "Needs login".
+8. Tap "Need login", open the link and select "Allow" in your browser when prompted.
+9. Return to Cursor and the MCP should show as Connected (see screenshot below)
+
+### API Key Authentication
+
+7. Get your API key on [anotherai.dev/](https://anotherai.dev/completions?showManageKeysModal=true) and add the following configuration:
 
 ```json
 {
@@ -67,7 +88,7 @@ Add the following configuration to your MCP servers config:
 }
 ```
 
-Cursor UI should now look like this (note the green indicator and the number of tools enabled displayed):
+8. Return to the MCP Tools settings screen. The Cursor UI should now look like this (note the green indicator and the number of tools enabled displayed):
 
 ![Successful Cursor MCP Server Setup](/images/mcp/cursor-setup-ok.png)
 
@@ -76,9 +97,40 @@ Cursor UI should now look like this (note the green indicator and the number of 
 <Tab value="Claude Code">
 
   1. Complete the set up above
-  2. Get your API key on [anotherai.dev/](https://anotherai.dev/completions?showManageKeysModal=true) 
-  3. Open Claude Code in your preferred terminal (standalone or within your IDE).
+  2. Choose your authentication method:
+
+  ### OAuth Authentication (Recommended)
+  
+  3. Open Claude Code in your preferred terminal (standalone or within your IDE)
   4. Type the following to install:
+
+  ```bash
+  claude mcp add --scope user --transport http anotherai {{API_URL}}/mcp
+  ```
+
+  5. Check that the server was added:
+
+  ```bash
+  claude mcp list
+  ```
+  6. Start Claude and authenticate:
+
+  ```bash
+  claude
+  ```
+
+  Then type:
+  ```bash
+  /mcp
+  ```
+
+  Navigate to `anotherai` and press Enter. You should automatically be redirected to a browser to authenticate.
+
+  ### API Key Authentication
+  
+  3. Get your API key on [anotherai.dev/](https://anotherai.dev/completions?showManageKeysModal=true) 
+  4. Open Claude Code in your preferred terminal (standalone or within your IDE)
+  5. Type the following to install:
 
   ```bash
   claude mcp add --scope user anotherai {{API_URL}}/mcp --transport http --header "Authorization: Bearer YOUR_API_KEY_HERE"
@@ -88,18 +140,47 @@ Cursor UI should now look like this (note the green indicator and the number of 
   **Installation Scopes**: The `--scope user` flag installs AnotherAI for your personal use across all projects. For team projects, you can use `--scope project` instead to create a shared `.mcp.json` file that can be committed to version control and shared with your team members. Learn more about MCP scopes in the [Anthropic documentation](https://docs.anthropic.com/en/docs/claude-code/mcp#user-scope).
   </Callout>
 
-  5. Type the following to verify the server is properly connected:
+  6. Type the following to verify the server is properly connected:
 
   ```bash
-claude
-```
+  claude
+  ```
 
-Then type:
-```bash
-/mcp 
-```
+  Then type:
+  ```bash
+  /mcp 
+  ```
 
-You should see the AnotherAI server listed as "connected".
+  You should see the AnotherAI server listed as "connected".
+
+</Tab>
+
+<Tab value="ChatGPT">
+
+ <Callout type="info">
+  **Currently only available in beta to Pro and Plus accounts on the web. Refer to [ChatGPT's documentation](https://platform.openai.com/docs/guides/developer-mode) for more information.**
+  </Callout>
+
+  1. Enable Developer Mode in ChatGPT:
+     - Go to [ChatGPT](https://chatgpt.com/)
+     - Click on the user icon in the bottom left corner
+     - Select `Settings` -> `Connectors` -> `Advanced Settings`
+     - Toggle the `Developer Mode` switch ON
+  2. Add the AnotherAI MCP server:
+     - Go back to the main Connectors page
+     - Select `Create` 
+     - Name the connector `AnotherAI`
+     - In `MCP Server URL`, enter `{{API_URL}}/mcp` 
+     - In `Authentication`, make sure OAuth is selected
+     - Select `Create` to save the configuration
+  3. Using the AnotherAI MCP: you will need to manually enable the MCP server in a new chat to use it
+     - In the chat text box, select the `+` -> `More` -> `Developer Mode`
+     - You should see `Developer Mode` and `Add sources` appear at the bottom of the text box
+     - Select `Add sources` and toggle on AnotherAI
+
+     Once you've added the MCP server, it should look like this:
+
+     ![ChatGPT MCP Setup](/images/mcp/chatgpt-setup.png)
 
 </Tab>
 
