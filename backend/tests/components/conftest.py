@@ -150,6 +150,7 @@ def setup_environment(test_jwk: dict[str, Any]):
             "ENV_NAME": "staging",  # Using staging env to test variable substitution
             "ANOTHERAI_API_URL": "http://localhost:8000",
             "ANOTHERAI_API_KEY": "aai-my-key",
+            "AUTHORIZATION_SERVER": "http://auth.localhost:8000",
             "JWK": json.dumps(test_jwk, separators=(",", ":")),
         },
         clear=True,

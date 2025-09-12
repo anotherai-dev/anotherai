@@ -4,9 +4,12 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from core.domain.events import EventRouter
 from core.domain.exceptions import InvalidTokenError, ObjectNotFoundError
 from core.domain.tenant_data import TenantData
+from core.services.user_manager import UserManager
 from core.storage.tenant_storage import TenantStorage
+from core.storage.user_storage import UserStorage
 from core.utils.signature_verifier import SignatureVerifier
 from protocol.api._services.security_service import SecurityService
 
@@ -23,8 +26,35 @@ def mock_tenant_storage():
 
 
 @pytest.fixture
-def security_service(mock_verifier: Mock, mock_tenant_storage: Mock):
-    return SecurityService(tenant_storage=mock_tenant_storage, verifier=mock_verifier)
+def mock_user_manager():
+    return Mock(spec=UserManager)
+
+
+@pytest.fixture
+def mock_user_storage():
+    return Mock(spec=UserStorage)
+
+
+@pytest.fixture
+def mock_event_router():
+    return Mock(spec=EventRouter)
+
+
+@pytest.fixture
+def security_service(
+    mock_verifier: Mock,
+    mock_tenant_storage: Mock,
+    mock_user_manager: Mock,
+    mock_user_storage: Mock,
+    mock_event_router: Mock,
+):
+    return SecurityService(
+        tenant_storage=mock_tenant_storage,
+        verifier=mock_verifier,
+        user_manager=mock_user_manager,
+        user_storage=mock_user_storage,
+        event_router=mock_event_router,
+    )
 
 
 @pytest.fixture
@@ -291,6 +321,65 @@ class TestFindTenant:
         # No storage methods should be called
         mock_tenant_storage.tenant_by_org_id.assert_not_called()
         mock_tenant_storage.tenant_by_owner_id.assert_not_called()
+
+    async def test_oauth_token_valid_uses_last_used_organization(
+        self,
+        security_service: SecurityService,
+        mock_user_manager: Mock,
+        mock_user_storage: Mock,
+        sample_tenant: TenantData,
+        mock_tenant_storage: Mock,
+    ):
+        oauth_token = "oat_test"
+        mock_user_manager.validate_oauth_token.return_value = "user123"
+        mock_user_storage.last_used_organization.return_value = sample_tenant
+
+        result = await security_service.find_tenant(oauth_token)
+
+        assert result == sample_tenant
+        mock_user_manager.validate_oauth_token.assert_called_once_with(oauth_token)
+        mock_user_storage.last_used_organization.assert_called_once_with("user123")
+        mock_tenant_storage.tenant_by_owner_id.assert_not_called()
+        mock_tenant_storage.create_tenant_for_owner_id.assert_not_called()
+
+    async def test_oauth_token_user_has_no_last_org_existing_tenant(
+        self,
+        security_service: SecurityService,
+        mock_user_manager: Mock,
+        mock_user_storage: Mock,
+        sample_tenant: TenantData,
+        mock_tenant_storage: Mock,
+    ):
+        oauth_token = "oat_test"
+        mock_user_manager.validate_oauth_token.return_value = "user123"
+        mock_user_storage.last_used_organization.side_effect = ObjectNotFoundError("user")
+        mock_tenant_storage.tenant_by_owner_id.return_value = sample_tenant
+
+        result = await security_service.find_tenant(oauth_token)
+
+        assert result == sample_tenant
+        mock_user_manager.validate_oauth_token.assert_called_once_with(oauth_token)
+        mock_user_storage.last_used_organization.assert_called_once_with("user123")
+        mock_tenant_storage.tenant_by_owner_id.assert_called_once_with("user123")
+        mock_tenant_storage.create_tenant_for_owner_id.assert_not_called()
+
+    async def test_oauth_token_invalid_raises_without_storage_calls(
+        self,
+        security_service: SecurityService,
+        mock_user_manager: Mock,
+        mock_user_storage: Mock,
+        mock_tenant_storage: Mock,
+    ):
+        oauth_token = "oat_bad"
+        mock_user_manager.validate_oauth_token.side_effect = InvalidTokenError("Invalid OAuth token")
+
+        with pytest.raises(InvalidTokenError):
+            _ = await security_service.find_tenant(oauth_token)
+
+        mock_user_manager.validate_oauth_token.assert_called_once_with(oauth_token)
+        mock_user_storage.last_used_organization.assert_not_called()
+        mock_tenant_storage.tenant_by_owner_id.assert_not_called()
+        mock_tenant_storage.create_tenant_for_owner_id.assert_not_called()
 
 
 class TestTokenFromHeader:

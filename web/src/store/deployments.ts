@@ -12,14 +12,23 @@ interface DeploymentsState {
   error: Error | null;
   total: number;
   hasLoaded: boolean;
+  currentPage: number;
+  pageSize: number;
   nextPageToken?: string;
   previousPageToken?: string;
 
-  fetchDeployments: (agentId?: string, includeArchived?: boolean, limit?: number, pageToken?: string) => Promise<void>;
+  fetchDeployments: (
+    page?: number,
+    pageSize?: number,
+    agentId?: string,
+    includeArchived?: boolean,
+    pageToken?: string
+  ) => Promise<void>;
   createDeployment: (deployment: DeploymentCreate) => Promise<void>;
   updateDeployment: (deploymentId: string, update: DeploymentUpdate) => Promise<void>;
   archiveDeployment: (deploymentId: string) => Promise<void>;
   getDeployment: (deploymentId: string) => Promise<Deployment | null>;
+  setPage: (page: number) => void;
   reset: () => void;
 }
 
@@ -29,6 +38,8 @@ const initialState = {
   error: null,
   total: 0,
   hasLoaded: false,
+  currentPage: 1,
+  pageSize: 100,
   nextPageToken: undefined,
   previousPageToken: undefined,
 };
@@ -36,8 +47,18 @@ const initialState = {
 export const useDeployments = create<DeploymentsState>((set, get) => ({
   ...initialState,
 
-  fetchDeployments: async (agentId?: string, includeArchived = false, limit = 20, pageToken?: string) => {
+  fetchDeployments: async (
+    page?: number,
+    pageSize?: number,
+    agentId?: string,
+    includeArchived = false,
+    pageToken?: string
+  ) => {
     if (get().isLoading) return;
+
+    const state = get();
+    const targetPage = page ?? state.currentPage;
+    const targetPageSize = pageSize ?? state.pageSize;
 
     set(
       produce((state: DeploymentsState) => {
@@ -48,7 +69,7 @@ export const useDeployments = create<DeploymentsState>((set, get) => ({
 
     try {
       const params = new URLSearchParams({
-        limit: limit.toString(),
+        limit: targetPageSize.toString(),
         include_archived: includeArchived.toString(),
       });
 
@@ -81,6 +102,8 @@ export const useDeployments = create<DeploymentsState>((set, get) => ({
         produce((state: DeploymentsState) => {
           state.deployments = data.items;
           state.total = data.total;
+          state.currentPage = targetPage;
+          state.pageSize = targetPageSize;
           state.nextPageToken = data.next_page_token;
           state.previousPageToken = data.previous_page_token;
           state.isLoading = false;
@@ -268,6 +291,23 @@ export const useDeployments = create<DeploymentsState>((set, get) => ({
     }
   },
 
+  setPage: (page: number) => {
+    const state = get();
+    if (page !== state.currentPage && page > 0) {
+      // For token-based pagination, we need to determine the right token
+      if (page > state.currentPage && state.nextPageToken) {
+        // Going forward - use nextPageToken
+        state.fetchDeployments(page, undefined, undefined, false, state.nextPageToken);
+      } else if (page < state.currentPage && state.previousPageToken) {
+        // Going backward - use previousPageToken
+        state.fetchDeployments(page, undefined, undefined, false, state.previousPageToken);
+      } else if (page === 1) {
+        // Going to first page - no token needed
+        state.fetchDeployments(1, undefined, undefined, false, undefined);
+      }
+    }
+  },
+
   reset: () => {
     set(initialState);
   },
@@ -279,7 +319,10 @@ export const useOrFetchDeployments = () => {
   const isLoading = useDeployments((state) => state.isLoading);
   const error = useDeployments((state) => state.error);
   const total = useDeployments((state) => state.total);
+  const currentPage = useDeployments((state) => state.currentPage);
+  const pageSize = useDeployments((state) => state.pageSize);
   const hasLoaded = useDeployments((state) => state.hasLoaded);
+  const setPage = useDeployments((state) => state.setPage);
 
   const deploymentsRef = useRef(deployments);
   deploymentsRef.current = deployments;
@@ -299,6 +342,9 @@ export const useOrFetchDeployments = () => {
     isLoading,
     error,
     total,
+    currentPage,
+    pageSize,
+    setPage,
     update,
   };
 };

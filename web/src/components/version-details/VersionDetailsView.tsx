@@ -29,7 +29,13 @@ export function VersionDetailsView({
       <div className="bg-white border border-gray-200 rounded-[2px] p-2">
         <div className="flex justify-between items-center">
           <span className="text-xs font-medium text-gray-700">Model</span>
-          <ModelIconWithName modelId={version.model} size={12} nameClassName="text-xs text-gray-900" />
+          <ModelIconWithName
+            modelId={version.model}
+            size={12}
+            nameClassName="text-xs text-gray-900"
+            reasoningEffort={version.reasoning_effort}
+            reasoningBudget={version.reasoning_budget}
+          />
         </div>
       </div>
 

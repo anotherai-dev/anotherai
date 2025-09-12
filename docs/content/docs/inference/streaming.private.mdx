@@ -22,7 +22,7 @@ The response is sent back incrementally in chunks with an event stream. You can 
 from openai import OpenAI
 client = OpenAI(
     base_url="{{API_URL}}/v1",
-    api_key="wai--***",
+    api_key="aai--***",
 )
 
 stream = client.chat.completions.create(
@@ -83,7 +83,7 @@ To stream only the text response of your chat completion, your code would look l
 from openai import OpenAI
 client = OpenAI(
     base_url="{{API_URL}}/v1",
-    api_key="wai--***",
+    api_key="aai--***",
 )
 
 stream = client.chat.completions.create(
@@ -180,7 +180,7 @@ for await (const chunk of completion) {
 <Tab>
 ```sh
 curl -X POST {{API_URL}}/v1/chat/completions \
-  -H "Authorization: Bearer wai--***" \
+  -H "Authorization: Bearer aai--***" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "gpt-4o",

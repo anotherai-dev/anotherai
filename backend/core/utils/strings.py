@@ -125,3 +125,10 @@ def obfuscate(input_str: str, max_chars: int):
     if len(input_str) <= max_chars:
         return "***"
     return input_str[:max_chars] + "***"
+
+
+_URL_REGEXP = re.compile(r"^https?:\/\/[^\s]+[\r\n]*")
+
+
+def remove_urls(input_str: str) -> str:
+    return _URL_REGEXP.sub("https://***", input_str)

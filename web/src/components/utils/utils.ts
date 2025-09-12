@@ -187,12 +187,26 @@ export function formatDate(
 ): string {
   if (value === null || value === undefined) return "N/A";
 
-  // Ensure UTC timestamps are properly parsed by adding 'Z' suffix if missing
+  // Only add 'Z' suffix for dates that contain time information and don't already have timezone info
   const dateString = String(value);
-  const utcDateString = dateString.endsWith("Z") ? dateString : dateString + "Z";
-  const date = new Date(utcDateString);
+  const hasTimeComponent = /T\d{2}:\d{2}|[ ]\d{2}:\d{2}/.test(dateString);
+  const hasTimezone = /[Z+\-]\d{2}:?\d{2}?$/.test(dateString);
+  const utcDateString = hasTimeComponent && !hasTimezone ? dateString + "Z" : dateString;
 
-  if (isNaN(date.getTime())) return "Invalid Date";
+  // Try UTC date first, fallback to original if parsing fails
+  let date = new Date(utcDateString);
+  let finalDateString = utcDateString;
+
+  if (isNaN(date.getTime())) {
+    date = new Date(dateString);
+    finalDateString = dateString;
+    if (isNaN(date.getTime())) return dateString;
+  }
+
+  // If there's no time component, always format as date-only regardless of the format parameter
+  if (!hasTimeComponent) {
+    return date.toLocaleDateString();
+  }
 
   switch (format) {
     case "datetime":
@@ -200,9 +214,9 @@ export function formatDate(
     case "time":
       return date.toLocaleTimeString();
     case "relative":
-      return formatRelativeDate(utcDateString);
+      return formatRelativeDate(finalDateString);
     case "relative_with_time":
-      return formatRelativeDateWithTime(utcDateString);
+      return formatRelativeDateWithTime(finalDateString);
     default:
       return date.toLocaleDateString();
   }
@@ -469,18 +483,15 @@ export function normalizeForComparison(value: unknown): string {
   return String(value);
 }
 
-export function getMatchingVersionKeys(versions: Version[]): string[] {
+export function getMatchingVersionKeys(versions: Version[], blackListedKeys: string[] = ["id"]): string[] {
   // For single version, return all keys (including defaults) except blacklisted ones
   if (versions.length === 1) {
-    const blackListedKeys: string[] = ["id"];
     const versionWithDefaults = getVersionWithDefaults(versions[0]);
     const allKeys = Object.keys(versionWithDefaults as unknown as Record<string, unknown>);
     return allKeys.filter((key) => !blackListedKeys.includes(key));
   }
 
   if (versions.length === 0) return [];
-
-  const blackListedKeys: string[] = ["id", "model"];
 
   // Apply defaults to all versions
   const versionsWithDefaults = versions.map(getVersionWithDefaults);

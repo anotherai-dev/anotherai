@@ -7,7 +7,9 @@ CREATE TABLE tenants (
     deleted_at TIMESTAMP,
     providers JSONB NOT NULL DEFAULT '[]',
     -- Org data
+    -- External user id
     owner_id VARCHAR(255),
+    -- External organization id
     org_id VARCHAR(255),
     -- Payment
     current_credits_usd FLOAT NOT NULL DEFAULT 0.0,

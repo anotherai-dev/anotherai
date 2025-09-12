@@ -45,7 +45,13 @@ export function VersionHeaderModel(props: VersionHeaderModelProps) {
             className="px-2 py-1 text-xs rounded font-medium bg-gray-200 border border-gray-300 text-gray-900 w-fit hover:bg-gray-300 cursor-pointer transition-colors"
             onClick={(e) => handleAddAnnotation(e)}
           >
-            <ModelIconWithName modelId={version.model} size={12} nameClassName="text-xs text-gray-900 font-medium" />
+            <ModelIconWithName
+              modelId={version.model}
+              size={12}
+              nameClassName="text-xs text-gray-900 font-medium"
+              reasoningEffort={version.reasoning_effort}
+              reasoningBudget={version.reasoning_budget}
+            />
           </div>
         </HoverPopover>
       ) : (
@@ -53,7 +59,13 @@ export function VersionHeaderModel(props: VersionHeaderModelProps) {
           className="px-2 py-1 text-xs rounded font-medium bg-gray-200 border border-gray-300 text-gray-900 w-fit hover:bg-gray-300 cursor-pointer transition-colors"
           onClick={(e) => handleAddAnnotation(e)}
         >
-          <ModelIconWithName modelId={version.model} size={12} nameClassName="text-xs text-gray-900 font-medium" />
+          <ModelIconWithName
+            modelId={version.model}
+            size={12}
+            nameClassName="text-xs text-gray-900 font-medium"
+            reasoningEffort={version.reasoning_effort}
+            reasoningBudget={version.reasoning_budget}
+          />
         </div>
       )}
       <AnnotationsView

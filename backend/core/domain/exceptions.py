@@ -116,6 +116,13 @@ class MissingEnvVariablesError(Exception):
         return f"Missing environment variables: {', '.join(self.names)}"
 
 
+class InvalidQueryError(DefaultError):
+    default_status_code = 400
+    default_message = "Invalid query"
+    code = "invalid_query"
+    default_capture = False
+
+
 class MissingCacheError(DefaultError):
     default_status_code = 400
     default_message = "Missing cache"
@@ -287,6 +294,6 @@ Grab a fresh one (plus $5 in free LLM credits for new users) at {ANOTHERAI_APP_U
     def missing_authorization(cls):
         return cls(
             "Authorization header is missing. "
-            "A valid authorization header with an API key looks like 'Bearer wai-****'. If you need a new API key, "
+            "A valid authorization header with an API key looks like 'Bearer aai-****'. If you need a new API key, "
             f"Grab a fresh one (plus $5 in free LLM credits for new users) at {ANOTHERAI_APP_URL}/keys 🚀",
         )

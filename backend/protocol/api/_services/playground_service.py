@@ -4,6 +4,9 @@ import time
 from collections.abc import Coroutine
 from typing import Any, final
 
+from structlog import get_logger
+from structlog.contextvars import bind_contextvars
+
 from core.domain.agent import Agent
 from core.domain.cache_usage import CacheUsage
 from core.domain.exceptions import BadRequestError, ObjectNotFoundError
@@ -26,6 +29,8 @@ from protocol.api._services.conversions import (
     output_from_domain,
     tool_to_domain,
 )
+
+_log = get_logger(__name__)
 
 
 @final
@@ -103,6 +108,7 @@ class PlaygroundService:
         metadata: dict[str, Any],
         use_cache: CacheUsage,
     ) -> PlaygroundOutput.Completion:
+        _log.debug("Playground: Running single completion", version_id=version.id, input_id=input.id)
         try:
             completion = await self._completion_runner.run(
                 agent=Agent(id=agent_id, uid=0),  # agent will be automatically created
@@ -117,12 +123,22 @@ class PlaygroundService:
                 completion_id=completion_id,
             )
         except Exception as e:  # noqa: BLE001
+            _log.debug(
+                "Playground: Running single completion failed",
+                version_id=version.id,
+                input_id=input.id,
+            )
             return PlaygroundOutput.Completion(
                 id=getattr(e, "task_run_id", None) or "",
                 output=Output(error=Error(error=str(e))),
                 cost_usd=None,
                 duration_seconds=None,
             )
+        _log.debug(
+            "Playground: Running single completion succeeded",
+            version_id=version.id,
+            input_id=input.id,
+        )
         return PlaygroundOutput.Completion(
             id=completion.id,
             output=output_from_domain(completion.agent_output),
@@ -209,6 +225,8 @@ class PlaygroundService:
                 )
             experiment_id = str(uuid7())
 
+        bind_contextvars(experiment_id=experiment_id)
+
         base_metadata = {
             "anotherai/experiment_id": experiment_id,
         }
@@ -240,6 +258,13 @@ class PlaygroundService:
 
         self._check_compatibility(versions, inputs)
 
+        _log.debug(
+            "Computed versions for playground tool",
+            experiment_id=experiment_id,
+            versions=len(versions),
+            inputs=len(inputs),
+        )
+
         for version in versions:
             for i in inputs:
                 completion_id = str(uuid7())
@@ -269,6 +294,7 @@ class PlaygroundService:
         await self._experiment_storage.create(experiment, agent.uid)
 
         completions = await asyncio.gather(*tasks)
+        _log.debug("Playground: Completed all completions", completions=len(completions))
         return PlaygroundOutput(
             completions=completions,
             experiment_id=experiment_id,

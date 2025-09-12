@@ -218,7 +218,7 @@ class Runner:
         # Overriding the structured generation flag if the model does not support it
         # Post provider override
         if not model_data_copy.supports_structured_output:
-            is_structured_generation_enabled = False
+            provider_options.structured_generation = False
 
         return provider, provider_options, model_data_copy
 
@@ -235,7 +235,7 @@ class Runner:
             version=self._version,
             custom_configs=self._custom_configs,
             factory=self._provider_factory,
-            builder=self._build_provider_data,  # TODO: not sure what this is
+            builder=self._build_provider_data,
             typology=IOTypology(input=builder.agent_input.typology, output=Typology()),
             use_fallback=self._use_fallback,
         )

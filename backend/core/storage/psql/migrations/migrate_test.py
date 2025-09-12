@@ -5,7 +5,7 @@ import pytest
 
 from core.storage.psql.migrations.migrate import _migration_files
 
-_EXCLUDED_TABLES = ("tenants", "api_keys", "migrations")
+_EXCLUDED_TABLES = ("tenants", "api_keys", "migrations", "users")
 
 
 async def test_migrate(admin_psql_dsn: str):
