@@ -1,5 +1,5 @@
 // String matching utilities using diff-match-patch for high-performance common substring detection
-import { diff_match_patch } from 'diff-match-patch';
+import { diff_match_patch } from "diff-match-patch";
 
 export function findCommonSubstrings(texts: (string | null | undefined)[] | null | undefined): string {
   // Input validation
@@ -24,7 +24,8 @@ export function findCommonSubstrings(texts: (string | null | undefined)[] | null
 
       // Extract common parts (EQUAL operations in diff)
       diffs.forEach(([operation, text]) => {
-        if (operation === 0 && text.trim().length >= 3) { // EQUAL operation
+        if (operation === 0 && text.trim().length >= 3) {
+          // EQUAL operation
           commonFragments.add(text.trim());
         }
       });
