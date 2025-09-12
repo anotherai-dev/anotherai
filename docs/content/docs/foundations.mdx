@@ -415,3 +415,27 @@ fmt.Printf("Latency: %fs", latency)
 ```
 </Tab>
 </Tabs>
+
+## URLs
+
+AnotherAI provides direct URLs to view completions and experiments in the web app:
+
+### Completion URL
+To view a specific completion in the web app:
+```
+{{WEB_APP_URL}}/completions/{completion_id}
+```
+
+### Experiment URL
+To view a specific experiment and its results:
+```
+{{WEB_APP_URL}}/experiments/{experiment_id}
+```
+
+### Query Results URL
+When using the `query_completions` MCP tool, it returns a URL in this format:
+```
+{{WEB_APP_URL}}/completions?query={encoded_query}
+```
+
+This URL displays filtered completion results based on your SQL query.
