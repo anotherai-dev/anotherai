@@ -1,7 +1,5 @@
 from pydantic import BaseModel
 
-from core.domain.models.model_data_mapping import AVAILABLE_MODELS
-
 from ._client import client
 
 
@@ -9,7 +7,7 @@ class ModelSuggestionOutput(BaseModel):
     suggested_model: str
 
 
-async def suggest_model(model: str) -> str | None:
+async def suggest_model(model: str, available_models: list[str]) -> str | None:
     completion = await client.beta.chat.completions.parse(
         model="suggest-model/gemini-2.5-flash",
         messages=[
@@ -33,7 +31,7 @@ Available models: {{available_models}}
         extra_body={
             "input": {
                 "model": model,
-                "available_models": AVAILABLE_MODELS,
+                "available_models": available_models,
             },
         },
         temperature=0.0,
