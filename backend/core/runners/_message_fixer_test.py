@@ -140,7 +140,7 @@ class TestMessageAutofixer:
                 ],
             ),
         ]
-        with pytest.raises(ValueError, match="Tool call request dup_id .* already found"):
+        with pytest.raises(ValueError, match=r"Tool call request dup_id .* already found"):
             _ = autofix(messages)
 
     def test_tool_call_result_without_request(self, autofix: Callable[[list[Message]], list[Message]]):
@@ -149,7 +149,7 @@ class TestMessageAutofixer:
         ]
         with pytest.raises(
             ValueError,
-            match="Tool call result orphan_id .* should immediately follow a tool call request",
+            match=r"Tool call result orphan_id .* should immediately follow a tool call request",
         ):
             _ = autofix(messages)
 
@@ -170,7 +170,7 @@ class TestMessageAutofixer:
         # The autofixer will first process the valid sequence, then encounter the duplicate result.
         # The first result for "req1" will be processed, moving it to _tool_result_ids.
         # The second result for "req1" will then be seen as a duplicate.
-        with pytest.raises(ValueError, match="Tool call result req1 .* already found"):
+        with pytest.raises(ValueError, match=r"Tool call result req1 .* already found"):
             _ = autofix(messages)
 
     def test_tool_call_result_for_unknown_request_id(self, autofix: Callable[[list[Message]], list[Message]]):
@@ -178,7 +178,7 @@ class TestMessageAutofixer:
             Message(role="assistant", content=[self._content_tc_request(id="actual_req")]),
             Message(role="user", content=[self._content_tc_result(id="unknown_req")]),
         ]
-        with pytest.raises(ValueError, match="Tool call result unknown_req .* not found in previous messages"):
+        with pytest.raises(ValueError, match=r"Tool call result unknown_req .* not found in previous messages"):
             _ = autofix(messages)
 
     def test_content_between_tool_call_request_and_result_different_message(
@@ -360,5 +360,5 @@ class TestMessageAutofixer:
             ),
             Message(role="user", content=[self._content_tc_result(id="req1", result="Res1")]),
         ]
-        with pytest.raises(ValueError, match="Tool call requests `req2` are still pending. "):
+        with pytest.raises(ValueError, match=r"Tool call requests `req2` are still pending. "):
             _ = autofix(messages)
