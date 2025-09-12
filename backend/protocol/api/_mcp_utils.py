@@ -4,15 +4,15 @@ from typing import Any, override
 
 from fastmcp.exceptions import ToolError
 from fastmcp.server import FastMCP
-from fastmcp.server.auth import AccessToken, AuthProvider, RemoteAuthProvider, TokenVerifier
+from fastmcp.server.auth import AccessToken, AuthProvider, TokenVerifier
 from fastmcp.server.dependencies import get_access_token
 from fastmcp.server.middleware import CallNext, Middleware, MiddlewareContext
 from fastmcp.tools.tool import ToolResult, default_serializer
 from mcp.types import CallToolRequestParams
-from pydantic import AnyHttpUrl, BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError
 from structlog import get_logger
+from structlog.contextvars import bind_contextvars
 
-from core.consts import ANOTHERAI_API_URL, AUTHORIZATION_SERVER
 from core.domain.exceptions import DefaultError, InvalidTokenError
 from core.domain.tenant_data import TenantData
 from core.providers._base.provider_error import ProviderError
@@ -53,6 +53,7 @@ class BaseMiddleware(Middleware):
             raise e
 
     async def on_message(self, context: MiddlewareContext[Any], call_next: CallNext[Any, Any]) -> Any:
+        bind_contextvars(tool_name=context.message.name)
         try:
             return await call_next(context)
         except ToolError as e:
@@ -177,6 +178,11 @@ class CustomTokenVerifier(TokenVerifier):
     async def verify_token(self, token: str) -> AccessToken | None:
         deps = lifecyle_dependencies()
         tenant = await deps.security_service.find_tenant(token)
+        bind_contextvars(
+            tenant_org_id=tenant.org_id,
+            tenant_owner_id=tenant.owner_id,
+            tenant_slug=tenant.slug,
+        )
         return AccessToken(
             token=token,
             client_id="",
@@ -187,17 +193,5 @@ class CustomTokenVerifier(TokenVerifier):
         )
 
 
-class CustomRemoteAuthProvider(RemoteAuthProvider):
-    @override
-    def get_routes(self):
-        # We handle the protected routes manually. It seems that some MCP clients require
-        # some weird routes
-        return []
-
-
 def build_auth_provider() -> AuthProvider:
-    return CustomRemoteAuthProvider(
-        token_verifier=CustomTokenVerifier(),
-        authorization_servers=[AnyHttpUrl(AUTHORIZATION_SERVER)],
-        resource_server_url=f"{ANOTHERAI_API_URL}/mcp",
-    )
+    return CustomTokenVerifier()

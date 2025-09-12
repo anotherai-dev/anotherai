@@ -36,9 +36,15 @@ def _renderer(json: bool | None = None):
 
 
 def setup_logs(
-    logger_factory: Callable[[], "WrappedLogger"] | None = None, json: bool | None = None, *processors: Processor,
+    logger_factory: Callable[[], "WrappedLogger"] | None = None,
+    json: bool | None = None,
+    *processors: Processor,
 ):
     setup_sentry()
+
+    min_level = os.getenv("LOG_LEVEL", "INFO")
+    if min_level not in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
+        min_level = logging.INFO
 
     structlog.configure(
         processors=[
@@ -51,6 +57,7 @@ def setup_logs(
             _renderer(),
             *processors,
         ],
+        wrapper_class=structlog.make_filtering_bound_logger(min_level),
         logger_factory=logger_factory or structlog.stdlib.LoggerFactory(),
         cache_logger_on_first_use=True,
     )

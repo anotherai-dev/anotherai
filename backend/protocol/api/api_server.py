@@ -26,7 +26,7 @@ _INCLUDED_ROUTES = set(os.environ["INCLUDED_ROUTES"].split(",")) if os.environ.g
 
 _MCP_ENABLED = not _INCLUDED_ROUTES or "mcp" in _INCLUDED_ROUTES
 
-# TODO: investigate why stateless_http is needed
+# Server is going to run in multiple, possibly short lived containers so turning on stateless_http
 _mcp_app = mcp.http_app(transport="streamable-http", path="/mcp", stateless_http=True) if _MCP_ENABLED else None
 
 
