@@ -19,7 +19,7 @@ from core.storage.clickhouse._models._ch_annotation import ClickhouseAnnotation
 from core.storage.clickhouse._models._ch_completion import ClickhouseCompletion, parse_messages
 from core.storage.clickhouse._models._ch_experiment import ClickhouseExperiment
 from core.storage.clickhouse._models._ch_field_utils import data_and_columns, zip_columns
-from core.storage.clickhouse._utils import clone_client, sanitize_readonly_privileges
+from core.storage.clickhouse._utils import clone_client, sanitize_query, sanitize_readonly_privileges
 from core.storage.completion_storage import CompletionField, CompletionStorage
 from core.utils.iter_utils import safe_map
 from core.utils.strings import remove_urls
@@ -171,7 +171,7 @@ class ClickhouseClient(CompletionStorage):
     async def raw_query(self, query: str) -> list[dict[str, Any]]:
         # We are safe to use a raw query from the client here since the query is executed with a client
         # that is restricted to read only operations and a specific tenant_uid filter
-
+        query = sanitize_query(query)
         readonly_client = await self._readonly_client()
         # We could also set these restrictions at the user level
         query_settings: dict[str, Any] = {
