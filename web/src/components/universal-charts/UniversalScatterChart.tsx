@@ -124,7 +124,7 @@ export function UniversalScatterChart({
 
   // Memoized canvas for text width measurement
   const measureTextWidth = useMemo(() => {
-    if (!canvasRef.current) {
+    if (!canvasRef.current && typeof document !== "undefined") {
       canvasRef.current = document.createElement("canvas");
     }
 
