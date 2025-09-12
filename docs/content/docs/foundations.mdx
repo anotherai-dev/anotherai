@@ -81,21 +81,54 @@ Learn more about by reading the [Observability](/observability) section.
 Experiments are containers for testing and comparing different model configurations, prompts, and parameters. They enable systematic evaluation and iteration of AI agents.
 
 **Key concepts:**
-- Experiments group related completions for analysis
+- Experiments group related completions in a matrix structure (versions × inputs)
 - Each experiment has a unique ID and can be annotated with feedback
+- Experiments can be built incrementally within a session
 - Results are documented for future reference and learning
 
-**Creating experiments with the playground tool:**
-The `playground` tool enables systematic testing across multiple dimensions:
-- Test multiple models in parallel (e.g., "gpt-4o-mini,claude-3-5-sonnet-20241022")
-- Compare different prompt variations and temperatures
-- Test with structured inputs using template variables
-- Automatically track cost and performance metrics
+**Creating experiments with composable tools:**
+Build experiments step-by-step for precise control:
 
-The tool creates a matrix of completions testing all combinations of models, prompts, inputs, and temperatures.
+1. **Create experiment** using `create_experiment` with title and description
+2. **Add versions** using `add_versions_to_experiment` to define what you're testing:
+   - Specify shared parameters (model, temperature, output_schema)
+   - Only include differences in the versions array
+   - Supports per-version parameters like reasoning_effort
+3. **Add inputs** using `add_inputs_to_experiment`:
+   - Direct inputs for new test cases
+   - SQL queries to test on production data
+4. **Run experiment** using `run_experiment` to execute all combinations
+5. **Iterate within session** - add more versions or inputs and re-run
+
+**Example: Testing prompt variations**
+```python
+# Create experiment
+exp_id = create_experiment(title="Customer support optimization", agent_id="support")
+
+# Add versions - only prompt differs
+add_versions_to_experiment(
+    experiment_id=exp_id,
+    model="claude-3-sonnet",
+    temperature=0.7,
+    output_schema=response_schema,
+    versions=[
+        {"prompt": [{"role": "system", "content": "Be concise and friendly"}]},
+        {"prompt": [{"role": "system", "content": "Be detailed and professional"}]}
+    ]
+)
+
+# Add test inputs
+add_inputs_to_experiment(
+    experiment_id=exp_id,
+    inputs=[{"messages": [{"role": "user", "content": "How do I reset my password?"}]}]
+)
+
+# Run and get results
+run_experiment(experiment_id=exp_id)
+```
 
 **Agent workflow:**
-1. **Create experiments** using `playground` tool for testing
+1. **Create targeted experiments** for specific comparisons (not all permutations)
 2. **Add results/conclusions** using `add_experiment_result` with:
    - Performance metrics (speed, cost, accuracy)
    - Key findings and insights
@@ -103,12 +136,15 @@ The tool creates a matrix of completions testing all combinations of models, pro
    - Model comparisons and winners
 3. **Provide experiment URL** immediately for user review: `{{WEB_APP_URL}}/experiments/{experiment_id}`
 4. **Check for user feedback** using `get_annotations`
-5. **Iterate** based on feedback
+5. **Iterate within session** by adding new versions/inputs based on results
 
 Always add experiment results using `add_experiment_result` after completing any testing or analysis. This tool documents findings, performance metrics, and recommendations for future reference.
 
-**Model selection for experiment creation:**
-When creating experiments for agents with complex structured output schemas, asking **Claude Opus** to create the experiment is recommended. Less intelligent models have been known to modify or simplify schemas despite explicit instructions not to. Claude Opus consistently preserves the exact schema specifications as intended.
+**Benefits of the new approach:**
+- **Precise control** - Test exact version pairs without unwanted permutations
+- **Incremental building** - Add versions or inputs as you learn
+- **Token efficient** - Share common parameters, only specify differences
+- **Clear structure** - Versions × Inputs matrix is intuitive
 
 ### Deployments
 
