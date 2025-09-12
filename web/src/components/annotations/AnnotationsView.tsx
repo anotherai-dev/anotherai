@@ -120,7 +120,9 @@ export function AnnotationsView({
             )}
           </div>
 
-          {agentId && <AnnotationsPromptLabel annotations={filteredAnnotations} agentId={agentId} experimentId={experimentId} />}
+          {agentId && (
+            <AnnotationsPromptLabel annotations={filteredAnnotations} agentId={agentId} experimentId={experimentId} />
+          )}
         </div>
       )}
 

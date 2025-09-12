@@ -10,7 +10,10 @@ interface ImproveAgentAnnotationsInstructionsProps {
   experimentId: string;
 }
 
-export function ImproveAgentAnnotationsInstructions({ agentId, experimentId }: ImproveAgentAnnotationsInstructionsProps) {
+export function ImproveAgentAnnotationsInstructions({
+  agentId,
+  experimentId,
+}: ImproveAgentAnnotationsInstructionsProps) {
   return (
     <HoverPopover
       content={<ImproveAgentAnnotationsInstructionsContent agentId={agentId} experimentId={experimentId} />}

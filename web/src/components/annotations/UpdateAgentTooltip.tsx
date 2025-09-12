@@ -11,7 +11,9 @@ interface UpdateAgentTooltipProps {
 export function UpdateAgentTooltip({ agentId, experimentId }: UpdateAgentTooltipProps) {
   const { showToast } = useToast();
 
-  const promptText = experimentId ? `Adjust anotherai/agent/${agentId} based on the annotations that have been added in anotherai/experiment/${experimentId}.` : `Adjust anotherai/agent/${agentId} based on the annotations that have been added.`;
+  const promptText = experimentId
+    ? `Adjust anotherai/agent/${agentId} based on the annotations that have been added in anotherai/experiment/${experimentId}.`
+    : `Adjust anotherai/agent/${agentId} based on the annotations that have been added.`;
 
   const handleCopyPrompt = async () => {
     try {
