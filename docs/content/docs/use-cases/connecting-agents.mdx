@@ -6,9 +6,11 @@ summary: Create and monitor multi-agent workflows with AnotherAI.
 import { Steps, Step } from 'fumadocs-ui/components/steps';
 import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
 
-## What are Workflows?
+## Why is Connecting Agents in Workflows Useful?
 
-A **workflow** is a sequence of two or more AI agents working together to accomplish a complex task. Workflow structures can vary, but here are a couple simple examples of what a workflow may look like:
+Connecting Agents allows you to evaluate the overall combined product of the multiple agents, instead of just the individual agents in a vacuum. This means you can evaluate the cumulative product of all agents, or debug an entire workflow, instead of having to look at just isolated pieces of the workflow individually.
+
+A **workflow** is just a sequence of two or more AI agents working together to accomplish a complex task. Workflow structures can vary, but here are a couple simple examples of what a workflow may look like:
 
 - Two or more agents work sequentially, where the output of one agent becomes the input for the next agent. For example: one agent extracts data from a document, a second agent summarizes it, and a third agent translates it into another language.
 - Two or more agents work in parallel and their results are combined at the end. For example: two agents are given the same meeting transcript. One agent is responsible for generating a summary of the meeting and the other is responsible for extracting todo items from the transcript.
@@ -19,179 +21,29 @@ To learn more and see additional examples, we recommend checking out [Anthropic'
 
 You can use agent metadata to add the key value pairs you'd like to connect agents as workflows.
 
-We recommend using these metadata fields for workflows:
-- `trace_id`: A generated UUID that uniquely identifies each workflow execution
-- `workflow_name`: A string that identifies the type of workflow being executed
+You can ask Claude Code(or your preferred AI coding agent) to create a workflow for you, like this:
 
-Here's the process of setting metadata for workflow tracking:
-
-<Tabs items={['Python', 'TypeScript', 'curl']}>
-<Tab value="Python">
-```python
-import uuid
-
-# 1. Set workflow identifiers
-trace_id = str(uuid.uuid7())  # Unique identifier for this workflow instance (time-ordered)
-workflow_name = "meeting-analysis"  # Type of workflow being executed
-
-# 2. Add the metadata when making agent calls
-response = client.chat.completions.create(
-    model="gpt-4o-mini",
-    messages=[{"role": "system", "content": "Summarize this meeting transcript"}],
-    metadata={
-        "trace_id": trace_id,
-        "workflow_name": workflow_name,
-        "agent_id": "meeting-summarizer"
-    }
-)
 ```
-</Tab>
-<Tab value="TypeScript">
-```typescript
-import { v7 as uuidv7 } from 'uuid';
+  I need to add workflow tracking to the following AnotherAI agents so I can connect them together as a workflow and monitor them as a group.
 
-// 1. Set workflow identifiers
-const traceId = uuidv7();  // Unique identifier for this workflow instance (time-ordered)
-const workflowName = 'meeting-analysis';  // Type of workflow being executed
+  I have these agents that work together:
+  - anotherai/agent/your-agent-name-1
+  - anotherai/agent/your-agent-name-2
+  - anotherai/agent/your-agent-name-3
 
-// 2. Add the metadata when making agent calls
-const response = await client.chat.completions.create({
-  model: 'gpt-4o-mini',
-  messages: [{role: 'system', content: 'Summarize this meeting transcript'}],
-  metadata: {
-    trace_id: traceId,
-    workflow_name: workflowName,
-    agent_id: 'meeting-summarizer'
-  }
-});
+  Please update the code for all these agents to include workflow tracking metadata:
+  1. A "trace_id" that uses a UUID (specifically uuid.uuid7() for Python or uuidv7() for TypeScript)  
+  2. A "workflow_name" that is [your-workflow-name]
+
+  Here's what I need:
+  - Generate the trace_id once at the beginning when I start the workflow and pass the same trace_id to all three agents during that workflow execution
+  - Set the workflow_name to "[your-workflow-name]" for all agents in this workflow type
+  - Add both of these to the metadata section of all my agent calls alongside the existing agent_id
+
+  The goal is so that when I run these agents together as part of the same workflow, they all share the same trace_id and workflow_name, which will let me see them grouped
+  together in AnotherAI's monitoring views.
+
 ```
-</Tab>
-<Tab value="curl">
-```bash
-# Set workflow identifiers
-TRACE_ID=$(python3 -c "import uuid; print(uuid.uuid7())")  # Unique identifier for this workflow instance
-WORKFLOW_NAME="meeting-analysis"  # Type of workflow being executed
-
-# Agent call with workflow metadata
-curl -X POST {{API_URL}}/v1/chat/completions \
-  -H "Authorization: Bearer aai-***" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "gpt-4o-mini",
-    "messages": [{"role": "system", "content": "Summarize this meeting transcript"}],
-    "metadata": {
-      "trace_id": "'$TRACE_ID'",
-      "workflow_name": "'$WORKFLOW_NAME'",
-      "agent_id": "meeting-summarizer"
-    }
-  }'
-```
-</Tab>
-</Tabs>
-
-Then set the same `trace_id` value across all agents in your workflow:
-
-<Tabs items={['Python', 'TypeScript', 'curl']}>
-<Tab value="Python">
-```python
-import uuid
-
-# Example workflow script showing consistent trace_id and workflow_name usage
-trace_id = str(uuid.uuid7())  # Generate once per workflow instance
-workflow_name = "meeting-analysis"  # Same for all agents in this workflow type
-
-# Agent 1: Document processor
-response1 = client.chat.completions.create(
-    model="gpt-4o-mini", 
-    messages=[{"role": "system", "content": "Summarize this meeting transcript"}],
-    metadata={
-        "trace_id": trace_id, 
-        "workflow_name": workflow_name,
-        "agent_id": "meeting-summarizer"
-    }
-)
-
-# Agent 2: Content analyzer (same trace_id and workflow_name)
-response2 = client.chat.completions.create(
-    model="gpt-4o-mini",
-    messages=[{"role": "system", "content": "Extract todos from this meeting transcript"}], 
-    metadata={
-        "trace_id": trace_id, 
-        "workflow_name": workflow_name,
-        "agent_id": "meeting-todo-extractor"
-    }
-)
-```
-</Tab>
-
-<Tab value="TypeScript">
-```typescript
-import { v7 as uuidv7 } from 'uuid';
-
-// Example workflow script showing consistent trace_id and workflow_name usage
-const traceId = uuidv7();  // Generate once per workflow instance
-const workflowName = 'meeting-analysis';  // Same for all agents in this workflow type
-
-// Agent 1: Document processor
-const response1 = await client.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [{role: 'system', content: 'Summarize this meeting transcript'}],
-    metadata: {
-        trace_id: traceId,
-        workflow_name: workflowName,
-        agent_id: 'meeting-summarizer'
-    }
-});
-
-// Agent 2: Content analyzer (same trace_id and workflow_name)
-const response2 = await client.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [{role: 'system', content: 'Extract todos from this meeting transcript'}],
-    metadata: {
-        trace_id: traceId,
-        workflow_name: workflowName,
-        agent_id: 'meeting-todo-extractor'
-    }
-});
-```
-</Tab>
-
-<Tab value="curl">
-```bash
-# Example workflow script showing consistent trace_id and workflow_name usage
-TRACE_ID=$(python3 -c "import uuid; print(uuid.uuid7())")  # Generate once per workflow instance
-WORKFLOW_NAME="meeting-analysis"  # Same for all agents in this workflow type
-
-# Agent 1: Document processor
-curl -X POST {{API_URL}}/v1/chat/completions \
-  -H "Authorization: Bearer aai-***" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "gpt-4o-mini",
-    "messages": [{"role": "system", "content": "Summarize this meeting transcript"}],
-    "metadata": {
-      "trace_id": "'$TRACE_ID'",
-      "workflow_name": "'$WORKFLOW_NAME'",
-      "agent_id": "meeting-summarizer"
-    }
-  }'
-
-# Agent 2: Content analyzer (same trace_id and workflow_name)
-curl -X POST {{API_URL}}/v1/chat/completions \
-  -H "Authorization: Bearer aai-***" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "gpt-4o-mini",
-    "messages": [{"role": "system", "content": "Extract todos from this meeting transcript"}],
-    "metadata": {
-      "trace_id": "'$TRACE_ID'",
-      "workflow_name": "'$WORKFLOW_NAME'",
-      "agent_id": "meeting-todo-extractor"
-    }
-  }'
-```
-</Tab>
-</Tabs>
 
 ## Monitoring Workflows
 
