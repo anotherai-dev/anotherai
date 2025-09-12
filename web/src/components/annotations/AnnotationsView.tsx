@@ -105,7 +105,7 @@ export function AnnotationsView({
             </button>
             {agentId && (
               <HoverPopover
-                content={<ImproveAgentAnnotationsInstructionsContent agentId={agentId} />}
+                content={<ImproveAgentAnnotationsInstructionsContent agentId={agentId} experimentId={experimentId} />}
                 position="bottom"
                 popoverClassName="bg-gray-900 text-white rounded-[4px]"
                 className=""
@@ -120,7 +120,7 @@ export function AnnotationsView({
             )}
           </div>
 
-          {agentId && <AnnotationsPromptLabel annotations={filteredAnnotations} agentId={agentId} />}
+          {agentId && <AnnotationsPromptLabel annotations={filteredAnnotations} agentId={agentId} experimentId={experimentId} />}
         </div>
       )}
 

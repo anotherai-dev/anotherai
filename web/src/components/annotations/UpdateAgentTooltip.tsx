@@ -5,12 +5,13 @@ import { useToast } from "@/components/ToastProvider";
 
 interface UpdateAgentTooltipProps {
   agentId: string;
+  experimentId?: string;
 }
 
-export function UpdateAgentTooltip({ agentId }: UpdateAgentTooltipProps) {
+export function UpdateAgentTooltip({ agentId, experimentId }: UpdateAgentTooltipProps) {
   const { showToast } = useToast();
 
-  const promptText = `Adjust anotherai/agent/${agentId} based on the annotations that have been added.`;
+  const promptText = experimentId ? `Adjust anotherai/agent/${agentId} based on the annotations that have been added in anotherai/experiment/${experimentId}.` : `Adjust anotherai/agent/${agentId} based on the annotations that have been added.`;
 
   const handleCopyPrompt = async () => {
     try {
