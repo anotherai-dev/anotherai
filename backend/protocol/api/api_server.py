@@ -6,9 +6,9 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from structlog import get_logger
 
+import core.logs.global_setup  # setup logs globally
 from core.domain.exceptions import DefaultError
 from core.domain.models.models import Model
-from core.logs.setup_logs import setup_logs
 from core.providers._base.provider_error import ProviderError
 from protocol._common import probes_router
 from protocol._common.broker_utils import use_in_memory_broker
@@ -17,8 +17,6 @@ from protocol.api import _api_router, _run_router, _well_known_router
 from protocol.api._api_utils import convert_error_response
 from protocol.api._dependencies._misc import set_start_time
 from protocol.api._mcp import mcp
-
-setup_logs()
 
 _log = get_logger(__name__)
 

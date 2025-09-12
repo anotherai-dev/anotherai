@@ -39,6 +39,7 @@ class BaseMiddleware(Middleware):
         context: MiddlewareContext[CallToolRequestParams],
         call_next: CallNext[CallToolRequestParams, ToolResult],
     ) -> ToolResult:
+        _log.info("on_call_tool", method=context.method)
         # Trying to deserialize JSON sent as a string
         # See https://github.com/jlowin/fastmcp/issues/932
         if context.message.arguments:
@@ -53,22 +54,24 @@ class BaseMiddleware(Middleware):
             raise e
 
     async def on_message(self, context: MiddlewareContext[Any], call_next: CallNext[Any, Any]) -> Any:
-        bind_contextvars(tool_name=context.message.name)
+        tool_name = getattr(context.message, "name", None)
+        bind_contextvars(tool_name=tool_name)
+        _log.debug("on_message", method=context.method)
         try:
             return await call_next(context)
         except ToolError as e:
             cause = e.__cause__
             if isinstance(cause, (ProviderError, DefaultError)):
                 if cause.capture:
-                    _log.exception(f"Error in tool call {context.message.name}", exc_info=e)
+                    _log.exception("Error in message", exc_info=e)
                 # We can re-raise the original error as is. FastMCP will handle the formatting
                 raise e
             if isinstance(cause, ValidationError):
                 # Tracking of when
-                _log.error(f"Validation error in tool call {context.message.name}", exc_info=e)
+                _log.error("Validation error in message", exc_info=e)
                 raise e
             # Anything else should not permeate to the outside so we raise an opaque error
-            _log.exception(f"Unknown Error in tool call {context.message.name}", exc_info=e)
+            _log.exception("Unknown Error in message", exc_info=e)
             raise Exception("An unknown error occurred") from None
 
         except Exception as e:  # noqa: BLE001

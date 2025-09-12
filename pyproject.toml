@@ -126,6 +126,13 @@ lint.fixable = ["ALL"]
 "litellm.BaseModel".msg = "Import from pydantic instead"
 "litellm.Field".msg = "Import from pydantic instead"
 
+[tool.ruff.lint.isort]
+force-to-top = ["core.logs.global_setup"]
+
+[tool.ruff.lint.pyflakes]
+allowed-unused-imports = ["core.logs.global_setup"]
+
+
 [tool.pyright]
 include = ["backend", "scripts"]
 ignore = []
