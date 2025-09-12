@@ -3,7 +3,7 @@
   "icon": "UserGroup",
   "defaultOpen": true,
   "pages": [
-    "fundementals",
+    "fundamentals",
     "user-feedback",
     "increasing-agent-reliability",
     "checking-new-models",

@@ -7,6 +7,7 @@ description: Learn how to use experiments to compare different agent configurati
 import { Step, Steps } from 'fumadocs-ui/components/steps';
 import { Callout } from 'fumadocs-ui/components/callout';
 import { Card, Cards } from 'fumadocs-ui/components/card';
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
 import { MessageSquare, MessageSquarePlus } from 'lucide-react';
 
 # Experiments 
@@ -78,8 +79,8 @@ GPT 5 mini?
 
 Beyond prompts and models, fine-tuning other parameters can impact your agent's behavior and output quality. Temperature in particular can have a significant impact on the quality of the output.
 
-#### Temperature
-
+<Accordions>
+<Accordion title="Temperature">
 Temperature is the most important parameter to experiment with after prompts and models. It controls the randomness of the model's output:
 
 - **Low temperature (0.0 - 0.3)**: More deterministic, consistent outputs. Best for:
@@ -106,6 +107,8 @@ the right balance between creativity and professionalism
 ```
 
 [IMAGE TODO: SCREENSHOT OF EXPERIMENT VIEW SHOWING 3 versions with different temperatures]
+</Accordion>
+</Accordions>
 
 ### Tips:
 - Always reference the specific files of your agent when requesting experiments to avoid any ambiguity about what should be tested
@@ -129,7 +132,7 @@ and recommend which configuration performs best specifically for both accuracy a
 ## Other Ways to Improve your Agents
 
 <Cards>
-  <Card title="Using Annotations" href="/use-cases/fundementals/improving_w_annotations" icon={<MessageSquare />}>
+  <Card title="Using Annotations" href="/use-cases/fundamentals/annotations" icon={<MessageSquare />}>
     Add specific feedback to completions and experiments to guide agent improvements
   </Card>
   <Card title="End-User Feedback" href="/use-cases/user-feedback" icon={<MessageSquarePlus />}>
