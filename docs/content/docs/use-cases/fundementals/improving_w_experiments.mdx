@@ -1,0 +1,138 @@
+---
+title: Using Experiments to Improve Agents
+summary: Systematically improve agents by comparing prompts, models, and parameters
+description: Learn how to use experiments to compare different agent configurations, test variations, and optimize for cost, speed, and accuracy
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Card, Cards } from 'fumadocs-ui/components/card';
+import { MessageSquare, MessageSquarePlus } from 'lucide-react';
+
+# Experiments 
+
+Throughout the process of creating a new agent, in order to make the best agent possible, you may need to:
+- Compare performance across different models (GPT-4, Claude, Gemini, etc.)
+- Test multiple prompt variations to find the most effective approach
+- Optimize for specific metrics like cost, speed, and accuracy. 
+
+Experiments allow you to systematically compare each of these different parameters of your agent to find the optimal setup for your use case across one or more inputs.
+
+### Creating Experiments
+
+To create an experiment:
+
+<Steps>
+<Step>
+#### Configure MCP
+Make sure you have the AnotherAI MCP configured and enabled. You can view the set up steps [here](/docs).
+</Step>
+
+<Step>
+#### Create Experiment
+Then just ask Claude Code (or the AI coding agent you're using) to set up experiments for you. We'll cover some common examples and sample messages you can use below.
+</Step>
+</Steps>
+
+[IMAGE TODO: SCREENSHOT OF PROMPT IN CLAUDE CODE ASKING FOR AN EXPERIMENT]
+
+The most common parameters to experiment with are prompts and models, however you can also experiment with changes to other parameters like temperature. 
+
+### Prompts
+
+Comparing different prompts is one of the most effective ways to improve your agent's performance. Small changes in wording, structure, or examples can lead to significant improvements. If you notice an issue with an existing prompt, you can even ask Claude to generate prompt variations to use in the experiment. 
+
+Example:
+
+```
+Look at the prompt of anotherai/agent/email-rewriter and create an experiment in AnotherAI 
+that compares the current prompt with a new prompt that better emphasizes adopting 
+the tone lists in the input 
+```
+
+[IMAGE TODO: SCREENSHOT OF EXPERIMENT VIEW SHOWING TWO PROMPTS SIDE BY SIDE]
+
+### Models
+
+Different models excel at different tasks. AnotherAI supports over 100 different models, and experiments can help you choose the right model for your agent, depending on its needs.
+
+Example:
+
+```
+Create an AnotherAI experiment to help me find a faster model for anotherai/agent/email-rewriter,
+but still maintains the same tone and verbosity considerations as my current model.
+```
+
+If you have a specific model in mind that you want to try - **for example, a newly released model** - you can ask Claude to help you test that model against your existing agent version. You can always request that Claude use inputs from existing completions, to ensure that you're testing with real, production data. 
+
+Example:
+
+```
+Can you retry the last 5 completions of anotherai/agent/email-rewriter and compare the outputs with 
+GPT 5 mini?
+```
+
+[IMAGE TODO: SCREENSHOT OF EXPERIMENT VIEW SHOWING TWO MODELS SIDE BY SIDE]
+
+### Other Parameters
+
+Beyond prompts and models, fine-tuning other parameters can impact your agent's behavior and output quality. Temperature in particular can have a significant impact on the quality of the output.
+
+#### Temperature
+
+Temperature is the most important parameter to experiment with after prompts and models. It controls the randomness of the model's output:
+
+- **Low temperature (0.0 - 0.3)**: More deterministic, consistent outputs. Best for:
+  - Data extraction tasks
+  - Classification
+  - Structured output generation
+  - Tasks requiring high accuracy and repeatability
+
+- **Medium temperature (0.4 - 0.7)**: Balanced creativity and consistency. Best for:
+  - General purpose assistants
+  - Question answering
+  - Summary generation
+
+- **High temperature (0.8 - 1.0)**: More creative, varied outputs. Best for:
+  - Creative writing
+  - Brainstorming
+  - Generating diverse options
+
+Example:
+
+```
+Test my email-rewriter agent with temperatures 0.2, 0.5, and 0.8 to find 
+the right balance between creativity and professionalism
+```
+
+[IMAGE TODO: SCREENSHOT OF EXPERIMENT VIEW SHOWING 3 versions with different temperatures]
+
+### Tips:
+- Always reference the specific files of your agent when requesting experiments to avoid any ambiguity about what should be tested
+- Pick one variable to test with at a time (ex. models, prompts) to make sure that you can easily attribute a given variable on the agent's changes in performance.
+
+### Analyzing Experiment Results
+
+Once your experiment has collected enough completions, you can:
+
+1. **Review side-by-side comparisons** in the AnotherAI experiments view
+2. **Use annotations** to mark which outputs are better and why (keep reading to learn more about annotations!)
+3. **Ask Claude Code** to analyze the results:
+
+```
+Analyze the results of experiment/019885bb-24ea-70f8-c41b-0cbb22cc3c00 
+and recommend which configuration performs best specifically for both accuracy and cost
+```
+
+[IMAGE TODO: SCREENSHOT OF CLAUDE CODE ANALYSIS OF EXPERIMENT RESULTS?]
+
+## Other Ways to Improve your Agents
+
+<Cards>
+  <Card title="Using Annotations" href="/use-cases/fundementals/improving_w_annotations" icon={<MessageSquare />}>
+    Add specific feedback to completions and experiments to guide agent improvements
+  </Card>
+  <Card title="End-User Feedback" href="/use-cases/user-feedback" icon={<MessageSquarePlus />}>
+    Collect and integrate feedback from your end users to continuously improve your agents
+  </Card>
+</Cards>

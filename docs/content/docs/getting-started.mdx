@@ -1,0 +1,234 @@
+---
+title: Getting Started
+summary: How to get set up to use AnotherAI.
+---
+
+## Set Up
+
+To use AnotherAI's hosted service: go to [https://anotherai.dev/](https://anotherai.dev/) and sign up to create a free account.
+<Callout>
+Are you interested in a self-hosted, [open-source](https://github.com/anotherai-dev/anotherai) set up? We have that too! You can learn how to get set up [here](/self-hosted). 
+</Callout>
+
+<Callout type="info">
+Need an extra hand with the setup? We're happy to help. Reach us at [team@workflowai.support](mailto:team@workflowai.support) or on [Slack](https://join.slack.com/t/anotherai-dev/shared_invite/zt-3av2prezr-Lz10~8o~rSRQE72m_PyIJA).
+</Callout>
+
+### MCP 
+
+AnotherAI is available as an MCP server in the IDEs below.
+
+<Tabs items={['Cursor', 'Claude Code', 'ChatGPT','Windsurf', 'Cursor CLI']}>
+
+<Tab value="Cursor">
+
+Quick setup (recommended):
+1. Complete the [set up](#set-up) steps above
+2. Tap on the button below
+
+<a href="cursor://anysphere.cursor-deeplink/mcp/install?name=anotherai&config=eyJ1cmwiOiJodHRwczovL2FwaS5hbm90aGVyYWkuZGV2L21jcCJ9Cg=="><img src="https://cursor.com/deeplink/mcp-install-dark.svg" alt="Add anotherai MCP server to Cursor" height="32" /></a>
+
+Manual installation:
+1. Open Cursor
+2. Go to `Settings...`
+3. Navigate to `Cursor Settings`
+4. Select `Tools and Integrations`
+5. Select `+ New MCP Server`
+6. Choose your authentication method:
+
+### OAuth Authentication (Recommended)
+
+Add the following configuration to your MCP servers config:
+
+```json
+{
+  "mcpServers": {
+    "AnotherAI": {
+      "url": "{{API_URL}}/mcp"
+    }
+  }
+}
+```
+
+7. Return to the MCP Tools settings screen and enable the MCP, the indicator should be yellow with the message "Needs login".
+8. Tap "Need login", open the link and select "Allow" in your browser when prompted.
+9. Return to Cursor and the MCP should show as Connected (see screenshot below)
+
+### API Key Authentication
+
+7. Get your API key on [anotherai.dev/](https://anotherai.dev/completions?showManageKeysModal=true) and add the following configuration:
+
+```json
+{
+  "mcpServers": {
+    "anotherai": {
+      "url": "{{API_URL}}/mcp",
+      "headers": {
+        "Authorization": "Bearer <your_api_key_here>"
+      }
+    }
+  }
+}
+```
+
+8. Return to the MCP Tools settings screen. The Cursor UI should now look like this (note the green indicator and the number of tools enabled displayed):
+
+![Successful Cursor MCP Server Setup](/images/mcp/cursor-setup-ok.png)
+
+</Tab>
+
+<Tab value="Claude Code">
+
+  1. Complete the set up above
+  2. Choose your authentication method:
+
+  ### OAuth Authentication (Recommended)
+  
+  3. Open Claude Code in your preferred terminal (standalone or within your IDE)
+  4. Type the following to install:
+
+  ```bash
+  claude mcp add --scope user --transport http anotherai {{API_URL}}/mcp
+  ```
+
+  5. Check that the server was added:
+
+  ```bash
+  claude mcp list
+  ```
+  6. Start Claude and authenticate:
+
+  ```bash
+  claude
+  ```
+
+  Then type:
+  ```bash
+  /mcp
+  ```
+
+  Navigate to `anotherai` and press Enter. You should automatically be redirected to a browser to authenticate.
+
+  ### API Key Authentication
+  
+  3. Get your API key on [anotherai.dev/](https://anotherai.dev/completions?showManageKeysModal=true) 
+  4. Open Claude Code in your preferred terminal (standalone or within your IDE)
+  5. Type the following to install:
+
+  ```bash
+  claude mcp add --scope user anotherai {{API_URL}}/mcp --transport http --header "Authorization: Bearer YOUR_API_KEY_HERE"
+  ```
+
+  <Callout type="info">
+  **Installation Scopes**: The `--scope user` flag installs AnotherAI for your personal use across all projects. For team projects, you can use `--scope project` instead to create a shared `.mcp.json` file that can be committed to version control and shared with your team members. Learn more about MCP scopes in the [Anthropic documentation](https://docs.anthropic.com/en/docs/claude-code/mcp#user-scope).
+  </Callout>
+
+  6. Type the following to verify the server is properly connected:
+
+  ```bash
+  claude
+  ```
+
+  Then type:
+  ```bash
+  /mcp 
+  ```
+
+  You should see the AnotherAI server listed as "connected".
+
+</Tab>
+
+<Tab value="ChatGPT">
+
+ <Callout type="info">
+  **Currently only available in beta to Pro and Plus accounts on the web. Refer to [ChatGPT's documentation](https://platform.openai.com/docs/guides/developer-mode) for more information.**
+  </Callout>
+
+  1. Enable Developer Mode in ChatGPT:
+     - Go to [ChatGPT](https://chatgpt.com/)
+     - Click on the user icon in the bottom left corner
+     - Select `Settings` -> `Connectors` -> `Advanced Settings`
+     - Toggle the `Developer Mode` switch ON
+  2. Add the AnotherAI MCP server:
+     - Go back to the main Connectors page
+     - Select `Create` 
+     - Name the connector `AnotherAI`
+     - In `MCP Server URL`, enter `{{API_URL}}/mcp` 
+     - In `Authentication`, make sure OAuth is selected
+     - Select `Create` to save the configuration
+  3. Using the AnotherAI MCP: you will need to manually enable the MCP server in a new chat to use it
+     - In the chat text box, select the `+` -> `More` -> `Developer Mode`
+     - You should see `Developer Mode` and `Add sources` appear at the bottom of the text box
+     - Select `Add sources` and toggle on AnotherAI
+
+     Once you've added the MCP server, it should look like this:
+
+     ![ChatGPT MCP Setup](/images/mcp/chatgpt-setup.png)
+
+</Tab>
+
+<Tab value="Windsurf">
+
+1. Open Windsurf
+2. Go to `Settings...`
+3. Select `Windsurf Settings`
+4. Navigate to `Cascade`
+5. Select `Manage MCPs`
+6. Select `View Raw Config`
+
+Add the following configuration to your MCP servers config:
+
+```json
+{
+  "mcpServers": {
+    "anotherai": {
+      "url": "{{API_URL}}/mcp",
+      "headers": {
+        "Authorization": "Bearer <your_api_key_here>"
+      }
+    }
+  }
+}
+```
+
+Navigate back to Manage MCPs and refresh the page. The AnotherAI MCP should appear and show as enabled.
+
+</Tab>
+
+<Tab value="Cursor CLI">
+
+Cursor CLI can access MCPs configured in your IDE's  `mcp.json` configuration file, enabling the same MCP servers and tools that you've configured for the IDE.
+
+Setup steps:
+
+1. Complete the [set up](#set-up) steps described above and ensure the AnotherAI MCP server is running
+2. Configure the AnotherAI MCP in your IDE's `mcp.json` file, as described in the `Cursor` tab.
+3. Once the MCP is enabled and active, you can ask the Cursor CLI to interact with it
+
+<Callout type="info">
+**Additional Configuration**: If you find that the CLI claims it can't find or use the AnotherAI MCP, you may need to give it the specific file path to use to look for the mcp.json file.
+</Callout>
+
+</Tab>
+
+</Tabs>
+
+## Try it out
+
+After you have the above set up completed, AnotherAI is ready to use!
+
+- If you have agents already created, check out how to [migrate them to AnotherAI](/agents/migrating).
+
+- If you don't have any agents built yet, check out [building a new agent](/agents/building) to learn about building a new AnotherAI-compatible agent.
+
+### AnotherAI's Zero Lock-in Promise
+
+We've been burned by vendor lock-in and want to make sure our users are never subject to it. You can try AnotherAI risk-free. If it doesn't provide value, switching back takes minutes, not months.
+
+
+To switch away from AnotherAI:
+- Remove `base_url="{{API_URL}}/v1"`
+- If you're not using deployments: your code stays identical
+- If you are using deployments: simply ask Claude Code (or your preferred coding agent) to fetch your deployment configuration to recreate the equivalent configuration in your code.
+
+If you have any questions or encounter any issues with switching away from AnotherAI, please reach out to [us](mailto:team@workflowai.support).
