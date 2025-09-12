@@ -1,18 +1,32 @@
 import { WorkflowModelsTable } from "./workflow-models-table";
 
 interface ModelSupports {
-  input_image: boolean;
-  input_pdf: boolean;
-  input_audio: boolean;
-  output_image: boolean;
-  output_text: boolean;
-  json_mode: boolean;
-  audio_only: boolean;
-  supports_system_messages: boolean;
-  structured_output: boolean;
-  supports_input_schema: boolean;
+  input: {
+    image: boolean;
+    audio: boolean;
+    pdf: boolean;
+    text: boolean;
+  };
+  output: {
+    image: boolean;
+    audio: boolean;
+    pdf: boolean;
+    text: boolean;
+  };
   parallel_tool_calls: boolean;
-  tool_calling: boolean;
+  tools: boolean;
+  top_p: boolean;
+  temperature: boolean;
+}
+
+interface ModelPricing {
+  input_token_usd: number;
+  output_token_usd: number;
+}
+
+interface ContextWindow {
+  max_tokens: number;
+  max_output_tokens: number;
 }
 
 interface Model {
@@ -23,6 +37,9 @@ interface Model {
   display_name: string;
   icon_url: string;
   supports: ModelSupports;
+  pricing: ModelPricing;
+  release_date: string;
+  context_window: ContextWindow;
 }
 
 interface ModelsResponse {
@@ -42,8 +59,12 @@ async function getModels(): Promise<Model[]> {
     }
 
     const data: ModelsResponse = await response.json();
-    // Sort models by created date (newest first)
-    return data.data.sort((a, b) => b.created - a.created);
+    // Sort models by release date (newest first)
+    return data.data.sort((a, b) => {
+      const dateA = new Date(a.release_date).getTime();
+      const dateB = new Date(b.release_date).getTime();
+      return dateB - dateA;
+    });
   } catch (error) {
     console.error("Error fetching models:", error);
     // Return empty array on error to show empty table
