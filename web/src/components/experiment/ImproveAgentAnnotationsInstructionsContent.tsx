@@ -5,14 +5,18 @@ import { useToast } from "@/components/ToastProvider";
 
 interface ImproveAgentAnnotationsInstructionsContentProps {
   agentId: string;
+  experimentId?: string;
 }
 
 export function ImproveAgentAnnotationsInstructionsContent({
   agentId,
+  experimentId,
 }: ImproveAgentAnnotationsInstructionsContentProps) {
   const { showToast } = useToast();
 
-  const promptText = `Adjust anotherai/agent/${agentId} based on the annotations that have been added. `;
+  const promptText = experimentId
+    ? `Adjust anotherai/agent/${agentId} based on the annotations that have been added in anotherai/experiment/${experimentId}. `
+    : `Adjust anotherai/agent/${agentId} based on the annotations that have been added. `;
   const copyButtonText = "Copy Annotation Prompt";
   const learnMoreUrl = "https://docs.anotherai.dev/agents/improving#annotations";
   const learnMoreButtonText = "Learn More About Annotations";
@@ -60,8 +64,8 @@ export function ImproveAgentAnnotationsInstructionsContent({
         </div>
 
         <div className="mt-3 italic font-bold w-full whitespace-pre-wrap">
-          Adjust anotherai/agent/{agentId} based on the annotations that have been added....[describe the specific
-          improvements you want here]
+          Adjust anotherai/agent/{agentId} based on the annotations that have been added in anotherai/experiment/
+          {experimentId}....[describe the specific improvements you want here]
         </div>
       </div>
 
