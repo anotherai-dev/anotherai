@@ -5,6 +5,7 @@ from taskiq import Context, TaskiqDepends
 from core.domain.events import Event
 from core.services.payment_service import PaymentService
 from core.services.store_completion.completion_storer import CompletionStorer
+from core.storage.user_storage import UserStorage
 from protocol._common.lifecycle import LifecycleDependencies
 
 
@@ -45,3 +46,10 @@ def _payment_service(event: EventDep, dependencies: LifecycleDependenciesDep) ->
 
 
 PaymentServiceDep = Annotated[PaymentService, TaskiqDepends(_payment_service)]
+
+
+def _user_storage(event: EventDep, dependencies: LifecycleDependenciesDep) -> UserStorage:
+    return dependencies.storage_builder.users(event.tenant_uid)
+
+
+UserStorageDep = Annotated[UserStorage, TaskiqDepends(_user_storage)]

@@ -33,7 +33,8 @@ class PsqlBaseStorage:
             _ = await conn.execute(f"SET app.tenant_uid = {int(self._tenant_uid)}")
             yield conn
 
-    def _validate[B: BaseModel](self, b: type[B], row: asyncpg.Record):
+    @classmethod
+    def _validate[B: BaseModel](cls, b: type[B], row: asyncpg.Record):
         return b.model_validate(dict(row))
 
     @classmethod

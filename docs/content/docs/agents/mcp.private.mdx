@@ -142,7 +142,7 @@ async with RunContext(model="mistral-medium-latest") as run_ctx:
 # Option 1: Extended tools parameter (OpenAI-style)
 curl https://run.anotherai.com/v1/chat/completions \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer wai-xxx" \
+  -H "Authorization: Bearer aai-xxx" \
   -d '{
     "model": "claude-3-7-sonnet-latest",
     "messages": [{"role": "user", "content": "Check my repositories for security issues"}],
@@ -164,7 +164,7 @@ curl https://run.anotherai.com/v1/chat/completions \
 # Option 2: Dedicated mcp_servers parameter (Anthropic-style)
 curl https://run.anotherai.com/v1/chat/completions \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer wai-xxx" \
+  -H "Authorization: Bearer aai-xxx" \
   -d '{
     "model": "claude-3-7-sonnet-latest",
     "messages": [{"role": "user", "content": "Check my repositories for security issues"}],

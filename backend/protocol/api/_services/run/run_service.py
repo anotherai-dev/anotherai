@@ -7,7 +7,7 @@ from core.domain.agent import Agent
 from core.domain.agent_input import AgentInput
 from core.domain.exceptions import BadRequestError, JSONSchemaValidationError, ObjectNotFoundError
 from core.domain.message import Message
-from core.domain.models.model_data_mapping import MODEL_COUNT, get_model_id
+from core.domain.models.model_data_mapping import get_model_id
 from core.domain.models.models import Model
 from core.domain.tenant_data import TenantData
 from core.domain.version import Version
@@ -60,21 +60,24 @@ class RunService:
         self._deployments_storage = deployments_storage
 
     @classmethod
-    async def missing_model_error(cls, model: str | None, prefix: str = ""):
-        _check_lineup = f"Check the lineup 👉 ({MODEL_COUNT} models)"
+    async def missing_model_error(
+        cls,
+        model: str | None,
+        deployment_ids: list[str] | None,
+    ):
         if not model:
             return BadRequestError(
-                f"""Empty model
-{_check_lineup}
-To list all models programmatically: Use the list_models tool""",
+                """Missing model. To list all models programmatically: Use the list_models tool""",
             )
 
         components = [
-            f"Unknown {prefix}model: {model}",
-            _check_lineup,
+            _invalid_model_error_msg(model),
+            "",
             "To list all models programmatically: Use the list_models tool",
+            "To list all deployments programmatically: Use the list_deployments tool",
         ]
-        if suggested := await suggest_model(model):
+
+        if suggested := await suggest_model(model, deployment_ids or []):
             components.insert(1, f"Did you mean {suggested}?")
         return BadRequestError("\n".join(components))
 
@@ -111,7 +114,10 @@ To list all models programmatically: Use the list_models tool""",
         try:
             agent_ref = _extract_references(request)
         except MissingModelError as e:
-            raise await self.missing_model_error(e.extras.get("model")) from None
+            raise await self.missing_model_error(
+                e.extras.get("model"),
+                [d async for d in self._deployments_storage.list_deployment_ids()],
+            ) from None
 
         messages = list(request_messages_to_domain(request))
 
@@ -135,8 +141,12 @@ To list all models programmatically: Use the list_models tool""",
         try:
             use_fallback = use_fallback_to_domain(request.use_fallback)
         except MissingModelError as e:
-            final_error = await self.missing_model_error(e.extras.get("model"), prefix="fallback ")
-            raise final_error from None
+            invalid_model = e.extras.get("model")
+            suggested = await suggest_model(invalid_model, []) if invalid_model else None
+            base = f"Invalid fallback model: {e.extras.get('model')}."
+            if suggested:
+                base += f" Did you mean {suggested}?"
+            raise BadRequestError(base) from None
 
         if request.metadata:
             prepared_run.metadata.update(request.metadata)
@@ -295,14 +305,12 @@ def _extract_references(request: OpenAIProxyChatCompletionRequest) -> _Environme
     if not model:
         if len(splits) > 2:
             # This is very likely an invalid environment error so we should raise an explicit BadRequestError
+            msg = _invalid_model_error_msg(request.model)
             raise BadRequestError(
-                f"""'{request.model}' does not refer to a valid model or deployment. The accepted formats are:
-                - <model>: a valid model name or alias
-                - <agent_id>/<model>: passing an agent_id as a prefix
-                - anotherai/deployment/<deployment_id>: passing a deployment id
+                f"""'{msg}
 
-                If the model cannot be changed, it is also possible to pass the agent_id or deployment_id in the
-                body of the request.""",
+If the model cannot be changed, it is also possible to pass the agent_id or deployment_id in the
+body of the request.""",
                 capture=True,
                 extras={"model": request.model},
             )
@@ -363,3 +371,10 @@ def _check_output_schema_compatibility(
     #         f"The requested response format is not compatible with the deployment's response format.\n{e}",
     #     ) from None
     return requested_schema
+
+
+def _invalid_model_error_msg(model: str):
+    return f"""'{model}' does not refer to a valid model or deployment. The accepted formats are:
+- <model>: a valid model name or alias
+- <agent_id>/<model>: passing an agent_id as a prefix
+- anotherai/deployment/<deployment_id>: passing a deployment id"""

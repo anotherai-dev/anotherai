@@ -3,6 +3,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any, override
 
+import asyncpg
 from asyncpg import UniqueViolationError
 from pydantic import BaseModel, Field
 
@@ -27,6 +28,10 @@ class PsqlTenantStorage(PsqlBaseStorage, TenantStorage):
     def table(cls) -> str:
         return "tenants"
 
+    @classmethod
+    def validate_row(cls, row: asyncpg.Record) -> TenantData:
+        return cls._validate(_TenantRow, row).to_domain()
+
     async def _tenant_where(self, where: str, *args: Any) -> TenantData:
         async with self._pool.acquire() as connection:
             row = await connection.fetchrow(
@@ -38,7 +43,7 @@ class PsqlTenantStorage(PsqlBaseStorage, TenantStorage):
             )
             if not row:
                 raise ObjectNotFoundError(f"Tenant with {where} not found")
-            return self._validate(_TenantRow, row).to_domain()
+            return self.validate_row(row)
 
     @override
     async def tenant_by_org_id(self, org_id: str) -> TenantData:

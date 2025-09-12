@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, Cloud, FileText, Search, Settings } from "lucide-react";
+import { ChevronLeft, Cloud, FileText, Layers, Search, Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -147,6 +147,15 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
           >
             <FileText className="w-4 h-4" />
             Documentation
+          </a>
+          <a
+            href="https://docs.anotherai.dev/inference/models#list"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-1 text-gray-700 hover:bg-gray-100"
+          >
+            <Layers className="w-4 h-4" />
+            Models
           </a>
         </div>
 
