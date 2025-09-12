@@ -79,8 +79,8 @@ async def playground(
         description="""A list of JSON schemas for structured output. Each schema will generate separate versions.
         Cannot be used with 'output_schema' parameter.""",
     ),
-    metadata: dict[str, Any] = Field(
-        default_factory=dict,
+    metadata: dict[str, Any] | None = Field(
+        default=None,
         description="Optional metadata to attach to all completion requests",
     ),
     experiment_id: str | None = Field(
