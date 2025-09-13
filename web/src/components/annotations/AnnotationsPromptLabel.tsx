@@ -5,10 +5,11 @@ import { UpdateAgentTooltip } from "./UpdateAgentTooltip";
 type AnnotationsPromptLabelProps = {
   annotations?: Annotation[];
   agentId?: string;
+  experimentId?: string;
 };
 
 export function AnnotationsPromptLabel(props: AnnotationsPromptLabelProps) {
-  const { annotations, agentId } = props;
+  const { annotations, agentId, experimentId } = props;
 
   if (!annotations || annotations.length === 0 || !agentId) {
     return null;
@@ -16,7 +17,7 @@ export function AnnotationsPromptLabel(props: AnnotationsPromptLabelProps) {
 
   return (
     <HoverPopover
-      content={<UpdateAgentTooltip agentId={agentId} />}
+      content={<UpdateAgentTooltip agentId={agentId} experimentId={experimentId} />}
       position="bottom"
       popoverClassName="bg-gray-900 rounded-md overflow-hidden px-2 py-1"
     >
