@@ -33,8 +33,8 @@ export function TableComponent({
     containerRef,
     containerWidth,
     containerLeft,
-    isHovering,
-    isScrolling,
+    isHovering: _isHovering, // eslint-disable-line @typescript-eslint/no-unused-vars
+    isScrolling: _isScrolling, // eslint-disable-line @typescript-eslint/no-unused-vars
     isTableBottomVisible,
     handleMouseEnter,
     handleMouseLeave,
