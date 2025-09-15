@@ -1,18 +1,32 @@
 "use client";
 
 interface ModelSupports {
-  input_image: boolean;
-  input_pdf: boolean;
-  input_audio: boolean;
-  output_image: boolean;
-  output_text: boolean;
-  json_mode: boolean;
-  audio_only: boolean;
-  supports_system_messages: boolean;
-  structured_output: boolean;
-  supports_input_schema: boolean;
+  input: {
+    image: boolean;
+    audio: boolean;
+    pdf: boolean;
+    text: boolean;
+  };
+  output: {
+    image: boolean;
+    audio: boolean;
+    pdf: boolean;
+    text: boolean;
+  };
   parallel_tool_calls: boolean;
-  tool_calling: boolean;
+  tools: boolean;
+  top_p: boolean;
+  temperature: boolean;
+}
+
+interface ModelPricing {
+  input_token_usd: number;
+  output_token_usd: number;
+}
+
+interface ContextWindow {
+  max_tokens: number;
+  max_output_tokens: number;
 }
 
 interface Model {
@@ -23,6 +37,9 @@ interface Model {
   display_name: string;
   icon_url: string;
   supports: ModelSupports;
+  pricing: ModelPricing;
+  release_date: string;
+  context_window: ContextWindow;
 }
 
 interface WorkflowModelsTableProps {
@@ -30,15 +47,8 @@ interface WorkflowModelsTableProps {
 }
 
 export function WorkflowModelsTable({ models }: WorkflowModelsTableProps) {
-  const FeatureIcon = ({ supported }: { supported: boolean }) =>
-    supported ? (
-      <span className="text-green-600 dark:text-green-400">✓</span>
-    ) : (
-      <span className="text-gray-400 dark:text-gray-600">—</span>
-    );
-
-  const formatDate = (timestamp: number) => {
-    const date = new Date(timestamp * 1000);
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
@@ -46,64 +56,60 @@ export function WorkflowModelsTable({ models }: WorkflowModelsTableProps) {
     });
   };
 
+  const formatPrice = (price: number) => {
+    // Convert to price per million tokens
+    const pricePerMillion = price * 1000000;
+    return `$${pricePerMillion.toFixed(2)}`;
+  };
+
+  const formatContextWindow = (tokens: number) => {
+    if (tokens >= 1000000) {
+      return `${(tokens / 1000000).toFixed(1)}M`;
+    } else if (tokens >= 1000) {
+      return `${(tokens / 1000).toFixed(0)}K`;
+    }
+    return tokens.toString();
+  };
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full border-collapse">
         <thead>
           <tr className="border-b border-border">
-            <th className="text-left p-2 font-semibold">Model</th>
-            <th className="text-left p-2 font-semibold">Provider</th>
-            <th className="text-left p-2 font-semibold">Released</th>
-            <th className="text-center p-2 font-semibold" title="JSON Mode">
-              📋
-            </th>
-            <th className="text-center p-2 font-semibold" title="Tool Calling">
-              🔧
-            </th>
-            <th className="text-center p-2 font-semibold" title="Structured Output">
-              📊
-            </th>
+            <th className="text-left p-2 font-semibold" style={{ minWidth: "50px" }}></th>
+            <th className="text-left p-2 font-semibold">Model ID</th>
+            <th className="text-left p-2 font-semibold">Input Price</th>
+            <th className="text-left p-2 font-semibold">Output Price</th>
+            <th className="text-left p-2 font-semibold">Context Window</th>
+            <th className="text-left p-2 font-semibold">Release Date</th>
           </tr>
         </thead>
         <tbody>
           {models.map((model) => (
             <tr key={model.id} className="border-b border-border hover:bg-accent/50 transition-colors">
               <td className="p-2">
-                <div className="flex items-center gap-2">
-                  {model.icon_url && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={model.icon_url} alt={model.owned_by} className="w-5 h-5" />
-                  )}
-                  <div>
-                    <div className="font-medium">{model.display_name}</div>
-                    <div className="text-xs text-muted-foreground">{model.id}</div>
-                  </div>
-                </div>
+                {model.icon_url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={model.icon_url} alt={model.owned_by} className="w-6 h-6" />
+                )}
               </td>
-              <td className="p-2 text-sm">{model.owned_by}</td>
-              <td className="p-2 text-sm text-muted-foreground">{formatDate(model.created)}</td>
-              <td className="text-center p-2">
-                <FeatureIcon supported={model.supports.json_mode} />
+              <td className="p-2">
+                <code className="text-sm">{model.id}</code>
               </td>
-              <td className="text-center p-2">
-                <FeatureIcon supported={model.supports.tool_calling} />
+              <td className="p-2 text-sm">
+                <span className="font-mono">{formatPrice(model.pricing.input_token_usd)}</span>
+                <span className="text-xs text-muted-foreground ml-1">/ 1M tokens</span>
               </td>
-              <td className="text-center p-2">
-                <FeatureIcon supported={model.supports.structured_output} />
+              <td className="p-2 text-sm">
+                <span className="font-mono">{formatPrice(model.pricing.output_token_usd)}</span>
+                <span className="text-xs text-muted-foreground ml-1">/ 1M tokens</span>
               </td>
+              <td className="p-2 text-sm font-mono">{formatContextWindow(model.context_window.max_tokens)}</td>
+              <td className="p-2 text-sm text-muted-foreground">{formatDate(model.release_date)}</td>
             </tr>
           ))}
         </tbody>
       </table>
-
-      <div className="mt-4 p-4 bg-muted rounded-lg">
-        <h4 className="font-semibold mb-2">Legend:</h4>
-        <div className="grid grid-cols-3 gap-2 text-sm">
-          <div>📋 JSON Mode</div>
-          <div>🔧 Tool Calling</div>
-          <div>📊 Structured Output</div>
-        </div>
-      </div>
     </div>
   );
 }

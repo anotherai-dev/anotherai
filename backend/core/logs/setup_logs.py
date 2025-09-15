@@ -1,12 +1,11 @@
 import logging
 import os
-from collections.abc import Callable
 
 import structlog
 from sentry_sdk import init as sentry_init
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.starlette import StarletteIntegration
-from structlog.types import Processor, WrappedLogger
+from structlog.types import Processor
 
 from core.logs._pydantic_processor import pydantic_processor
 from core.logs._sentry_processor import SentryProcessor
@@ -36,14 +35,19 @@ def _renderer(json: bool | None = None):
 
 
 def setup_logs(
-    logger_factory: Callable[[], "WrappedLogger"] | None = None, json: bool | None = None, *processors: Processor,
+    json: bool | None = None,
+    *processors: Processor,
 ):
     setup_sentry()
+
+    min_level = os.getenv("LOG_LEVEL", "INFO")
+
+    # Convert string level to logging constant
+    numeric_level = getattr(logging, min_level.upper(), logging.INFO)
 
     structlog.configure(
         processors=[
             structlog.contextvars.merge_contextvars,  # request-scoped context
-            structlog.stdlib.add_logger_name,
             structlog.stdlib.add_log_level,
             structlog.processors.TimeStamper(fmt="iso", utc=True),
             pydantic_processor,
@@ -51,6 +55,6 @@ def setup_logs(
             _renderer(),
             *processors,
         ],
-        logger_factory=logger_factory or structlog.stdlib.LoggerFactory(),
+        wrapper_class=structlog.make_filtering_bound_logger(numeric_level),
         cache_logger_on_first_use=True,
     )

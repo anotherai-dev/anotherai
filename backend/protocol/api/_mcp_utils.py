@@ -4,15 +4,15 @@ from typing import Any, override
 
 from fastmcp.exceptions import ToolError
 from fastmcp.server import FastMCP
-from fastmcp.server.auth import AccessToken, AuthProvider, RemoteAuthProvider, TokenVerifier
+from fastmcp.server.auth import AccessToken, AuthProvider, TokenVerifier
 from fastmcp.server.dependencies import get_access_token
 from fastmcp.server.middleware import CallNext, Middleware, MiddlewareContext
-from fastmcp.tools.tool import ToolResult, default_serializer
-from mcp.types import CallToolRequestParams
-from pydantic import AnyHttpUrl, BaseModel, ValidationError
+from fastmcp.tools.tool import Tool, ToolResult, default_serializer
+from mcp.types import CallToolRequestParams, ListToolsRequest
+from pydantic import BaseModel, ValidationError
 from structlog import get_logger
+from structlog.contextvars import bind_contextvars
 
-from core.consts import ANOTHERAI_API_URL, AUTHORIZATION_SERVER
 from core.domain.exceptions import DefaultError, InvalidTokenError
 from core.domain.tenant_data import TenantData
 from core.providers._base.provider_error import ProviderError
@@ -39,6 +39,7 @@ class BaseMiddleware(Middleware):
         context: MiddlewareContext[CallToolRequestParams],
         call_next: CallNext[CallToolRequestParams, ToolResult],
     ) -> ToolResult:
+        _log.info("on_call_tool", method=context.method)
         # Trying to deserialize JSON sent as a string
         # See https://github.com/jlowin/fastmcp/issues/932
         if context.message.arguments:
@@ -52,28 +53,83 @@ class BaseMiddleware(Middleware):
             _log.error("Validation error", exc_info=e)
             raise e
 
+    @override
+    async def on_list_tools(
+        self,
+        context: MiddlewareContext[ListToolsRequest],
+        call_next: CallNext[ListToolsRequest, list[Tool]],
+    ) -> list[Tool]:
+        all_tools = await call_next(context)
+        # Some LLMs are hellbent on sending objects as stringified JSON. So we add strings as an acceptable type
+        # For array and objects
+        for tool in all_tools:
+            if tool.parameters:
+                tool.parameters = _add_string_as_acceptable_type(tool.parameters)
+
+        return all_tools
+
     async def on_message(self, context: MiddlewareContext[Any], call_next: CallNext[Any, Any]) -> Any:
+        tool_name = getattr(context.message, "name", None)
+        bind_contextvars(tool_name=tool_name)
+        _log.debug("on_message", method=context.method)
         try:
             return await call_next(context)
         except ToolError as e:
             cause = e.__cause__
             if isinstance(cause, (ProviderError, DefaultError)):
                 if cause.capture:
-                    _log.exception(f"Error in tool call {context.message.name}", exc_info=e)
+                    _log.exception("Error in message", exc_info=e)
                 # We can re-raise the original error as is. FastMCP will handle the formatting
                 raise e
             if isinstance(cause, ValidationError):
                 # Tracking of when
-                _log.error(f"Validation error in tool call {context.message.name}", exc_info=e)
+                _log.error("Validation error in message", exc_info=e)
                 raise e
             # Anything else should not permeate to the outside so we raise an opaque error
-            _log.exception(f"Unknown Error in tool call {context.message.name}", exc_info=e)
+            _log.exception("Unknown Error in message", exc_info=e)
             raise Exception("An unknown error occurred") from None
 
         except Exception as e:  # noqa: BLE001
             # That would be unexpected
             _log.exception("Unknown Error in message not wrapped in tool error", exc_info=e)
             raise Exception("An unknown error occurred") from None
+
+
+def _add_string_to_property_type(property: dict[str, Any]) -> dict[str, Any]:
+    if (t := property.get("type")) and isinstance(t, str) and t in {"array", "object"}:
+        return {
+            **property,
+            "type": [t, "string"],
+        }
+    if (
+        (any_of := property.get("anyOf"))
+        and isinstance(any_of, list)
+        and not any(item.get("type") == "string" for item in any_of)
+    ):
+        return {
+            **property,
+            "anyOf": [
+                *any_of,
+                {
+                    "type": "string",
+                },
+            ],
+        }
+    return property
+
+
+def _add_string_as_acceptable_type(parameters: dict[str, Any]) -> dict[str, Any]:
+    # We only add to root level
+    properties: dict[str, Any] = parameters.get("properties", {})
+    if not properties or not isinstance(properties, dict):
+        return parameters
+
+    new_properties = {k: _add_string_to_property_type(v) for k, v in properties.items()}
+
+    return {
+        **parameters,
+        "properties": new_properties,
+    }
 
 
 def tool_serializer(value: Any) -> str:
@@ -177,6 +233,11 @@ class CustomTokenVerifier(TokenVerifier):
     async def verify_token(self, token: str) -> AccessToken | None:
         deps = lifecyle_dependencies()
         tenant = await deps.security_service.find_tenant(token)
+        bind_contextvars(
+            tenant_org_id=tenant.org_id,
+            tenant_owner_id=tenant.owner_id,
+            tenant_slug=tenant.slug,
+        )
         return AccessToken(
             token=token,
             client_id="",
@@ -187,17 +248,5 @@ class CustomTokenVerifier(TokenVerifier):
         )
 
 
-class CustomRemoteAuthProvider(RemoteAuthProvider):
-    @override
-    def get_routes(self):
-        # We handle the protected routes manually. It seems that some MCP clients require
-        # some weird routes
-        return []
-
-
 def build_auth_provider() -> AuthProvider:
-    return CustomRemoteAuthProvider(
-        token_verifier=CustomTokenVerifier(),
-        authorization_servers=[AnyHttpUrl(AUTHORIZATION_SERVER)],
-        resource_server_url=f"{ANOTHERAI_API_URL}/mcp",
-    )
+    return CustomTokenVerifier()

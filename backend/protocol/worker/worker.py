@@ -4,14 +4,12 @@ from typing import Any, override
 from structlog import get_logger
 from taskiq import SimpleRetryMiddleware, TaskiqEvents, TaskiqMessage, TaskiqResult, TaskiqState
 
+import core.logs.global_setup
 from core.domain.exceptions import InternalError
 from core.domain.metrics import send_counter, send_gauge
-from core.logs.setup_logs import setup_logs
 from protocol._common.broker_utils import use_in_memory_broker
 from protocol._common.errors import configure_scope_for_error
 from protocol._common.lifecycle import shutdown, startup
-
-setup_logs()
 
 _log = get_logger(__name__)
 _log.propagate = True
