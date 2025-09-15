@@ -38,7 +38,8 @@ export function MetricsCustomViewsInstructions() {
           <div className="flex mt-1">
             <span className="mr-1 flex-shrink-0">2.</span>
             <span className="flex-1 w-full whitespace-pre-wrap">
-              Copy and paste the prompt below into the client&apos;s chat, and fill in the details you&apos;d like filtered:
+              Copy and paste the prompt below into the client&apos;s chat, and fill in the details you&apos;d like
+              filtered:
             </span>
           </div>
         </div>

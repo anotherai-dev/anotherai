@@ -1,8 +1,8 @@
 "use client";
 
-import { PageHeader } from "@/components/PageHeader";
 import { MetricsCustomViewsInstructions } from "@/components/MetricsCustomViewsInstructions";
 import { MetricsSection } from "@/components/MetricsSection";
+import { PageHeader } from "@/components/PageHeader";
 import { QueryGraphCard } from "@/components/QueryGraphCard";
 
 export default function MetricsPage() {
