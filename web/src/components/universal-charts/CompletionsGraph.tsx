@@ -22,6 +22,7 @@ function createSeriesFromYAxes(yAxes: YAxis[]) {
     key: yAxis.field,
     color: yAxis.color_hex || `hsl(${index * 137.508}deg 80% 50%)`, // Golden angle distribution for colors
     name: yAxis.label || yAxis.field,
+    unit: yAxis.unit, // Pass through the unit for per-series formatting
   }));
 }
 
