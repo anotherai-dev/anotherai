@@ -1,15 +1,19 @@
 "use client";
 
-import { HeaderSection } from "@/components/HeaderSection";
+import { PageHeader } from "@/components/PageHeader";
+import { MetricsCustomViewsInstructions } from "@/components/MetricsCustomViewsInstructions";
 import { MetricsSection } from "@/components/MetricsSection";
 import { QueryGraphCard } from "@/components/QueryGraphCard";
 
 export default function MetricsPage() {
   return (
-    <div className="flex flex-col w-full h-full mx-auto px-4 py-8 gap-6 bg-gray-50 overflow-y-auto">
-      <HeaderSection
+    <div className="flex flex-col w-full h-full mx-auto px-4 pt-4 pb-8 gap-4 bg-gray-50 overflow-y-auto">
+      <PageHeader
+        breadcrumbs={[]}
         title="Metrics"
         description="Monitor and analyze performance metrics across your AI agents and completions"
+        descriptionRightContent={<MetricsCustomViewsInstructions />}
+        className="pb-2"
       />
 
       <MetricsSection title="Cost Analytics">
