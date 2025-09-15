@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CustomTooltip } from "./CustomTooltip";
+import { useTooltipFormatterWithUnit } from "./useTooltipFormatterWithUnit";
 import { SeriesConfig, autoDetectSeries, ensureXFieldForChart } from "./utils";
 
 interface ChartData {
@@ -81,12 +82,11 @@ export function UniversalLineChart({
   // Y-axis tick formatter (no units on axis ticks)
   const yAxisTickFormatter = yAxisFormatter;
 
-  const tooltipFormatterWithUnit = useCallback(
-    (value: number) => {
-      const formattedValue = tooltipFormatter(value);
-      return yAxisUnit ? `${formattedValue} ${yAxisUnit}` : formattedValue;
-    },
-    [tooltipFormatter, yAxisUnit]
+  const tooltipFormatterWithUnit = useTooltipFormatterWithUnit(
+    tooltipFormatter,
+    yAxisUnit,
+    isActuallyMultiSeries,
+    finalSeries
   );
 
   // Create axis labels with units
