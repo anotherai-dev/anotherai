@@ -648,7 +648,7 @@ If you're using experiments to make improvements to your agent, you can always d
 
 ![Deploy Version](/images/deploy-version-popup.png)
 
-3. Open Claude Code (or your preferred AI coding agent)
+3. Open your preferred AI assistant
 4. Request deployment to your preferred environment:
 
 ```
@@ -662,13 +662,13 @@ I want to deploy anotherai/version/acf2635be31cbd89f9363bfd3b2c6abc to productio
 If you're making changes to your agent in your IDE, you can also just request to have a deployment created directly, without opening the web app.
 
 1. Ensure your code is already using the AnotherAI SDK with an `agent_id`
-2. Tell Claude (or your AI coding agent) to deploy your agent:
+2. Tell your AI assistant to deploy your agent:
 
 ```
 Deploy the version of my anotherai/agent/travel-assistant that uses GPT-5 to production
 ```
 
-Claude will create a version ID for you and deploy it.
+Your AI assistantwill create a version ID for you and deploy it.
 
 <Callout type="tip">
 We recommend using the naming convention `<agent-id>/<environment>#<number>` (e.g., `travel-assistant/production#1`).
@@ -684,7 +684,7 @@ If you find a version via the completions view on the web app, you can also depl
 
 ![Completion Version Details](/images/completion-version-details.png)
 
-3. Paste the version ID into Claude Code (or your preferred AI coding agent) and ask it to deploy:
+3. Paste the version ID into your AI assistant and ask it to deploy:
 
 ```
 I want to deploy fc1ddfbb1cf220716ab7c999b3c89020 to production.
@@ -717,13 +717,13 @@ Name the deployment: "calendar-assistant/production-9-2"
 
 ### Update your code
 
-Once the deployment is created, ask Claude to update your code to use the new deployment.
+Once the deployment is created, ask your AI assistant to update your code to use the new deployment.
 
 ```
 Update my agent code to use the new deployment travel-assistant/production#1
 ```
 
-Claude will update your code to use the deployment reference, removing the static components that are now stored in the deployment.
+your AI assistant will update your code to use the deployment reference, removing the static components that are now stored in the deployment.
 
 **Before:**
 
@@ -863,7 +863,7 @@ Copy the new version ID you want to deploy from [AnotherAI](https://anotherai.de
 </Step>
 
 <Step>
-  Ask Claude to update the existing deployment: 
+  Ask your AI assistant to update the existing deployment: 
   ``` 
   Update deployment travel-assistant/production#1 to use
   anotherai/version/a9f1fc5ab11299a9fee5604e51fe7b6e 
@@ -929,7 +929,7 @@ traveler_type: "business" // new required variable added
 
 <Callout type="success">
 Don't worry if you're unsure if an update version is a breaking change or not: if you ask
-Claude to update an existing deployment and it cannot because the new version is incompatible, Claude will automatically create a new deployment for you. You can create as many deployments as you need.
+your AI assistant to update an existing deployment and it cannot because the new version is incompatible, your AI assistant will automatically create a new deployment for you. You can create as many deployments as you need.
 </Callout>
 
 ## Reconciling Code and Deployments
@@ -1181,7 +1181,7 @@ Here are some examples of views that could be useful:
 
 To see all completions across all agents in the workflow. 
 
-You can ask Claude to create a custom view, like this:
+You can ask your AI assistant to create a custom view, like this:
 
 ```
 Show me all the completions for the workflow 'meeting-analysis', ordered by trace_id, created_at 

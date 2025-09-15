@@ -7,13 +7,66 @@ description: Learn how to use LLMs and datasets to create a robust evaluation sy
 import { Step, Steps } from 'fumadocs-ui/components/steps';
 import { Accordions, Accordion } from 'fumadocs-ui/components/accordion';
 
-Evaluating your AI agents is important for ensuring they meet quality standards and perform reliably in production. However there is no one-size-fits-all evaluation criteria: some agents need to be evaluated only on accuracy, while others have additional criteria: tone, clarity, verbosity, etc. 
+Evaluating your AI agents is important for ensuring they meet quality standards and perform reliably in production. 
 
-Because of these differences, AnotherAI does not provide a single rigid evaluation tool, but instead gives you the tools to create a custom evaluation system.
+## Using Datasets to Evaluate Your Agents
 
-# Using LLMs as a Judge
+A dataset gives you a consistent benchmark to use when evaluating different versions of your agent. Datasets allow you to both create a collection of important cases that you want to make sure always work, as well as provide an apples-to-apples comparison for different versions of your agent. 
 
-LLM-as-a-judge style evaluation uses one AI model to evaluate the outputs of another. This approach enables scalable, consistent evaluation of your agents' responses across multiple criteria. Setting up an LLM-as-a-judge evaluation system is especially useful if you want to evaluate most - or all - completions as they are created in your product.
+### Build Your Evaluation Dataset
+
+While there is no one-size-fits-all way to build a dataset, there are a few common ways to collect content for your dataset:
+
+#### From User Feedback
+
+When users report issues with your agent's outputs, these completions become valuable test cases because they represent a case that your agent is not handling well but should. To add the content of a completion to your dataset:
+
+1. Locate the completion in AnotherAI
+    - The exact process for this step will vary depending on how your received the feedback that the completion had an issue. 
+2. Open the completion details and copy the completion ID
+    - The completion ID is location in the top right corner of the completion details modal.
+3. Paste the completion ID into your AI coding agent's chat and ask them to add the completion to your dataset.
+    - Your AI agent will be able to convert the completion content into the format of your existing dataset entries. 
+
+### From Production Data
+
+Using data from production completions instead of mocked data ensures that you're testing real-world scenarios. AnotherAI logs all completions from your agents, so you can easily review past completions for important cases to add to your dataset.
+
+You can browse past completions from your in the AnotherAI web app:
+
+1. Go the [anotherai.dev/agents](https://anotherai.dev/agents)
+2. Locate the agent whose completions you want to review
+3. Select the agent and scroll down it's page
+   - You'll be able to see some of the recent completions immediately, but for a full list, select "View all completions"
+
+
+### Dataset Types
+
+When creating datasets for agent evaluation, you can choose between two main approaches depending on your use case:
+
+**Input and Expected Output Datasets**
+
+These datasets include both the input and the correct output for each test case. In this case your evaluation process simply consists of comparing a completion's output to the correct output to determine the quality of a given version. This approach works well for agents that would only have one correct output for a given input.
+
+Examples of good use cases:
+- Solving math problems
+- Data extraction tasks
+- Classification tasks
+
+**Input-Only Datasets**
+
+These datasets contain only inputs without predefined expected outputs. Evaluation relies on LLM-as-a-judge or human reviewers to assess quality as there is no single correct output. This approach is much better for agents that can have multiple valid outputs for a given input.
+
+Examples of good use cases:
+- Creative writing 
+- Content summarization 
+- Analysis tasks
+
+## Handling Complex Evaluations with LLMs as a Judge
+
+In simpler cases, you can review the results of your agent running on your dataset manually, there are more complex cases where you may need to build a separate system to help with the evalution. 
+
+LLM-as-a-judge style evaluation uses one AI model to evaluate the outputs of another.
 
 ### Key Benefits
 
@@ -30,47 +83,31 @@ Let's walk through evaluating an email summarization agent. In this example, our
 
 [IMAGE TODO: SCREENSHOT OF EMAIL SUMMARIZER AGENT COMPLETION IN ANOTHERAI (to be clearer to non-technical users)]
 
-```python
-# Example agent usage
-from openai import AsyncOpenAI
-import os
-
-# Initialize the AnotherAI client
-client = AsyncOpenAI(
-    base_url="{{API_URL}}/v1",
-    api_key=os.environ.get("ANOTHERAI_API_KEY")
-)
-
-async def summarize_email(email_content, model="gpt-4o-mini"):
-    """Summarize an email using the specified model"""
-    response = await client.chat.completions.create(
-        model=model,
-        messages=[
-            {"role": "system", "content": "Summarize this email concisely."},
-            {"role": "user", "content": email_content}
-        ]
-    )
-    return response.choices[0].message.content
-```
-
 <Steps>
 
 <Step>
-### Decide on Your Dataset
+**Decide on Your Dataset**
 
-Before evaluating, you need to determine the test data for your agent. You have two options:
-
-- **Static Dataset**: Pre-defined test cases for consistent, reproducible testing
-- **Production Data**: Recent completions from your live agent for real-world evaluation
-
-To learn more about both approaches, see [Static Dataset Evaluation](#static-dataset-evaluation) and [Production Data Evaluation](#production-data-evaluation) below. 
+Before evaluating, you need to make sure you have a robust dataset. See [Build Your Evaluation Dataset](#build-your-evaluation-dataset) to learn more about this process
 
 </Step>
 
 <Step>
-### Create the Judge Agent
+**Create the Judge Agent**
 
-Define evaluation criteria and scoring structure:
+Define evaluation criteria and scoring structure. You can ask your AI coding agent:
+
+```
+Create an evaluation agent for anotherai/agent/email-summarizer that evaluates outputs 
+on completeness, accuracy, clarity, and conciseness. Each criterion should be scored 
+1-10 with explanations.
+```
+The key points to clarify in your request are:
+- What dimensions of the output do you want evaluated? (In the case above, completeness, accuracy, clarity, and conciseness)
+- How do you want them evaluated? (In the case above, 1-10 with explanations)
+
+<Accordions>
+<Accordion title="Example of an evaluation agent's implementation code">
 
 ```python
 from pydantic import BaseModel, Field
@@ -111,12 +148,26 @@ async def create_summary_judge(client, original_email, summary):
         response_format=SummaryEvaluation
     )
 ```
+
+</Accordion>
+</Accordions>
 </Step>
 
 <Step>
-### Run the Evaluation Pipeline
+**Create the Evaluation Pipeline**
 
-Evaluate your agent across multiple models:
+Define the pipeline functions that will evaluate your agent across multiple models. Ask your AI coding agent:
+
+```
+Create an evaluation pipeline that:
+1. Runs anotherai/agent/email-summarizer on each test email in @email-summarizer-dataset.json
+2. Uses the @email-judge-agent.py to score each summary
+3. Sends the scores as annotations to AnotherAI
+4. Calculates average scores to compare model performance
+```
+
+<Accordions>
+<Accordion title="Example of evaluation pipeline implementation code">
 
 ```python
 import asyncio
@@ -242,12 +293,23 @@ async def evaluate_email_summaries(emails, models, client):
         "detailed_results": results
     }
 ```
+
+</Accordion>
+</Accordions>
 </Step>
 
 <Step>
-### Analyze Results
+**Run Evaluation and Analyze Results**
 
-After running your evaluation, review the results and use Claude to help analyze them:
+Execute the evaluation pipeline and analyze the results. Ask your AI coding agent:
+
+```
+Create a script that runs @email-evaluation-pipline.py on gpt-4o-mini and gpt-4.1-nano-latest.
+Load the dataset from @email-summarizer-dataset.json and show me the average scores and success rates for each model.
+```
+
+<Accordions>
+<Accordion title="Example of evaluation pipeline execution code">
 
 ```python
 # Example usage
@@ -280,14 +342,17 @@ async def main():
 asyncio.run(main())
 ```
 
-This code:
-1. Runs your email summarizer agent to create completions (summaries)
-2. Runs the judge agent to evaluate each summary
-3. Stores the evaluation scores as annotations on the summarizer's completions in AnotherAI
+</Accordion>
+</Accordions>
+
+This prompt and subsequent code will:
+1. Generates email summaries using the specified models
+2. Run the judge agent to evaluate each summary
+3. Store the evaluation scores as annotations in AnotherAI
 
 [IMAGE TODO: SCREENSHOT OF LLM AS A JUDGE RESULTS???]
 
-You can then ask Claude to analyze these evaluation results by querying the annotations:
+You can then ask your AI coding agent to analyze these evaluation results by querying the annotations:
 
 ```
 Which model configuration of email-summarizer performed best overall according to the judge?
@@ -300,9 +365,9 @@ What were the most common issues the judge found in the email summaries?
 
 <Step>
 
-### Track Performance Over Time
+**Track Performance Over Time**
 
-If you want to run your evaluation regularly and monitor the results over time, you can set up continuous monitoring by asking Claude to create custom views that show the evaluation results:
+If you want to run your evaluation regularly and monitor the results over time, you can set up continuous monitoring by asking your AI coding agent to create custom views that show the evaluation results:
 
 ```
 Create a view that shows all completions of anotherai/agent/[your-agent-name] with annotations. 
@@ -311,162 +376,3 @@ The view should display the completion ID, input, outputs, and the annotation le
 [IMAGE TODO: SCREENSHOT OF VIEW CREATED FROM THIS PROMPT]
 </Step>
 </Steps>
-
-# Dataset Options:
-
-## Static Dataset Evaluation
-
-Static dataset evaluation uses pre-defined test cases stored in files (JSON, CSV, etc.) to test your agent consistently. We recommend datasets have at least initial 20 test cases, however the exact number may be lower or much higher for you, depending on the complexity of your agent.
-
-<Accordions>
-<Accordion title="A Note on Static Dataset Types" id="static-dataset-types">
-
-When creating static datasets for agent evaluation, you can choose between two main approaches depending on your use case:
-
-**Input and Expected Output Datasets**
-
-These datasets include both the input and the correct output for each test case. In this case your evaluation process simply consists of comparing a completion's output to the correct output to determine the quality of a given version. This approach works well for agents that would only have one correct output for a given input.
-
-Examples of good use cases:
-- Solving math problems
-- Data extraction tasks
-- Classification tasks
-
-**Input-Only Datasets**
-
-These datasets contain only inputs without predefined expected outputs. Evaluation relies on LLM-as-a-judge or human reviewers to assess quality as there is no single correct output. This approach is much better for agents that can have multiple valid outputs for a given input.
-
-Examples of good use cases:
-- Creative writing 
-- Content summarization 
-- Analysis tasks
-
-</Accordion>
-</Accordions>
-
-### Benefits
-- **Reproducibility**: Run the exact same tests across different agent versions
-- **Edge Case Coverage**: Include specific scenarios you know are challenging
-- **Regression Testing**: Ensure updates don't break existing functionality
-
-### Drawbacks
-- **Maintenance**: Test cases can become outdated as requirements change
-- **Limited Coverage**: May not reflect actual production usage patterns
-- **Artificial Examples**: Test cases might not capture real-world complexity
-
-### Example Implementation
-
-Create a JSON file with diverse test cases. For example:
-
-```json
-{
-  "emails": [
-    {
-      "id": "budget-meeting-001",
-      "content": "Subject: Q4 Budget Review Meeting\n\nHi team,\n\nI'd like to schedule our Q4 budget review for next Friday at 2 PM. Please come prepared with your department's spending reports and projections for next quarter.\n\nThe meeting will cover:\n- Current quarter spending analysis\n- Next quarter budget allocations\n- Cost-saving initiatives\n\nPlease confirm your attendance by Wednesday.\n\nBest,\nSarah",
-      "category": "meeting-request"
-    },
-    {
-      "id": "urgent-support-002",
-      "content": "Subject: URGENT: Production Server Down\n\nTeam,\n\nOur main production server went down at 3:47 AM. Customer transactions are failing.\n\nImmediate actions needed:\n1. All hands on deck - cancel morning meetings\n2. DevOps team investigate root cause\n3. Customer Success prepare communications\n\nJoin emergency call: meet.company.com/emergency\n\n- Mark (CTO)",
-      "category": "urgent-technical"
-    }
-  ]
-}
-```
-
-Then load and use it in your evaluation:
-
-```python
-# Load static dataset
-import json
-from openai import AsyncOpenAI
-
-with open('test_emails.json', 'r') as f:
-    emails = json.load(f)['emails']
-
-# Initialize client
-client = AsyncOpenAI(
-    base_url="{{API_URL}}/v1",
-    api_key=os.environ.get("ANOTHERAI_API_KEY")
-)
-
-# Define models to test
-models = ["gpt-4o-mini", "gpt-4.1-nano-latest"]
-
-# Run evaluation
-results = await evaluate_email_summaries(emails, models, client)
-```
-
-## Production Data Evaluation
-
-Production data evaluation uses recent completions from your live agent to test performance on real-world data.
-
-### Benefits
-- **Real-World Testing**: Evaluate on actual data your users are submitting
-- **Current Relevance**: Always testing on the latest usage patterns
-- **No Maintenance**: No need to update test cases manually
-
-### Drawbacks
-- **Inconsistency**: Different data each time makes comparison harder
-- **No Edge Cases**: Might miss rare but important scenarios
-- **Privacy Concerns**: May need to filter sensitive production data
-- **Availability**: Requires existing completions to evaluate
-
-### Example Implementation
-
-To evaluate production data, you have two options:
-
-**Option 1: Use the playground MCP tool (Recommended)**
-
-Ask Claude to create an experiment with recent completions:
-
-```
-Create an experiment using the playground tool that tests gpt-4o-mini on the last 50 
-completions from my email-summarizer agent from the past day.
-```
-
-[IMAGE TODO: SCREENSHOT OF EXPERIMENT CREATED FROM THIS PROMPT]
-
-**Option 2: Query and evaluate manually**
-
-Modify the code from Step 3 to query recent completions first:
-
-```python
-# Query recent completions - ask Claude to fetch them
-# "Get the last 50 completions from my email-summarizer agent from the past day"
-
-completions = response.json()['results']
-
-# Extract inputs from completions
-emails = []
-for completion in completions:
-    # Extract the original email from the input
-    emails.append({
-        "id": completion['id'],
-        "content": completion['input']['email_content']
-    })
-
-# Now run the evaluation pipeline from Step 3
-# Note: In AnotherAI, experiment_id is typically a string identifier you create
-# rather than something registered via API
-experiment_id = f"prod-eval-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
-
-# Run evaluation on the production data
-results = await evaluate_email_summaries(emails, ["gpt-4o-mini"], client)
-```
-
-### Choosing Your Approach
-
-**Use Static Datasets when:**
-- You need consistent benchmarks across versions
-- You have specific edge cases to test
-- You're comparing model performance
-- You need reproducible results for stakeholders
-
-**Use Production Data when:**
-- You want to understand current performance
-- You're monitoring quality over time
-- You have sufficient production volume
-- You want to catch real-world issues
-

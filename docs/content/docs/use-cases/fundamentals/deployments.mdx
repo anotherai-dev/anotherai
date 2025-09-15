@@ -33,7 +33,7 @@ If there is a version of the agent in an experimentyou want to deploy, you can g
 
 ![Deploy Version](/images/deploy-version-popup.png)
 
-3. Open Claude Code (or your preferred AI coding agent)
+3. Open your preferred AI assistant
 4. Request deployment to your preferred environment:
 
 ```
@@ -49,7 +49,7 @@ and reference the deployment_id.
 If the version of your agent you want to deploy is already in your IDE, you can also just request to have a deployment created directly, without opening the web app.
 
 1. Ensure your code is already using the AnotherAI SDK with an `agent_id`
-2. Tell Claude (or your AI coding agent) to deploy your agent:
+2. Tell your AI assistant to deploy your agent:
 
 ```
 Deploy the version of anotherai/agent/travel-assistant in my code to production. 
@@ -57,7 +57,7 @@ Create a deployment for this version and update to my code to match this version
 and reference the deployment_id.
 ```
 
-Claude will create a version ID for you and deploy it.
+Your AI assistantwill create a version ID for you and deploy it.
 
 </Tab>
 
@@ -69,7 +69,7 @@ If you find the version you want to deploy is in a completion view on the web ap
 
 ![Completion Version Details](/images/completion-version-details.png)
 
-3. Paste the version ID into Claude Code (or your preferred AI coding agent) and ask it to deploy:
+3. Paste the version ID into your preferred AI assistant and ask it to deploy:
 
 ```
 Deploy anotherai/version/acf2635be31cbd89f9363bfd3b2c6abc to production. 
@@ -118,7 +118,7 @@ Copy the new version ID you want to deploy from [AnotherAI](https://anotherai.de
 </Step>
 
 <Step>
-  Ask Claude (or any AI assistant) to update the existing deployment: 
+  Ask your preferred AI assistant to update the existing deployment: 
 
   ``` 
   Update deployment anotherai/deployment/question-answering-agent:production#1 to use
@@ -158,6 +158,5 @@ Creating a new deployment is required when the changes you are making are consid
 Creating a new deployment_id for an already-deployed agent is the same process as creating that initial deployment. You can refer to the [initial deployment setup](#initial-deployment-setup-requires-engineering) section for the process.
 
 <Callout type="success">
-Don't worry if you're unsure if an update version is a breaking change or not: if you ask
-Claude to update an existing deployment and it cannot because the new version is incompatible, Claude will automatically create a new deployment for you. You can create as many deployments as you need.
+Don't worry if you're unsure if an update version is a breaking change or not: if you ask your AI assistant to update an existing deployment and it cannot because the new version is incompatible, oyur AI assistant will automatically create a new deployment for you. You can create as many deployments as you need.
 </Callout>

@@ -21,7 +21,7 @@ Need an extra hand with building agents? We're happy to help. Reach us at [team@
 
 ## Specifying Agent Behavior and Requirements
 
-The easiest way to create a new agent is to ask Claude Code (or your preferred AI coding agent) to build it for you.
+The easiest way to create a new agent is to ask your preferred AI assistant to build it for you.
 
 #### Basic Agent Creation
 
@@ -33,7 +33,7 @@ Create a new AnotherAI agent that can summarize emails
 
 #### Adding Performance Requirements
 
-If you have other criteria or constraints for your agent, you can include them in your prompt and Claude Code will use AnotherAI to help you optimize for them.
+If you have other criteria or constraints for your agent, you can include them in your prompt and your AI assistant will use AnotherAI to help you optimize for them.
 
 **For customer-facing agents that need fast responses:**
 
@@ -47,19 +47,19 @@ Create a new AnotherAI agent that summarizes emails where at least half of the r
 Create a new AnotherAI agent that summarizes emails that costs less than $5 for 1000 requests
 ```
 
-Claude Code will be able to construct the agent's code, and will be able to use AnotherAI to access 100+ different models to find the best configuration to help you achieve your goals.
+Your AI assistant will be able to construct the agent's code, and will be able to use AnotherAI to access 100+ different models to find the best configuration to help you achieve your goals.
 
 
 If you prefer to build manually or want to understand the configuration details, see our [OpenAI SDK Integration](/docs/integrations/openai) guide.
 
 ## Testing your Agent
 
-As part of the process of creating your agent with AnotherAI, Claude Code will automatically create an initial experiment to test your agent's performance. Experiments allow you to systematically compare each of these different parameters of your agent to find the optimal setup for your use case across one or more inputs. You can use experiments to:
+As part of the process of creating your agent with AnotherAI, your AI assistant will automatically create an initial experiment to test your agent's performance. Experiments allow you to systematically compare each of these different parameters of your agent to find the optimal setup for your use case across one or more inputs. You can use experiments to:
 - Compare performance across different models (GPT-4, Claude, Gemini, etc.)
 - Test multiple prompt variations to find the most effective approach
 - Optimize for specific metrics like cost, speed, and accuracy. 
 
-In the cases above where certain constraints were specified, Claude Code will automatically create several versions of your agent to assess which one matches your requirements best.
+In the cases above where certain constraints were specified, your AI assistant will automatically create several versions of your agent to assess which one matches your requirements best.
 
 For the prompt requesting a fast agent:
 
@@ -69,11 +69,11 @@ For the prompt requesting a cost-effective agent:
 
 [IMAGE TODO: SCREENSHOT OF EXPERIMENT SHOWING DIFFERENT COST-EFFECTIVE MODELS]
 
-If you find there is additional criteria you want to test, you can always ask Claude Code to create additional experiments. The most common parameters to experiment with are prompts and models, however you can also experiment with changes to other parameters like temperature. 
+If you find there is additional criteria you want to test, you can always ask your AI assistant to create additional experiments. The most common parameters to experiment with are prompts and models, however you can also experiment with changes to other parameters like temperature. 
 
 ### Prompts
 
-Comparing different prompts is one of the most effective ways to improve your agent's performance. Small changes in wording, structure, or examples can lead to significant improvements. If you notice an issue with an existing prompt, you can even ask Claude to generate prompt variations to use in the experiment. 
+Comparing different prompts is one of the most effective ways to improve your agent's performance. Small changes in wording, structure, or examples can lead to significant improvements. If you notice an issue with an existing prompt, you can even ask your AI assistant to generate prompt variations to use in the experiment. 
 
 Example:
 
@@ -96,7 +96,7 @@ Create an AnotherAI experiment to help me find a faster model for anotherai/agen
 but still maintains the same tone and verbosity considerations as my current model.
 ```
 
-If you have a specific model in mind that you want to try - **for example, a newly released model** - you can ask Claude to help you test that model against your existing agent version. You can always request that Claude use inputs from existing completions, to ensure that you're testing with real, production data. 
+If you have a specific model in mind that you want to try - **for example, a newly released model** - you can ask your AI assistant to help you test that model against your existing agent version. You can always request that your AI assistant uses inputs from existing completions, to ensure that you're testing with real, production data. 
 
 Example:
 
@@ -112,7 +112,7 @@ GPT 5 mini?
 Beyond prompts and models, fine-tuning other parameters can impact your agent's behavior and output quality. Temperature in particular can have a significant impact on the quality of the output.
 
 <Accordions>
-<Accordion title="Temperature">
+<Accordion title="What is Temperature?">
 Temperature is the most important parameter to experiment with after prompts and models. It controls the randomness of the model's output:
 
 - **Low temperature (0.0 - 0.3)**: More deterministic, consistent outputs. Best for:
@@ -131,6 +131,9 @@ Temperature is the most important parameter to experiment with after prompts and
   - Brainstorming
   - Generating diverse options
 
+</Accordion>
+</Accordions>
+
 Example:
 
 ```
@@ -139,8 +142,6 @@ the right balance between creativity and professionalism
 ```
 
 [IMAGE TODO: SCREENSHOT OF EXPERIMENT VIEW SHOWING 3 versions with different temperatures]
-</Accordion>
-</Accordions>
 
 ## Adding Feedback to your Experiments
 

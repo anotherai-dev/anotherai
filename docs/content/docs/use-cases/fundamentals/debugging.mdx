@@ -1,21 +1,21 @@
 ---
 title: Debugging Agent Issues
-summary: Learn how to systematically debug problems with agent completions using Claude Code's investigation capabilities
-description: Step-by-step guide to identifying, analyzing, and resolving issues with your AI agents by leveraging completion IDs and Claude Code's debugging features
+summary: Learn how to systematically debug problems with agent completions using your AI assistant's investigation capabilities
+description: Step-by-step guide to identifying, analyzing, and resolving issues with your AI agents by leveraging completion IDs and your AI assistant's debugging features
 ---
 
 # Debugging Agent Issues
 
 import { Step, Steps } from 'fumadocs-ui/components/steps';
 
-If you noticed issues with your agent, the easiest way to debug is to use Claude Code (or your preferred AI coding agent) to investigate the issue.
+If you noticed issues with your agent, the easiest way to debug is to use your AI assistant to investigate the issue.
 
 <Steps>
 <Step>
 
-### Describe the Issue to Claude Code
+### Describe the Issue to your AI assistant
 
-Open Claude Code (or your preferred AI coding agent) and describe the issue you're experiencing. Depending on the nature of the issue, your description can contain different information. 
+Open your AI assistant (or your preferred AI coding agent) and describe the issue you're experiencing. Depending on the nature of the issue, your description can contain different information. 
 
 **Using Specific Completion Links:**
 If you've identified a specific problematic completion, you can copy the completion ID from the completions detail view (button in the top right of the modal) and share it:
@@ -39,20 +39,15 @@ and help me understand how to fix the issue.
 
 <Step>
 
-### Claude Does the Rest!
+### Your AI assistant Does the Rest!
 
-Claude Code will debug for you by examining the completion and agent details and input variables. After the issue is identified, you can use the Claude Code to help you rewrite your agent's code to fix the issue.
-
-<Callout type="tip">
-Based on our experience: for complex debugging tasks, we strongly recommend switching from your default model to Claude Opus using the `/model` command in Claude Code. 
-</Callout>
-
+Your AI assistant will debug for you by examining the completion and agent details and input variables. After the issue is identified, you can use your AI assistant to help you rewrite your agent's code to fix the issue.
 
 </Step>
 </Steps>
 
 
-## Common Issues Claude Can Help Debug
+## Common Issues your AI assistant Can Help Debug
 
 - **Prompt engineering problems** - Suboptimal prompts leading to poor outputs
 - **Input validation issues** - Malformed or unexpected input data
@@ -61,6 +56,6 @@ Based on our experience: for complex debugging tasks, we strongly recommend swit
 - **Performance bottlenecks** - Slow completions or timeout issues
 
 ## Tips
-- Try to always provide a link to at least one completion with the issue present in AnotherAI's web app to make it easier for Claude to understand the issue.
+- Try to always provide a link to at least one completion with the issue present in AnotherAI's web app to make it easier for your AI assistant to understand the issue.
 - Always test your updates with a few different inputs to avoid missing surprise regressions with your updates. 
 

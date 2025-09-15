@@ -13,26 +13,23 @@ One of the core features we wanted to unlock with AnotherAI was to allow users t
 
 You can start by asking questions directly in natural language through the MCP, build persistent views in the web app for metrics you want to monitor regularly, and for more advanced use cases, access the data directly via REST API to integrate with your existing tools or build your own customizable dashboards.
 
-<Callout type="warning">
-**Documentation feedback:** The sections "What sorts of data can I query?" and "How do I query and visualize my data?" overlap significantly. Consider merging these sections or restructuring to avoid redundancy.
-</Callout>
+## Types of Data You Can Query
 
-## What sorts of data can I query?
-
-- Organization-wide data. This can include data about:
-  - your overall spending across all agents
-  - the most used agents
-  - the agents that have the most failed completions
+**Organization-wide data, including:**
+  - Total spending across all agents
+  - Most used agents and models
+  - Agents with the highest failure rates
 
 [IMAGE TODO: SCREENSHOT OF ORGANIZATION-WIDE DATA QUERY IN A VIEW]
-- Agent-level data. This can include data about:
-  - the cost of a specific agent
-  - the latency of a specific agent
-  - user feedback on a specific agent
+
+**Agent-level data, including:**
+  - Individual agent costs and usage
+  - Latency and performance metrics
+  - User feedback and annotations left my team members
 
 [IMAGE TODO: SCREENSHOT OF AGENT-LEVEL DATA QUERY/OR COMPLETIONS LIST IN A VIEW]
 
-## How do I query and visualize my data?
+## Query methods
 
 ### Using Natural Language with MCP
 
@@ -57,8 +54,74 @@ You've run 1.45 million completions this week at an average cost of $0.00078 per
 </Accordions>
 
 - "Which agents are failing most often?"
+
+<Accordions>
+<Accordion title="Example response">
+**Agents with Highest Failure Rates (Last 7 Days):**
+
+1. extract-company-info-from-domain - 58.82% failure rate (10 failures / 17 total runs)
+2. extract-meeting-notes - 33.33% failure rate (10 failures / 30 total runs)
+3. task-input-migration - 5.26% failure rate (2 failures / 38 total runs)
+4. generate-task-preview - 3.55% failure rate (41 failures / 1,155 total runs)
+5. task-input-example - 0.75% failure rate (2 failures / 265 total runs)
+</Accordion>
+</Accordions>
+
 - "Show me the average latency for each model"
+
+<Accordions>
+<Accordion title="Example response">
+**Average Model Latencies (Last 24 Hours):**
+
+| Model | Avg Latency | P50 | P95 | P99 | Total Requests |
+|-------|-------------|-----|-----|-----|----------------|
+| gemini-1.5-pro-002 | 1,662ms | 1,500ms | 2,580ms | 4,124ms | 245 |
+| gemini-2.0-flash-001 | 1,877ms | 1,150ms | 11,575ms | 15,860ms | 106 |
+| gemini-2.0-flash-latest | 2,638ms | 1,700ms | 9,075ms | 13,470ms | 166 |
+| gpt-4o-mini-latest | 4,683ms | 4,300ms | 6,300ms | 6,540ms | 6 |
+| gemini-2.5-flash | 4,756ms | 3,800ms | 10,160ms | 13,516ms | 27 |
+| claude-3-7-sonnet-20250219 | 7,061ms | 6,000ms | 12,100ms | 22,680ms | 161 |
+</Accordion>
+</Accordions>
+
 - "How many completions did we process yesterday?"
+
+<Accordions>
+<Accordion title="Example response">
+**Yesterday's Completions (September 14):**
+
+Total: 376 completions
+Total Cost: $4.92
+Average Cost per Completion: $0.0131
+Success Rate: 99.2% (3 failures)
+Unique Agents Used: 29
+
+**Completions by Hour:**
+- 12 AM: 1
+- 1 AM: 5
+- 2 AM: 13
+- 3 AM: 1
+- 4 AM: 87
+- 5 AM: 69
+- 6 AM: 13
+- 7 AM: 1
+- 8 AM: 2
+- 9 AM: 18
+- 10 AM: 12
+- 11 AM: 9
+- 12 PM: 18
+- 1 PM: 3
+- 2 PM: 37
+- 3 PM: 17
+- 4 PM: 11
+- 5 PM: 1
+- 6 PM: 1
+- 7 PM: 18
+- 8 PM: 1
+- 9 PM: 25
+- 10 PM: 13
+</Accordion>
+</Accordions>
 
 Your AI assistant will handle the query and present the results in a clear format.
 
@@ -66,26 +129,29 @@ Your AI assistant will handle the query and present the results in a clear forma
 
 You can also create persistent views in the web app to monitor important metrics over time. Simply describe what you want to see visualized.
 
-For example: suppose you have an agent is becoming increasingly popular in your product. You want to keep an eye on the overall spend on that agent to ensure you don't go over budget. You also want to keep an eye on the speed of the models you're using, so that your customers aren't left with long wait times. You may ask Claude to create the following views as such:
+For example: suppose you have an agent is becoming increasingly popular in your product. You want to keep an eye on the overall spend on that agent to ensure you don't go over budget. You also want to keep an eye on the speed of the models you're using, so that your customers aren't left with long wait times. You may ask your AI assistant to create the following views as such:
 
 <Steps>
 <Step>
-Describe the view or goal you want to Claude (or your preferred AI agent)
+Describe the view or goal you want to your preferred AI assistant
 
 ```
-Create a view in AnotherAI that shows me the daily cost of anotherai/agent/calendar-event-extractor
+Create a view in AnotherAI that shows me the daily cost of 
+anotherai/agent/calendar-event-extractor
 ```
 [IMAGE TODO: SCREENSHOT OF VIEW CREATED FROM THIS PROMPT]
 or 
 
 ```
-Create a view in AnotherAI that shows me the total number of completions per day across all agents
+Create a view in AnotherAI that shows me the total number of completions per day
+across all agents
 ```
 [IMAGE TODO: SCREENSHOT OF VIEW CREATED FROM THIS PROMPT]
 or 
 
 ```
-Create a view in AnotherAI that shows all the completion outputs and annotations for anotherai/agent/calendar-event-extractor
+Create a view in AnotherAI that shows all the completion outputs and annotations
+for anotherai/agent/calendar-event-extractor
 ```
 [IMAGE TODO: SCREENSHOT OF VIEW CREATED FROM THIS PROMPT]
 </Step>
@@ -93,7 +159,8 @@ Create a view in AnotherAI that shows all the completion outputs and annotations
 After creating a view, you can always make adjustments to it
 
 ```
-Update anotherai/views/calendar-event-extractor-completions to include the completion inputs as well
+Update anotherai/views/calendar-event-extractor-completions to include the completion 
+inputs as well
 ```
 [IMAGE TODO: SCREENSHOT OF VIEW UPDATED FROM THIS PROMPT]
 </Step>

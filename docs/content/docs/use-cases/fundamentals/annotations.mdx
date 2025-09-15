@@ -6,13 +6,74 @@ description: Learn how to use annotations to provide specific feedback on comple
 
 import { Callout } from 'fumadocs-ui/components/callout';
 import { Card, Cards } from 'fumadocs-ui/components/card';
+import { Steps, Step } from 'fumadocs-ui/components/steps';
 import { FlaskRound, MessageSquarePlus } from 'lucide-react';
 
-# Annotations
+## Annotations
 
-Annotations are the tool that allows you to add comments to your completions and experiments. The idea behind annotations is to give you  a way to provide clear, specific feedback on completions that your AI Coding agent can access and use to improve your agents on your behalf.
+When building and running AI agents in production, we wanted to build a way for you to leave clear feedback for your AI coding agent to use to improve your agent. This is where annotations come in.
 
-### What sort of content can be added in annotations?
+## When to Use Annotations: Manually Reviewing Production Completions
+
+<Steps>
+<Step>
+**Identifying completions that need improvements**
+
+While not always the case, generally the review of production completions are triggered by:
+- a feedback system set up to flag completions that need review (learn more about utilizing end-user feedback to improve your agents with [user feedback](/use-cases/user-feedback))
+- a user or team member reporting an issue with a completion
+
+</Step>
+<Step>
+**Annotate individual completions with your feedback**
+
+- To annotate entire completions: there is a text box on the top right of the screen where you can add your feedback about the content of the completion.
+- To annotate individual fields within the output, hover over the field you want to annotate and select the "Add Annotation" button. 
+
+<iframe src="https://customer-turax1sz4f7wbpuv.cloudflarestream.com/72270b5b80230702252f69c9c3f4a20a/iframe" width="100%"
+height="400" style={{border: 0}} allowFullScreen></iframe>
+
+You can learn more about the type of content you may want to add in annotations [here](#what-sort-of-content-can-be-added-in-annotations)
+
+</Step>
+<Step> 
+**Using your AI coding agent to improve your agent based on annotations**
+
+After you've added annotations to agent completions or an experiment, all you tell your AI coding agent that you've added annotations and ask it to use your feedback to improve your agent. Just specify the agent - and optionally the specific completions - that you added the annotations to, and your agent will take care of the rest. For example:
+
+```
+Adjust anotherai/agent/calendar-event-extractor based on the annotations 
+that have been added in anotherai/completion/01994ea5-59d3-7396-8b8f-5531355cf151, 
+anotherai/completion/01994e86-5861-715c-7078-1b1d4e6440b1, and 
+anotherai/completion/01994e86-2bef-7227-cea5-5b82f56f7bc7.
+```
+
+Your AI coding assistant will use the annotations to improve the agent.
+</Step>
+<Step>
+**Gain insights about your agent's performance with annotations (optional)**
+
+You can also leverage annotations to provide you with insights about your agent's performance. For example you can ask your AI coding agent to do the following based on the annotations you've added:
+
+#### **Create Performance Reports**
+
+```
+Provide a report on the accuracy scores for all completions of calendar-event-extractor 
+that used GPT-5. 
+```
+[IMAGE TODO: SCREENSHOT OF VIEW CREATED FROM THIS PROMPT]
+
+#### **Compare Model Performance**
+
+```
+Which model has the best tone overall, based on annotations?
+```
+[IMAGE TODO: SCREENSHOT OF VIEW CREATED FROM THIS PROMPT]
+
+</Step>
+</Steps>
+
+## What sort of content can be added in annotations?
 
 Annotations can contain feedback about:
 - What is working (e.g. "The event descriptions are clear and the ideal length")
@@ -26,13 +87,13 @@ However if you would like to incorporate more quantitative ratings, you can do t
 
 [IMAGE TODO: SCREENSHOT OF TEXT-BASED ANNOTATIONS IN ANOTHERAI]
 
-### How to Add Annotations
 
-#### In AnotherAI Web App
+## Other Methods for Improving Agents with Annotations
 
-You can add text-based annotations directly in AnotherAI on both the experiments screen and in individual completion detail views. Annotations can be added for both entire completions and individual fields within the output (when the output is structured).
+While using annotations when manually reviewing production completions is the most common use case, we would be remiss if we didn't mention some other methods for improving your agents with annotations:
 
-##### Annotations on Experiments Screen
+### Manually Annotating Experiment Results
+
 - To annotate entire completions: locate the "Add Annotation" button under each completion's output. Select the button to open a text box where you can add your feedback about the content of that specific completion. 
 - To annotate individual fields within the output, hover over the field you want to annotate and select the "Add Annotation" button.
 - You can also add annotations to the model, prompt, output schema (if structured output is enabled for the agent), and other parameters like temperature, top_p, etc.
@@ -40,54 +101,18 @@ You can add text-based annotations directly in AnotherAI on both the experiments
   <iframe src="https://customer-turax1sz4f7wbpuv.cloudflarestream.com/e123814e5c765505fa03443864bb2397/iframe" width="100%"
   height="400" frameBorder="0" allowFullScreen></iframe>
 
-##### Annotations on Completion Detail View
-- To annotate entire completions: there is a text box on the top right of the screen where you can add your feedback about the content of the completion.
-- To annotate individual fields within the output, hover over the field you want to annotate and select the "Add Annotation" button. 
+### Using AI Agents to Add Annotations
 
-Note: at this time, it's not possible to add scores directly in the web app.
-
-<iframe src="https://customer-turax1sz4f7wbpuv.cloudflarestream.com/72270b5b80230702252f69c9c3f4a20a/iframe" width="100%"
-height="400" frameBorder="0" allowFullScreen></iframe>
-
-#### Using Claude or AI Agents
-
-You can also ask Claude Code to review completions and add text-based, scores, or both types of annotations on your behalf. To ensure that Claude Code is evaluating the completions in the way you want, it's best to provide some guidance. For example:
+You can also ask your preferred AI coding agent to review completions and add text-based, scores, or both types of annotations on your behalf. To ensure that your agent is evaluating the completions in the way you want, it's best to provide some guidance. For example:
 
 ```
 Review the completions in anotherai/experiment/019885bb-24ea-70f8-c41b-0cbb22cc3c00 
 and leave scores about the completion's accuracy and tone. Evaluate accuracy based on whether the agent correctly extracted all todos from the transcript and evaluate tone based on whether the agent used an appropriately professional tone.
 ```
 
-Claude will analyze the completions and add appropriate annotations. In the example above, Claude will add an annotation with the scores "accuracy" and "tone" and assigned appropriate values for each, based on the content of the completion. 
-
-### Using Claude Code to Improve your Agents using Annotations
-
-After you've added annotations to agent completions or an experiment, all you need to do is tell Claude that you've added annotations and ask it to use them to improve your agent. Just specify the agent or experiment that you added the annotations to, and Claude will take care of the rest. For example:
-
-```
-Adjust anotherai/agent/calendar-event-extractor based on the annotations that have been added.
-```
-
-Claude will use the annotations to improve the agent: be it by updating the prompt, model, output schema, or other parameters.
-
-### Other ways to use Annotations
-
-Claude can also leverage annotations to provide you with insights about your agent's performance. For example:
-
-#### 1. **Create Performance Reports**
-```
-Provide a report on the accuracy scores for all completions of calendar-event-extractor that used GPT-5. 
-```
-[IMAGE TODO: SCREENSHOT OF VIEW CREATED FROM THIS PROMPT]
-
-#### 2. **Compare Model Performance**
-```
-Which model has the best tone overall, based on annotations?
-```
-[IMAGE TODO: SCREENSHOT OF VIEW CREATED FROM THIS PROMPT]
+Your agent will analyze the completions and add appropriate annotations. In the example above, your agent will add an annotation with the scores "accuracy" and "tone" and assigned appropriate values for each, based on the content of the completion. 
 
 ## Other Ways to Improve your Agents
-
 
 <Cards>
   <Card title="Using Experiments" href="/use-cases/fundamentals/experiments" icon={<FlaskRound />}>
@@ -97,4 +122,3 @@ Which model has the best tone overall, based on annotations?
     Collect and integrate feedback from your end users to continuously improve your agents
   </Card>
 </Cards>
-

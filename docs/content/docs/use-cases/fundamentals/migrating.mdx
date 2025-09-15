@@ -9,13 +9,13 @@ import { BarChart3, UploadCloud, Eye, PlugZap, ListChecks, Globe, ShieldCheck } 
 
 ## Migrating From OpenAI to AnotherAI
 
-The easiest way to migrate your agent is to ask Claude Code (or your preferred AI coding agent) to handle it for you.
+The easiest way to migrate your agent is to ask your preferred AI assistant to handle it for you.
 
 <Callout type="info">
 Looking for help with migrating your agent? We're happy to help. Reach us at [team@workflowai.support](mailto:team@workflowai.support) or on [Slack](https://join.slack.com/t/anotherai-dev/shared_invite/zt-3av2prezr-Lz10~8o~rSRQE72m_PyIJA).
 </Callout>
 
-If you want to keep your agent as is in code with minimal changes, you can ask Claude Code to do the following:
+If you want to keep your agent as is in code with minimal changes, you can ask your AI assistant to do the following:
 
 ```
 Migrate my agent at @[your-agent-file-path] to use AnotherAI. 
@@ -24,7 +24,7 @@ AnotherAI's features
 ```
 [IMAGE TODO: PROMPT SENT TO CLAUDE CODE??]
 
-If your agent isn't currently using [input variables](/integrations/openai#1-input-variables) or [structured output](/integrations/openai#2-structured-outputs), you can ask Claude Code to update your agent's code to use them during the migration:
+If your agent isn't currently using [input variables](/integrations/openai#1-input-variables) or [structured output](/integrations/openai#2-structured-outputs), you can ask your AI assistant to update your agent's code to use them during the migration:
 
 ```
 Migrate my agent at @[your-agent-file-path] to use AnotherAI. 
@@ -59,7 +59,7 @@ Copy the completion ID
 </Step>
 <Step>
 
-Send the following prompt to Claude Code (or your preferred AI coding agent):
+Send the following prompt to your preferred AI assistant:
 ```
 Migrate this version of my agent to AnotherAI: 
 anotherai/completion/01993f2d-1fdf-72e5-6847-ad428ea113ce
@@ -69,7 +69,7 @@ anotherai/completion/01993f2d-1fdf-72e5-6847-ad428ea113ce
 </Steps>
 
 
-Claude Code will take care of the steps to migrate the agent to AnotherAI including: 
+Your AI assistant will take care of the steps to migrate the agent to AnotherAI including: 
 - Fetching prompts from WorkflowAI deployments
 - Converting WorkflowAI SDK calls to OpenAI completion calls
 - Setting up API keys and client configuration
@@ -79,7 +79,15 @@ The migration process ensures your existing WorkflowAI agents work seamlessly wi
 
 ## Migrating Away from AnotherAI
 
-We have a zero lock-in promise. If you're not happy with AnotherAI at any point, we make it easy to migrate away. Learn more [here](/getting-started#anotherais-zero-lock-in-promise).
+We have a zero lock-in promise, so you can try AnotherAI risk-free. If it doesn't provide value, switching back takes minutes, not months.
+
+
+To switch away from AnotherAI:
+- Remove `base_url="{{API_URL}}/v1"`
+- If you're not using deployments: your code stays identical
+- If you are using deployments: simply ask your AI assistant to fetch your deployment configuration to recreate the equivalent configuration in your code.
+
+If you have any questions or encounter any issues with switching away from AnotherAI, please reach out to [us](mailto:team@workflowai.support).
 
 ## Next Steps
 
