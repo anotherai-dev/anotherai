@@ -10,9 +10,27 @@ type MatchingToolValueProps = {
   experimentId?: string;
   completionId?: string;
   keyPath?: string;
+  position?:
+    | "bottom"
+    | "top"
+    | "left"
+    | "right"
+    | "topRight"
+    | "topRightAligned"
+    | "topLeftAligned"
+    | "topRightAlignedNew"
+    | "rightOverlap"
+    | "bottomLeft";
 };
 
-export function MatchingToolValue({ tools, annotations, experimentId, completionId, keyPath }: MatchingToolValueProps) {
+export function MatchingToolValue({
+  tools,
+  annotations,
+  experimentId,
+  completionId,
+  keyPath,
+  position = "topRightAligned",
+}: MatchingToolValueProps) {
   const [showAddForm, setShowAddForm] = useState(false);
 
   const handleAddAnnotation = (e?: React.MouseEvent) => {
@@ -52,7 +70,7 @@ export function MatchingToolValue({ tools, annotations, experimentId, completion
               Add annotation
             </span>
           }
-          position="topRightAligned"
+          position={position}
           popoverClassName="bg-white border border-gray-200"
           className="w-full block"
         >

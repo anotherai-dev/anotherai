@@ -85,6 +85,7 @@ export function MatrixSection(props: Props) {
           metrics={metrics}
           allMetricsPerKey={allMetricsPerKey}
           agentId={experiment.agent_id}
+          experiment={experiment}
         />
       );
     });
