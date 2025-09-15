@@ -3,6 +3,7 @@ export interface SeriesConfig {
   key: string;
   color: string;
   name?: string;
+  unit?: string;
 }
 
 // Default color palette for charts - consistent across all chart types
@@ -48,6 +49,27 @@ export const DEFAULT_CHART_COLORS = [
   "#fd79a8",
   "#e17055",
 ];
+
+// Units that should appear before the value (prefixes)
+const PREFIX_UNITS = new Set(["$", "€", "£", "¥", "₹", "₩", "₽", "USD", "EUR", "GBP"]);
+
+/**
+ * Format a value with its unit, placing currency symbols and certain units as prefixes
+ * @param value - The formatted value as a string
+ * @param unit - The unit to append/prepend
+ * @returns Formatted string with unit in correct position
+ */
+export function formatValueWithUnit(value: string, unit: string | undefined): string {
+  if (!unit) return value;
+
+  // Check if unit should be a prefix (currency symbols, etc.)
+  if (PREFIX_UNITS.has(unit)) {
+    return `${unit}${value}`;
+  }
+
+  // Default: unit as suffix with space
+  return `${value} ${unit}`;
+}
 
 // Transform data to ensure it has an 'x' field for automatic chart detection
 export function ensureXFieldForChart(data: Record<string, unknown>[]): Record<string, unknown>[] {
