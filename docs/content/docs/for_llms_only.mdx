@@ -1,0 +1,1200 @@
+---
+title: LLM Reference Guide
+summary: Additional AnotherAI information for AI assistants - reference this page when information is not found elsewhere in the documentation
+description: Supplementary documentation specifically for LLMs and AI coding assistants containing additional context and information about AnotherAI features and capabilities
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+
+### Manual Migration Steps
+
+If you prefer to migrate manually or want to understand what changes are needed, follow the steps below.
+
+<Steps>
+<Step>
+
+### Update your configuration
+
+There are three main steps to migrating your agent to AnotherAI:
+
+1. Update your OpenAI client configuration to point to AnotherAI's base URL. (Required)
+2. Add an `agent_id` in the agent's metadata. This ensures that each agent can be distinguished in AnotherAI's webview. (Recommended)
+3. (For cloud-hosted AnotherAI only) Replace your provider API keys with an AnotherAI API key to gain easy access to 100+ different models. (Recommended)
+
+
+<Tabs items={['Python / OpenAI SDK', 'Node (OpenAI SDK)']}>
+<Tab value="Python / OpenAI SDK">
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="{{API_URL}}/v1",  # Or http://localhost:8000/v1 for self-hosted
+    api_key="aai-***", 
+)
+
+# Your existing code works as-is
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "user", "content": "Hello, world!"}
+    ],
+    metadata={
+        "agent_id": "your-agent-name",  # Recommended for observability
+    }
+)
+```
+
+</Tab>
+<Tab value="Node (OpenAI SDK)">
+
+```javascript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  baseURL: '{{API_URL}}/v1',  // Or http://localhost:8000/v1 for self-hosted
+  apiKey: 'aai-***',  
+});
+
+// Your existing code works as-is
+const response = await client.chat.completions.create({
+  model: 'gpt-4o',
+  messages: [
+    { role: 'user', content: 'Hello, world!' }
+  ],
+  metadata: {
+    agent_id: 'your-agent-name',  // Recommended for observability
+  }
+});
+```
+
+</Tab>
+</Tabs>
+
+</Step>
+
+<Step>
+
+### Verify your agent is working
+
+Test your agent by running it once. If everything is set up correctly, you should see the completion appear at https://anotherai.dev/completions.
+
+</Step>
+
+<Step>
+
+### You're done!
+
+Your agent is now integrated with AnotherAI, giving you access to:
+
+- **100+ AI Models**: Access models from OpenAI, Anthropic, Google, and more
+- **Real-time Observability**: Monitor costs, performance, and errors
+- **Prompt Deployments**: Update prompts without code changes
+
+</Step>
+</Steps>
+
+---
+
+---
+title: Migrating from WorkflowAI to AnotherAI
+summary: Guide for migrating agents from WorkflowAI to AnotherAI
+---
+
+# Migrating from WorkflowAI to AnotherAI
+
+## Context
+
+WorkflowAI is a layer of abstraction on top of LLM providers, that similarly to AnotherAI allows hitting many providers in the same manner.
+
+The main difference is that in most cases WorkflowAI has a "structured data in structured data out" approach and does not use the message primitive in its basic API.
+
+While not the most common usage, WorkflowAI also offers an OpenAI completion API compatible endpoint. 
+
+> WorkflowAI and AnotherAI share the same authorization servers. So users of WorkflowAI can use the same account on AnotherAI. API Keys are however not transferable. WorkflowAI API keys start with `wai-` and AnotherAI API keys start with `aai-`.
+
+
+## Migration Steps
+
+Very important: Most WorkflowAI agents use deployments on WorkflowAI, meaning that the code does not contain the prompt. The prompt is stored and managed by the WorkflowAI backend. It is possible to setup a bridge that forwards data from WorkflowAI to AnotherAI which makes the prompt and/or deployment available in AnotherAI.
+
+### Step 1: Identify the agent id and deployment environment
+
+You will first need to identify:
+- the agent id, which will be the same in AnotherAI as in WorkflowAI
+- the deployment environment ("production", "staging", "dev")
+
+They both can be extracted from the code.
+
+<Tabs groupId="framework" items={['TypeScript (OpenAI SDK)', 'API']}>
+<Tab value="TypeScript (OpenAI SDK)">
+
+```typescript
+// WorkflowAI client setup
+// This should be replaced with the OpenAI client setup pointing to AnotherAI
+const workflowAI = new WorkflowAI({
+  key: process.env["WORKFLOWAI_API_KEY"],
+});
+
+// Set up types
+// Input type can likely be re-used in a function
+export interface AnalyzeBookCharactersTaskInput {
+  book_title?: string;
+}
+
+// Output type will have to converted to a Zod schema to be compatible with the OpenAI beta SDK
+export interface AnalyzeBookCharactersTaskOutput {
+  characters?: {
+    name?: string;
+    goals?: string[];
+    weaknesses?: string[];
+    outcome?: string;
+  }[];
+}
+
+// Set up the agent
+const analyzeBookCharacters: Agent<
+  AnalyzeBookCharactersTaskInput,
+  AnalyzeBookCharactersTaskOutput
+> = workflowAI.agent({
+  id: "analyze-book-characters", // agent id, will be the same in AnotherAI
+  schemaId: 1, // schema id, can be ignored, will no longer be used in AnotherAI
+  version: "production", // deployment envoronment, in WorkflowAI deployments are unique per agent schema
+});
+```
+
+</Tab>
+
+<Tab value="API">
+
+WorkflowAI exposes a `run` endpoint per agent and schema. The full url will look like `https://run.workflowai.com/v1/agents/<agent_id>/schemas/<schema_id>/run` or `https://run.workflowai.com/v1/tasks/<agent_id>/schemas/<schema_id>/run` where:
+- `<agent_id>` is a slug that is the id of the agent
+- `<schema_id>` is an integer that identifies a schema (not used in AnotherAI)
+
+The payload will look like:
+```
+POST https://run.workflowai.com/v1/agents/analyze-book-characters/schemas/1/run
+Authorization: Bearer wai-***
+Content-Type: application/json
+{
+    "version": "production", // deployment_id, in WorkflowAI deployments are unique per agent schema
+    "task_input": {
+        "book_title": "The Shadow of the Wind"
+    },
+    "metadata": {
+        // metadata is optional
+    }
+} 
+```
+
+</Tab>
+</Tabs>
+
+### Step 2: Check if a deployment has already been migrated
+
+In WorkflowAI, deployments are unique per agent schema. In AnotherAI, deployments are unique accross all agents and the concept of schema is removed. Instead, it is a good practice to include the agent_id into the deployment id and add a deployment number.
+
+You can fetch all existing deployments for a given agent using the `list_deployments` tool with the agent_id parameter.
+
+A migrated deployment will likely have the shape: `<agent_id>:<deployment_deployment_environment>#<deployment_number>`
+
+In the example above, the migrated deployment will look like: `analyze-book-characters:production#1`.
+
+> It is possible that a deployment was created with a slightly different format. Check the available deployments using the `list_deployments` tool and make sure to adjust the deployment id accordingly.
+
+If the deployment has not been migrated, tell the user to contact the WorkflowAI support.
+
+
+### Step 3: Convert the WorkflowAI code to point to AnotherAI when a deployment has already been migrated for a standard WorkflowAI agent
+
+AnotherAI is compatible with the OpenAI completion API, so it should be configured just like any other OpenAI client. You can use the `create_api_key` tool to create an API key if needed. Be mindful of any existing frameworks that are used to make completion calls and follow the appropriate documentation. In some cases, you might have to adapt the response format (aka `output_schema`) which is a property of the version in AnotherAI.
+
+To use a deployment, simply use the deployment id in the model parameter in the completion call.
+
+<Tabs groupId="framework" items={['TypeScript (OpenAI SDK)',  'Go (OpenAI SDK)', 'API']}>
+<Tab value="TypeScript (OpenAI SDK)">
+
+```typescript
+import OpenAI from "openai";
+import { zodTextFormat } from "openai/helpers/zod";
+import { z } from "zod";
+
+
+const client = new OpenAI({
+  baseURL: "{{API_URL}}/v1",
+  apiKey: process.env["ANOTHERAI_API_KEY"],
+});
+
+// Typescript here is sufficient
+export interface AnalyzeBookCharactersTaskInput {
+  book_title?: string;
+}
+
+// ----------------------------------------------------------------
+// Without using Zod
+
+export interface AnalyzeBookCharactersTaskOutput {
+  characters?: {
+    name?: string;
+    goals?: string[];
+    weaknesses?: string[];
+    outcome?: string;
+  }[];
+}
+
+export async function analyzeBookCharacters(input: AnalyzeBookCharactersTaskInput): Promise<AnalyzeBookCharactersTaskOutput> {
+    const completion = await client.chat.completions.create({
+        model: "anotherai/deployment/analyze-book-characters:production#1", // use the "anotherai/deployment/<deployment_id>" id here
+        messages: [], // messages should remain empty since the prompt is stored in AnotherAI
+        // response_format is not needed here since it is handled by the deployment
+        input: input, // input is AnotherAI specific. You may have to silence a TS error
+    });
+    return JSON.parse(completion.choices[0].message.content)
+}
+
+// ----------------------------------------------------------------
+
+// Or if using Zod and the beta OpenAI client
+// Output needs to be converted to a Zod schema to be compatible with the OpenAI beta SDK
+// OutputSchema is available in `version.output_schema.json_schema`
+const AnalyzeBookCharactersTaskOutputSchema = z.object({
+  characters: z.array(z.object({
+    name: z.string(),
+    goals: z.array(z.string()),
+    weaknesses: z.array(z.string()),
+    outcome: z.string(),
+  })),
+});
+export type AnalyzeBookCharactersTaskOutput = z.infer<typeof AnalyzeBookCharactersTaskOutputSchema>;
+
+export async function analyzeBookCharacters(input: AnalyzeBookCharactersTaskInput): Promise<AnalyzeBookCharactersTaskOutput> {
+  // Use .parse() instead of .create() when using the beta client
+  const completion = await client.beta.chat.completions.parse({
+      model: "anotherai/deployment/analyze-book-characters:production#1", // use the "anotherai/deployment/<deployment_id>" id here
+      messages: [], // messages should remain empty since the prompt is stored in AnotherAI
+      response_format: zodTextFormat(AnalyzeBookCharactersTaskOutputSchema, "AnalyzeBookCharactersTaskOutput"),
+      input: input, // input is AnotherAI specific. You may have to silence a TS error
+  });
+  return completion.output_parsed
+}
+```
+
+</Tab>
+<Tab value="Go (OpenAI SDK)">
+
+```go
+
+import (
+	"context"
+	// Make sure to use the v2
+	"github.com/openai/openai-go/v2"
+	"github.com/openai/openai-go/v2/option"
+	"github.com/openai/openai-go/v2/shared"
+	"github.com/invopop/jsonschema" // library to generate JSON schemas if needed
+)
+
+// setup AnotherAI client
+var client = openai.NewClient(
+	option.WithBaseURL("{{API_URL}}/v1"),
+	option.WithAPIKey(os.Getenv("ANOTHERAI_API_KEY")),
+)
+
+// types are likely already present in the users' code
+type AnalyzeBookCharactersTaskInput struct {
+	BookTitle string `json:"book_title"`
+}
+
+type AnalyzeBookCharactersTaskOutput struct {
+	Characters []struct {
+		Name       string   `json:"name"`
+		Goals      []string `json:"goals"`
+		Weaknesses []string `json:"weaknesses"`
+		Outcome    string   `json:"outcome"`
+	} `json:"characters"`
+}
+
+// Generate the JSON schema for the output
+var AnalyzeBookCharactersTaskOutput = jsonschema.Reflect(&AnalyzeBookCharactersTaskOutput{})
+
+
+func AnalyzeBookCharacters(input AnalyzeBookCharactersTaskInput) (AnalyzeBookCharactersTaskOutput, error) {
+  params := openai.ChatCompletionNewParams{
+    // Pass a plain string here
+    Model: "anotherai/deployment/analyze-book-characters:production#1",
+    // No need to pass messages
+    Metadata: shared.Metadata{
+      //...any user provided metadata. No need to pass agent_id here since it will be passed by the deployment
+    },
+    ResponseFormat: openai.ChatCompletionNewParamsResponseFormatUnion{
+      OfJSONSchema: &openai.ResponseFormatJSONSchemaParam{
+        JSONSchema: openai.ResponseFormatJSONSchemaJSONSchemaParam{
+          Name:   "analyze-book-characters-task-output",
+          Schema: AnalyzeBookCharactersTaskOutput,
+        },
+      },
+    },
+  }
+  // input is AnotherAI specific
+  params.SetExtraFields(map[string]any{
+    "input": input, // will be serialized as JSON
+  })
+	chatCompletion, err := client.Chat.Completions.New(
+		context.TODO(),
+		params,
+	)
+  out := AnalyzeBookCharactersTaskOutput{}
+  if err != nil {
+    // handle error if needed
+    return out, err
+  }
+  content := chatCompletion.choices[0].message.content
+  
+  if err := json.Unmarshal([]byte(content), &out); err != nil {
+    // handle error if needed
+    return out, err
+  }
+  return out, nil
+}
+```
+
+</Tab>
+<Tab value="API">
+
+It is likely that an OpenAI SDK exists for the requested language. The OpenAI SDKs are usually more convenient to use, providing out of the box:
+- retries / error management
+- structured output parsing
+- tool calling handling
+
+It is also possible that the user already has an Agent framework setup that is compatible with the completion API. If re-using an existing Agent framework, it is a good idea to create a separate client as to avoid forcing the user to migrate the entirety of its completion calls.
+
+If hitting the API directly is needed, the payload will look like:
+```json
+{
+    "model": "anotherai/deployment/analyze-book-characters:production#1", // use the "anotherai/deployment/<deployment_id>" id here
+    "messages": [],
+    // no need to pass the response_format here, it is handle by the deployment
+    "input": ..., // corresponds to task_input in WorkflowAI,
+    "metadata": {
+        // metadata is optional
+    }
+}
+```
+
+</Tab>
+</Tabs>
+
+The code is now migrated to AnotherAI.
+
+
+### Step 3 bis: Migrating a WorkflowAI agent that uses the OpenAI completion API compatible endpoint
+
+A WorkflowAI agent that uses the completion API will also have a configured OpenAI client. This client should be updated to point to AnotherAI's base URL and API key.
+
+Example code to be converted:
+
+<Tabs items={['Node (OpenAI SDK)', 'API']}>
+<Tab>
+
+```typescript
+import OpenAI from 'openai';
+
+client = OpenAI(
+    base_url="https://run.workflowai.com/v1/",
+    api_key=os.environ["WORKFLOWAI_API_KEY"],
+)
+```
+
+</Tab>
+<Tab>
+
+When hitting the API directly, an http client is usually configured with the base URL and API key.
+The exact client depends on the language and libraries that are used.
+
+Simply make sure that:
+- the base URL points to `{{API_URL}}`. The full completion URL should look like `{{API_URL}}/v1/chat/completions`
+- the Authorization header looks like `Authorization: Bearer aai-***` where `aai-***` is the AnotherAI API key
+
+</Tab>
+</Tabs>
+
+You can tell whether or not the agent uses a deployment by checking the model in the OpenAI completion call.
+
+Any model with the format `<agent_id>/#<a number>/<environment, e-g:production|staging|dev>` is a WorkflowAI deployment.
+
+<Tabs items={['Node (OpenAI SDK)', 'API']}>
+<Tab>
+
+```typescript
+// This is a WorkflowAI deployment
+const completion = await client.chat.completions.create({
+    model: "travel-assistant/#1/production",
+});
+
+// This is not a WorkflowAI deployment
+const completion = await client.chat.completions.create({
+    model: "gpt-4o",
+});
+```
+
+</Tab>
+<Tab>
+
+Uses deployments:
+
+```sh
+POST {{API_URL}}/v1/chat/completions
+Authorization: Bearer aai-***
+Content-Type: application/json
+{
+    "model": "travel-assistant/#1/production",
+    # messages are optional here
+    ...
+}
+```
+
+Does not use deployments, calls a model directly
+```sh
+POST {{API_URL}}/v1/chat/completions
+Authorization: Bearer aai-***
+Content-Type: application/json
+{
+    "model": "gpt-4o",
+    # messages are required here
+    ...
+}
+```
+</Tab>
+</Tabs>
+
+If the agent uses a model directly, there is nothing to do. Changing the OpenAI client config will be enough.
+If the agent uses a deployment, you will need to adjust the `deployment_id` to match the imported one, don't forget to prefix it with `anotherai/deployment/`.
+
+## What Is a Deployment?
+
+A deployment is a way to refer to a _Version_ via an alias so that you can make changes to your agent without having to make changes to the codebase (there are some exceptions which we'll cover later).
+
+Following with the [example above](#understanding-versions-and-input), if we deploy the associated version with the alias `travel-assistant/production#1`, we can use it in the codebase like this:
+
+<Tabs items={["OpenAI SDK (JS)"]}>
+<Tab>
+```js
+const completion = await openai.chat.completions.create({
+    model: "anotherai/deployment/travel-assistant:production#1",
+    messages: [
+        { role: "user", content: "Any customs I should be mindful about at the dinner table ?" },
+    ],
+    input: {
+        country: "France",
+        language: "English",
+    }
+});
+```
+</Tab>
+</Tabs>
+
+When AnotherAI receives the request, it retrieves the _Version_ using the alias (`travel-assistant/production#1`), follow the steps described [above](#compiling-a-completion-call-from-a-version-and-input) before sending the request to the provider.
+
+<Accordions>
+<Accordion title="Understanding versions and input in the context of deployments">
+
+To understand deployments, it is important to understand how AnotherAI separates the static (_Version_) and dynamic (_Input_) portions of the completion call, and how AnotherAI re-creates the completion call from a _Version_ and _Input_.
+
+### Separating version and input
+
+The rules for separating the _Version_ and _Input_ are simple:
+
+- All completion parameters (model, temperature, etc.) besides `messages` are part of the _Version_
+- All messages up to the last message containing a templated content is part of the _Version_ (`version.prompt`)
+- If no message contains a templated content and if the first message is a system message, the first system message is part of the _Version_
+
+The input contains the rest:
+
+- the input variables
+- the messages that are not part of the _Version_
+
+For example, in the following code:
+
+- The version contains the first system message but not the user message since the user message does not contain a templated content.
+- The input contains the user message and the input variables.
+
+<Tabs items={["OpenAI SDK (JS)"]}>
+<Tab>
+```js
+const completion = await openai.chat.completions.create({
+  model: "gpt-4o",
+  messages: [
+        {
+            "role": "system",
+            // Using a template here instead of a string format to allow separating a static system message template and 
+            // input variables.
+            "content": `You are an expert on {{ country }}. You are helping a customer traveling to {{ country }}. Answer questions in {{ language }}.`
+        },
+        { role: "user", content: "Any customs I should be mindful about at the dinner table ?" },
+    ],
+    temperature: 0.5,
+    //   Input variables
+    input: {
+        country: "France",
+        language: "English",
+    }
+    agent_id: "travel-assistant"
+});
+```
+</Tab>
+</Tabs>
+
+### Compiling a completion call from a version and input
+
+Most providers API only accept a list of messages as input so AnotherAI needs to compile the completion call from the _Version_ and _Input_.
+
+Building the message list is done in two steps:
+
+- 1. The message templates that belong to the _Version_ are rendered using the input variables.
+- 2. The messages that belong to the _Input_ are added to the message list.
+
+{/* TODO: example here, a bit difficult since we don't refer to versions directly and we would need to refer to a deployment */}
+
+### Response format and variables schema
+
+A Version also refers to a specific response format and set of variables. That's because both are usually tightly linked to the prompt itself:
+
+- the system message often refers to specific fields in the response format
+- if the prompt is templated, it directly refers to a set of input variables
+
+{/* TODO: we need to introduce the concept of schemas somewhere since they are tied to versions. Not sure if here is the best place. */}
+
+</Accordion>
+</Accordions>
+
+## Why Use Deployments?
+
+At heart, deployments are simply a way to manage some completion parameters that would traditionally be committed and deployed with the codebase. With the speed at which LLMs are evolving, re-deploying code any time a prompt needs to be adjusted or a model needs to be changed is not sustainable.
+
+The flow is simple:
+
+<Steps>
+  <Step>
+    Create completions via the API or the playground mcp tool. AnotherAI will separate the completion parameters into
+    the static components (aka Version) and the dynamic components (aka Input).
+  </Step>
+  <Step>Once you are happy with a set of parameters, create a deployment via the MCP tool.</Step>
+  <Step>Update your code to point to the deployed version and remove the hardcoded parameters.</Step>
+</Steps>
+
+In other words, change:
+
+<Tabs items={["OpenAI SDK (JS)"]}>
+<Tab>
+```js
+const completion = await openai.chat.completions.create({
+  model: "gpt-4o",
+  messages: [
+        {
+            "role": "system",
+            // Using a template here instead of a string format to allow separating a static system message template and 
+            // input variables.
+            "content": `You are an expert on {{ country }}. You are helping a customer traveling to {{ country }}. Answer questions in {{ language }}.`
+        },
+        { role: "user", content: "Any customs I should be mindful about at the dinner table ?" },
+    ],
+    temperature: 0.5,
+    //   Input variables
+    input: {
+        country: "France",
+        language: "English",
+    }
+    agent_id: "travel-assistant"
+});
+```
+
+to:
+
+```js
+const completion = await openai.chat.completions.create({
+  // model and temperature are stored in the deployment
+  model: "anotherai/deployment/travel-assistant:production#1",
+  messages: [
+    // System message template is stored in the deployment
+    // User message is dynamic here so it is not stored in the deployment
+    { role: "user", content: "Any customs I should be mindful about at the dinner table ?" },
+  ],
+  input: {
+    country: "France",
+    language: "English",
+  },
+  // agent_id is stored in the deployment
+});
+```
+
+</Tab>
+</Tabs>
+
+## Creating a Deployment
+
+<Steps>
+<Step>
+
+### Select and deploy your version
+
+<Tabs items={["From An Experiment", "From Your Code", "From a Completion"]}>
+<Tab>
+If you're using experiments to make improvements to your agent, you can always deploy the updated version of your agent from the experiments web view
+
+1. Locate the experiment that has the version of the agent you want to deploy.
+2. Hover over the version number to copy the version ID
+
+![Deploy Version](/images/deploy-version-popup.png)
+
+3. Open Claude Code (or your preferred AI coding agent)
+4. Request deployment to your preferred environment:
+
+```
+I want to deploy anotherai/version/acf2635be31cbd89f9363bfd3b2c6abc to production.
+```
+
+[IMAGE TODO: SCREENSHOT OF DEPLOYMENT LIST OR INDIVIDUAL DEPLOYMENTS VIEW??]
+</Tab>
+
+<Tab>
+If you're making changes to your agent in your IDE, you can also just request to have a deployment created directly, without opening the web app.
+
+1. Ensure your code is already using the AnotherAI SDK with an `agent_id`
+2. Tell Claude (or your AI coding agent) to deploy your agent:
+
+```
+Deploy the version of my anotherai/agent/travel-assistant that uses GPT-5 to production
+```
+
+Claude will create a version ID for you and deploy it.
+
+<Callout type="tip">
+We recommend using the naming convention `<agent-id>/<environment>#<number>` (e.g., `travel-assistant/production#1`).
+</Callout>
+
+</Tab>
+
+<Tab>
+If you find a version via the completions view on the web app, you can also deploy it directly from there.
+
+1. Open the detail view of the completion using the version you want to deploy
+2. Copy the version ID (located on the right side of the modal)
+
+![Completion Version Details](/images/completion-version-details.png)
+
+3. Paste the version ID into Claude Code (or your preferred AI coding agent) and ask it to deploy:
+
+```
+I want to deploy fc1ddfbb1cf220716ab7c999b3c89020 to production.
+```
+
+</Tab>
+</Tabs>
+
+#### Common environment names
+
+- `dev` - for development testing
+- `staging` - for pre-production validation
+- `production` or `prod` - for live production use
+
+When deployed, these environments are combined with your agent name:
+
+- `travel-assistant/dev#1`
+- `calendar-assistant/staging#2`
+- `customer-support/production#1`
+
+Optionally, you can request a specific name be used for the deployment. Otherwise, your AI coding agent will pick one for you automatically:
+
+```
+I want to deploy anotherai/version/a9f1fc5ab11299a9fee5604e51fe7b6e to production.
+Name the deployment: "calendar-assistant/production-9-2"
+```
+
+</Step>
+<Step>
+
+### Update your code
+
+Once the deployment is created, ask Claude to update your code to use the new deployment.
+
+```
+Update my agent code to use the new deployment travel-assistant/production#1
+```
+
+Claude will update your code to use the deployment reference, removing the static components that are now stored in the deployment.
+
+**Before:**
+
+<Tabs items={["OpenAI SDK (JS)", "OpenAI SDK (Python)"]}>
+<Tab>
+```js
+const completion = await openai.chat.completions.create({
+  model: "gpt-4o",
+  messages: [
+    {
+      role: "system",
+      content: `You are an expert travel assistant specializing in {{ country }}.
+
+Key responsibilities:
+
+- Provide accurate information about {{ country }} including culture, customs, and travel tips
+- Consider the traveler's budget level: {{ budget_level }}
+- Recommend activities and restaurants appropriate for their interests and budget
+
+Always be helpful, accurate, and culturally sensitive.`
+}
+],
+temperature: 0.7,
+// Input variables
+input: {
+country: destination,
+budget_level: travelerBudget
+},
+agent_id: "travel-assistant"
+});
+
+````
+</Tab>
+<Tab>
+```python
+completion = await openai.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {
+            "role": "system",
+            "content": """You are an expert travel assistant specializing in {{ country }}.
+
+Key responsibilities:
+- Provide accurate information about {{ country }} including culture, customs, and travel tips
+- Consider the traveler's budget level: {{ budget_level }}
+- Recommend activities and restaurants appropriate for their interests and budget
+
+Always be helpful, accurate, and culturally sensitive."""
+        }
+    ],
+    temperature=0.7,
+    extra_body={
+        "input": {
+            "country": destination,
+            "budget_level": traveler_budget
+        },
+        "agent_id": "travel-assistant"
+    }
+)
+````
+
+</Tab>
+</Tabs>
+
+**After:**
+
+<Tabs items={["OpenAI SDK (JS)", "OpenAI SDK (Python)"]}>
+<Tab>
+```js
+const completion = await openai.chat.completions.create({
+  // Static components are now stored in the deployment
+  model: "anotherai/deployment/travel-assistant:production#1",
+  messages: [],
+  input: {
+    country: destination,
+    budget_level: travelerBudget
+  }
+});
+```
+</Tab>
+<Tab>
+```python
+completion = await openai.chat.completions.create(
+    # Model, temperature, system message, and agent_id are now in the deployment
+    model="anotherai/deployment/travel-assistant:production#1",
+    messages=[],
+    extra_body={
+        "input": {
+            "country": destination,
+            "budget_level": traveler_budget
+        }
+    }
+)
+```
+</Tab>
+</Tabs>
+
+</Step>
+</Steps>
+
+## Updating Existing Deployments
+
+When you want to deploy and use a new version of your agent, depending on the scope of the changes, you may be able to update an existing deployment instead of creating a new one.
+
+#### Benefits of updating an existing deployment
+
+Updating an existing deployment does not require any code changes. Because no code changes are required, updating an existing deployment is generally much faster than creating and releasing a new deployment.
+
+<Callout type="info">
+  To prevent unwanted deployments that could negatively impact your production environment, your coding agent will
+  require you to confirm all deployment updates using the web app.
+</Callout>
+
+### What updates can be made to an existing deployment?
+
+You can update an existing deployment if the new version is considered a non-breaking change.
+
+<Accordions type="single" defaultValue="non-breaking-changes">
+<Accordion title="Non-breaking Changes Examples" id="non-breaking-changes">
+
+- Changing the model
+- Adjusting temperature or other generation parameters
+- Editing prompt wording while keeping the same variables
+
+</Accordion>
+</Accordions>
+
+### How to update an existing deployment
+
+When your changes don't affect the input variables or output schema, you can update the existing deployment:
+
+<Steps>
+<Step>
+Copy the new version ID you want to deploy from [AnotherAI](https://anotherai.dev).
+
+[IMAGE TODO: SCREENSHOT OF WHERE A VERSION IS LOCATED IN THE WEB APP]
+</Step>
+
+<Step>
+  Ask Claude to update the existing deployment: 
+  ``` 
+  Update deployment travel-assistant/production#1 to use
+  anotherai/version/a9f1fc5ab11299a9fee5604e51fe7b6e 
+  ```
+</Step>
+
+<Step>
+Confirm the update in the AnotherAI web app when prompted.
+[IMAGE TODO: SCREENSHOT OF DEPLOYMENT UPDATE CONFIRMATION IN THE WEB APP]
+</Step>
+
+<Step>
+That's it! **No code changes needed** - your application automatically uses the updated version.
+</Step>
+</Steps>
+
+### When do I _have to_ create a new deployment instead of updating an existing one?
+
+Creating a new deployment is required when the changes you are making are considered breaking changes.
+
+<Accordions type="single" defaultValue="breaking-changes">
+<Accordion title="Breaking Changes Examples" id="breaking-changes">
+
+- Editing the input variables
+  - Adding a new variable
+  - Removing a variable
+  - Changing the name or the type of an existing variable
+- Editing the output schema
+  - Adding a new field
+  - Removing a field
+  - Changing the name or the type of an existing field
+
+</Accordion>
+</Accordions>
+
+When a new deployment is created, you will need to update your code to point to the new deployment.
+
+**Example: Updating code for a new deployment**
+
+<Tabs items={["OpenAI SDK (JS)"]}>
+<Tab>
+```js
+// Before - using old deployment
+const completion = await openai.chat.completions.create({
+    model: "anotherai/deployment/travel-assistant:production#1",
+    input: {
+        country: "France"
+    }
+});
+
+// After - using new deployment with breaking changes
+const completion = await openai.chat.completions.create({
+model: "anotherai/deployment/travel-assistant:production#2", // new deployment
+input: {
+destination: "France", // variable renamed: country -> destination
+traveler_type: "business" // new required variable added
+}
+});
+
+````
+</Tab>
+</Tabs>
+
+<Callout type="success">
+Don't worry if you're unsure if an update version is a breaking change or not: if you ask
+Claude to update an existing deployment and it cannot because the new version is incompatible, Claude will automatically create a new deployment for you. You can create as many deployments as you need.
+</Callout>
+
+## Reconciling Code and Deployments
+
+The code allows targeting a deployment but still provide completion parameters. For example, one could write:
+
+<Tabs items={["OpenAI SDK (JS)"]}>
+<Tab>
+```js
+const completion = await openai.chat.completions.create({
+    model: "anotherai/deployment/travel-assistant:production#1",
+    input: {
+        country: "France"
+    }
+    temperature: 0.5, // temperature might be different from the deployment
+});
+
+````
+
+</Tab>
+</Tabs>
+
+In the above example, we need to decide which temperature should be used, the one from the deployment or the one from the code.
+
+We believe that code should be the source of truth which means that in the above case the temperature should be the one from the code. The reconciliation between code and deployments follows the following rules:
+
+- any provided completion parameter can override the corresponding deployment parameter
+- if the override creates a version that is incompatible with the deployment an error is raised.
+
+Consider a deployment `travel-assistant/production#1` created with:
+
+- model: "gpt-4o"
+- temperature: 0.5
+- variables: `country: string`
+
+<Tabs items={["OpenAI SDK (JS)"]}>
+<Tab>
+```js
+// Accepted since the version is compatible with the deployment
+const completion = await openai.chat.completions.create({
+    model: "anotherai/deployment/travel-assistant:production#1",
+    input: {
+        country: "France"
+    }
+    temperature: 1, // temperature 1 is used
+    tools: [...] // tools are used
+});
+
+// Rejected since the version is incompatible with the deployment
+const completion = await openai.chat.completions.create({
+model: "anotherai/deployment/travel-assistant:production#1",
+input: {
+country: "France"
+}
+response_format: {
+type: "json_schema",
+json_schema: ... // response format is incompatible with the deployment
+}
+});
+
+```
+</Tab>
+</Tabs>
+
+## Setting up Workflows
+
+You can use agent metadata to add the key value pairs you'd like to connect agents as workflows.
+
+We recommend using these metadata fields for workflows:
+- `trace_id`: A generated UUID that uniquely identifies each workflow execution
+- `workflow_name`: A string that identifies the type of workflow being executed
+
+Here's the process of setting metadata for workflow tracking:
+
+<Tabs items={['Python', 'TypeScript', 'curl']}>
+<Tab value="Python">
+```python
+import uuid
+
+# 1. Set workflow identifiers
+trace_id = str(uuid.uuid7())  # Unique identifier for this workflow instance (time-ordered)
+workflow_name = "meeting-analysis"  # Type of workflow being executed
+
+# 2. Add the metadata when making agent calls
+response = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "system", "content": "Summarize this meeting transcript"}],
+    metadata={
+        "trace_id": trace_id,
+        "workflow_name": workflow_name,
+        "agent_id": "meeting-summarizer"
+    }
+)
+```
+</Tab>
+<Tab value="TypeScript">
+```typescript
+import { v7 as uuidv7 } from 'uuid';
+
+// 1. Set workflow identifiers
+const traceId = uuidv7();  // Unique identifier for this workflow instance (time-ordered)
+const workflowName = 'meeting-analysis';  // Type of workflow being executed
+
+// 2. Add the metadata when making agent calls
+const response = await client.chat.completions.create({
+  model: 'gpt-4o-mini',
+  messages: [{role: 'system', content: 'Summarize this meeting transcript'}],
+  metadata: {
+    trace_id: traceId,
+    workflow_name: workflowName,
+    agent_id: 'meeting-summarizer'
+  }
+});
+```
+</Tab>
+<Tab value="curl">
+```bash
+# Set workflow identifiers
+TRACE_ID=$(python3 -c "import uuid; print(uuid.uuid7())")  # Unique identifier for this workflow instance
+WORKFLOW_NAME="meeting-analysis"  # Type of workflow being executed
+
+# Agent call with workflow metadata
+curl -X POST {{API_URL}}/v1/chat/completions \
+  -H "Authorization: Bearer aai-***" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o-mini",
+    "messages": [{"role": "system", "content": "Summarize this meeting transcript"}],
+    "metadata": {
+      "trace_id": "'$TRACE_ID'",
+      "workflow_name": "'$WORKFLOW_NAME'",
+      "agent_id": "meeting-summarizer"
+    }
+  }'
+```
+</Tab>
+</Tabs>
+
+Then set the same `trace_id` value across all agents in your workflow:
+
+<Tabs items={['Python', 'TypeScript', 'curl']}>
+<Tab value="Python">
+```python
+import uuid
+
+# Example workflow script showing consistent trace_id and workflow_name usage
+trace_id = str(uuid.uuid7())  # Generate once per workflow instance
+workflow_name = "meeting-analysis"  # Same for all agents in this workflow type
+
+# Agent 1: Document processor
+response1 = client.chat.completions.create(
+    model="gpt-4o-mini", 
+    messages=[{"role": "system", "content": "Summarize this meeting transcript"}],
+    metadata={
+        "trace_id": trace_id, 
+        "workflow_name": workflow_name,
+        "agent_id": "meeting-summarizer"
+    }
+)
+
+# Agent 2: Content analyzer (same trace_id and workflow_name)
+response2 = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "system", "content": "Extract todos from this meeting transcript"}], 
+    metadata={
+        "trace_id": trace_id, 
+        "workflow_name": workflow_name,
+        "agent_id": "meeting-todo-extractor"
+    }
+)
+```
+</Tab>
+
+<Tab value="TypeScript">
+```typescript
+import { v7 as uuidv7 } from 'uuid';
+
+// Example workflow script showing consistent trace_id and workflow_name usage
+const traceId = uuidv7();  // Generate once per workflow instance
+const workflowName = 'meeting-analysis';  // Same for all agents in this workflow type
+
+// Agent 1: Document processor
+const response1 = await client.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [{role: 'system', content: 'Summarize this meeting transcript'}],
+    metadata: {
+        trace_id: traceId,
+        workflow_name: workflowName,
+        agent_id: 'meeting-summarizer'
+    }
+});
+
+// Agent 2: Content analyzer (same trace_id and workflow_name)
+const response2 = await client.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [{role: 'system', content: 'Extract todos from this meeting transcript'}],
+    metadata: {
+        trace_id: traceId,
+        workflow_name: workflowName,
+        agent_id: 'meeting-todo-extractor'
+    }
+});
+```
+</Tab>
+
+<Tab value="curl">
+```bash
+# Example workflow script showing consistent trace_id and workflow_name usage
+TRACE_ID=$(python3 -c "import uuid; print(uuid.uuid7())")  # Generate once per workflow instance
+WORKFLOW_NAME="meeting-analysis"  # Same for all agents in this workflow type
+
+# Agent 1: Document processor
+curl -X POST {{API_URL}}/v1/chat/completions \
+  -H "Authorization: Bearer aai-***" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o-mini",
+    "messages": [{"role": "system", "content": "Summarize this meeting transcript"}],
+    "metadata": {
+      "trace_id": "'$TRACE_ID'",
+      "workflow_name": "'$WORKFLOW_NAME'",
+      "agent_id": "meeting-summarizer"
+    }
+  }'
+
+# Agent 2: Content analyzer (same trace_id and workflow_name)
+curl -X POST {{API_URL}}/v1/chat/completions \
+  -H "Authorization: Bearer aai-***" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o-mini",
+    "messages": [{"role": "system", "content": "Extract todos from this meeting transcript"}],
+    "metadata": {
+      "trace_id": "'$TRACE_ID'",
+      "workflow_name": "'$WORKFLOW_NAME'",
+      "agent_id": "meeting-todo-extractor"
+    }
+  }'
+```
+</Tab>
+</Tabs>
+
+## Monitoring Workflows
+
+Once you have your agents running with shared metadata, you can create custom views to monitor and analyze the workflows.
+Here are some examples of views that could be useful:
+
+### General workflow monitoring
+
+To see all completions across all agents in the workflow. 
+
+You can ask Claude to create a custom view, like this:
+
+```
+Show me all the completions for the workflow 'meeting-analysis', ordered by trace_id, created_at 
+so I can see each workflow instance with its agents in chronological order.
+```
+
+[IMAGE TODO: SCREENSHOT OF VIEW CREATED FROM THIS PROMPT]
+
+### Workflow performance analytics
+
+See daily cost for a specific workflow across all agents involved.
+
+```
+Create a graph showing daily cost for workflow_name='meeting-analysis'
+```
+[IMAGE TODO: SCREENSHOT OF VIEW CREATED FROM THIS PROMPT]

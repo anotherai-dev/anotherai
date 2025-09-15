@@ -7,7 +7,7 @@ description: How to reduce agent costs while maintaining quality
 import { Steps, Step } from 'fumadocs-ui/components/steps';
 import { Callout } from 'fumadocs-ui/components/callout';
 
-Suppose you have an agent that is working well, but is used in your product very often and racking up costs. With AnotherAI you have instant access to 100+ different models, so you can easily explore if there is a cheaper model that can deliver the same quality at a fraction of the cost.
+Suppose you have an agent that is working well, but is used in your product very often and racking up costs. With AnotherAI your AI coding agent gets instant access to 100+ different models, so it can help you find a cheaper model that can deliver the same quality at a fraction of the cost.
 
 ### Finding a cost-effective model
 
@@ -16,7 +16,7 @@ Suppose you have an agent that is working well, but is used in your product very
 Ask Claude to create an experiment comparing your current model against cheaper alternatives
 
 ```
-Help me find the most cost effeective model to use on @calendar_event_extractor.py. 
+Help me find the most cost effeective model to use on anotherai/agent/calendar-event-extractor. 
 Compare the cheaper models with my current model to assess the cost difference and 
 quality drop.
 ```
@@ -25,7 +25,7 @@ quality drop.
 If you want to be sure to test with real data, you can modify your prompt to include that instruction
 
 ```
-Help me find the most cost effeective model to use on @calendar_event_extractor.py. 
+Help me find the most cost effeective model to use on anotherai/agent/calendar-event-extractor. 
 Compare the cheaper models with my current model to assess the cost difference and 
 quality drop. Use the inputs from the last 50 production completions.
 ```
@@ -33,7 +33,7 @@ quality drop. Use the inputs from the last 50 production completions.
 Alternatively, if you have a dataset of standard test inputs you like to use to validate changes, you can modify your prompt to include that instruction:
 
 ```
-Help me find the most cost effeective model to use on @calendar_event_extractor.py. 
+Help me find the most cost effeective model to use on anotherai/agent/calendar-event-extractor. 
 Compare the cheaper models with my current model to assess the cost difference and 
 quality drop. Use the inputs from @email_test_cases.txt
 ```
