@@ -14,6 +14,7 @@ interface CompletionsGraphProps {
   error: Error | null;
   graph: Graph;
   title?: string;
+  showBorder?: boolean;
 }
 
 // Generate series configuration from Y axes with golden angle color distribution
@@ -26,7 +27,7 @@ function createSeriesFromYAxes(yAxes: YAxis[]) {
   }));
 }
 
-export function CompletionsGraph({ data, isLoading, error, graph }: CompletionsGraphProps) {
+export function CompletionsGraph({ data, isLoading, error, graph, showBorder = true }: CompletionsGraphProps) {
   // Memoized and optimized data transformation using utils function
   const chartData = useMemo(() => {
     return transformDataForCompletionsGraph({ data, graph });
@@ -34,7 +35,7 @@ export function CompletionsGraph({ data, isLoading, error, graph }: CompletionsG
 
   if (isLoading) {
     return (
-      <div className="bg-white border border-gray-200 rounded-[2px] flex flex-col p-6">
+      <div className={`bg-white ${showBorder ? "border border-gray-200" : ""} rounded-[2px] flex flex-col p-6`}>
         <div className="animate-pulse">
           <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
           <div className="h-64 bg-gray-100 rounded"></div>
@@ -45,7 +46,7 @@ export function CompletionsGraph({ data, isLoading, error, graph }: CompletionsG
 
   if (error) {
     return (
-      <div className="bg-white border border-gray-200 rounded-[2px] flex flex-col p-6">
+      <div className={`bg-white ${showBorder ? "border border-gray-200" : ""} rounded-[2px] flex flex-col p-6`}>
         <div className="text-red-600 text-center">
           <p className="font-semibold">Error loading chart</p>
           <p className="text-sm mt-2">{error?.error || "Unknown error"}</p>
@@ -122,5 +123,9 @@ export function CompletionsGraph({ data, isLoading, error, graph }: CompletionsG
     }
   };
 
-  return <div className="bg-white border border-gray-200 rounded-[2px] flex flex-col pt-6">{renderChart()}</div>;
+  return (
+    <div className={`bg-white ${showBorder ? "border border-gray-200" : ""} rounded-[2px] flex flex-col pt-6`}>
+      {renderChart()}
+    </div>
+  );
 }

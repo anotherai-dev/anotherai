@@ -180,7 +180,7 @@ export function UniversalLineChart({
 
   // Initialize global canvas on first use
   useEffect(() => {
-    if (!globalCanvas) {
+    if (!globalCanvas && typeof document !== "undefined") {
       globalCanvas = document.createElement("canvas");
     }
   }, []);
