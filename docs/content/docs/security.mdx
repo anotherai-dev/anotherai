@@ -13,7 +13,8 @@ The SQL query tool in AnotherAI provides powerful observability capabilities whi
 Our SQL query security is built on [ClickHouse's robust access control system](https://clickhouse.com/docs/operations/access-rights):
 
 - **Read-only access**: All SQL queries are executed with [read-only permissions](https://clickhouse.com/docs/operations/settings/permissions-for-queries), preventing any data modification, deletion, or schema changes
-- **Role-based access control (RBAC)**: Each customer operates within isolated security contexts using ClickHouse's role-based permission system
+- **Tenant Isolation**: Each customer operates within isolated security contexts using a dedicated ClickHouse's user with strict role-based permissions
+- **Resource limitations**: Each query is limited in CPU and memory usage to prevent starvation of resources
 - **Query validation**: All queries are validated before execution to ensure they comply with security policies
 
 ### Security Guarantees
@@ -30,6 +31,7 @@ Our SQL query security is built on [ClickHouse's robust access control system](h
 - Alter database schemas or tables
 - Execute system-level commands
 - Bypass row-level security policies
+- Execute queries that would require too much resources
 
 ### Data Isolation
 
