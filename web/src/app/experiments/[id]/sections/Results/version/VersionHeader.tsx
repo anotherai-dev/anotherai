@@ -10,6 +10,7 @@ import {
 } from "@/components/utils/utils";
 import { VersionDetailsView } from "@/components/version-details/VersionDetailsView";
 import { Annotation, ExperimentWithLookups, Message, Version } from "@/types/models";
+import { HeaderMatchingSection } from "../../matching/HeaderMatchingSection";
 import { VersionHeaderMetrics } from "./VersionHeaderMetrics";
 import { VersionHeaderModel } from "./VersionHeaderModel";
 import { VersionHeaderPriceAndLatency } from "./VersionHeaderPriceAndLatency";
@@ -17,7 +18,6 @@ import { VersionHeaderPrompt } from "./VersionHeaderPrompt";
 import { VersionHeaderSchema } from "./VersionHeaderSchema";
 import { VersionHeaderSharedPromptAndSchema } from "./VersionHeaderSharedPromptAndSchema";
 import { VersionOptionalKeysView } from "./VersionOptionalKeysView";
-import { HeaderMatchingSection } from "../../matching/HeaderMatchingSection";
 
 type VersionHeaderProps = {
   version: Version;
@@ -219,11 +219,7 @@ export function VersionHeader(props: VersionHeaderProps) {
 
         {experiment && (
           <div className="mt-3">
-            <HeaderMatchingSection
-              experiment={experiment}
-              annotations={annotations}
-              experimentId={experimentId}
-            />
+            <HeaderMatchingSection experiment={experiment} annotations={annotations} experimentId={experimentId} />
           </div>
         )}
       </div>
