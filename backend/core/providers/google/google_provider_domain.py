@@ -586,8 +586,9 @@ class StreamedResponse(BaseModel):
             return ParsedResponse(usage=usage)
 
         candidate = self.candidates[0]
+        finish_reason = candidate.parsed_finish_reason()
         if not candidate.content:
-            return ParsedResponse(usage=usage)
+            return ParsedResponse(usage=usage, finish_reason=finish_reason)
 
         thoughts = ""
         response = ""
@@ -609,7 +610,13 @@ class StreamedResponse(BaseModel):
                     ),
                 )
 
-        return ParsedResponse(usage=usage)
+        return ParsedResponse(
+            usage=usage,
+            reasoning=thoughts,
+            delta=response,
+            tool_call_requests=native_tool_calls,
+            finish_reason=finish_reason,
+        )
 
 
 class PromptFeedback(BaseModel):

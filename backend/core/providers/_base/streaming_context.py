@@ -68,6 +68,9 @@ class ParsedResponse(NamedTuple):
     # TODO: we could pass final here since we usually know
     # This would avoid an extra streamed chunk
 
+    def is_empty(self) -> bool:
+        return all(v is None for v in self)
+
 
 class StreamingContext:
     def __init__(self, raw_completion: RawCompletion):
