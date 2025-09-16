@@ -223,7 +223,7 @@ class ClickhouseClient(CompletionStorage):
         input_id: str,
         max_memory_usage: int = 1024 * 1024 * 5,  # 5MB
         max_execution_time: float = 0.1,  # 100ms
-    ) -> AgentOutput | None:
+    ):
         result = await self._client.query(
             _CACHED_OUTPUT_QUERY,
             parameters={"version_id": version_id, "input_id": input_id},
@@ -234,12 +234,13 @@ class ClickhouseClient(CompletionStorage):
         )
         if not result.result_rows:
             return None
-        messages = parse_messages(result.result_rows[0][0])
-        return AgentOutput(messages=messages)
+        row = result.result_rows[0]
+        messages = parse_messages(row[1])
+        return str(row[0]), AgentOutput(messages=messages)
 
 
 _CACHED_OUTPUT_QUERY = """
-SELECT output_messages FROM completions PREWHERE input_id = {input_id:FixedString(32)} WHERE version_id = {version_id:FixedString(32)} and output_error = '' LIMIT 1
+SELECT id, output_messages FROM completions PREWHERE input_id = {input_id:FixedString(32)} WHERE version_id = {version_id:FixedString(32)} and output_error = '' LIMIT 1
 """
 
 
