@@ -165,3 +165,7 @@ class StreamingContext:
             delta=None,
             final_chunk=self._runner_output,
         )
+
+    @property
+    def usage(self) -> LLMUsage:
+        return self._usage

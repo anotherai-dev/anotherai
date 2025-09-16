@@ -220,6 +220,7 @@ class HTTPXProvider[ProviderConfigVar: ProviderConfigInterface, ResponseModel: B
             if streaming_context:
                 # TODO: this is no longer used. We should remove it
                 raw_completion.response = streaming_context.aggregated_output()
+                raw_completion.usage = streaming_context.usage
 
         with self._wrap_errors(options=options, raw_completion=raw_completion, finally_block=_finally):
             url = self._request_url(model=options.model, stream=True)

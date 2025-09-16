@@ -338,9 +338,9 @@ class StreamedResponse(BaseModel):
 
             def to_domain(self, idx: int) -> ToolCallRequestDelta:
                 return ToolCallRequestDelta(
-                    id="",
+                    id=self.toolUseId,
                     idx=idx,
-                    tool_name="",
+                    tool_name=self.name,
                     arguments="",
                 )
 
