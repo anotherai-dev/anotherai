@@ -15,7 +15,7 @@ function InfoRow({ title, value, onClick }: InfoRowProps) {
     >
       <div className="flex justify-between items-center">
         <span className="text-xs font-medium text-gray-700">{title}</span>
-        <span className="text-xs text-gray-900">{value}</span>
+        <span className="text-xs text-gray-900 text-right">{value}</span>
       </div>
     </div>
   );
