@@ -1,8 +1,15 @@
-import { getVersionKeyDisplayName } from "@/components/utils/utils";
+import { useMemo } from "react";
+import {
+  createOutputSchemaFromJSON,
+  getVersionKeyDisplayName,
+  isJSONSchema,
+  parseJSONValue,
+} from "@/components/utils/utils";
 import { Annotation, ExtendedVersion, Message, OutputSchema, Tool } from "@/types/models";
 import { VersionPromptSection } from "../Results/version/VersionPromptSection";
 import { VersionSchemaSection } from "../Results/version/VersionSchemaSection";
 import { MatchingBaseValue } from "./MatchingBaseValue";
+import { MatchingJSONValue } from "./MatchingJSONValue";
 import { MatchingToolValue } from "./MatchingToolValue";
 
 type HeaderMatchingRowProps = {
@@ -26,6 +33,13 @@ export function HeaderMatchingRow({
   const displayName = getVersionKeyDisplayName(keyName);
   // Extract the raw value
   const rawValue = (versionWithDefaults as unknown as Record<string, unknown>)[keyName];
+  const parsedJSON = parseJSONValue(rawValue);
+  const isSchemaDetected = useMemo(() => isJSONSchema(parsedJSON), [parsedJSON]);
+
+  // Memoized OutputSchema creation for JSON schemas
+  const outputSchema = useMemo(() => {
+    return isSchemaDetected ? createOutputSchemaFromJSON(parsedJSON, keyName || "detected-schema") : null;
+  }, [isSchemaDetected, parsedJSON, keyName]);
 
   // Render appropriate component based on key type
   const renderValue = () => {
@@ -65,23 +79,58 @@ export function HeaderMatchingRow({
             position="topRight"
           />
         );
-      default:
-        return (
-          <MatchingBaseValue
-            value={rawValue}
-            annotations={annotations}
-            experimentId={experimentId}
-            completionId={completionId}
-            keyPath={keyName}
-            supportMultiline={true}
-            position="topRight"
-          />
-        );
     }
+
+    // Handle JSON schema detection outside the switch
+    if (outputSchema) {
+      return (
+        <VersionSchemaSection
+          outputSchema={outputSchema}
+          annotations={annotations}
+          experimentId={experimentId}
+          completionId={completionId}
+          prefix={keyName}
+          className="mt-2 space-y-3"
+          agentId={agentId}
+        />
+      );
+    }
+
+    // Default case - Use MatchingJSONValue if JSON is detected, otherwise use MatchingBaseValue
+    if (parsedJSON !== null) {
+      return (
+        <MatchingJSONValue
+          value={rawValue}
+          parsedJSON={parsedJSON}
+          annotations={annotations}
+          experimentId={experimentId}
+          completionId={completionId}
+          keyPath={keyName}
+          position="topRight"
+          containerPadding="pt-1"
+        />
+      );
+    }
+    return (
+      <MatchingBaseValue
+        value={rawValue}
+        annotations={annotations}
+        experimentId={experimentId}
+        completionId={completionId}
+        keyPath={keyName}
+        supportMultiline={true}
+        position="topRight"
+      />
+    );
   };
 
-  // Special layout for prompt and output_schema - keep header style (key above value)
-  if (keyName === "prompt" || keyName === "output_schema") {
+  // Special layout for prompt, output_schema, JSON schemas, and JSON values - keep header style (key above value)
+  if (
+    keyName === "prompt" ||
+    keyName === "output_schema" ||
+    isSchemaDetected ||
+    (parsedJSON !== null && keyName !== "tools")
+  ) {
     return (
       <div className="border-b border-gray-200/60 last:border-b-0 mx-[8px] py-2">
         <div className="pb-1 text-xs font-medium text-gray-600">{displayName}</div>
