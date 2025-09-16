@@ -1,7 +1,7 @@
 import asyncio
 import json
 import time
-from collections.abc import AsyncGenerator, Callable
+from collections.abc import AsyncGenerator
 from typing import Any, override
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -21,15 +21,15 @@ from core.providers._base.llm_usage import LLMUsage
 from core.providers._base.models import RawCompletion
 from core.providers._base.provider_error import FailedGenerationError, ProviderError
 from core.providers._base.provider_options import ProviderOptions
-from core.providers._base.provider_output import ProviderOutput
 from core.providers.factory.local_provider_factory import LocalProviderFactory
 from core.providers.openai.openai_provider import OpenAIProvider
+from core.runners.output_factory import OutputFactory
+from core.runners.runner_output import RunnerOutput, RunnerOutputChunk
 from tests.fake_models import fake_llm_completion
-from tests.utils import mock_aiter
 
 
-def _output_factory(raw: str, partial: bool) -> ProviderOutput:
-    return ProviderOutput(json.loads(raw))
+def _output_factory(raw: str) -> Any:
+    return json.loads(raw)
 
 
 @pytest.mark.parametrize("provider_cls", LocalProviderFactory.PROVIDER_TYPES.values())
@@ -102,12 +102,6 @@ def test_assign_raw_completion():
     AbstractProvider._assign_raw_completion(  # pyright: ignore [reportPrivateUsage]
         raw_completion,
         llm_completion,
-        output=ProviderOutput(
-            output={},
-            tool_calls=[
-                ToolCallRequest(tool_name="test", tool_input_dict={"test": "test"}),
-            ],
-        ),
     )
     assert llm_completion.usage == usage
 
@@ -165,10 +159,10 @@ class _MockedProvider(AbstractProvider[Any, Any]):
     async def _single_complete(
         self,
         request: Any,
-        output_factory: Callable[[str, bool], ProviderOutput],
+        output_factory: OutputFactory,
         raw_completion: RawCompletion,
         options: ProviderOptions,
-    ) -> ProviderOutput:
+    ) -> RunnerOutput:
         return await self.mock._single_complete(request, output_factory, raw_completion, options)
 
     @override
@@ -184,12 +178,11 @@ class _MockedProvider(AbstractProvider[Any, Any]):
     def _single_stream(
         self,
         request: Any,
-        output_factory: Callable[[str, bool], ProviderOutput],
-        partial_output_factory: Callable[[Any], ProviderOutput],
+        output_factory: OutputFactory,
         raw_completion: RawCompletion,
         options: ProviderOptions,
-    ) -> AsyncGenerator[ProviderOutput]:
-        return self.mock._single_stream(request, output_factory, partial_output_factory, raw_completion, options)
+    ) -> AsyncGenerator[RunnerOutputChunk]:
+        return self.mock._single_stream(request, output_factory, raw_completion, options)
 
 
 @pytest.fixture
@@ -252,9 +245,9 @@ class TestComplete:
         # }
 
     async def test_complete_with_tool_calls(self, mocked_provider: _MockedProvider, builder_context: BuilderInterface):
-        mocked_provider.mock._single_complete.return_value = ProviderOutput(
-            output={},
-            tool_calls=[ToolCallRequest(tool_name="test", tool_input_dict={"test": "test"})],
+        mocked_provider.mock._single_complete.return_value = RunnerOutput(
+            agent_output={},
+            tool_call_requests=[ToolCallRequest(tool_name="test", tool_input_dict={"test": "test"})],
         )
         _ = await mocked_provider.complete(
             messages=[],
@@ -278,7 +271,6 @@ class TestStream:
                 messages=[],
                 options=ProviderOptions(model=Model.GPT_4O_2024_05_13, tenant="tenant1"),
                 output_factory=_output_factory,
-                partial_output_factory=ProviderOutput,
             ):
                 pass
 
@@ -301,23 +293,6 @@ class TestStream:
         #     "status": "unknown_provider_error",
         #     "config": "workflowai_0",
         # }
-
-    async def test_stream_with_tool_calls(self, mocked_provider: _MockedProvider, builder_context: BuilderInterface):
-        mocked_provider.mock._single_stream.return_value = mock_aiter(
-            ProviderOutput(
-                output={},
-                tool_calls=[ToolCallRequest(tool_name="test", tool_input_dict={"test": "test"})],
-            ),
-        )
-        async for _ in mocked_provider.stream(
-            messages=[],
-            options=ProviderOptions(model=Model.GPT_4O_2024_05_13),
-            output_factory=_output_factory,
-            partial_output_factory=ProviderOutput,
-        ):
-            pass
-
-        # TODO: make sure messages are set
 
 
 class TestCostComputation:

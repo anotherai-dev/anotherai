@@ -200,7 +200,7 @@ class HTTPXProvider[ProviderConfigVar: ProviderConfigInterface, ResponseModel: B
         return RunnerOutput(
             agent_output=parsed_output,
             reasoning=reasoning,
-            tool_call_requests=native_tools_calls,
+            tool_call_requests=native_tools_calls or None,
         )
 
     def _streaming_context(self, raw_completion: RawCompletion) -> StreamingContext:
@@ -243,8 +243,15 @@ class HTTPXProvider[ProviderConfigVar: ProviderConfigInterface, ResponseModel: B
                 streaming_context = self._streaming_context(raw_completion)
                 async for chunk in self.wrap_sse(response.aiter_bytes()):
                     delta = self._extract_stream_delta(chunk)
-                    parsed = streaming_context.add_chunk(delta)
+                    yield streaming_context.add_chunk(delta)
 
                 # Always yield the final output
                 # This is the output that will be needed to save the run
-                yield streaming_context.complete(output_factory)
+                yield streaming_context.complete(
+                    lambda raw, reasoning, tool_calls: self._build_structured_output(
+                        output_factory,
+                        raw,
+                        reasoning,
+                        tool_calls,
+                    ),
+                )

@@ -147,7 +147,7 @@ def tool_call_delta_from_domain(tool_call: ToolCallRequest):
 def tool_call_delta_from_delta(tool_call: ToolCallRequestDelta):
     return OpenAIProxyToolCallDelta(
         id=tool_call.id,
-        index=tool_call.idx,
+        index=tool_call.idx or 0,
         function=function_call_from_delta(tool_call),
     )
 

@@ -1,5 +1,6 @@
+import json
 from collections.abc import Callable
-from typing import Any, NamedTuple
+from typing import NamedTuple
 
 from pydantic import BaseModel, Field
 
@@ -13,9 +14,49 @@ from core.runners.runner_output import RunnerOutput, RunnerOutputChunk, ToolCall
 
 class _ToolCallRequestBuffer(BaseModel):
     id: str | None = None
-    idx: int | None = None
+    idx: int
     tool_name: str | None = None
     tool_input: list[str] = Field(default_factory=list)
+
+    def should_handle_delta(self, delta: ToolCallRequestDelta) -> bool:
+        if delta.idx is not None:
+            return delta.idx == self.idx
+        if delta.id:
+            return delta.id == self.id
+        if delta.tool_name:
+            return delta.tool_name == self.tool_name
+        return True
+
+    def add_delta(self, delta: ToolCallRequestDelta):
+        self.tool_input.append(delta.arguments)
+
+    @classmethod
+    def from_delta(cls, delta: ToolCallRequestDelta, default_idx: int):
+        return cls(
+            id=delta.id,
+            idx=delta.idx or default_idx,
+            tool_name=delta.tool_name,
+            tool_input=[delta.arguments],
+        )
+
+    def to_tool_call(self) -> ToolCallRequest:
+        _final_input = "".join(self.tool_input)
+        try:
+            input_dict = json.loads(_final_input) if _final_input else {}
+        except json.JSONDecodeError as e:
+            raise InvalidGenerationError(
+                msg="Model returned a tool call with unparseable arguments",
+                capture=True,
+                extras={
+                    "arguments": _final_input,
+                },
+            ) from e
+        return ToolCallRequest(
+            index=self.idx,
+            id=self.id or "",
+            tool_name=self.tool_name or "",
+            tool_input_dict=input_dict,
+        )
 
 
 class ParsedResponse(NamedTuple):
@@ -35,11 +76,10 @@ class StreamingContext:
 
         self.raw_completion = raw_completion
 
-        self._tool_call_request_buffer: dict[int, _ToolCallRequestBuffer] = {}
+        self._tool_call_buffers: list[_ToolCallRequestBuffer] = []
         self._last_chunk: ParsedResponse | None = None
 
         self._agg_output: list[str] = []
-        self._agg_tool_calls: list[ToolCallRequest] = []
         self._agg_reasoning: list[str] = []
 
         self._runner_output: RunnerOutput | None = None
@@ -52,8 +92,14 @@ class StreamingContext:
         return self._runner_output
 
     def _add_tool_call_delta(self, chunk: ToolCallRequestDelta):
-        # TODO:
-        pass
+        for b in reversed(self._tool_call_buffers):
+            if b.should_handle_delta(chunk):
+                b.add_delta(chunk)
+                return
+        self._tool_call_buffers.append(_ToolCallRequestBuffer.from_delta(chunk, len(self._tool_call_buffers)))
+
+    def _tool_calls(self) -> list[ToolCallRequest]:
+        return [b.to_tool_call() for b in self._tool_call_buffers]
 
     def aggregated_output(self) -> str:
         return "".join(self._agg_output)
@@ -73,11 +119,11 @@ class StreamingContext:
         if chunk.delta:
             self._agg_output.append(chunk.delta)
 
-        if chunk.finish_reason:
-            self._raise_for_finish_reason(chunk.finish_reason)
-
         if chunk.usage:
             self._apply_usage(chunk.usage)
+
+        if chunk.finish_reason:
+            self._raise_for_finish_reason(chunk.finish_reason)
 
         return RunnerOutputChunk(
             tool_call_requests=self._last_chunk.tool_call_requests,
@@ -107,12 +153,12 @@ class StreamingContext:
                     raw_completion=self.raw_completion,
                 )
 
-    def complete(self, output_factory: Callable[[str], Any]) -> RunnerOutputChunk:
-        self._runner_output = RunnerOutput(
-            agent_output=output_factory("".join(self._agg_output)),
-            reasoning="".join(self._agg_reasoning),
-            tool_call_requests=self._agg_tool_calls,
-        )
+    def complete(
+        self,
+        builder: Callable[[str, str | None, list[ToolCallRequest] | None], RunnerOutput],
+    ) -> RunnerOutputChunk:
+        self._runner_output = builder("".join(self._agg_output), "".join(self._agg_reasoning), self._tool_calls())
+
         return RunnerOutputChunk(
             tool_call_requests=None,
             reasoning=None,
