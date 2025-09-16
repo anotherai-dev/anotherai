@@ -400,6 +400,7 @@ class StreamedResponse(BaseModel):
             else None,
             usage=usage,
             finish_reason=choice.parsed_finish_reason(),
+            reasoning=choice.delta.reasoning_content,
         )
 
 

@@ -213,9 +213,10 @@ class TestSingleStream:
 
         parsed_chunks = [o async for o in raw_chunks]
 
-        assert len(parsed_chunks) == 2
-        assert parsed_chunks[0][0] == {"greeting": "Hello James!"}
-        assert parsed_chunks[1][0] == {"greeting": "Hello James!"}
+        assert len(parsed_chunks) == 4
+        final_chunk = parsed_chunks[-1].final_chunk
+        assert final_chunk is not None
+        assert final_chunk.agent_output == {"greeting": "Hello James!"}
 
         assert len(httpx_mock.get_requests()) == 1
 
@@ -261,9 +262,10 @@ class TestSingleStream:
 
         parsed_chunks = [o async for o in raw_chunks]
 
-        assert len(parsed_chunks) == 2
-        assert parsed_chunks[0][0] == {"answer": "Oh it has 30 words!"}
-        assert parsed_chunks[1][0] == {"answer": "Oh it has 30 words!"}
+        assert len(parsed_chunks) == 4
+        final_chunk = parsed_chunks[-1].final_chunk
+        assert final_chunk is not None
+        assert final_chunk.agent_output == {"answer": "Oh it has 30 words!"}
 
         assert len(httpx_mock.get_requests()) == 1
 
@@ -283,7 +285,7 @@ class TestSingleStream:
 
         reasoning = [c.reasoning for c in chunks]
         assert reasoning[0] == "First"
-        assert reasoning[1] == "First response"
+        assert reasoning[1] == " response"
 
 
 class TestStream:
@@ -314,7 +316,7 @@ class TestStream:
             output_factory=_output_factory,
         )
         chunks = [o async for o in streamer]
-        assert len(chunks) == 2
+        assert len(chunks) == 4
 
         # Not sure why the pyright in the CI reports an error here
         request = httpx_mock.get_requests()[0]
@@ -649,12 +651,11 @@ class TestCheckValid:
 
 class TestExtractStreamDelta:
     def test_extract_stream_delta(self, xai_provider: XAIProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
         delta = xai_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
             b'{"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"gpt-3.5-turbo-1106","system_fingerprint":"fp_44132a4de3","usage": {"prompt_tokens": 35, "completion_tokens": 109, "total_tokens": 144},"choices":[{"index":0,"delta":{"content":"\\"greeting\\": \\"Hello James!\\"\\n}"},"logprobs":null,"finish_reason":null}]}',
         )
         assert delta.delta == '"greeting": "Hello James!"\n}'
-        assert raw_completion.usage == LLMUsage(prompt_token_count=35, completion_token_count=109)
+        assert delta.usage == LLMUsage(prompt_token_count=35, completion_token_count=109)
 
     def test_done(self, xai_provider: XAIProvider):
         delta = xai_provider._extract_stream_delta(b"[DONE]")  # pyright: ignore[reportPrivateUsage]

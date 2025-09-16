@@ -248,7 +248,7 @@ class TestStream:
             output_factory=_output_factory,
         )
         chunks = [chunk async for chunk in streamer]
-        assert len(chunks) == 5
+        assert len(chunks) == 3
 
         # Not sure why the pyright in the CI reports an error here
         request = httpx_mock.get_requests()[0]
