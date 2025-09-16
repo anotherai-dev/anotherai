@@ -8,14 +8,18 @@ from core.domain.exceptions import (
     UnpriceableRunError,
 )
 from core.domain.file import File
+from core.domain.finish_reason import FinishReason
 from core.domain.message import MessageDeprecated
 from core.domain.models import Model
 from core.domain.tool_choice import ToolChoice, ToolChoiceFunction
 from core.providers._base.llm_usage import LLMUsage
 from core.providers._base.provider_error import FailedGenerationError, ModelDoesNotSupportModeError
+from core.providers._base.streaming_context import ParsedResponse
 from core.providers.google.google_provider_domain import (
     internal_tool_name_to_native_tool_call,
+    native_tool_name_to_internal,
 )
+from core.runners.runner_output import ToolCallRequestDelta
 from core.utils.dicts import TwoWayDict
 from core.utils.json_utils import safe_extract_dict_from_json
 from core.utils.token_utils import tokens_from_string
@@ -294,6 +298,11 @@ class _BaseChoice(BaseModel):
     index: int | None = None
     finish_reason: str | None = None
 
+    def parsed_finish_reason(self) -> FinishReason | None:
+        if self.finish_reason == "length":
+            return "max_context"
+        return None
+
 
 class ChoiceMessage(BaseModel):
     role: XAIRole | None = None
@@ -318,6 +327,14 @@ class StreamedToolCall(BaseModel):
     id: str | None = None
     type: Literal["function"] | None = None
     function: StreamedToolCallFunction
+
+    def to_domain(self) -> ToolCallRequestDelta:
+        return ToolCallRequestDelta(
+            id=self.id or "",
+            idx=self.index,
+            tool_name=native_tool_name_to_internal(self.function.name) if self.function.name else "",
+            arguments=self.function.arguments or "",
+        )
 
 
 class ChoiceDelta(_BaseChoice):
@@ -368,6 +385,22 @@ class StreamedResponse(BaseModel):
     id: str | None = None
     choices: list[ChoiceDelta] = Field(default_factory=list)
     usage: Usage | None = None
+
+    def to_parsed_response(self) -> ParsedResponse:
+        usage = self.usage.to_domain() if self.usage else None
+        if not self.choices:
+            return ParsedResponse(usage=usage)
+
+        choice = self.choices[0]
+
+        return ParsedResponse(
+            delta=choice.delta.content,
+            tool_call_requests=[tool_call.to_domain() for tool_call in choice.delta.tool_calls]
+            if choice.delta.tool_calls
+            else None,
+            usage=usage,
+            finish_reason=choice.parsed_finish_reason(),
+        )
 
 
 class XAIError(BaseModel):

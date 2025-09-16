@@ -1,7 +1,7 @@
 import contextlib
 import json
 import re
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from typing import Any, Literal
 
 import structlog
@@ -14,16 +14,20 @@ from core.domain.file import File, FileKind
 from core.domain.message import Message, MessageContent, MessageRole
 from core.domain.models.model_data_mapping import get_model_id
 from core.domain.reasoning_effort import ReasoningEffort
-from core.domain.tenant_data import PublicOrganizationData
 from core.domain.tool import HostedTool, Tool
 from core.domain.tool_call import ToolCallRequest, ToolCallResult
 from core.domain.tool_choice import ToolChoiceFunction
 from core.domain.trace import LLMTrace, Trace
 from core.domain.version import Version
 from core.providers._base.provider_error import MissingModelError
+from core.runners.runner_output import RunnerOutputChunk, ToolCallRequestDelta
 from protocol.api._run_models import (
+    FinishReason,
     OpenAIAudioInput,
     OpenAIProxyChatCompletionChoice,
+    OpenAIProxyChatCompletionChunkChoice,
+    OpenAIProxyChatCompletionChunkChoiceFinal,
+    OpenAIProxyChatCompletionChunkDelta,
     OpenAIProxyChatCompletionRequest,
     OpenAIProxyChatCompletionResponse,
     OpenAIProxyCompletionUsage,
@@ -97,6 +101,14 @@ def function_call_from_domain(function_call: ToolCallRequest):
     )
 
 
+def function_call_from_delta(function_call: ToolCallRequestDelta):
+    """Convert domain ToolCallRequest to OpenAI proxy function call"""
+    return OpenAIProxyFunctionCall(
+        name=function_call.tool_name,
+        arguments=function_call.arguments,
+    )
+
+
 def tool_definition_to_domain(tool_definition: "OpenAIProxyToolDefinition") -> Tool | HostedTool:
     """Convert OpenAI proxy tool definition to domain Tool or HostedTool"""
     if not tool_definition.parameters and not tool_definition.description and tool_definition.name.startswith("@"):
@@ -129,6 +141,14 @@ def tool_call_delta_from_domain(tool_call: ToolCallRequest):
         id=tool_call.id,
         index=tool_call.index,
         function=function_call_from_domain(tool_call),
+    )
+
+
+def tool_call_delta_from_delta(tool_call: ToolCallRequestDelta):
+    return OpenAIProxyToolCallDelta(
+        id=tool_call.id,
+        index=tool_call.idx,
+        function=function_call_from_delta(tool_call),
     )
 
 
@@ -219,11 +239,11 @@ def message_from_run(
     deprecated_function: bool,
 ):
     txt_content, tool_calls = _extract_completion_from_output(run.agent_output)
+    payload = _tool_or_function_call_from_domain(tool_calls, deprecated_function)
     return OpenAIProxyMessage(
         role="assistant",
         content=txt_content,
-        tool_calls=[tool_call_from_domain(t) for t in tool_calls] if tool_calls and not deprecated_function else None,
-        function_call=function_call_from_domain(tool_calls[0]) if tool_calls and deprecated_function else None,
+        **payload,
     )
 
 
@@ -366,7 +386,7 @@ def completion_usage_from_domain(traces: list[Trace]):
     )
 
 
-def completion_choice_from_domain(completion: AgentCompletion, deprecated_function: bool, org: PublicOrganizationData):
+def completion_choice_from_domain(completion: AgentCompletion, deprecated_function: bool):
     message = message_from_run(completion, deprecated_function)
     if message.tool_calls:
         finish_reason = "tool_calls"
@@ -388,11 +408,10 @@ def completion_choice_from_domain(completion: AgentCompletion, deprecated_functi
 def completion_response_from_domain(
     completion: AgentCompletion,
     deprecated_function: bool,
-    org: PublicOrganizationData,
 ):
     return OpenAIProxyChatCompletionResponse(
         id=completion.id,
-        choices=[completion_choice_from_domain(completion, deprecated_function, org)],
+        choices=[completion_choice_from_domain(completion, deprecated_function)],
         created=int(completion.created_at.timestamp()),
         model=completion.final_model or "unknown",
         usage=completion_usage_from_domain(completion.traces),
@@ -449,3 +468,90 @@ def use_fallback_to_domain(use_fallback: Literal["auto", "never"] | list[str] | 
             raise MissingModelError(msg=str(e), model=use_fallback) from None
 
     return use_fallback
+
+
+def _tool_or_function_call_from_domain(
+    requests: Sequence[ToolCallRequest] | None,
+    deprecated_function: bool,
+) -> dict[str, Any]:
+    if not requests:
+        return {"function_call": None, "tool_calls": None}
+
+    if deprecated_function:
+        return {"function_call": function_call_from_domain(requests[0]), "tool_calls": None}
+    return {"function_call": None, "tool_calls": [tool_call_from_domain(t) for t in requests]}
+
+
+def _tool_or_function_call_delta(output: RunnerOutputChunk | None, deprecated_function: bool) -> dict[str, Any]:
+    if not output or not output.tool_call_requests:
+        return {"function_call": None, "tool_calls": None}
+
+    if deprecated_function:
+        return {"function_call": function_call_from_delta(output.tool_call_requests[0]), "tool_calls": None}
+    return {"function_call": None, "tool_calls": [tool_call_delta_from_delta(t) for t in output.tool_call_requests]}
+
+
+def _tool_or_function_call_delta_from_domain(
+    requests: Sequence[ToolCallRequest] | None,
+    deprecated_function: bool,
+) -> dict[str, Any]:
+    if not requests:
+        return {"function_call": None, "tool_calls": None}
+
+    if deprecated_function:
+        return {"function_call": function_call_from_domain(requests[0]), "tool_calls": None}
+    return {"function_call": None, "tool_calls": [tool_call_delta_from_domain(t) for t in requests]}
+
+
+def completion_chunk_delta_from_output(output: RunnerOutputChunk, deprecated_function: bool):
+    return OpenAIProxyChatCompletionChunkDelta(
+        role="assistant",
+        content=output.delta,
+        **_tool_or_function_call_delta(output, deprecated_function),
+    )
+
+
+def completion_chunk_delta_from_completion(completion: AgentCompletion, deprecated_function: bool):
+    txt_content, tool_calls = _extract_completion_from_output(completion.agent_output)
+    payload = _tool_or_function_call_delta_from_domain(tool_calls, deprecated_function)
+    return OpenAIProxyChatCompletionChunkDelta(
+        role="assistant",
+        content=txt_content,
+        **payload,
+    )
+
+
+def _possible_finish_reason(run: AgentCompletion, deprecated_function: bool) -> FinishReason | None:
+    """Compute the finish reason for a run"""
+    if run.agent_output.has_tool_call_requests:
+        return "function_call" if deprecated_function else "tool_calls"
+    return "stop"
+
+
+def completion_chunk_choice_from_output(output: RunnerOutputChunk, deprecated_function: bool):
+    return OpenAIProxyChatCompletionChunkChoice(
+        delta=completion_chunk_delta_from_output(output, deprecated_function),
+        index=0,
+    )
+
+
+def completion_chunk_choice_final_from_completion(
+    run: AgentCompletion,
+    final_chunk: RunnerOutputChunk | None,
+    deprecated_function: bool,
+) -> OpenAIProxyChatCompletionChunkChoiceFinal:
+    """Build the final delta based on a run"""
+    delta = (
+        completion_chunk_delta_from_output(final_chunk, deprecated_function)
+        if final_chunk
+        else completion_chunk_delta_from_completion(run, deprecated_function)
+    )
+    return OpenAIProxyChatCompletionChunkChoiceFinal(
+        delta=delta,
+        finish_reason=_possible_finish_reason(run, deprecated_function),
+        index=0,
+        usage=completion_usage_from_domain(run.traces),
+        cost_usd=run.cost_usd,
+        duration_seconds=run.duration_seconds,
+        url=completion_url(run.id),
+    )

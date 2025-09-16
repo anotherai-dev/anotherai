@@ -15,10 +15,6 @@ class RunnerOutput(NamedTuple):
     agent_output: Any
     tool_call_requests: Sequence[ToolCallRequest] | None = None
     reasoning: str | None = None
-    delta: str | None = None
-
-    # Whether the output is the final output, used when streaming
-    final: bool = False
 
     def _stringified_output(self) -> str:
         if isinstance(self.agent_output, str):
@@ -40,3 +36,40 @@ class RunnerOutput(NamedTuple):
             content.append(MessageContent(text=self.reasoning))
 
         return [Message(role="assistant", content=content)]
+
+    def as_chunk(self):
+        """Forces a delta based on the agent output"""
+        delta = self.agent_output if isinstance(self.agent_output, str) else json.dumps(self.agent_output)
+        return RunnerOutputChunk(
+            tool_call_requests=[ToolCallRequestDelta.from_domain(t) for t in self.tool_call_requests]
+            if self.tool_call_requests
+            else None,
+            reasoning=self.reasoning,
+            delta=delta,
+            final_chunk=self,
+        )
+
+
+class ToolCallRequestDelta(NamedTuple):
+    id: str
+    idx: int | None
+    tool_name: str
+    arguments: str = ""
+    arguments_dict: dict[str, Any] | None = None
+
+    @classmethod
+    def from_domain(cls, output: ToolCallRequest):
+        return cls(
+            id=output.id,
+            idx=output.index,
+            tool_name=output.tool_name,
+            arguments=json.dumps(output.tool_input_dict),
+        )
+
+
+class RunnerOutputChunk(NamedTuple):
+    tool_call_requests: Sequence[ToolCallRequestDelta] | None = None
+    reasoning: str | None = None
+    delta: str | None = None
+
+    final_chunk: RunnerOutput | None = None

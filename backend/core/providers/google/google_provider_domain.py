@@ -9,12 +9,16 @@ from pydantic import BaseModel, Field, ValidationError
 
 from core.domain.exceptions import InvalidFileError, InvalidRunOptionsError
 from core.domain.file import File
+from core.domain.finish_reason import FinishReason
 from core.domain.message import MessageDeprecated
 from core.domain.models import Model
 from core.domain.tool import HostedTool, Tool
 from core.domain.tool_call import ToolCallRequest, ToolCallResult
 from core.domain.tool_choice import ToolChoice
 from core.providers._base.llm_usage import LLMUsage
+from core.providers._base.provider_error import InvalidGenerationError, MaxTokensExceededError
+from core.providers._base.streaming_context import ParsedResponse
+from core.runners.runner_output import ToolCallRequestDelta
 from core.utils.audio import audio_duration_seconds
 from core.utils.dicts import TwoWayDict
 from core.utils.json_utils import safe_extract_dict_from_json
@@ -546,6 +550,17 @@ class Candidate(BaseModel):
     finishReason: str | None = None
     safetyRatings: list[SafetyRating] | None = None
 
+    def parsed_finish_reason(self) -> FinishReason | None:
+        match self.finishReason:
+            case "MAX_TOKENS":
+                return "max_context"
+            case "MALFORMED_FUNCTION_CALL":
+                return "malformed_function_call"
+            case "RECITATION":
+                return "recitation"
+            case _:
+                return None
+
 
 class UsageMetadata(BaseModel):
     promptTokenCount: int | None = None
@@ -565,6 +580,37 @@ class StreamedResponse(BaseModel):
     candidates: list[Candidate] | None = None
     usageMetadata: UsageMetadata | None = None
 
+    def to_parsed_response(self) -> ParsedResponse:
+        usage = self.usageMetadata.to_domain() if self.usageMetadata else None
+        if not self.candidates:
+            return ParsedResponse(usage=usage)
+
+        candidate = self.candidates[0]
+        if not candidate.content:
+            return ParsedResponse(usage=usage)
+
+        thoughts = ""
+        response = ""
+
+        native_tool_calls: list[ToolCallRequestDelta] = []
+        for part in candidate.content.parts:
+            if part.thought:
+                thoughts += part.text or ""
+            else:
+                response += part.text or ""
+
+            if part.functionCall:
+                native_tool_calls.append(
+                    ToolCallRequestDelta(
+                        id="",
+                        idx=None,
+                        tool_name=native_tool_name_to_internal(part.functionCall.name),
+                        arguments_dict=part.functionCall.args or {},
+                    ),
+                )
+
+        return ParsedResponse(usage=usage)
+
 
 class PromptFeedback(BaseModel):
     blockReason: str | None = None
@@ -576,3 +622,20 @@ class CompletionResponse(BaseModel):
     candidates: list[Candidate] | None = None
     usageMetadata: UsageMetadata | None = None
     promptFeedback: PromptFeedback | None = None
+
+
+def raise_for_finish_reason(cls, candidates: list[Candidate]):
+    for candidate in candidates:
+        match candidate.finishReason:
+            case "MAX_TOKENS":
+                raise MaxTokensExceededError(
+                    msg="Model returned a MAX_TOKENS finish reason. The max number of tokens as specified in the request was reached.",
+                )
+            case "MALFORMED_FUNCTION_CALL":
+                raise InvalidGenerationError(
+                    msg="Model returned a malformed function call finish reason",
+                    # Capturing so we can see why this happens
+                    capture=True,
+                )
+            case _:
+                pass
