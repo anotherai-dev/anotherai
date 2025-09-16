@@ -73,3 +73,6 @@ class RunnerOutputChunk(NamedTuple):
     delta: str | None = None
 
     final_chunk: RunnerOutput | None = None
+
+    def is_empty(self) -> bool:
+        return all(v is None for v in self)

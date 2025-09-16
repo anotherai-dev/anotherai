@@ -20,6 +20,7 @@ from core.providers._base.provider_error import (
 from core.providers._base.streaming_context import ParsedResponse
 from core.providers.google.google_provider_domain import (
     internal_tool_name_to_native_tool_call,
+    native_tool_name_to_internal,
 )
 from core.runners.runner_output import ToolCallRequestDelta
 
@@ -258,6 +259,8 @@ class CompletionRequest(BaseModel):
 
 
 class Usage(BaseModel):
+    cache_creation_input_tokens: int | None = None
+    cache_read_input_tokens: int | None = None
     input_tokens: int | None = None
     output_tokens: int | None = None
 
@@ -265,6 +268,7 @@ class Usage(BaseModel):
         return LLMUsage(
             prompt_token_count=self.input_tokens,
             completion_token_count=self.output_tokens,
+            prompt_token_count_cached=self.cache_read_input_tokens,
         )
 
 
@@ -350,6 +354,10 @@ class InputJsonDelta(BaseModel):
     partial_json: str
 
 
+class _CompletionChunkMessage(BaseModel):
+    usage: Usage
+
+
 class CompletionChunk(BaseModel):
     """Represents a streaming chunk response from Anthropic"""
 
@@ -364,7 +372,7 @@ class CompletionChunk(BaseModel):
         "error",
     ]
     # For message_start
-    message: dict[str, Any] | None = None
+    message: _CompletionChunkMessage | None = None
     # For content_block_start
     content_block: ContentBlock | ToolUse | ThinkingBlock | None = None
     # For content_block_delta
@@ -383,7 +391,7 @@ class CompletionChunk(BaseModel):
                         ToolCallRequestDelta(
                             id=self.content_block.id,
                             idx=self.index or 0,
-                            tool_name=self.content_block.name,
+                            tool_name=native_tool_name_to_internal(self.content_block.name),
                             arguments="",
                         ),
                     ],
@@ -434,14 +442,16 @@ class CompletionChunk(BaseModel):
                 return None
 
     def to_parsed_response(self) -> ParsedResponse:
+        if self.error:
+            raise self.error.to_domain(response=None)
+
         res = self._parsed_content_block()
         if not res:
             res = self._parsed_delta()
-        usage = self.usage.to_domain() if self.usage else None
+        raw_usage = self.message.usage if self.message else self.usage
+        usage = raw_usage.to_domain() if raw_usage else None
         if not res:
-            return ParsedResponse(
-                usage=usage,
-            )
+            return ParsedResponse(usage=usage)
         return res._replace(usage=usage)
 
 

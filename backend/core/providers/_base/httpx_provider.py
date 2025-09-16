@@ -244,7 +244,10 @@ class HTTPXProvider[ProviderConfigVar: ProviderConfigInterface, ResponseModel: B
                 streaming_context = self._streaming_context(raw_completion)
                 async for chunk in self.wrap_sse(response.aiter_bytes()):
                     delta = self._extract_stream_delta(chunk)
-                    yield streaming_context.add_chunk(delta)
+                    c = streaming_context.add_chunk(delta)
+                    if c.is_empty():
+                        continue
+                    yield c
 
                 # Always yield the final output
                 # This is the output that will be needed to save the run

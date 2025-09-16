@@ -158,6 +158,7 @@ class StreamingContext:
         builder: Callable[[str, str | None, list[ToolCallRequest] | None], RunnerOutput],
     ) -> RunnerOutputChunk:
         self._runner_output = builder("".join(self._agg_output), "".join(self._agg_reasoning), self._tool_calls())
+        self.raw_completion.usage = self._usage
 
         return RunnerOutputChunk(
             tool_call_requests=None,

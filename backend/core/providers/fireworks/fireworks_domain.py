@@ -256,7 +256,7 @@ class StreamedResponse(BaseModel):
         choice = self.choices[0]
 
         return ParsedResponse(
-            delta=choice.delta.content,
+            delta=choice.delta.content or None,
             tool_call_requests=[tool_call.to_domain() for tool_call in choice.delta.tool_calls]
             if choice.delta.tool_calls
             else None,

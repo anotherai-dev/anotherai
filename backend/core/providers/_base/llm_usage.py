@@ -59,4 +59,6 @@ class LLMUsage(LLMPromptUsage, LLMCompletionUsage):
 
     def apply(self, other: "LLMUsage"):
         for k in other.model_fields_set:
-            setattr(self, k, getattr(other, k))
+            attr = getattr(other, k, None)
+            if attr is not None:
+                setattr(self, k, attr)
