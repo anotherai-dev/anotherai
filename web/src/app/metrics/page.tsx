@@ -25,7 +25,7 @@ export default function MetricsPage() {
           customGraph={{
             type: "line",
             x: { field: "date", label: "Date" },
-            y: [{ field: "total_cost", label: "Total Cost (USD)" }],
+            y: [{ field: "total_cost", label: "Total Cost", unit: "$" }],
           }}
         />
 
@@ -37,7 +37,7 @@ export default function MetricsPage() {
           customGraph={{
             type: "pie",
             x: { field: "model", label: "Model" },
-            y: [{ field: "total_cost", label: "Total Cost (USD)" }],
+            y: [{ field: "total_cost", label: "Total Cost", unit: "$" }],
           }}
         />
 
@@ -49,7 +49,7 @@ export default function MetricsPage() {
           customGraph={{
             type: "bar",
             x: { field: "agent_id", label: "Agent" },
-            y: [{ field: "total_cost", label: "Total Cost (USD)" }],
+            y: [{ field: "total_cost", label: "Total Cost", unit: "$" }],
             stacked: true,
           }}
         />
@@ -103,7 +103,7 @@ export default function MetricsPage() {
           customGraph={{
             type: "line",
             x: { field: "date", label: "Date" },
-            y: [{ field: "avg_response_time", label: "Avg Response Time (s)" }],
+            y: [{ field: "avg_response_time", label: "Avg Response Time", unit: "s" }],
           }}
         />
 

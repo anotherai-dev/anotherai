@@ -6,7 +6,7 @@ import { UniversalBarChart } from "./UniversalBarChart";
 import { UniversalLineChart } from "./UniversalLineChart";
 import { UniversalPieChart } from "./UniversalPieChart";
 import { UniversalScatterChart } from "./UniversalScatterChart";
-import { transformDataForCompletionsGraph } from "./utils";
+import { formatValueWithUnit, transformDataForCompletionsGraph } from "./utils";
 
 interface CompletionsGraphProps {
   data: Record<string, unknown>[];
@@ -106,6 +106,7 @@ export function CompletionsGraph({ data, isLoading, error, graph, showBorder = t
             {...pieProps}
             colors={[primaryColor, "#10B981", "#F59E0B", "#EF4444", "#8B5CF6"]}
             showLegend={true}
+            tooltipFormatter={(value) => formatValueWithUnit(value.toString(), yAxisUnit)}
           />
         );
 

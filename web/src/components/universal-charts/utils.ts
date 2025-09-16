@@ -53,6 +53,9 @@ export const DEFAULT_CHART_COLORS = [
 // Units that should appear before the value (prefixes)
 const PREFIX_UNITS = new Set(["$", "€", "£", "¥", "₹", "₩", "₽", "USD", "EUR", "GBP"]);
 
+// Units that should appear after the value without a space
+const NO_SPACE_SUFFIX_UNITS = new Set(["s"]);
+
 /**
  * Format a value with its unit, placing currency symbols and certain units as prefixes
  * @param value - The formatted value as a string
@@ -65,6 +68,11 @@ export function formatValueWithUnit(value: string, unit: string | undefined): st
   // Check if unit should be a prefix (currency symbols, etc.)
   if (PREFIX_UNITS.has(unit)) {
     return `${unit}${value}`;
+  }
+
+  // Check if unit should be a suffix without space (like "s" for seconds)
+  if (NO_SPACE_SUFFIX_UNITS.has(unit)) {
+    return `${value}${unit}`;
   }
 
   // Default: unit as suffix with space
