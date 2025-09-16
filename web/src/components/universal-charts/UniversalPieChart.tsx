@@ -129,9 +129,10 @@ export function UniversalPieChart({
     return <p className="text-gray-500 text-sm">{emptyMessage}</p>;
   }
 
-  const renderCustomLabel = (props: { payload?: { percentage: string } } & Record<string, unknown>) => {
-    if (!props.payload) return "";
-    const percent = parseFloat(props.payload.percentage);
+  const renderCustomLabel = (props: unknown) => {
+    const typedProps = props as { payload?: { percentage: string } };
+    if (!typedProps.payload) return "";
+    const percent = parseFloat(typedProps.payload.percentage);
     // Only show label if segment is large enough (>3% of total)
     if (percent < 3) return "";
     return `${percent}%`;
