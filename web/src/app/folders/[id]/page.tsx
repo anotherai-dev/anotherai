@@ -59,6 +59,11 @@ export default function FolderPage() {
 function FolderViewGraph({ view }: { view: View }) {
   const { data, isLoading, error } = useCompletionsQuery(view.query || "");
 
+  // Type guard: this component is only called for views with graphs
+  if (!view.graph) {
+    return null;
+  }
+
   return (
     <div className="bg-white border border-gray-200 rounded-[2px] flex flex-col shadow-sm">
       {/* Header */}
