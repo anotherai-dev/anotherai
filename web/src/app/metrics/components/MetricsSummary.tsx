@@ -64,17 +64,17 @@ export function MetricsSummary() {
       { key: "Success Rate", value: `${successRate.toFixed(1)}%` },
       { key: "Total Cost", value: `$${totalCost.toFixed(2)}` },
       { key: "This Month's Cost", value: `$${monthlySpending.toFixed(2)}`, color: "text-blue-600" },
-      
+
       // Performance Metrics
       { key: "Avg Response Time", value: `${avgDuration.toFixed(1)}s` },
       { key: "Fastest Response", value: `${fastestResponse.toFixed(1)}s`, color: "text-green-600" },
       { key: "Slowest Response", value: `${slowestResponse.toFixed(1)}s`, color: "text-red-600" },
-      
+
       // Usage Analytics
       { key: "Avg Daily Completions", value: Math.round(avgDailyCompletions).toLocaleString() },
       { key: "Active Agents", value: activeAgents.toString() },
       { key: "Most Active Agent", value: mostActiveAgent },
-      
+
       // Model & Cost Analytics
       { key: "Most Used Model", value: mostUsedModel },
       { key: "Avg Cost per Completion", value: `$${avgCost.toFixed(4)}` },
