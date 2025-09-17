@@ -99,13 +99,12 @@ AnotherAI uses **Jinja2** templating with these key patterns:
 ```python
 messages = [{
     "role": "user",
-    "content": "Summarize this text in {{length}} words: {{text}}"
+    "content": "Translate this text to French: {{text}}"
 }]
 
 extra_body = {
     "input": {
-        "text": "Long article content here...",
-        "length": 50
+        "text": "Hello, how are you today?"
     }
 }
 ```
@@ -177,7 +176,17 @@ extra_body = {
 
 In the AnotherAI web app, these examples would appear like:
 
-[IMAGE TODO: DETAIL VIEW WITH INPUT VARIABLES]
+<Tabs items={['Single Variable', 'Multiple Variables', 'Complex Nested']}>
+<Tab value="Single Variable">
+![Single Input Variable Detail View](/images/input-variables-single-detail.png)
+</Tab>
+<Tab value="Multiple Variables">
+![Multiple Input Variables Detail View](/images/input-variables-multiple-detail.png)
+</Tab>
+<Tab value="Complex Nested">
+![Complex Nested Input Variables Detail View](/images/input-variables-complex-nested-detail.png)
+</Tab>
+</Tabs>
 
 ## Observability benefits
 
