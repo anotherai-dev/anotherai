@@ -143,6 +143,8 @@ class PlaygroundService:
             )
             return PlaygroundOutput.Completion(
                 id=getattr(e, "task_run_id", None) or "",
+                input_id=input.id,
+                version_id=version.id,
                 output=Output(error=Error(error=str(e))),
                 cost_usd=None,
                 duration_seconds=None,

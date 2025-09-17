@@ -747,6 +747,8 @@ def trace_to_domain(trace: Trace) -> DomainTrace:
 def playground_output_completion_from_domain(completion: DomainCompletion):
     return PlaygroundOutput.Completion(
         id=completion.id,
+        input_id=completion.agent_input.id,
+        version_id=completion.version.id,
         output=output_from_domain(completion.agent_output),
         cost_usd=completion.cost_usd,
         duration_seconds=completion.duration_seconds,

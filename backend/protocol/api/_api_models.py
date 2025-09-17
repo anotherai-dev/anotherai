@@ -467,6 +467,8 @@ class CreateExperimentRequest(BaseModel):
 class PlaygroundOutput(BaseModel):
     class Completion(BaseModel):
         id: str
+        input_id: str
+        version_id: str
         output: Output
         cost_usd: float | None
         duration_seconds: float | None
