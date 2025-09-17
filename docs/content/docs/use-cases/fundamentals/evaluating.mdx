@@ -58,13 +58,37 @@ Examples of good use cases:
 These datasets contain only inputs without predefined expected outputs. Evaluation relies on LLM-as-a-judge or human reviewers to assess quality as there is no single correct output. This approach is much better for agents that can have multiple valid outputs for a given input.
 
 Examples of good use cases:
-- Creative writing 
-- Content summarization 
+- Creative writing
+- Content summarization
 - Analysis tasks
+
+<Info>
+**Clarification from Pierre:** LLM as a judge isn't limited to input-only datasets. It can also be used with datasets that have expected outputs. In those cases, the LLM judge compares the actual output against the expected output to evaluate how well they match, considering factors like semantic similarity, completeness, and accuracy. This is particularly useful when exact string matching isn't appropriate for determining correctness.
+</Info>
 
 ## Handling Complex Evaluations with LLMs as a Judge
 
-In simpler cases, you can review the results of your agent running on your dataset manually, there are more complex cases where you may need to build a separate system to help with the evalution. 
+<Warning>
+**Feedback from Pierre:** This paragraph is confusing. What does "review the results manually" mean? Is manual review the opposite of LLM as a judge? The transition doesn't make sense - it's unclear if LLM as a judge is for complex cases only, or if it's an alternative to manual review in general. Also, what does "running your dataset manually" mean - do you mean manually inspecting each output one by one? This needs clarification about when/why to use LLM as a judge vs other evaluation methods.
+</Warning>
+
+<Info>
+**Clarification from Pierre on when to use LLM as a judge:** LLM as a judge is used when you cannot evaluate deterministically with code using equality checks.
+
+**Deterministic evaluation (use code):** When outputs can be exactly compared
+- Math problems: `2 + 2 = 4` (exact match)
+- Data extraction: Extracted JSON must match expected structure
+- Classification: Output must be one of specific categories
+
+**LLM as a judge evaluation:** When multiple outputs could be correct
+- Text generation: Two different summaries can both be correct even with different wording
+- Creative writing: Many valid ways to write the same content
+- Analysis tasks: Different interpretations can be equally valid
+
+Example: If generating a product description, "This comfortable blue shirt is perfect for casual wear" and "A relaxed-fit blue shirt ideal for everyday occasions" are both correct despite being completely different text. You need LLM as a judge to evaluate if both capture the key product features correctly.
+</Info>
+
+In simpler cases, you can review the results of your agent running on your dataset manually, there are more complex cases where you may need to build a separate system to help with the evalution.
 
 LLM-as-a-judge style evaluation uses one AI model to evaluate the outputs of another.
 
