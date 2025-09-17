@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CustomTooltip } from "./CustomTooltip";
+import { useTooltipFormatterWithUnit } from "./useTooltipFormatterWithUnit";
 import { SeriesConfig, autoDetectSeries, ensureXFieldForChart } from "./utils";
 
 interface ChartData {
@@ -76,14 +77,6 @@ export function UniversalBarChart({
   // Y-axis tick formatter (no units on axis ticks)
   const yAxisTickFormatter = yAxisFormatter;
 
-  const tooltipFormatterWithUnit = useCallback(
-    (value: number) => {
-      const formattedValue = tooltipFormatter(value);
-      return yAxisUnit ? `${formattedValue} ${yAxisUnit}` : formattedValue;
-    },
-    [tooltipFormatter, yAxisUnit]
-  );
-
   // Create axis labels with units
   const xAxisLabelWithUnit = useMemo(() => {
     if (!xAxisLabel && !xAxisUnit) return undefined;
@@ -114,6 +107,13 @@ export function UniversalBarChart({
         });
       });
   }, [finalSeries, isActuallyMultiSeries, transformedData]);
+
+  const tooltipFormatterWithUnit = useTooltipFormatterWithUnit(
+    tooltipFormatter,
+    yAxisUnit,
+    isActuallyMultiSeries,
+    filteredSeries
+  );
 
   // Transform data to remove zero values completely and truncate long labels
   const processedData = useMemo(() => {
@@ -178,7 +178,7 @@ export function UniversalBarChart({
 
   // Memoized canvas for text width measurement
   const measureTextWidth = useMemo(() => {
-    if (!canvasRef.current) {
+    if (!canvasRef.current && typeof document !== "undefined") {
       canvasRef.current = document.createElement("canvas");
     }
 

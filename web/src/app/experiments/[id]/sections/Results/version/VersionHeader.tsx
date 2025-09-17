@@ -9,7 +9,8 @@ import {
   findIndexOfVersionThatFirstUsedThoseSchema,
 } from "@/components/utils/utils";
 import { VersionDetailsView } from "@/components/version-details/VersionDetailsView";
-import { Annotation, Message, Version } from "@/types/models";
+import { Annotation, ExperimentWithLookups, Message, Version } from "@/types/models";
+import { HeaderMatchingSection } from "../../matching/HeaderMatchingSection";
 import { VersionHeaderMetrics } from "./VersionHeaderMetrics";
 import { VersionHeaderModel } from "./VersionHeaderModel";
 import { VersionHeaderPriceAndLatency } from "./VersionHeaderPriceAndLatency";
@@ -40,6 +41,7 @@ type VersionHeaderProps = {
   allMetricsPerKey?: Record<string, number[]>;
   showAvgPrefix?: boolean;
   agentId?: string;
+  experiment?: ExperimentWithLookups;
 };
 
 export function VersionHeader(props: VersionHeaderProps) {
@@ -58,6 +60,7 @@ export function VersionHeader(props: VersionHeaderProps) {
     allMetricsPerKey,
     showAvgPrefix = true,
     agentId,
+    experiment,
   } = props;
 
   const [isHovered, setIsHovered] = useState(false);
@@ -209,16 +212,22 @@ export function VersionHeader(props: VersionHeaderProps) {
             agentId={agentId}
           />
         )}
-      </div>
 
-      <div className="mt-auto">
         <div className="mt-3">
           <DeployVersionInstructions versionId={version.id} agentId={agentId} />
         </div>
 
+        {experiment && (
+          <div className="mt-3">
+            <HeaderMatchingSection experiment={experiment} annotations={annotations} experimentId={experimentId} />
+          </div>
+        )}
+      </div>
+
+      <div className="mt-auto">
         {(priceAndLatency || metrics) && (
           <>
-            <div className="mt-3 pt-2 border-t border-gray-200" />
+            <div className="pt-2 mt-3 border-t border-gray-200" />
             <VersionHeaderPriceAndLatency priceAndLatency={priceAndLatency} showAvgPrefix={showAvgPrefix} />
             <VersionHeaderMetrics metrics={metrics} allMetricsPerKey={allMetricsPerKey} showAvgPrefix={showAvgPrefix} />
           </>

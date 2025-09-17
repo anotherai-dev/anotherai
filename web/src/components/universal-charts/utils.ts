@@ -3,6 +3,7 @@ export interface SeriesConfig {
   key: string;
   color: string;
   name?: string;
+  unit?: string;
 }
 
 // Default color palette for charts - consistent across all chart types
@@ -48,6 +49,98 @@ export const DEFAULT_CHART_COLORS = [
   "#fd79a8",
   "#e17055",
 ];
+
+// Units that should appear before the value (prefixes)
+const PREFIX_UNITS = new Set(["$", "€", "£", "¥", "₹", "₩", "₽", "USD", "EUR", "GBP"]);
+
+// Units that should appear after the value without a space
+const NO_SPACE_SUFFIX_UNITS = new Set(["s", "k", "m"]);
+
+/**
+ * Intelligently format a number for display
+ * @param value - The numeric value to format
+ * @returns Formatted number string
+ */
+export function formatNumber(value: number): string {
+  const absValue = Math.abs(value);
+
+  // Handle zero
+  if (value === 0) return "0";
+
+  // Handle very large numbers with suffixes
+  if (absValue >= 1_000_000) {
+    const millions = value / 1_000_000;
+    return `${Math.round(millions * 100) / 100}m`;
+  }
+  if (absValue >= 1_000) {
+    const thousands = value / 1_000;
+    return `${Math.round(thousands * 100) / 100}k`;
+  }
+
+  // Handle numbers >= 1: round to 2 decimal places
+  if (absValue >= 1) {
+    return (Math.round(value * 100) / 100).toString();
+  }
+
+  // Handle small decimals (0.1 to 0.999...)
+  if (absValue >= 0.1) {
+    return (Math.round(value * 10000) / 10000).toString();
+  }
+
+  // Handle very small numbers: preserve leading zeros, limit to reasonable precision
+  if (absValue >= 0.0000001) {
+    return parseFloat(value.toFixed(7)).toString();
+  }
+
+  // For extremely small numbers: use scientific notation
+  return value.toExponential(1);
+}
+
+/**
+ * Format a value with its unit, placing currency symbols and certain units as prefixes
+ * @param value - The formatted value as a string
+ * @param unit - The unit to append/prepend
+ * @returns Formatted string with unit in correct position
+ */
+export function formatValueWithUnit(value: string, unit: string | undefined): string {
+  // If the value is a number string, format it intelligently
+  const numericValue = parseFloat(value);
+  if (!isNaN(numericValue)) {
+    const formattedNumber = formatNumber(numericValue);
+
+    // If no unit, just return formatted number
+    if (!unit) return formattedNumber;
+
+    // Check if unit should be a prefix (currency symbols, etc.)
+    if (PREFIX_UNITS.has(unit)) {
+      return `${unit}${formattedNumber}`;
+    }
+
+    // Check if unit should be a suffix without space (like "s" for seconds)
+    if (NO_SPACE_SUFFIX_UNITS.has(unit)) {
+      return `${formattedNumber}${unit}`;
+    }
+
+    // Default: unit as suffix with space
+    return `${formattedNumber} ${unit}`;
+  }
+
+  // Fallback for non-numeric values
+  if (!unit) return value;
+
+  // Check if unit should be a prefix (currency symbols, etc.)
+  if (PREFIX_UNITS.has(unit)) {
+    return `${unit}${value}`;
+  }
+
+  // Check if unit should be a suffix without space (like "s" for seconds)
+  if (NO_SPACE_SUFFIX_UNITS.has(unit)) {
+    return `${value}${unit}`;
+  }
+
+  // Default: unit as suffix with space
+  return `${value} ${unit}`;
+}
 
 // Transform data to ensure it has an 'x' field for automatic chart detection
 export function ensureXFieldForChart(data: Record<string, unknown>[]): Record<string, unknown>[] {

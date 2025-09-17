@@ -5,6 +5,7 @@ import {
   ExperimentWithLookups,
   ExtendedVersion,
   Message,
+  OutputSchema,
   Version,
 } from "@/types/models";
 import { findCommonSubstrings } from "./stringMatchingUtils";
@@ -816,6 +817,35 @@ export function parseJSONValue(value: unknown): unknown | null {
   }
 
   return null;
+}
+
+export function isJSONSchema(parsedJSON: unknown): boolean {
+  if (!parsedJSON || typeof parsedJSON !== "object") return false;
+  const obj = parsedJSON as Record<string, unknown>;
+
+  // Check if it has the structure of an OutputSchema (id + json_schema)
+  if (obj.id && obj.json_schema) return true;
+
+  // Check if it looks like a raw JSON schema (has typical schema properties)
+  const schemaIndicators = ["type", "$schema", "properties", "required", "definitions", "$defs"];
+  return schemaIndicators.some((indicator) => indicator in obj);
+}
+
+export function createOutputSchemaFromJSON(parsedJSON: unknown, fallbackId: string): OutputSchema | null {
+  if (!parsedJSON || typeof parsedJSON !== "object") return null;
+
+  const obj = parsedJSON as Record<string, unknown>;
+
+  // If it already has the OutputSchema structure
+  if (obj.id && obj.json_schema && typeof obj.id === "string" && typeof obj.json_schema === "object") {
+    return { id: obj.id as string, json_schema: obj.json_schema as Record<string, unknown> };
+  }
+
+  // If it's a raw JSON schema, wrap it in OutputSchema format
+  return {
+    id: fallbackId || "detected-schema",
+    json_schema: obj,
+  };
 }
 
 export function isDateValue(value: unknown): boolean {

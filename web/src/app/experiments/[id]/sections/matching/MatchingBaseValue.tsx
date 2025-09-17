@@ -10,9 +10,29 @@ type MatchingBaseValueProps = {
   experimentId?: string;
   completionId?: string;
   keyPath?: string;
+  supportMultiline?: boolean;
+  position?:
+    | "bottom"
+    | "top"
+    | "left"
+    | "right"
+    | "topRight"
+    | "topRightAligned"
+    | "topLeftAligned"
+    | "topRightAlignedNew"
+    | "rightOverlap"
+    | "bottomLeft";
 };
 
-export function MatchingBaseValue({ value, annotations, experimentId, completionId, keyPath }: MatchingBaseValueProps) {
+export function MatchingBaseValue({
+  value,
+  annotations,
+  experimentId,
+  completionId,
+  keyPath,
+  supportMultiline,
+  position = "topRightAligned",
+}: MatchingBaseValueProps) {
   const [showAddForm, setShowAddForm] = useState(false);
 
   const displayValue = useMemo(() => {
@@ -48,7 +68,7 @@ export function MatchingBaseValue({ value, annotations, experimentId, completion
               Add annotation
             </span>
           }
-          position="topRightAligned"
+          position={position}
           popoverClassName="bg-white border border-gray-200"
           className="w-full block"
         >
@@ -56,7 +76,9 @@ export function MatchingBaseValue({ value, annotations, experimentId, completion
             className="flex items-center w-full hover:bg-gray-100 hover:cursor-pointer transition-colors min-h-[28px] px-2 py-2"
             onClick={(e) => handleAddAnnotation(e)}
           >
-            <div className="text-xs text-gray-900 bg-white border border-gray-200 rounded-[2px] px-1.5 py-1 whitespace-nowrap">
+            <div
+              className={`text-xs text-gray-900 bg-white border border-gray-200 rounded-[2px] px-1.5 py-1 ${supportMultiline ? "whitespace-normal break-words" : "whitespace-nowrap"}`}
+            >
               {displayValue}
             </div>
           </div>
@@ -66,7 +88,9 @@ export function MatchingBaseValue({ value, annotations, experimentId, completion
           className="flex items-center w-full hover:bg-gray-100 hover:cursor-pointer transition-colors min-h-[28px] px-2 py-2"
           onClick={(e) => handleAddAnnotation(e)}
         >
-          <div className="text-xs text-gray-900 bg-white border border-gray-200 rounded-[2px] px-1.5 py-1 whitespace-nowrap">
+          <div
+            className={`text-xs text-gray-900 bg-white border border-gray-200 rounded-[2px] px-1.5 py-1 ${supportMultiline ? "whitespace-normal break-words" : "whitespace-nowrap"}`}
+          >
             {displayValue}
           </div>
         </div>

@@ -1,15 +1,17 @@
 import { Plus } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { HoverPopover } from "@/components/HoverPopover";
 import { AnnotationsView } from "@/components/annotations/AnnotationsView";
-import { Annotation, Tool } from "@/types/models";
+import { Annotation } from "@/types/models";
 
-type MatchingToolValueProps = {
-  tools: Tool[];
+type MatchingJSONValueProps = {
+  value: unknown;
+  parsedJSON: unknown;
   annotations?: Annotation[];
   experimentId?: string;
   completionId?: string;
   keyPath?: string;
+  containerPadding?: string;
   position?:
     | "bottom"
     | "top"
@@ -23,39 +25,39 @@ type MatchingToolValueProps = {
     | "bottomLeft";
 };
 
-export function MatchingToolValue({
-  tools,
+export function MatchingJSONValue({
+  value,
+  parsedJSON,
   annotations,
   experimentId,
   completionId,
   keyPath,
+  containerPadding = "",
   position = "topRightAligned",
-}: MatchingToolValueProps) {
+}: MatchingJSONValueProps) {
   const [showAddForm, setShowAddForm] = useState(false);
+
+  const displayValue = useMemo(() => {
+    if (parsedJSON === null || parsedJSON === undefined) {
+      // Fallback to original value if JSON parsing failed
+      if (value === null || value === undefined) {
+        return "null";
+      } else if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+        return String(value);
+      } else {
+        return JSON.stringify(value, null, 2);
+      }
+    }
+
+    // Display the parsed JSON in a formatted way
+    return JSON.stringify(parsedJSON, null, 2);
+  }, [parsedJSON, value]);
 
   const handleAddAnnotation = (e?: React.MouseEvent) => {
     e?.preventDefault();
     e?.stopPropagation();
     setShowAddForm(!showAddForm);
   };
-
-  const toolsDisplay =
-    tools && tools.length > 0 ? (
-      <div className="space-y-1">
-        {tools.map((tool, index) => (
-          <div key={index} className="flex justify-between items-center">
-            <div className="flex-1 min-w-0">
-              <div className="text-xs font-medium text-gray-700 truncate">{tool.name || `Tool ${index + 1}`}</div>
-            </div>
-            <span className="text-xs text-gray-500 bg-gray-100 px-1 py-0.5 rounded ml-2 flex-shrink-0">function</span>
-          </div>
-        ))}
-      </div>
-    ) : (
-      <div className="text-xs text-gray-900 bg-white border border-gray-200 rounded-[2px] px-1.5 py-1 whitespace-nowrap">
-        No tools available
-      </div>
-    );
 
   return (
     <>
@@ -75,18 +77,22 @@ export function MatchingToolValue({
           className="w-full block"
         >
           <div
-            className="flex items-center w-full hover:bg-gray-100 hover:cursor-pointer transition-colors min-h-[28px] px-2 py-2"
+            className={`flex items-center w-full hover:bg-gray-100 hover:cursor-pointer transition-colors min-h-[28px] ${containerPadding}`}
             onClick={(e) => handleAddAnnotation(e)}
           >
-            {toolsDisplay}
+            <div className="text-[11px] text-gray-900 bg-white border border-gray-200 rounded-[2px] px-0 py-2 whitespace-pre-wrap break-words font-mono font-normal w-full">
+              {displayValue}
+            </div>
           </div>
         </HoverPopover>
       ) : (
         <div
-          className="flex items-center w-full hover:bg-gray-100 hover:cursor-pointer transition-colors min-h-[28px] px-2 py-2"
+          className={`flex items-center w-full hover:bg-gray-100 hover:cursor-pointer transition-colors min-h-[28px] ${containerPadding}`}
           onClick={(e) => handleAddAnnotation(e)}
         >
-          {toolsDisplay}
+          <div className="text-xs text-gray-900 bg-white border border-gray-200 rounded-[2px] px-0 py-2 whitespace-pre-wrap break-words font-mono">
+            {displayValue}
+          </div>
         </div>
       )}
       <div className="px-2">

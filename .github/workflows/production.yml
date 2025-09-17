@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - production
-      # TODO: remove when we don't want to deploy from main
-      - main
 
 permissions:
   contents: read

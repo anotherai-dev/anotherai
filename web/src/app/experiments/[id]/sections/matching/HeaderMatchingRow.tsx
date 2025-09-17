@@ -12,7 +12,7 @@ import { MatchingBaseValue } from "./MatchingBaseValue";
 import { MatchingJSONValue } from "./MatchingJSONValue";
 import { MatchingToolValue } from "./MatchingToolValue";
 
-type MatchingRowProps = {
+type HeaderMatchingRowProps = {
   keyName: string;
   versionWithDefaults: ExtendedVersion;
   annotations?: Annotation[];
@@ -21,14 +21,14 @@ type MatchingRowProps = {
   agentId?: string;
 };
 
-export function MatchingRow({
+export function HeaderMatchingRow({
   keyName,
   versionWithDefaults,
   annotations,
   experimentId,
   completionId,
   agentId,
-}: MatchingRowProps) {
+}: HeaderMatchingRowProps) {
   // Get display name for the key
   const displayName = getVersionKeyDisplayName(keyName);
   // Extract the raw value
@@ -52,7 +52,7 @@ export function MatchingRow({
             experimentId={experimentId}
             completionId={completionId}
             prefix={keyName}
-            className="mt-2 space-y-3 px-2"
+            className="mt-2 space-y-3"
             agentId={agentId}
           />
         );
@@ -76,6 +76,7 @@ export function MatchingRow({
             experimentId={experimentId}
             completionId={completionId}
             keyPath={keyName}
+            position="topRight"
           />
         );
     }
@@ -89,7 +90,7 @@ export function MatchingRow({
           experimentId={experimentId}
           completionId={completionId}
           prefix={keyName}
-          className="mt-2 space-y-3 px-2"
+          className="mt-2 space-y-3"
           agentId={agentId}
         />
       );
@@ -105,7 +106,8 @@ export function MatchingRow({
           experimentId={experimentId}
           completionId={completionId}
           keyPath={keyName}
-          containerPadding="px-2 py-2"
+          position="topRight"
+          containerPadding="pt-1"
         />
       );
     }
@@ -116,14 +118,32 @@ export function MatchingRow({
         experimentId={experimentId}
         completionId={completionId}
         keyPath={keyName}
+        supportMultiline={true}
+        position="topRight"
       />
     );
   };
 
+  // Special layout for prompt, output_schema, JSON schemas, and JSON values - keep header style (key above value)
+  if (
+    keyName === "prompt" ||
+    keyName === "output_schema" ||
+    isSchemaDetected ||
+    (parsedJSON !== null && keyName !== "tools")
+  ) {
+    return (
+      <div className="border-b border-gray-200/60 last:border-b-0 mx-[8px] py-2">
+        <div className="pb-1 text-xs font-medium text-gray-600">{displayName}</div>
+        <div className="text-xs text-gray-900">{renderValue()}</div>
+      </div>
+    );
+  }
+
+  // Default layout for all other keys - justify between (key far left, value far right)
   return (
-    <div className="flex border-b border-gray-200/60 last:border-b-0 mx-[8px]">
-      <div className="w-54 px-2 py-[12px] text-xs font-semibold text-gray-900">{displayName}</div>
-      <div className="flex-1 text-xs text-gray-900 items-center px-2">{renderValue()}</div>
+    <div className="flex justify-between border-b border-gray-200/60 last:border-b-0 mx-[8px] overflow-hidden">
+      <div className="text-xs font-medium text-gray-600 pt-3.5">{displayName}</div>
+      <div className="text-xs text-gray-900">{renderValue()}</div>
     </div>
   );
 }
