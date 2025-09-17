@@ -1,5 +1,5 @@
 import asyncio
-from typing import final
+from typing import Any, final
 
 from core.domain.agent import Agent
 from core.domain.exceptions import ObjectNotFoundError
@@ -8,7 +8,7 @@ from core.storage.annotation_storage import AnnotationStorage, TargetFilter
 from core.storage.completion_storage import CompletionStorage
 from core.storage.experiment_storage import ExperimentStorage
 from core.utils.background import add_background_task
-from protocol.api._api_models import CreateExperimentRequest, Experiment, Page
+from protocol.api._api_models import CreateExperimentRequest, Experiment, Page, PlaygroundOutput
 from protocol.api._services.conversions import create_experiment_to_domain, experiment_from_domain
 
 
@@ -71,3 +71,26 @@ class ExperimentService:
         await self.experiment_storage.create(domain_exp, agent_uid=agent.uid)
         add_background_task(self.completion_storage.store_experiment(domain_exp))
         return experiment_from_domain(domain_exp, [], [])
+
+    async def create_experiment_mcp(
+        self,
+        experiment_id: str | None,
+        title: str,
+        description: str,
+        agent_id: str,
+        metadata: dict[str, Any] | None,
+        author_name: str,
+    ) -> PlaygroundOutput:
+        # TODO: handle duplicates
+        exp = await self.create_experiment(
+            CreateExperimentRequest(
+                id=experiment_id,
+                title=title,
+                description=description,
+                agent_id=agent_id,
+                metadata=metadata,
+                author_name=author_name,
+            ),
+        )
+
+        return PlaygroundOutput(experiment_id=exp.id, experiment_url=exp.url, completions=[])

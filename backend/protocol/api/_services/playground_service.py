@@ -4,11 +4,13 @@ import time
 from collections.abc import Coroutine
 from typing import Any, final
 
+from pydantic import ValidationError
 from structlog import get_logger
 from structlog.contextvars import bind_contextvars
 
 from core.domain.agent import Agent
 from core.domain.cache_usage import CacheUsage
+from core.domain.events import EventRouter, StartExperimentCompletion
 from core.domain.exceptions import BadRequestError, ObjectNotFoundError
 from core.domain.experiment import Experiment
 from core.domain.models.model_data_mapping import get_model_id
@@ -18,17 +20,21 @@ from core.services.completion_runner import CompletionRunner
 from core.services.messages.messages_utils import json_schema_for_template_and_variables
 from core.storage.agent_storage import AgentStorage
 from core.storage.completion_storage import CompletionStorage
-from core.storage.experiment_storage import ExperimentStorage
-from core.utils.hash import hash_model
+from core.storage.deployment_storage import DeploymentStorage
+from core.storage.experiment_storage import CompletionIDTuple, ExperimentStorage
+from core.utils.hash import hash_model, is_hash_32
 from core.utils.uuid import uuid7
-from protocol.api._api_models import Error, Input, Message, Output, PlaygroundOutput, Tool
+from protocol.api._api_models import Error, Input, Message, Output, PlaygroundOutput, Tool, Version
 from protocol.api._services.conversions import (
     experiments_url,
     input_to_domain,
     message_to_domain,
     playground_output_completion_from_domain,
     tool_to_domain,
+    version_from_domain,
+    version_to_domain,
 )
+from protocol.api._services.utils_service import IDType, sanitize_id
 
 _log = get_logger(__name__)
 
@@ -41,11 +47,96 @@ class PlaygroundService:
         agent_storage: AgentStorage,
         experiment_storage: ExperimentStorage,
         completion_storage: CompletionStorage,
+        deployment_storage: DeploymentStorage,
+        event_router: EventRouter,
     ):
         self._completion_runner = completion_runner
         self._agent_storage = agent_storage
         self._experiment_storage = experiment_storage
         self._completion_storage = completion_storage
+        self._deployment_storage = deployment_storage
+        self._event_router = event_router
+
+    async def _get_version_by_id(self, agent_id: str, version_id: str) -> DomainVersion:
+        id_type, id = sanitize_id(version_id)
+        if not id_type:
+            # Not sure what this is so we check if it's a hash
+            id_type = IDType.VERSION if is_hash_32(id) else IDType.DEPLOYMENT
+
+        match id_type:
+            case IDType.VERSION:
+                val, _ = await self._completion_storage.get_version_by_id(agent_id, id)
+                return val
+            case IDType.DEPLOYMENT:
+                deployment = await self._deployment_storage.get_deployment(id)
+                return deployment.version
+            case _:
+                raise BadRequestError(f"Invalid version id: {version_id}")
+
+    async def add_versions_to_experiment(
+        self,
+        experiment_id: str,
+        version: str | Version,
+        overrides: list[dict[str, Any]] | None,
+    ) -> list[str]:
+        # First fetch the experiment and the associated inputs
+        experiment = await self._experiment_storage.get_experiment(experiment_id, include={"agent_id", "inputs"})
+
+        # First we compute the list of all versions
+        # The _version_with_override will raise an error if one override is not valid
+        async def _version_iterator():
+            if isinstance(version, str):
+                # The double conversion to and from domain sucks here but is necessary
+                # Since the overrides will apply to the exposed version type
+                base_version: Version = version_from_domain(await self._get_version_by_id(experiment.agent_id, version))
+            else:
+                base_version = version
+
+            yield base_version
+            if not overrides:
+                return
+            for override in overrides:
+                yield _version_with_override(base_version, override)
+
+        # Creating domain versions
+        versions = [version_to_domain(v) async for v in _version_iterator()]
+        inserted_ids = await self._experiment_storage.add_versions(experiment_id, versions)
+
+        if experiment.inputs:
+            # Now we create completions for each version / input combination
+            completions_to_insert = [
+                CompletionIDTuple(completion_id=uuid7(), version_id=id, input_id=input.id)
+                for id in inserted_ids
+                for input in experiment.inputs
+            ]
+            inserted_completions_ids = await self._experiment_storage.add_completions(
+                experiment_id,
+                completions_to_insert,
+            )
+            # All the inserted completions should be started
+            for c in completions_to_insert:
+                if c.completion_id not in inserted_completions_ids:
+                    # Might be a race condition somewhere so we can just ignore
+                    continue
+                self._event_router(
+                    StartExperimentCompletion(
+                        experiment_id=experiment_id,
+                        completion_id=c.completion_id,
+                        version_id=c.version_id,
+                        input_id=c.input_id,
+                    ),
+                )
+
+        return [IDType.VERSION.wrap(id) for id in inserted_ids]
+
+    async def add_inputs_to_experiment(
+        self,
+        experiment_id: str,
+        inputs: list[Input],
+        input_query: str | None,
+    ) -> list[str]:
+        # TODO: implement
+        return []
 
     @classmethod
     def _parse_models(cls, models: str) -> list[Model]:
@@ -324,3 +415,10 @@ def _extract_input_from_prompts(prompts: list[list[Message]]) -> tuple[list[list
 
     # otherwise every list of messages in prompt should actually be part of the input
     return ([], [Input(messages=m) for m in prompts])
+
+
+def _version_with_override(base: Version, override: dict[str, Any]) -> Version:
+    try:
+        return base.model_copy(update=override)
+    except ValidationError as e:
+        raise BadRequestError(f"Invalid version with override: {e}")

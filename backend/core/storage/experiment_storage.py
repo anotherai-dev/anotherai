@@ -1,12 +1,19 @@
 from datetime import datetime
-from typing import Literal, Protocol
+from typing import Literal, NamedTuple, Protocol
+from uuid import UUID
 
 from core.domain.agent_input import AgentInput
 from core.domain.agent_output import AgentOutput
 from core.domain.experiment import Experiment
 from core.domain.version import Version
 
-type ExperimentFields = Literal["versions", "inputs", "outputs"]
+type ExperimentFields = Literal["agent_id", "versions", "inputs", "outputs"]
+
+
+class CompletionIDTuple(NamedTuple):
+    completion_id: UUID
+    version_id: str
+    input_id: str
 
 
 class ExperimentStorage(Protocol):
@@ -30,22 +37,19 @@ class ExperimentStorage(Protocol):
 
     async def get_experiment(self, experiment_id: str, include: set[ExperimentFields] | None = None) -> Experiment: ...
 
-    async def add_inputs(self, experiment_id: str, inputs: list[AgentInput]) -> list[str]:
+    async def add_inputs(self, experiment_id: str, inputs: list[AgentInput]) -> set[str]:
         """Adds the inputs to the experiment. Returns a list of the input ids that were inserted"""
         ...
 
-    async def add_versions(self, experiment_id: str, versions: list[Version]) -> list[str]:
+    async def add_versions(self, experiment_id: str, versions: list[Version]) -> set[str]:
         """Adds the versions to the experiment. Returns a list of the version ids that were inserted"""
         ...
 
-    async def add_completion(
+    async def add_completions(
         self,
         experiment_id: str,
-        completion_id: str,
-        version_id: str,
-        input_id: str,
-        output: AgentOutput,
-    ) -> None:
+        completions: list[CompletionIDTuple],
+    ) -> set[UUID]:
         """Adds a completion to an experiment. If an output is provided, the completion is marked as completed.
         Raises a DuplicateValueError if a completion already exists for the experiment, input and version."""
         ...

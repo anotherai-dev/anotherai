@@ -1,4 +1,5 @@
 from typing import Protocol
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -23,9 +24,9 @@ class UserConnectedEvent(Event):
     organization_id: str | None
 
 
-class ExperimentTriggerCompletion(Event):
+class StartExperimentCompletion(Event):
     experiment_id: str
-    completion_id: str
+    completion_id: UUID
     version_id: str
     input_id: str
 

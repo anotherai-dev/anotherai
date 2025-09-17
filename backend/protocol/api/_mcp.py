@@ -34,6 +34,11 @@ mcp = _mcp_utils.CustomFastMCP(
     auth=_mcp_utils.build_auth_provider(),
 )
 
+type AuthorName = Annotated[
+    str,
+    Field(description="The name of the user executing the tool. Can be `user` to target the authenticated user."),
+]
+
 # ------------------------------------------------------------
 # Playground
 
@@ -44,7 +49,8 @@ async def create_experiment(
     title: str,
     description: str,
     agent_id: str,
-    metadata: dict[str, Any],
+    author_name: AuthorName,
+    metadata: dict[str, Any] | None = None,
 ) -> PlaygroundOutput:
     """Creates a new experiment and returns the experiment id. If an experiment id is provided and an experiment exists
     with the same id and for the same agent, the existing experiment is updated and returned.
@@ -53,7 +59,14 @@ async def create_experiment(
     - Use the add_versions_to_experiment tool to add versions to the experiment.
     - Use the add_inputs_to_experiment tool to add inputs to the experiment.
     """
-    raise NotImplementedError("Not implemented")
+    return await (await _mcp_utils.experiment_service()).create_experiment_mcp(
+        experiment_id=experiment_id,
+        title=title,
+        description=description,
+        agent_id=agent_id,
+        metadata=metadata,
+        author_name=author_name,
+    )
 
 
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
@@ -85,15 +98,15 @@ async def add_versions_to_experiment(
             "Use the overrides to create variations of the base version. The payload must respect the same json schema as the version.",
         ),
     ],
-) -> PlaygroundOutput | str:
+) -> list[str]:
     """Adds versions to an existing experiment if they are not already present, and creates the completions for the added
     versions based on the experiment's inputs.
     - the version is added as is
     - a version is added per provided override
 
-    Returns outputs created from the added version if the experiment already contained inputs.
+    Returns the ids of the added versions.
     """
-    raise NotImplementedError("Not implemented")
+    return await (await _mcp_utils.playground_service()).add_versions_to_experiment(experiment_id, version, overrides)
 
 
 @mcp.tool(annotations=ToolAnnotations(idempotentHint=True))
@@ -115,10 +128,27 @@ async def add_inputs_to_experiment(
             query_completions() + inputs parameter when retrying existing completions.""",
         ),
     ],
-) -> PlaygroundOutput | str:
+) -> list[str]:
     """Adds inputs to an existing experiment if they are not already present, and creates the completions for the added
-    inputs based on the experiment's versions."""
-    raise NotImplementedError("Not implemented")
+    inputs based on the experiment's versions.
+
+    Returns the ids of the added inputs.
+    """
+    return await (await _mcp_utils.playground_service()).add_inputs_to_experiment(experiment_id, inputs, input_query)
+
+
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
+async def get_experiment_outputs(
+    experiment_id: str,
+    version_ids: list[str] | None = None,
+    input_ids: list[str] | None = None,
+) -> PlaygroundOutput:
+    """Returns the outputs of an experiment. Waits for completions if they are not ready.
+    - If version_ids are provided, only the outputs of the specified versions are returned.
+    - If input_ids are provided, only the outputs of the specified inputs are returned.
+    - If both version_ids and input_ids are provided, the outputs of the specified versions and inputs are returned.
+    """
+    raise NotImplementedError
 
 
 # ------------------------------------------------------------
