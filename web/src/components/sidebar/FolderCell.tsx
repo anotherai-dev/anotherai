@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import React, { useCallback, useRef } from "react";
 import { View } from "@/types/models";
 import EditableFolderName, { EditableFolderNameRef } from "./EditableFolderName";
@@ -38,42 +39,77 @@ function FolderCell({
   onDrop,
   onRefChange,
 }: FolderCellProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const folderRef = useRef<EditableFolderNameRef>(null);
 
   const handleRename = useCallback(() => {
     folderRef.current?.startEditing();
   }, []);
 
+  const handleFolderClick = useCallback(
+    (e: React.MouseEvent) => {
+      // Don't navigate if we're editing the name or if click is on input
+      if (folderRef.current?.isEditing() || (e.target as HTMLElement).tagName === "INPUT") {
+        return;
+      }
+      // Navigate to folder page if folder has an ID (not the empty folder)
+      if (folderId && folderId !== "") {
+        router.push(`/folders/${folderId}`);
+      }
+    },
+    [router, folderId]
+  );
+
+  const isActive = useCallback(() => {
+    if (!folderId || folderId === "") return false;
+    const expectedPath = `/folders/${folderId}`;
+    return pathname === expectedPath;
+  }, [pathname, folderId]);
+
   return (
     <div className="mb-0.5">
       <div
-        className={`flex items-center pl-3 pr-2 group/folder transition-colors ${
+        className={`flex items-center pl-3 pr-2 group/folder transition-colors rounded-[2px] ${
           isDragOver
-            ? "bg-blue-200 border border-blue-600 border-dashed rounded-[2px]"
+            ? "bg-blue-200 border border-blue-600 border-dashed"
             : isDragActive
-              ? "border border-transparent border-dashed rounded-[2px]"
-              : ""
-        } ${isMenuOpen ? "hover:bg-gray-100 bg-gray-100" : "hover:bg-gray-100"} ${folderId === "" ? "py-2" : "py-1"}`}
+              ? "border border-transparent border-dashed"
+              : isActive()
+                ? "bg-blue-100"
+                : ""
+        } ${
+          isMenuOpen ? "hover:bg-gray-100 bg-gray-100" : !isActive() ? "hover:bg-gray-100" : "hover:bg-blue-200"
+        } ${folderId === "" ? "py-2" : "py-1"}`}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
         onDrop={onDrop}
       >
-        <button
-          onClick={onToggleCollapse}
-          className={`flex items-center gap-1 text-xs font-medium transition-colors flex-1 cursor-pointer ${
-            isDragOver ? "text-gray-800" : "text-gray-500 hover:text-gray-700"
-          }`}
-        >
-          {isCollapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-          <EditableFolderName
-            ref={(ref) => {
-              folderRef.current = ref;
-              onRefChange(ref);
-            }}
-            folderId={folderId}
-            name={folderName}
-          />
-        </button>
+        <div className="flex items-center flex-1 gap-1">
+          <button
+            onClick={onToggleCollapse}
+            className={`flex items-center justify-center w-4 h-4 transition-colors ${
+              isActive() ? "text-blue-700" : isDragOver ? "text-gray-800" : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            {isCollapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          </button>
+          <button
+            onClick={handleFolderClick}
+            className={`flex items-center text-xs font-medium transition-colors flex-1 cursor-pointer min-w-0 ${
+              isActive() ? "text-blue-700" : isDragOver ? "text-gray-800" : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <EditableFolderName
+              ref={(ref) => {
+                folderRef.current = ref;
+                onRefChange(ref);
+              }}
+              folderId={folderId}
+              name={folderName}
+            />
+          </button>
+        </div>
         <FolderMenuButton
           folderId={folderId}
           folderName={folderName}
