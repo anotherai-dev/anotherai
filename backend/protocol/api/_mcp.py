@@ -148,7 +148,7 @@ async def get_experiment_outputs(
     - If input_ids are provided, only the outputs of the specified inputs are returned.
     - If both version_ids and input_ids are provided, the outputs of the specified versions and inputs are returned.
     """
-    raise NotImplementedError
+    return await (await _mcp_utils.playground_service()).get_experiment_outputs(experiment_id, version_ids, input_ids)
 
 
 # ------------------------------------------------------------

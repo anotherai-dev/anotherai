@@ -1,9 +1,11 @@
+import re
 from collections.abc import Mapping
 from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel
 
+from core.domain.exceptions import BadRequestError
 from core.services.messages.messages_utils import json_schema_for_template
 from core.utils.schema_sanitation import streamline_schema
 from protocol.api._api_models import Message
@@ -63,3 +65,16 @@ def sanitize_id(value: str) -> tuple[IDType | None, str]:
         return None, value
 
     return id_type, splits[1]
+
+
+def sanitize_ids(ids: list[str], expected_type: IDType, expected_regexp: re.Pattern[str]) -> set[str]:
+    def iter():
+        for id in ids:
+            id_type, sanitized = sanitize_id(id)
+            if id_type is not None and id_type != expected_type:
+                raise BadRequestError(f"Invalid {expected_type.value} id: {id}")
+            if not expected_regexp.match(sanitized):
+                raise BadRequestError(f"Invalid {expected_type.value} id: {id}")
+            yield sanitized
+
+    return set(iter())

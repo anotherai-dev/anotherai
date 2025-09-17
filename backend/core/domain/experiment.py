@@ -15,8 +15,11 @@ class ExperimentOutput:
     version_id: str
     input_id: str
     created_at: datetime = Field(default_factory=datetime_zero)
+    started_at: datetime | None
     completed_at: datetime | None
     output: AgentOutput | None
+    cost_usd: float | None
+    duration_seconds: float | None
 
 
 class Experiment(BaseModel):

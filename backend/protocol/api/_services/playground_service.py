@@ -1,7 +1,7 @@
 import asyncio
 import json
 import time
-from collections.abc import Coroutine
+from collections.abc import Coroutine, Iterable
 from typing import Any, final
 
 from pydantic import ValidationError
@@ -11,7 +11,7 @@ from structlog.contextvars import bind_contextvars
 from core.domain.agent import Agent
 from core.domain.cache_usage import CacheUsage
 from core.domain.events import EventRouter, StartExperimentCompletion
-from core.domain.exceptions import BadRequestError, ObjectNotFoundError
+from core.domain.exceptions import BadRequestError, ObjectNotFoundError, OperationTimeoutError
 from core.domain.experiment import Experiment
 from core.domain.models.model_data_mapping import get_model_id
 from core.domain.models.models import Model
@@ -22,19 +22,20 @@ from core.storage.agent_storage import AgentStorage
 from core.storage.completion_storage import CompletionStorage
 from core.storage.deployment_storage import DeploymentStorage
 from core.storage.experiment_storage import CompletionIDTuple, ExperimentStorage
-from core.utils.hash import hash_model, is_hash_32
+from core.utils.hash import HASH_REGEXP_32, hash_model, is_hash_32
 from core.utils.uuid import uuid7
 from protocol.api._api_models import Error, Input, Message, Output, PlaygroundOutput, Tool, Version
 from protocol.api._services.conversions import (
     experiments_url,
     input_to_domain,
     message_to_domain,
+    output_from_domain,
     playground_output_completion_from_domain,
     tool_to_domain,
     version_from_domain,
     version_to_domain,
 )
-from protocol.api._services.utils_service import IDType, sanitize_id
+from protocol.api._services.utils_service import IDType, sanitize_id, sanitize_ids
 
 _log = get_logger(__name__)
 
@@ -80,18 +81,18 @@ class PlaygroundService:
         overrides: list[dict[str, Any]] | None,
     ) -> list[str]:
         # First fetch the experiment and the associated inputs
-        experiment = await self._experiment_storage.get_experiment(experiment_id, include={"agent_id", "inputs"})
+        experiment = await self._experiment_storage.get_experiment(experiment_id, include={"agent_id", "inputs.id"})
+
+        if isinstance(version, str):
+            # The double conversion to and from domain sucks here but is necessary
+            # Since the overrides will apply to the exposed version type
+            base_version: Version = version_from_domain(await self._get_version_by_id(experiment.agent_id, version))
+        else:
+            base_version = version
 
         # First we compute the list of all versions
         # The _version_with_override will raise an error if one override is not valid
         async def _version_iterator():
-            if isinstance(version, str):
-                # The double conversion to and from domain sucks here but is necessary
-                # Since the overrides will apply to the exposed version type
-                base_version: Version = version_from_domain(await self._get_version_by_id(experiment.agent_id, version))
-            else:
-                base_version = version
-
             yield base_version
             if not overrides:
                 return
@@ -104,39 +105,130 @@ class PlaygroundService:
 
         if experiment.inputs:
             # Now we create completions for each version / input combination
-            completions_to_insert = [
-                CompletionIDTuple(completion_id=uuid7(), version_id=id, input_id=input.id)
-                for id in inserted_ids
-                for input in experiment.inputs
-            ]
-            inserted_completions_ids = await self._experiment_storage.add_completions(
+            await self._start_experiment_completions(
                 experiment_id,
-                completions_to_insert,
+                inserted_ids,
+                [input.id for input in experiment.inputs],
             )
-            # All the inserted completions should be started
-            for c in completions_to_insert:
-                if c.completion_id not in inserted_completions_ids:
-                    # Might be a race condition somewhere so we can just ignore
-                    continue
-                self._event_router(
-                    StartExperimentCompletion(
-                        experiment_id=experiment_id,
-                        completion_id=c.completion_id,
-                        version_id=c.version_id,
-                        input_id=c.input_id,
-                    ),
-                )
 
         return [IDType.VERSION.wrap(id) for id in inserted_ids]
 
     async def add_inputs_to_experiment(
         self,
         experiment_id: str,
-        inputs: list[Input],
+        inputs: list[Input] | None,
         input_query: str | None,
     ) -> list[str]:
-        # TODO: implement
-        return []
+        experiment = await self._experiment_storage.get_experiment(experiment_id, include={"versions.id"})
+        if inputs and input_query:
+            raise BadRequestError("Exactly one of inputs and input_query must be provided")
+
+        if input_query:
+            inputs = await self._extract_inputs_from_query(input_query)
+        elif not inputs:
+            raise BadRequestError("Exactly one of inputs and input_query must be provided")
+
+        inserted_ids = await self._experiment_storage.add_inputs(
+            experiment_id,
+            [input_to_domain(input) for input in inputs],
+        )
+        if experiment.versions:
+            await self._start_experiment_completions(
+                experiment_id,
+                version_ids=(IDType.VERSION.wrap(v.id) for v in experiment.versions),
+                input_ids=(input.id for input in inputs),
+            )
+
+        return [IDType.INPUT.wrap(id) for id in inserted_ids]
+
+    async def _start_experiment_completions(
+        self,
+        experiment_id: str,
+        version_ids: Iterable[str],
+        input_ids: Iterable[str],
+    ):
+        completions_to_insert = [
+            CompletionIDTuple(completion_id=uuid7(), version_id=version_id, input_id=input_id)
+            for version_id in version_ids
+            for input_id in input_ids
+        ]
+        inserted_completions_ids = await self._experiment_storage.add_completions(
+            experiment_id,
+            completions_to_insert,
+        )
+        # All the inserted completions should be started
+        for c in completions_to_insert:
+            if c.completion_id not in inserted_completions_ids:
+                # Might be a race condition somewhere so we can just ignore
+                continue
+            self._event_router(
+                StartExperimentCompletion(
+                    experiment_id=experiment_id,
+                    completion_id=c.completion_id,
+                    version_id=c.version_id,
+                    input_id=c.input_id,
+                ),
+            )
+
+    async def _fetch_playground_output(
+        self,
+        experiment_id: str,
+        version_ids: set[str] | None,
+        input_ids: set[str] | None,
+    ) -> PlaygroundOutput:
+        completions = await self._experiment_storage.list_experiment_completions(
+            experiment_id,
+            version_ids=version_ids,
+            input_ids=input_ids,
+            include={"output"},
+        )
+
+        def _completion_iter():
+            for c in completions:
+                if not c.output or not c.cost_usd or not c.duration_seconds:
+                    _log.warning("Playground: Completion is not properly completed", completion_id=c.completion_id)
+                yield PlaygroundOutput.Completion(
+                    id=c.completion_id,
+                    input_id=c.input_id,
+                    version_id=c.version_id,
+                    output=output_from_domain(c.output) if c.output else Output(),
+                    cost_usd=c.cost_usd,
+                    duration_seconds=c.duration_seconds,
+                )
+
+        return PlaygroundOutput(
+            experiment_id=experiment_id,
+            experiment_url=experiments_url(experiment_id),
+            completions=list(_completion_iter()),
+        )
+
+    async def get_experiment_outputs(
+        self,
+        experiment_id: str,
+        version_ids: list[str] | None,
+        input_ids: list[str] | None,
+        max_wait_time_seconds: float = 30,
+    ) -> PlaygroundOutput:
+        sanitized_versions = sanitize_ids(version_ids, IDType.VERSION, HASH_REGEXP_32) if version_ids else None
+        sanitized_inputs = sanitize_ids(input_ids, IDType.INPUT, HASH_REGEXP_32) if input_ids else None
+
+        start_time = time.time()
+
+        while time.time() - start_time < max_wait_time_seconds:
+            # First fetch completions to check that all are properly completed
+            completions = await self._experiment_storage.list_experiment_completions(
+                experiment_id,
+                version_ids=sanitized_versions,
+                input_ids=sanitized_inputs,
+            )
+            if all(c.completed_at for c in completions):
+                return await self._fetch_playground_output(experiment_id, sanitized_versions, sanitized_inputs)
+
+            # TODO: check that all completions are properly started
+
+            await asyncio.sleep(5)
+
+        raise OperationTimeoutError(f"Playground: Experiment outputs not ready after {max_wait_time_seconds} seconds")
 
     @classmethod
     def _parse_models(cls, models: str) -> list[Model]:
@@ -421,4 +513,4 @@ def _version_with_override(base: Version, override: dict[str, Any]) -> Version:
     try:
         return base.model_copy(update=override)
     except ValidationError as e:
-        raise BadRequestError(f"Invalid version with override: {e}")
+        raise BadRequestError(f"Invalid version with override: {e}") from e

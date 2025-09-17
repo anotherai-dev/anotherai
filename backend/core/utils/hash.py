@@ -59,8 +59,8 @@ def secure_hash(val: str) -> str:
     return hashlib.sha256(val.encode()).hexdigest()
 
 
-_HASH_REGEXP_32 = re.compile(r"^[a-f0-9]{32}$")
+HASH_REGEXP_32 = re.compile(r"^[a-f0-9]{32}$")
 
 
 def is_hash_32(val: str) -> bool:
-    return _HASH_REGEXP_32.match(val) is not None
+    return HASH_REGEXP_32.match(val) is not None

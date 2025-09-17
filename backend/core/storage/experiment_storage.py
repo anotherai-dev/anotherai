@@ -4,10 +4,12 @@ from uuid import UUID
 
 from core.domain.agent_input import AgentInput
 from core.domain.agent_output import AgentOutput
-from core.domain.experiment import Experiment
+from core.domain.experiment import Experiment, ExperimentOutput
 from core.domain.version import Version
 
-type ExperimentFields = Literal["agent_id", "versions", "inputs", "outputs"]
+type ExperimentFields = Literal["agent_id", "versions.id", "inputs.id", "outputs"]
+
+type ExperimentOutputFields = Literal["output"]
 
 
 class CompletionIDTuple(NamedTuple):
@@ -35,7 +37,13 @@ class ExperimentStorage(Protocol):
 
     async def count_experiments(self, agent_uid: int | None, since: datetime | None) -> int: ...
 
-    async def get_experiment(self, experiment_id: str, include: set[ExperimentFields] | None = None) -> Experiment: ...
+    async def get_experiment(
+        self,
+        experiment_id: str,
+        include: set[ExperimentFields] | None = None,
+        version_ids: set[str] | None = None,
+        input_ids: set[str] | None = None,
+    ) -> Experiment: ...
 
     async def add_inputs(self, experiment_id: str, inputs: list[AgentInput]) -> set[str]:
         """Adds the inputs to the experiment. Returns a list of the input ids that were inserted"""
@@ -62,4 +70,15 @@ class ExperimentStorage(Protocol):
     async def add_completion_output(self, experiment_id: str, completion_id: str, output: AgentOutput) -> None:
         """Sets the output for a completion in an experiment. Completion is marked as completed.
         Raises a DuplicateValueError if the completion is already completed."""
+        ...
+
+    async def list_experiment_completions(
+        self,
+        experiment_id: str,
+        version_ids: set[str] | None = None,
+        input_ids: set[str] | None = None,
+        include: set[ExperimentOutputFields] | None = None,
+    ) -> list[ExperimentOutput]:
+        """Returns the completions of an experiment.
+        Raises an error if the version_ids or input_ids are not found in the experiment."""
         ...
