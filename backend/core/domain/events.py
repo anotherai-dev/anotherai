@@ -23,5 +23,12 @@ class UserConnectedEvent(Event):
     organization_id: str | None
 
 
+class ExperimentTriggerCompletion(Event):
+    experiment_id: str
+    completion_id: str
+    version_id: str
+    input_id: str
+
+
 class EventRouter(Protocol):
     def __call__(self, event: Event, delay: float | None = None) -> None: ...

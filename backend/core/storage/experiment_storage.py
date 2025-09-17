@@ -1,7 +1,12 @@
 from datetime import datetime
-from typing import Protocol
+from typing import Literal, Protocol
 
+from core.domain.agent_input import AgentInput
+from core.domain.agent_output import AgentOutput
 from core.domain.experiment import Experiment
+from core.domain.version import Version
+
+type ExperimentFields = Literal["versions", "inputs", "outputs"]
 
 
 class ExperimentStorage(Protocol):
@@ -13,8 +18,44 @@ class ExperimentStorage(Protocol):
 
     async def delete(self, experiment_id: str) -> None: ...
 
-    async def list_experiments(self, agent_uid: int | None, since: datetime | None, limit: int, offset: int = 0) -> list[Experiment]: ...
+    async def list_experiments(
+        self,
+        agent_uid: int | None,
+        since: datetime | None,
+        limit: int,
+        offset: int = 0,
+    ) -> list[Experiment]: ...
 
     async def count_experiments(self, agent_uid: int | None, since: datetime | None) -> int: ...
 
-    async def get_experiment(self, experiment_id: str) -> Experiment: ...
+    async def get_experiment(self, experiment_id: str, include: set[ExperimentFields] | None = None) -> Experiment: ...
+
+    async def add_inputs(self, experiment_id: str, inputs: list[AgentInput]) -> list[str]:
+        """Adds the inputs to the experiment. Returns a list of the input ids that were inserted"""
+        ...
+
+    async def add_versions(self, experiment_id: str, versions: list[Version]) -> list[str]:
+        """Adds the versions to the experiment. Returns a list of the version ids that were inserted"""
+        ...
+
+    async def add_completion(
+        self,
+        experiment_id: str,
+        completion_id: str,
+        version_id: str,
+        input_id: str,
+        output: AgentOutput,
+    ) -> None:
+        """Adds a completion to an experiment. If an output is provided, the completion is marked as completed.
+        Raises a DuplicateValueError if a completion already exists for the experiment, input and version."""
+        ...
+
+    async def start_completion(self, experiment_id: str, completion_id: str) -> None:
+        """Mark a completion as started in an experiment.
+        If the completion is already started, raises a DuplicateValueError"""
+        ...
+
+    async def add_completion_output(self, experiment_id: str, completion_id: str, output: AgentOutput) -> None:
+        """Sets the output for a completion in an experiment. Completion is marked as completed.
+        Raises a DuplicateValueError if the completion is already completed."""
+        ...
