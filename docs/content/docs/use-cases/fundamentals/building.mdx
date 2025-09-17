@@ -50,6 +50,18 @@ Create a new AnotherAI agent that summarizes emails that costs less than $5 for 
 Your AI assistant will be able to construct the agent's code, and will be able to use AnotherAI to access 100+ different models to find the best configuration to help you achieve your goals.
 
 
+#### Adding Metadata
+
+You can also add custom metadata to your agents to help organize and track them. Common use cases include:
+
+- **Workflow tracking**: include a trace_id and workflow_name key. (Learn more about workflows [here](/use-cases/connecting-agents))
+- **User identication**: include a user_id customer_email key. 
+
+```
+Create a new AnotherAI agent that summarizes emails and include a customer_id metadata key 
+with UUID values.
+```
+
 If you prefer to build manually or want to understand the configuration details, see our [OpenAI SDK Integration](/docs/integrations/openai) guide.
 
 ## Testing your Agent

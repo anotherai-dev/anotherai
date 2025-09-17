@@ -6,6 +6,7 @@ description: Learn how to use LLMs and datasets to create a robust evaluation sy
 
 import { Step, Steps } from 'fumadocs-ui/components/steps';
 import { Accordions, Accordion } from 'fumadocs-ui/components/accordion';
+import { Callout } from 'fumadocs-ui/components/callout';
 
 Evaluating your AI agents is important for ensuring they meet quality standards and perform reliably in production. 
 
@@ -46,7 +47,11 @@ When creating datasets for agent evaluation, you can choose between two main app
 
 **Input and Expected Output Datasets**
 
-These datasets include both the input and the correct output for each test case. In this case your evaluation process simply consists of comparing a completion's output to the correct output to determine the quality of a given version. This approach works well for agents that would only have one correct output for a given input.
+These datasets include both the input and the expected output for each test case. In cases where there is only one correct output (ex: math problems, classification tasks), 
+your evaluation process simply consists of comparing a completion's output to the correct output to determine the quality of a given version. This can be done manually or by utilizing a script to check if they're identical. 
+
+When there is more than one correct output (ex: creative writing, analysis tasks), but you still want to include the expected output in your dataset, it can be useful to use [LLM-as-a-judge](#handling-complex-evaluations-with-llms-as-a-judge) to evaluate the quality of the output. In those cases, the LLM judge compares the actual output against the expected output to evaluate how well they match, considering factors 
+like semantic similarity, completeness, and accuracy.
 
 Examples of good use cases:
 - Solving math problems
@@ -55,42 +60,40 @@ Examples of good use cases:
 
 **Input-Only Datasets**
 
-These datasets contain only inputs without predefined expected outputs. Evaluation relies on LLM-as-a-judge or human reviewers to assess quality as there is no single correct output. This approach is much better for agents that can have multiple valid outputs for a given input.
+These datasets contain only inputs without predefined expected outputs. Evaluation relies on [LLM-as-a-judge](#handling-complex-evaluations-with-llms-as-a-judge) (recommended) or human reviewers to assess quality as there is no single correct output. This approach is much better for agents that can have multiple valid outputs for a given input.
 
 Examples of good use cases:
 - Creative writing
 - Content summarization
 - Analysis tasks
 
-<Info>
-**Clarification from Pierre:** LLM as a judge isn't limited to input-only datasets. It can also be used with datasets that have expected outputs. In those cases, the LLM judge compares the actual output against the expected output to evaluate how well they match, considering factors like semantic similarity, completeness, and accuracy. This is particularly useful when exact string matching isn't appropriate for determining correctness.
-</Info>
+## Evaluating the Results of Running Your Dataset
 
-## Handling Complex Evaluations with LLMs as a Judge
+To evaluate your agent's outputs from running your dataset, you have two approaches:
 
-<Warning>
-**Feedback from Pierre:** This paragraph is confusing. What does "review the results manually" mean? Is manual review the opposite of LLM as a judge? The transition doesn't make sense - it's unclear if LLM as a judge is for complex cases only, or if it's an alternative to manual review in general. Also, what does "running your dataset manually" mean - do you mean manually inspecting each output one by one? This needs clarification about when/why to use LLM as a judge vs other evaluation methods.
-</Warning>
+1. **Deterministic evaluation (using code)**
 
-<Info>
-**Clarification from Pierre on when to use LLM as a judge:** LLM as a judge is used when you cannot evaluate deterministically with code using equality checks.
+This approach is best when there is one correct, expected output for each input. In these cases you can write a simple script to compare the actual and expected outputs and run the script to evaluate the results.
 
-**Deterministic evaluation (use code):** When outputs can be exactly compared
+Types of agents that can usually be evaluated using deterministic evaluation:
 - Math problems: `2 + 2 = 4` (exact match)
 - Data extraction: Extracted JSON must match expected structure
 - Classification: Output must be one of specific categories
 
-**LLM as a judge evaluation:** When multiple outputs could be correct
+2. **LLM-as-a-judge (automated)** 
+
+Many agents don't have just one correct answer, though. When multiple outputs could be considered correct, you cannot evaluate deterministically with code. In these cases we recommend building an LLM-as-a-judge system to evaluate the results.
+
+Types of agents that can usually be evaluated using LLM-as-a-judge:
 - Text generation: Two different summaries can both be correct even with different wording
 - Creative writing: Many valid ways to write the same content
 - Analysis tasks: Different interpretations can be equally valid
 
-Example: If generating a product description, "This comfortable blue shirt is perfect for casual wear" and "A relaxed-fit blue shirt ideal for everyday occasions" are both correct despite being completely different text. You need LLM as a judge to evaluate if both capture the key product features correctly.
-</Info>
+For example: If generating a product description, "This comfortable blue shirt is perfect for casual wear" and "A relaxed-fit blue shirt ideal for everyday occasions" are both correct despite being completely different text. You need LLM as a judge to evaluate if both capture the key product features correctly.
 
-In simpler cases, you can review the results of your agent running on your dataset manually, there are more complex cases where you may need to build a separate system to help with the evalution.
+### Handling Complex Evaluations with LLMs as a Judge
 
-LLM-as-a-judge style evaluation uses one AI model to evaluate the outputs of another.
+LLM-as-a-judge is recommended when you cannot evaluate deterministically with code using equality checks. This style of evalution uses one AI model to evaluate the outputs of another, thus taking advantage of LLM's ability to reason and deduce correctness based on previous examples or criteria instead of a strict equality check.
 
 ### Key Benefits
 
