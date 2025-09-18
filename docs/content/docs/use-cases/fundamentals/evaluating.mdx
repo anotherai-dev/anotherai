@@ -108,7 +108,7 @@ Let's walk through evaluating an email summarization agent. In this example, our
 - Takes an email as input
 - Returns a summary
 
-[IMAGE TODO: SCREENSHOT OF EMAIL SUMMARIZER AGENT COMPLETION IN ANOTHERAI (to be clearer to non-technical users)]
+![Email Summarizer Completion Details](/images/email-summarizer-completion-details.png)
 
 <Steps>
 
@@ -377,8 +377,6 @@ This prompt and subsequent code will:
 2. Run the judge agent to evaluate each summary
 3. Store the evaluation scores as annotations in AnotherAI
 
-[IMAGE TODO: SCREENSHOT OF LLM AS A JUDGE RESULTS???]
-
 You can then ask your AI coding agent to analyze these evaluation results by querying the annotations:
 
 ```
@@ -400,6 +398,7 @@ If you want to run your evaluation regularly and monitor the results over time, 
 Create a view that shows all completions of anotherai/agent/[your-agent-name] with annotations. 
 The view should display the completion ID, input, outputs, and the annotation left on the completion.
 ```
-[IMAGE TODO: SCREENSHOT OF VIEW CREATED FROM THIS PROMPT]
+
+![Completions and Annotations View](/images/calendar-event-completions-annotations-with-inputs.png)
 </Step>
 </Steps>
