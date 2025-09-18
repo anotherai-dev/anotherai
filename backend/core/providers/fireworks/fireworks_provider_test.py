@@ -2,7 +2,7 @@
 import json
 import os
 import unittest
-from typing import cast
+from typing import Any, cast
 from unittest.mock import Mock, patch
 
 import pytest
@@ -16,7 +16,6 @@ from core.domain.models.model_data import FinalModelData, MaxTokensData
 from core.domain.tool import Tool
 from core.domain.tool_call import ToolCallRequest
 from core.providers._base.abstract_provider import RawCompletion
-from core.providers._base.httpx_provider import ParsedResponse
 from core.providers._base.llm_usage import LLMUsage
 from core.providers._base.provider_error import (
     MaxTokensExceededError,
@@ -25,8 +24,6 @@ from core.providers._base.provider_error import (
     UnknownProviderError,
 )
 from core.providers._base.provider_options import ProviderOptions
-from core.providers._base.provider_output import ProviderOutput
-from core.providers._base.streaming_context import ToolCallRequestBuffer
 from core.providers.fireworks.fireworks_domain import (
     Choice,
     ChoiceMessage,
@@ -62,13 +59,11 @@ def fireworks_provider():
             url=os.getenv("FIREWORKS_API_URL", "https://api.fireworks.ai/inference/v1/chat/completions"),
         ),
     )
-    # Clearing the context
-    provider._thinking_tag_context.set(None)  # pyright: ignore [reportPrivateUsage]
     return provider
 
 
-def _output_factory(x: str, _: bool) -> ProviderOutput:
-    return ProviderOutput(x)
+def _output_factory(x: str) -> Any:
+    return x
 
 
 class TestValues(unittest.TestCase):
@@ -178,16 +173,14 @@ class TestSingleStream:
         raw_chunks = provider._single_stream(  # pyright: ignore [reportPrivateUsage]
             request={"messages": [{"role": "user", "content": "Hello"}]},
             output_factory=_output_factory,
-            partial_output_factory=lambda x: ProviderOutput(x),
             raw_completion=raw,
             options=ProviderOptions(model=Model.LLAMA_3_3_70B, max_tokens=10, temperature=0, output_schema={}),
         )
 
         parsed_chunks = [o async for o in raw_chunks]
+        assert not any(chunk.is_empty() for chunk in parsed_chunks)
 
-        assert len(parsed_chunks) == 2
-        assert parsed_chunks[0][0] == {"foo": "bar"}
-        assert parsed_chunks[1][0] == '{"foo" : "bar"}'
+        assert len(parsed_chunks) == 3
 
         req = httpx_mock.get_request(url="https://api.fireworks.ai/inference/v1/chat/completions")
         assert req
@@ -204,7 +197,6 @@ class TestSingleStream:
             raw_chunks = fireworks_provider._single_stream(  # pyright: ignore [reportPrivateUsage]
                 request={"messages": [{"role": "user", "content": "Hello"}]},
                 output_factory=_output_factory,
-                partial_output_factory=lambda x: ProviderOutput(x),
                 raw_completion=raw,
                 options=ProviderOptions(model=Model.LLAMA_3_3_70B, max_tokens=10, temperature=0),
             )
@@ -224,7 +216,6 @@ class TestSingleStream:
             raw_chunks = fireworks_provider._single_stream(  # pyright: ignore [reportPrivateUsage]
                 request={"messages": [{"role": "user", "content": "Hello"}]},
                 output_factory=_output_factory,
-                partial_output_factory=lambda x: ProviderOutput(x),
                 raw_completion=raw,
                 options=ProviderOptions(model=Model.LLAMA_3_3_70B, max_tokens=10, temperature=0),
             )
@@ -255,10 +246,9 @@ class TestStream:
             [Message.with_text("Hello")],
             options=ProviderOptions(model=Model.DEEPSEEK_V3_0324, temperature=0, output_schema={"type": "object"}),
             output_factory=_output_factory,
-            partial_output_factory=lambda x: ProviderOutput(x),
         )
         chunks = [chunk async for chunk in streamer]
-        assert len(chunks) == 2
+        assert len(chunks) == 3
 
         # Not sure why the pyright in the CI reports an error here
         request = httpx_mock.get_requests()[0]
@@ -295,7 +285,6 @@ class TestStream:
             [Message.with_text("Hello")],
             options=ProviderOptions(model=Model.LLAMA_3_3_70B, max_tokens=10, temperature=0),
             output_factory=_output_factory,
-            partial_output_factory=lambda x: ProviderOutput(x),
         )
         with pytest.raises(UnknownProviderError) as e:
             [chunk async for chunk in streamer]
@@ -332,8 +321,8 @@ class TestComplete:
             ),
             output_factory=_output_factory,
         )
-        assert o.output
-        assert o.tool_calls is None
+        assert o.agent_output
+        assert o.tool_call_requests is None
         # Not sure why the pyright in the CI reports an error here
         request = httpx_mock.get_requests()[0]
         assert request.method == "POST"  # pyright: ignore reportUnknownMemberType
@@ -414,8 +403,8 @@ class TestComplete:
             ),
             output_factory=_output_factory,
         )
-        assert o.output
-        assert o.tool_calls is None
+        assert o.agent_output
+        assert o.tool_call_requests is None
 
         request = httpx_mock.get_requests()[0]
         assert request.method == "POST"  # pyright: ignore reportUnknownMemberType
@@ -460,10 +449,10 @@ class TestComplete:
         o = await provider.complete(
             [Message.with_text("Hello")],
             options=ProviderOptions(model=Model.LLAMA_3_3_70B, max_tokens=10, temperature=0, output_schema=None),
-            output_factory=lambda x, _: ProviderOutput(x),
+            output_factory=_output_factory,
         )
-        assert isinstance(o.output, str)
-        assert o.tool_calls is None
+        assert isinstance(o.agent_output, str)
+        assert o.tool_call_requests is None
 
         request = httpx_mock.get_requests()[0]
         assert request.method == "POST"  # pyright: ignore reportUnknownMemberType
@@ -520,7 +509,7 @@ class TestComplete:
             ),
             output_factory=_output_factory,
         )
-        assert o.output
+        assert o.agent_output
 
         request = httpx_mock.get_requests()[0]
         assert request
@@ -577,7 +566,7 @@ class TestExtractContent:
         response = CompletionResponse.model_validate_json(
             fixture_bytes("fireworks", "r1_completion_with_reasoning.json"),
         )
-        content = fireworks_provider._extract_content_str(response)  # pyright: ignore[reportPrivateUsage]
+        content = fireworks_provider._extract_content_str(response)
         assert (
             content
             == '\n\n```json\n{\n  "greeting": "The Azure Whisper",\n  "content": "On a cloudless morning, young Mira gazed upward, mesmerized by the endless blue canvas above. \'Why is the sky blue?\' she asked her grandmother, who tended sunflowers nearby. Her grandmother smiled, recalling an old tale. \'Long ago, the sky was colorless. A lonely star wept tears of sapphire, staining the heavens to remind us of its sorrow. But over time, the stars found joy again—scattering laughter as sunlight through the blue. Now, the sky sings their story.\' Mira squinted, imagining starry tears and shimmering light. From that day, the sky felt less like emptiness and more like a secret kept between the stars and her.",\n  "moral": "Even the simplest wonders hold stories waiting to be imagined."\n}\n```'
@@ -587,7 +576,7 @@ class TestExtractContent:
         response = CompletionResponse.model_validate_json(
             fixture_bytes("fireworks", "r1_completion_with_reasoning.json"),
         )
-        reasoning_steps = fireworks_provider._extract_reasoning_steps(response)  # pyright: ignore[reportPrivateUsage]
+        reasoning_steps = fireworks_provider._extract_reasoning_steps(response)
         assert (
             reasoning_steps
             == "Okay, let's see. The user asked for a short story based on the fact that the sky is blue. \n"
@@ -597,84 +586,30 @@ class TestExtractContent:
 class TestExtractStreamDelta:
     def test_extract_stream_delta(self, fireworks_provider: FireworksAIProvider):
         raw_completion = RawCompletion(response="", usage=LLMUsage())
-        delta = fireworks_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
+        delta = fireworks_provider._extract_stream_delta(
             b'{"id":"39c134cd-a781-4843-bdd6-e3db43259273","object":"chat.completion.chunk","created":1734400681,"model":"accounts/fireworks/models/llama-v3p1-8b-instruct","choices":[{"index":0,"delta":{"content":"\\"greeting\\": \\"Hello James!\\"\\n}"},"finish_reason":null}],"usage":null}',
-            raw_completion,
-            {},
         )
-        assert delta.content == '"greeting": "Hello James!"\n}'
+        assert delta.delta == '"greeting": "Hello James!"\n}'
         assert raw_completion.usage == LLMUsage(prompt_token_count=None, completion_token_count=None)
 
     def test_extract_stream_delta_content_null(self, fireworks_provider: FireworksAIProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-        delta = fireworks_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
+        delta = fireworks_provider._extract_stream_delta(
             b'{"id":"39c134cd-a781-4843-bdd6-e3db43259273","object":"chat.completion.chunk","created":1734400681,"model":"accounts/fireworks/models/llama-v3p1-8b-instruct","choices":[{"index":0,"delta":{"content":null},"finish_reason":"stop"}],"usage":{"prompt_tokens":24,"total_tokens":32,"completion_tokens":8}}',
-            raw_completion,
-            {},
         )
-        assert delta.content == ""
-        assert raw_completion.usage == LLMUsage(prompt_token_count=24, completion_token_count=8)
+        assert delta.delta is None
+        assert delta.usage == LLMUsage(prompt_token_count=24, completion_token_count=8)
 
-    def test_extract_stream_delta_content_empty(self, fireworks_provider: FireworksAIProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-        delta = fireworks_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
-            b'{"id": "b9840d6a-77ef-4438-aadd-1db781444101","object": "chat.completion.chunk","created": 1738030001,"model": "accounts/fireworks/models/deepseek-r1","choices": [{"index": 0,"delta": {"role": "assistant"},"finish_reason": null}],"usage": null}',
-            raw_completion,
-            {},
-        )
-        assert delta == ParsedResponse("", tool_calls=[])
-        assert fireworks_provider._thinking_tag_context.get() is None  # pyright: ignore[reportPrivateUsage]
+    def test_extract_stream_delta_with_tool_calls(self) -> None:
+        provider = FireworksAIProvider(config=FireworksConfig(provider=Provider.FIREWORKS, api_key="test"))
 
-    def test_extract_stream_delta_content_thinking_tag(self, fireworks_provider: FireworksAIProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-        delta = fireworks_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
-            b'{"id": "b9840d6a-77ef-4438-aadd-1db781444101","object": "chat.completion.chunk","created": 1738030001,"model": "accounts/fireworks/models/deepseek-r1","choices": [{"index": 0,"delta": {"content": "<think>\\n"},"finish_reason": null}],"usage": null}',
-            raw_completion,
-            {},
-        )
-        assert delta == ParsedResponse("", "\n", tool_calls=[])
-        assert fireworks_provider._thinking_tag_context.get() is True  # pyright: ignore[reportPrivateUsage]
-
-    def test_extract_stream_delta_content_thinking_tag_open_and_close(self, fireworks_provider: FireworksAIProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-        delta = fireworks_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
-            b'{"id": "b9840d6a-77ef-4438-aadd-1db781444101","object": "chat.completion.chunk","created": 1738030001,"model": "accounts/fireworks/models/deepseek-r1","choices": [{"index": 0,"delta": {"content": "<think>\\n"},"finish_reason": null}],"usage": null}',
-            raw_completion,
-            {},
-        )
-        assert delta == ParsedResponse("", "\n", tool_calls=[])
-        assert fireworks_provider._thinking_tag_context.get() is True  # pyright: ignore[reportPrivateUsage]
-
-        delta = fireworks_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
-            b'{"id": "b9840d6a-77ef-4438-aadd-1db781444101","object": "chat.completion.chunk","created": 1738030001,"model": "accounts/fireworks/models/deepseek-r1","choices": [{"index": 0,"delta": {"content": "Some thoughts"},"finish_reason": null}],"usage": null}',
-            raw_completion,
-            {},
-        )
-        assert delta == ParsedResponse("", "Some thoughts", tool_calls=[])
-        assert fireworks_provider._thinking_tag_context.get() is True  # pyright: ignore[reportPrivateUsage]
-
-        delta = fireworks_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
-            b'{"id": "b9840d6a-77ef-4438-aadd-1db781444101","object": "chat.completion.chunk","created": 1738030001,"model": "accounts/fireworks/models/deepseek-r1","choices": [{"index": 0,"delta": {"content": "</think>"},"finish_reason": null}],"usage": null}',
-            raw_completion,
-            {},
-        )
-        assert delta == ParsedResponse("", "", tool_calls=[])
-        assert fireworks_provider._thinking_tag_context.get() is False  # pyright: ignore[reportPrivateUsage]
-
-    def test_extract_stream_delta_usage(self, fireworks_provider: FireworksAIProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-        delta = fireworks_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
-            b'{"id":"39c134cd-a781-4843-bdd6-e3db43259273","object":"chat.completion.chunk","created":1734400681,"model":"accounts/fireworks/models/llama-v3p1-8b-instruct","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":24,"total_tokens":32,"completion_tokens":8}}',
-            raw_completion,
-            {},
-        )
-        assert delta.content == ""
-        assert raw_completion.usage == LLMUsage(prompt_token_count=24, completion_token_count=8)
-
-    def test_done(self, fireworks_provider: FireworksAIProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-        delta = fireworks_provider._extract_stream_delta(b"[DONE]", raw_completion, {})  # pyright: ignore[reportPrivateUsage]
-        assert delta.content == ""
+        # Test complete tool call
+        sse_event = b'{"id":"test-id","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"test_id_1","type":"function","function":{"name":"test_tool","arguments":"{\\"key\\": \\"value\\"}"}}]}}]}'
+        parsed = provider._extract_stream_delta(sse_event)
+        assert parsed.tool_call_requests is not None
+        assert len(parsed.tool_call_requests) == 1
+        assert parsed.tool_call_requests[0].id == "test_id_1"
+        assert parsed.tool_call_requests[0].tool_name == "test_tool"
+        assert parsed.tool_call_requests[0].arguments == '{"key": "value"}'
 
 
 class TestRequiresDownloadingFile:
@@ -725,20 +660,15 @@ class TestMaxTokensExceeded:
                 [Message.with_text("Hello")],
                 options=ProviderOptions(model=Model.LLAMA_3_3_70B, max_tokens=10, temperature=0),
                 output_factory=_output_factory,
-                partial_output_factory=lambda x: ProviderOutput(x),
             ):
                 pass
         assert e.value.store_task_run is True
-        assert (
-            e.value.args[0]
-            == "Model returned a response with a LENGTH finish reason, meaning the maximum number of tokens was exceeded."
-        )
 
 
 class TestPrepareCompletion:
     async def test_role_before_content(self, fireworks_provider: FireworksAIProvider):
         """Test that the 'role' key appears before 'content' in the prepared request."""
-        request = fireworks_provider._build_request(  # pyright: ignore[reportPrivateUsage]
+        request = fireworks_provider._build_request(
             messages=[MessageDeprecated(role=MessageDeprecated.Role.USER, content="Hello")],
             options=ProviderOptions(model=Model.LLAMA_3_3_70B, max_tokens=10, temperature=0),
             stream=False,
@@ -788,7 +718,7 @@ class TestFireworksAIProviderNativeToolCalls:
             ],
         )
 
-        request = provider._build_request(messages, options, stream=False)  # pyright: ignore[reportPrivateUsage]
+        request = provider._build_request(messages, options, stream=False)
         assert isinstance(request, CompletionRequest)
         assert request.tools is not None
         assert len(request.tools) == 1
@@ -822,7 +752,7 @@ class TestFireworksAIProviderNativeToolCalls:
         )
 
         provider = FireworksAIProvider(config=FireworksConfig(provider=Provider.FIREWORKS, api_key="test"))
-        tool_calls = provider._extract_native_tool_calls(response)  # pyright: ignore[reportPrivateUsage]
+        tool_calls = provider._extract_native_tool_calls(response)
         assert len(tool_calls) == 1
         assert tool_calls[0].id == "test_id_1"
         assert tool_calls[0].tool_name == "test_tool"
@@ -853,46 +783,13 @@ class TestFireworksAIProviderNativeToolCalls:
             usage=Usage(prompt_tokens=0, completion_tokens=0, total_tokens=0),
         )
 
-        content = provider._extract_content_str(response)  # pyright: ignore[reportPrivateUsage]
+        content = provider._extract_content_str(response)
         assert content == ""
-
-    def test_extract_stream_delta_with_tool_calls(self) -> None:
-        provider = FireworksAIProvider(config=FireworksConfig(provider=Provider.FIREWORKS, api_key="test"))
-        raw_completion = RawCompletion(response="", usage=LLMUsage(prompt_token_count=0, completion_token_count=0))
-
-        # Test complete tool call
-        sse_event = b'{"id":"test-id","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"test_id_1","type":"function","function":{"name":"test_tool","arguments":"{\\"key\\": \\"value\\"}"}}]}}]}'
-        parsed = provider._extract_stream_delta(sse_event, raw_completion, {})  # pyright: ignore[reportPrivateUsage]
-        assert parsed.tool_calls is not None
-        assert len(parsed.tool_calls) == 1
-        assert parsed.tool_calls[0].id == "test_id_1"
-        assert parsed.tool_calls[0].tool_name == "test_tool"
-        assert parsed.tool_calls[0].tool_input_dict == {"key": "value"}
-
-    def test_extract_stream_delta_with_tool_calls_partial(self) -> None:
-        # Test partial tool call
-        provider = FireworksAIProvider(config=FireworksConfig(provider=Provider.FIREWORKS, api_key="test"))
-        raw_completion = RawCompletion(response="", usage=LLMUsage(prompt_token_count=0, completion_token_count=0))
-
-        tool_call_request_buffer: dict[int, ToolCallRequestBuffer] = {}
-
-        sse_event = b'{"id":"test-id","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"test_id_1","type":"function","function":{"name":"test_tool","arguments":"{\\"key"}}]}}]}'
-        parsed = provider._extract_stream_delta(sse_event, raw_completion, tool_call_request_buffer)  # pyright: ignore[reportPrivateUsage]
-        assert parsed.tool_calls == []
-
-        # Test continuation of tool call
-        sse_event = b'{"id":"test-id","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"\\": \\"value\\"}"}}]}}]}'
-        parsed = provider._extract_stream_delta(sse_event, raw_completion, tool_call_request_buffer)  # pyright: ignore[reportPrivateUsage]
-        assert parsed.tool_calls is not None
-        assert len(parsed.tool_calls) == 1
-        assert parsed.tool_calls[0].id == "test_id_1"
-        assert parsed.tool_calls[0].tool_name == "test_tool"
-        assert parsed.tool_calls[0].tool_input_dict == {"key": "value"}
 
 
 class TestUnknownError:
     def test_content_length_exceeded(self, fireworks_provider: FireworksAIProvider):
-        e = fireworks_provider._unknown_error(  # pyright: ignore[reportPrivateUsage]
+        e = fireworks_provider._unknown_error(
             Response(
                 status_code=400,
                 text="""{
@@ -907,7 +804,7 @@ class TestUnknownError:
         assert str(e) == "The string is too long"
 
     def test_context_length_exceeded(self, fireworks_provider: FireworksAIProvider):
-        e = fireworks_provider._unknown_error(  # pyright: ignore[reportPrivateUsage]
+        e = fireworks_provider._unknown_error(
             Response(
                 status_code=400,
                 text="""{"error": {"code": "context_length_exceeded", "message": "Max token exceeded"}}""",
@@ -917,7 +814,7 @@ class TestUnknownError:
         assert str(e) == "Max token exceeded"
 
     def test_invalid_request_error(self, fireworks_provider: FireworksAIProvider):
-        e = fireworks_provider._unknown_error(  # pyright: ignore[reportPrivateUsage]
+        e = fireworks_provider._unknown_error(
             Response(
                 status_code=400,
                 text="""{"error": {"type": "invalid_request_error", "message": "Prompt is too long"}}""",
@@ -934,7 +831,7 @@ class TestUnknownError:
                 "type": "invalid_request_error",
             },
         }
-        e = fireworks_provider._unknown_error(  # pyright: ignore[reportPrivateUsage]
+        e = fireworks_provider._unknown_error(
             Response(
                 status_code=400,
                 text=json.dumps(payload),
@@ -958,7 +855,7 @@ class TestExtractAndLogRateLimits:
                 "x-ratelimit-limit-tokens-generated": "1000",
             },
         )
-        await fireworks_provider._extract_and_log_rate_limits(response, ProviderOptions(model=Model.LLAMA_3_3_70B))  # pyright: ignore[reportPrivateUsage]
+        await fireworks_provider._extract_and_log_rate_limits(response, ProviderOptions(model=Model.LLAMA_3_3_70B))
 
         # TODO[metrics]
         # assert patch_metric_send.call_count == 3

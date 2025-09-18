@@ -8,7 +8,6 @@ import {
   findIndexOfVersionThatFirstUsedThosePromptAndSchema,
   findIndexOfVersionThatFirstUsedThoseSchema,
 } from "@/components/utils/utils";
-import { VersionDetailsView } from "@/components/version-details/VersionDetailsView";
 import { Annotation, ExperimentWithLookups, Message, Version } from "@/types/models";
 import { HeaderMatchingSection } from "../../matching/HeaderMatchingSection";
 import { DraggableColumnWrapper } from "./DraggableColumnWrapper";
@@ -136,31 +135,23 @@ export function VersionHeader(props: VersionHeaderProps) {
     >
       <div className="flex-1 space-y-2">
         <div onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
-          <HoverPopover
-            content={<VersionDetailsView version={version} showPrompt={false} />}
-            position="bottom"
-            popoverClassName="rounded bg-white border border-gray-200 w-80"
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <div className="text-gray-800 font-semibold text-sm cursor-pointer hover:text-gray-600">
-                Version {index + 1}
-              </div>
-              {isHovered && (
-                <HoverPopover
-                  content={<div className="text-xs">Copy Version ID</div>}
-                  position="top"
-                  popoverClassName="bg-gray-800 text-white rounded-[4px] px-2 py-1"
+          <div className="flex items-center gap-2 mb-2">
+            <div className="text-gray-800 font-semibold text-sm">Version {index + 1}</div>
+            {isHovered && (
+              <HoverPopover
+                content={<div className="text-xs">Copy Version ID</div>}
+                position="top"
+                popoverClassName="bg-gray-800 text-white rounded-[4px] px-2 py-1"
+              >
+                <button
+                  onClick={handleCopyVersion}
+                  className="bg-white border border-gray-200 text-gray-900 hover:bg-gray-100 cursor-pointer h-5 w-5 rounded-[2px] flex items-center justify-center"
                 >
-                  <button
-                    onClick={handleCopyVersion}
-                    className="bg-white border border-gray-200 text-gray-900 hover:bg-gray-100 cursor-pointer h-5 w-5 rounded-[2px] flex items-center justify-center"
-                  >
-                    <Copy size={12} />
-                  </button>
-                </HoverPopover>
-              )}
-            </div>
-          </HoverPopover>
+                  <Copy size={12} />
+                </button>
+              </HoverPopover>
+            )}
+          </div>
           <VersionHeaderModel
             version={version}
             annotations={annotations}

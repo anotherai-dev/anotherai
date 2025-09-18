@@ -15,10 +15,8 @@ from core.domain.models import Model, Provider
 from core.domain.models.model_provider_data_mapping import GOOGLE_GEMINI_API_PROVIDER_DATA
 from core.providers._base.llm_completion import LLMCompletion
 from core.providers._base.llm_usage import LLMUsage
-from core.providers._base.models import RawCompletion
 from core.providers._base.provider_error import MaxTokensExceededError, ProviderInternalError
 from core.providers._base.provider_options import ProviderOptions
-from core.providers._base.provider_output import ProviderOutput
 from core.providers.google.gemini.gemini_api_provider import GoogleGeminiAPIProvider, GoogleGeminiAPIProviderConfig
 from core.providers.google.google_provider_domain import (
     Blob,
@@ -239,7 +237,7 @@ async def test_complete_500(httpx_mock: HTTPXMock):
         _ = await provider.complete(
             [Message.with_text("Hello")],
             options=ProviderOptions(model=Model.GEMINI_1_5_PRO_001, max_tokens=10, temperature=0),
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+            output_factory=lambda x: json.loads(x),
         )
 
     details = e.value.serialized().details
@@ -265,7 +263,7 @@ async def test_complete_max_tokens(httpx_mock: HTTPXMock):
         await provider.complete(
             [Message.with_text("Hello")],
             options=ProviderOptions(model=Model.GEMINI_1_5_PRO_001, max_tokens=10, temperature=0),
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+            output_factory=lambda x: json.loads(x),
         )
 
     assert e.value.code == "max_tokens_exceeded"
@@ -281,15 +279,13 @@ def test_extract_stream_delta_max_tokens():
     sse_event_max_tokens = json.dumps(
         {
             "candidates": [
-                {"content": {"parts": [{"text": "Hello, world!"}], "role": "model"}},
-                {"finishReason": "MAX_TOKENS"},
+                {"content": {"parts": [{"text": "Hello, world!"}], "role": "model"}, "finishReason": "MAX_TOKENS"},
             ],
         },
     ).encode()
-    with pytest.raises(MaxTokensExceededError) as e:
-        provider._extract_stream_delta(sse_event_max_tokens, RawCompletion(response="", usage=LLMUsage()), {})  # pyright: ignore [reportPrivateUsage]
 
-    assert "MAX_TOKENS" in str(e.value)
+    res = provider._extract_stream_delta(sse_event_max_tokens)
+    assert res.finish_reason == "max_context"
 
 
 class TestPrepareCompletion:
@@ -405,12 +401,12 @@ class TestStream:
             async for c in gemini_provider.stream(
                 messages=[Message.with_text("Hello")],
                 options=ProviderOptions(model=Model.GEMINI_1_5_PRO_001, max_tokens=10, temperature=0, output_schema={}),
-                output_factory=lambda x, _: ProviderOutput(json.loads(x)),
-                partial_output_factory=lambda x: ProviderOutput(x),
+                output_factory=lambda x: json.loads(x),
             )
         ]
         assert len(cs) == 2
-        assert cs[-1].output == {"hello": "world"}
+        assert cs[-1].final_chunk
+        assert cs[-1].final_chunk.agent_output == {"hello": "world"}
 
         # Here we just use the usageMetadata from the last chunk since the pricing is per token
         assert builder_context.llm_completions[0].usage.prompt_token_count == 10

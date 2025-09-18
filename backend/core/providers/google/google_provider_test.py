@@ -19,13 +19,10 @@ from core.domain.models import Model, Provider
 from core.domain.models.model_data import ModelData
 from core.domain.models.model_data_mapping import MODEL_DATAS
 from core.domain.tool import Tool
-from core.providers._base.abstract_provider import RawCompletion
 from core.providers._base.builder_context import BuilderInterface
 from core.providers._base.llm_completion import LLMCompletion
 from core.providers._base.llm_usage import LLMUsage
 from core.providers._base.provider_error import (
-    FailedGenerationError,
-    InvalidGenerationError,
     MaxTokensExceededError,
     MissingModelError,
     ModelDoesNotSupportModeError,
@@ -36,7 +33,6 @@ from core.providers._base.provider_error import (
     UnknownProviderError,
 )
 from core.providers._base.provider_options import ProviderOptions
-from core.providers._base.provider_output import ProviderOutput
 from core.providers.google.google_provider import (
     GoogleProvider,
     GoogleProviderConfig,
@@ -53,6 +49,7 @@ from core.providers.google.google_provider_domain import (
     UsageMetadata,
 )
 from core.providers.google.vertex_base_config import _VERTEX_API_EXCLUDED_REGIONS_METADATA_KEY
+from core.runners.runner_output import RunnerOutput
 from tests.fake_models import fake_llm_completion
 from tests.utils import mock_aiter, request_json_body
 
@@ -78,6 +75,10 @@ def patch_google_provider_auth():
         autospec=True,
     ) as mock_google_provider_auth:
         yield mock_google_provider_auth
+
+
+def _output_factory(raw: str):
+    return json.loads(raw)
 
 
 class TestGoogleProvider(unittest.TestCase):
@@ -684,7 +685,7 @@ async def test_complete_500(httpx_mock: HTTPXMock):
         await provider.complete(
             [Message.with_text("Hello")],
             options=ProviderOptions(model=Model.GEMINI_1_5_PRO_001, max_tokens=10, temperature=0),
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+            output_factory=_output_factory,
         )
 
     details = e.value.serialized().details
@@ -779,12 +780,12 @@ class TestExtractStreamDelta:
             },
         ).encode()
 
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-        result = google_provider._extract_stream_delta(sse_event, raw_completion, {})
+        result = google_provider._extract_stream_delta(sse_event)
 
-        assert result.content == "Hello, world!"
-        assert raw_completion.usage.prompt_token_count == 10
-        assert raw_completion.usage.completion_token_count == 3
+        assert result.delta == "Hello, world!"
+        assert result.usage
+        assert result.usage.prompt_token_count == 10
+        assert result.usage.completion_token_count == 3
 
     def test_extract_stream_delta_recitation_error(self, google_provider: GoogleProvider):
         sse_event_recitation = json.dumps(
@@ -798,58 +799,51 @@ class TestExtractStreamDelta:
             },
         ).encode()
 
-        with pytest.raises(FailedGenerationError) as excinfo:
-            google_provider._extract_stream_delta(
-                sse_event_recitation,
-                RawCompletion(response="", usage=LLMUsage()),
-                {},
-            )
+        result = google_provider._extract_stream_delta(
+            sse_event_recitation,
+        )
 
-        assert "RECITATION finish reason" in str(excinfo.value)
+        assert result.finish_reason == "recitation"
 
     def test_extract_stream_delta_max_tokens(self, google_provider: GoogleProvider):
         sse_event_max_tokens = json.dumps(
             {
                 "candidates": [
-                    {"content": {"parts": [{"text": "Hello, world!"}], "role": "model"}},
-                    {"finishReason": "MAX_TOKENS"},
+                    {"content": {"parts": [{"text": "Hello, world!"}], "role": "model"}, "finishReason": "MAX_TOKENS"},
                 ],
             },
         ).encode()
-        with pytest.raises(MaxTokensExceededError) as e:
-            google_provider._extract_stream_delta(
-                sse_event_max_tokens,
-                RawCompletion(response="", usage=LLMUsage()),
-                {},
-            )
 
-        assert "MAX_TOKENS" in str(e.value)
+        result = google_provider._extract_stream_delta(
+            sse_event_max_tokens,
+        )
+
+        assert result.finish_reason == "max_context"
 
     def test_extract_stream_delta_malformed_function_call(self, google_provider: GoogleProvider):
         sse_event_malformed_function_call = json.dumps(
             {
                 "candidates": [
-                    {"content": {"parts": [{"text": "Hello, world!"}], "role": "model"}},
-                    {"finishReason": "MALFORMED_FUNCTION_CALL"},
+                    {
+                        "content": {"parts": [{"text": "Hello, world!"}], "role": "model"},
+                        "finishReason": "MALFORMED_FUNCTION_CALL",
+                    },
                 ],
             },
         ).encode()
-        with pytest.raises(InvalidGenerationError):
-            google_provider._extract_stream_delta(
-                sse_event_malformed_function_call,
-                RawCompletion(response="", usage=LLMUsage()),
-                {},
-            )
+
+        result = google_provider._extract_stream_delta(
+            sse_event_malformed_function_call,
+        )
+        assert result.finish_reason == "malformed_function_call"
 
     def test_extract_stream_delta_empty_response(self, google_provider: GoogleProvider):
         sse_event_empty = json.dumps({"candidates": []}).encode()
 
         result_empty = google_provider._extract_stream_delta(
             sse_event_empty,
-            RawCompletion(response="", usage=LLMUsage()),
-            {},
         )
-        assert result_empty.content == ""
+        assert result_empty.is_empty()
 
     def test_no_candidates(self, google_provider: GoogleProvider):
         """Test that we currently handle the case where there are no candidates but a usage"""
@@ -859,15 +853,13 @@ class TestExtractStreamDelta:
             },
         ).encode()
 
-        completion = RawCompletion(response="", usage=LLMUsage())
         result_no_candidates = google_provider._extract_stream_delta(
             sse_event_no_candidates,
-            completion,
-            {},
         )
-        assert result_no_candidates.content == ""
-        assert completion.usage.prompt_token_count == 10
-        assert completion.usage.completion_token_count == 3
+        assert result_no_candidates.usage
+        assert result_no_candidates.delta is None
+        assert result_no_candidates.usage.prompt_token_count == 10
+        assert result_no_candidates.usage.completion_token_count == 3
 
 
 class TestComplete:
@@ -900,7 +892,7 @@ class TestComplete:
     #     o = await provider.complete(
     #         messages=[Message(role=Message.Role.USER, content="Hello")],
     #         options=ProviderOptions(model=model, max_tokens=10, temperature=0),
-    #         output_factory=lambda x, _: ProviderOutput(json.loads(x)),  # pyright: ignore
+    #         output_factory=_output_factory,  # pyright: ignore
     #     )
     #     assert o.output == {"hello": "world"}
 
@@ -938,7 +930,7 @@ class TestComplete:
     #     o = await provider.complete(
     #         messages=[Message(role=Message.Role.USER, content="Hello")],
     #         options=ProviderOptions(model=model, temperature=0),
-    #         output_factory=lambda x, _: ProviderOutput(json.loads(x)),  # pyright: ignore
+    #         output_factory=_output_factory,  # pyright: ignore
     #     )
     #     assert o.output == {"hello": "world"}
 
@@ -969,9 +961,9 @@ class TestComplete:
         o = await google_provider.complete(
             messages=[Message.with_text("Hello")],
             options=ProviderOptions(model=Model.GEMINI_1_5_PRO_001, max_tokens=10, temperature=0),
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+            output_factory=_output_factory,
         )
-        assert o.output == {"hello": "world"}
+        assert o.agent_output == {"hello": "world"}
 
         request = httpx_mock.get_request()
         assert request is not None
@@ -1002,9 +994,9 @@ class TestComplete:
         o = await google_provider.complete(
             messages=[Message.with_text("Hello")],
             options=ProviderOptions(model=Model.GEMINI_1_5_PRO_001, max_tokens=10, temperature=0),
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+            output_factory=_output_factory,
         )
-        assert o.output == {"hello": "world"}
+        assert o.agent_output == {"hello": "world"}
 
         request = httpx_mock.get_request()
         assert request is not None
@@ -1042,11 +1034,11 @@ class TestComplete:
             result = await google_provider.complete(
                 [Message.with_text("Hello")],
                 options=ProviderOptions(model=Model.GEMINI_1_5_PRO_001, max_tokens=10, temperature=0),
-                output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+                output_factory=_output_factory,
             )
 
         # Successful response from us-east1
-        assert result == ProviderOutput(output={"hello": "world"}, final=True)
+        assert result == RunnerOutput(agent_output={"hello": "world"})
 
         requests = httpx_mock.get_requests()
         assert len(requests) == 2
@@ -1083,7 +1075,7 @@ class TestComplete:
                 await google_provider.complete(
                     [Message.with_text("Hello")],
                     options=ProviderOptions(model=Model.GEMINI_1_5_PRO_001, max_tokens=10, temperature=0),
-                    output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+                    output_factory=_output_factory,
                 )
 
             requests = httpx_mock.get_requests()
@@ -1616,12 +1608,12 @@ class TestStream:
                     temperature=0,
                     output_schema={},
                 ),
-                output_factory=lambda x, _: ProviderOutput(json.loads(x)),
-                partial_output_factory=lambda x: ProviderOutput(x),
+                output_factory=_output_factory,
             )
         ]
         assert len(cs) == 2
-        assert cs[-1].output == {"hello": "world"}
+        assert cs[-1].final_chunk
+        assert cs[-1].final_chunk.agent_output == {"hello": "world"}
 
         # This is a bit weird here but the tokens in the usageMetadata is ignored since we need to recompute
         # a character count and divide by 4 for proper pricing
