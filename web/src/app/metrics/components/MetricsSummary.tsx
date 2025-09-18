@@ -8,7 +8,9 @@ export function MetricsSummary() {
   const { data: totalCostData, isLoading: isLoadingTotalCost } = useCompletionsQuery(
     "SELECT COALESCE(SUM(cost_usd), 0) AS total_cost FROM completions"
   );
-  const { data: totalCompletionsData, isLoading: isLoadingTotalCompletions } = useCompletionsQuery("SELECT COUNT(*) AS total_completions FROM completions");
+  const { data: totalCompletionsData, isLoading: isLoadingTotalCompletions } = useCompletionsQuery(
+    "SELECT COUNT(*) AS total_completions FROM completions"
+  );
   const { data: avgCostData, isLoading: isLoadingAvgCost } = useCompletionsQuery(
     "SELECT COALESCE(AVG(cost_usd), 0) AS avg_cost FROM completions WHERE cost_usd > 0"
   );
@@ -43,9 +45,18 @@ export function MetricsSummary() {
   );
 
   // Check if any queries are still loading
-  const isLoading = isLoadingTotalCost || isLoadingTotalCompletions || isLoadingAvgCost || 
-    isLoadingAvgDuration || isLoadingSuccessRate || isLoadingActiveAgents || isLoadingMostUsedModel || 
-    isLoadingTotalFailed || isLoadingMostActiveAgent || isLoadingAvgDaily || isLoadingMonthlySpending || 
+  const isLoading =
+    isLoadingTotalCost ||
+    isLoadingTotalCompletions ||
+    isLoadingAvgCost ||
+    isLoadingAvgDuration ||
+    isLoadingSuccessRate ||
+    isLoadingActiveAgents ||
+    isLoadingMostUsedModel ||
+    isLoadingTotalFailed ||
+    isLoadingMostActiveAgent ||
+    isLoadingAvgDaily ||
+    isLoadingMonthlySpending ||
     isLoadingResponseTimeRange;
 
   // Extract values with proper type casting
@@ -106,9 +117,7 @@ export function MetricsSummary() {
   );
 
   // Loading skeleton component
-  const LoadingSkeleton = () => (
-    <div className="animate-pulse bg-gray-200 h-4 rounded w-16"></div>
-  );
+  const LoadingSkeleton = () => <div className="animate-pulse bg-gray-200 h-4 rounded w-16"></div>;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-2">
