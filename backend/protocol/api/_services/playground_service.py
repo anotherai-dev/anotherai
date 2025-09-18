@@ -84,7 +84,7 @@ class PlaygroundService:
         overrides: list[dict[str, Any]] | None,
     ) -> list[str]:
         # First fetch the experiment and the associated inputs
-        experiment = await self._experiment_storage.get_experiment(experiment_id, include={"agent_id", "inputs.id"})
+        experiment = await self._experiment_storage.get_experiment(experiment_id, include={"agent_id", "inputs"})
 
         if isinstance(version, str):
             # The double conversion to and from domain sucks here but is necessary
@@ -124,7 +124,7 @@ class PlaygroundService:
         inputs: list[Input] | None,
         input_query: str | None,
     ) -> list[str]:
-        experiment = await self._experiment_storage.get_experiment(experiment_id, include={"versions.id"})
+        experiment = await self._experiment_storage.get_experiment(experiment_id, include={"versions"})
         if inputs and input_query:
             raise BadRequestError("Exactly one of inputs and input_query must be provided")
 

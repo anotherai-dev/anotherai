@@ -100,7 +100,7 @@ async def add_versions_to_experiment(
             description="Overrides to apply to the base version. "
             "Use the overrides to create variations of the base version. The payload must respect the same json schema as the version.",
         ),
-    ],
+    ] = None,
 ) -> list[str]:
     """Adds versions to an existing experiment if they are not already present, and creates the completions for the added
     versions based on the experiment's inputs.
