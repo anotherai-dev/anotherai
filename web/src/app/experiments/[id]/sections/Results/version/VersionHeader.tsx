@@ -10,6 +10,7 @@ import {
 } from "@/components/utils/utils";
 import { Annotation, ExperimentWithLookups, Message, Version } from "@/types/models";
 import { HeaderMatchingSection } from "../../matching/HeaderMatchingSection";
+import { DraggableColumnWrapper } from "./DraggableColumnWrapper";
 import { VersionHeaderMetrics } from "./VersionHeaderMetrics";
 import { VersionHeaderModel } from "./VersionHeaderModel";
 import { VersionHeaderPriceAndLatency } from "./VersionHeaderPriceAndLatency";
@@ -41,6 +42,9 @@ type VersionHeaderProps = {
   showAvgPrefix?: boolean;
   agentId?: string;
   experiment?: ExperimentWithLookups;
+  // Drag and drop props
+  onReorderColumns?: (fromIndex: number, toIndex: number) => void;
+  dragIndex?: number;
 };
 
 export function VersionHeader(props: VersionHeaderProps) {
@@ -60,6 +64,8 @@ export function VersionHeader(props: VersionHeaderProps) {
     showAvgPrefix = true,
     agentId,
     experiment,
+    onReorderColumns,
+    dragIndex,
   } = props;
 
   const [isHovered, setIsHovered] = useState(false);
@@ -121,7 +127,12 @@ export function VersionHeader(props: VersionHeaderProps) {
   }, [versions, version, optionalKeysToShow, index]);
 
   return (
-    <div className="flex flex-col h-full text-xs">
+    <DraggableColumnWrapper
+      onReorderColumns={onReorderColumns}
+      dragIndex={dragIndex}
+      versionId={version.id}
+      className="flex flex-col h-full text-xs"
+    >
       <div className="flex-1 space-y-2">
         <div onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
           <div className="flex items-center gap-2 mb-2">
@@ -224,6 +235,6 @@ export function VersionHeader(props: VersionHeaderProps) {
           </>
         )}
       </div>
-    </div>
+    </DraggableColumnWrapper>
   );
 }
