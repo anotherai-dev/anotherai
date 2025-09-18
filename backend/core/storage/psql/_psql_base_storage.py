@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Annotated, Any
 
 import asyncpg
+import pydantic_core
 from asyncpg.pool import PoolConnectionProxy
 from pydantic import BaseModel, BeforeValidator, PlainSerializer
 
@@ -147,7 +148,7 @@ class PsqlBaseRow(BaseModel):
     deleted_at: datetime | None = None
 
 
-class WithUpdatedAtRow(PsqlBaseRow):
+class WithUpdatedAtRow(BaseModel):
     updated_at: datetime | None = None
 
 
@@ -156,8 +157,8 @@ class AgentLinkedRow(PsqlBaseRow):
     agent_slug: str | None = None  # from JOIN queries
 
 
-def _serialize_json(value: Any):
-    return json.dumps(value)
+def psql_serialize_json(value: Any):
+    return pydantic_core.to_json(value, exclude_none=True).decode()
 
 
 def _deserialize_json(value: Any) -> Any:
@@ -167,7 +168,7 @@ def _deserialize_json(value: Any) -> Any:
 
 
 JSONValidator = BeforeValidator(_deserialize_json)
-JSONSerializer = PlainSerializer(_serialize_json)
+JSONSerializer = PlainSerializer(psql_serialize_json)
 
 
 type JSONDict = Annotated[dict[str, Any], JSONValidator, JSONSerializer]

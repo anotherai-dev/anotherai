@@ -6,11 +6,18 @@ import structlog
 from asyncpg.pool import PoolConnectionProxy
 
 from core.domain.agent_input import AgentInput
+from core.domain.agent_output import AgentOutput
 from core.domain.cache_usage import CacheUsage
 from core.domain.exceptions import DuplicateValueError, ObjectNotFoundError
-from core.domain.experiment import Experiment
+from core.domain.experiment import Experiment, ExperimentOutput
 from core.domain.version import Version
-from core.storage.experiment_storage import CompletionIDTuple, ExperimentFields, ExperimentStorage
+from core.storage.experiment_storage import (
+    CompletionIDTuple,
+    CompletionOutputTuple,
+    ExperimentFields,
+    ExperimentOutputFields,
+    ExperimentStorage,
+)
 from core.storage.psql._psql_base_storage import (
     AgentLinkedRow,
     JSONDict,
@@ -19,9 +26,10 @@ from core.storage.psql._psql_base_storage import (
     PsqlBaseStorage,
     WithUpdatedAtRow,
     insert_iterator,
+    psql_serialize_json,
 )
 from core.storage.psql._psql_utils import map_value
-from core.utils.fields import datetime_zero
+from core.utils.fields import datetime_zero, uuid_zero
 from core.utils.iter_utils import safe_map
 
 log = structlog.get_logger(__name__)
@@ -262,7 +270,7 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
                 for completion in completions
             )
             values = await connection.fetchmany(
-                f"""INSERT INTO experiment_completions ({", ".join(_OUTPUT_INSERT_FIELDS)})
+                f"""INSERT INTO experiment_outputs ({", ".join(_OUTPUT_INSERT_FIELDS)})
                 VALUES ({", ".join(f"${i + 1}" for i in range(len(_OUTPUT_INSERT_FIELDS)))})
                 ON CONFLICT (experiment_uid, completion_id) DO NOTHING
                 RETURNING completion_id""",  # noqa: S608 # OK here since fields is defined above
@@ -305,15 +313,64 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
     async def fail_completion(self, experiment_id: str, completion_id: UUID) -> None:
         async with self._connect() as connection:
             experiment_uid = await self._experiment_uid(connection, experiment_id)
-            returned = await connection.execute(
+            returned = await connection.fetchval(
                 """UPDATE experiment_outputs SET started_at = NULL
-                WHERE experiment_uid = $2 AND completion_id = $3 AND started_at IS NOT NULL AND completed_at IS NULL
+                WHERE experiment_uid = $1 AND completion_id = $2 AND started_at IS NOT NULL AND completed_at IS NULL
                 RETURNING uid""",
                 experiment_uid,
                 completion_id,
             )
             if not returned:
                 await self._raise_for_completion_not_found(connection, experiment_uid, completion_id)
+
+    @override
+    async def add_completion_output(
+        self,
+        experiment_id: str,
+        completion_id: UUID,
+        output: CompletionOutputTuple,
+    ) -> None:
+        async with self._connect() as connection:
+            experiment_uid = await self._experiment_uid(connection, experiment_id)
+            _ = await connection.execute(
+                "UPDATE experiment_outputs SET completed_at = CURRENT_TIMESTAMP, output_messages = $1, output_error = $2, output_preview = $3 WHERE experiment_uid = $4 AND completion_id = $5",
+                psql_serialize_json(output.output.messages),
+                psql_serialize_json(output.output.error),
+                output.output.preview,
+                output.cost_usd,
+                output.duration_seconds,
+                experiment_uid,
+                completion_id,
+            )
+
+    @override
+    async def list_experiment_completions(
+        self,
+        experiment_id: str,
+        version_ids: set[str] | None = None,
+        input_ids: set[str] | None = None,
+        include: set[ExperimentOutputFields] | None = None,
+    ) -> list[ExperimentOutput]:
+        async with self._connect() as connection:
+            experiment_uid = await self._experiment_uid(connection, experiment_id)
+            args: list[Any] = [experiment_uid]
+            where: list[str] = ["experiment_uid = $1"]
+            if version_ids:
+                where.append(f"ei.version_id = ANY(${len(args) + 1})")
+                args.append(version_ids)
+            if input_ids:
+                where.append(f"ei.input_id = ANY(${len(args) + 1})")
+                args.append(input_ids)
+
+            rows = await connection.fetch(
+                f"""SELECT experiment_outputs.*, ei.input_id as input_id, ev.version_id as version_id
+                FROM experiment_outputs
+                JOIN experiment_inputs ei ON ei.uid = experiment_outputs.input_id
+                JOIN experiment_versions ev ON ev.uid = experiment_outputs.version_id
+                WHERE {" AND ".join(where)}""",  # noqa: S608
+                *args,
+            )
+            return safe_map(rows, lambda x: self._validate(_ExperimentOutputRow, x).to_domain(), log)
 
 
 class _ExperimentRow(AgentLinkedRow, WithUpdatedAtRow):
@@ -415,7 +472,7 @@ class _ExperimentVersionRow(PsqlBaseRow):
 _OUTPUT_INSERT_FIELDS = [
     "experiment_uid",
     "completion_id",
-    "version_id",
+    "version_uid",
     "input_uid",
     "started_at",
     "completed_at",
@@ -428,13 +485,17 @@ _OUTPUT_INSERT_FIELDS = [
 class _ExperimentOutputRow(PsqlBaseRow):
     experiment_uid: int = 0
     version_uid: int = 0
+    version_id: str | None = None  # from JOIN queries
     input_uid: int = 0
+    input_id: str | None = None  # from JOIN queries
     completion_id: UUID | None = None
     started_at: datetime | None = None
     completed_at: datetime | None = None
     output_messages: JSONList | None = None
     output_error: JSONDict | None = None
     output_preview: str | None = None
+    cost_usd: float | None = None
+    duration_seconds: float | None = None
 
     @classmethod
     def from_domain(
@@ -449,4 +510,23 @@ class _ExperimentOutputRow(PsqlBaseRow):
             version_uid=version_uids[completion.version_id],
             input_uid=input_uids[completion.input_id],
             completion_id=completion.completion_id,
+        )
+
+    def to_domain(self) -> ExperimentOutput:
+        return ExperimentOutput(
+            completion_id=self.completion_id or uuid_zero(),
+            version_id=self.version_id or "",
+            input_id=self.input_id or "",
+            created_at=self.created_at or datetime_zero(),
+            started_at=self.started_at,
+            completed_at=self.completed_at,
+            cost_usd=self.cost_usd,
+            duration_seconds=self.duration_seconds,
+            output=AgentOutput.model_validate(
+                {
+                    "messages": self.output_messages,
+                    "error": self.output_error,
+                    "preview": self.output_preview,
+                },
+            ),
         )

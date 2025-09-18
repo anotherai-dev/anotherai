@@ -1,5 +1,6 @@
 from datetime import UTC, datetime
 from typing import Literal
+from uuid import UUID
 
 from pydantic import TypeAdapter
 from pydantic_core import ValidationError
@@ -747,7 +748,7 @@ def trace_to_domain(trace: Trace) -> DomainTrace:
 
 def playground_output_completion_from_domain(completion: DomainCompletion):
     return PlaygroundOutput.Completion(
-        id=completion.id,
+        id=UUID(completion.id),  # TODO: remove conversion
         input_id=completion.agent_input.id,
         version_id=completion.version.id,
         output=output_from_domain(completion.agent_output),

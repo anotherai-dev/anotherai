@@ -255,7 +255,7 @@ class PlaygroundService:
             version=version,
             input=input,
             metadata=metadata,
-            use_cache=use_cache or CacheUsage.AUTO,
+            use_cache=use_cache,
         )
         if cached:
             return CompletionOutputTuple(

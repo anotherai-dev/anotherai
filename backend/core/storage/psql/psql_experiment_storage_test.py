@@ -6,9 +6,11 @@ import pytest
 
 from core.domain.agent import Agent
 from core.domain.agent_input import AgentInput
-from core.domain.exceptions import ObjectNotFoundError
+from core.domain.exceptions import DuplicateValueError, ObjectNotFoundError
 from core.domain.experiment import Experiment
 from core.domain.message import Message
+from core.domain.version import Version
+from core.storage.experiment_storage import CompletionIDTuple
 from core.storage.psql.psql_agent_storage import PsqlAgentsStorage
 from core.storage.psql.psql_experiment_storage import PsqlExperimentStorage
 from tests.fake_models import fake_experiment
@@ -302,7 +304,7 @@ class TestListExperiments:
         await experiment_storage.create(experiment)
 
         # List from tenant 2
-        storage_tenant2 = PsqlExperimentStorage(tenant_uid=2, pool=psql_pool)
+        storage_tenant2 = PsqlExperimentStorage(tenant_uid=2, pool=psql_pool)  # type: ignore
         since = datetime(1960, 1, 1, tzinfo=UTC)
         retrieved = await storage_tenant2.list_experiments(None, since, 10)
 
@@ -382,3 +384,134 @@ class TestAddInputs:
         input = AgentInput(messages=[Message.with_text("Hello")], variables={"a": "b"})
         with pytest.raises(ObjectNotFoundError):
             await experiment_storage.add_inputs("nonexistent-exp", [input])
+
+
+class TestAddVersions:
+    async def test_add_single_version(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+    ):
+        version = Version(model="gpt-4o")
+        inserted = await experiment_storage.add_versions(inserted_experiment.id, [version])
+        assert inserted == {version.id}
+
+        # Re-adding should insert nothing
+        inserted_again = await experiment_storage.add_versions(inserted_experiment.id, [version])
+        assert inserted_again == set()
+
+
+class TestAddCompletions:
+    async def test_add_single_completion(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+    ):
+        # Prepare prerequisites: one input and one version
+        agent_input = AgentInput(messages=[Message.with_text("Hello")], variables={"x": 1})
+        version = Version(model="gpt-4o")
+        await experiment_storage.add_inputs(inserted_experiment.id, [agent_input])
+        await experiment_storage.add_versions(inserted_experiment.id, [version])
+
+        completion_id = uuid.uuid4()
+        inserted = await experiment_storage.add_completions(
+            inserted_experiment.id,
+            [CompletionIDTuple(completion_id=completion_id, version_id=version.id, input_id=agent_input.id)],
+        )
+        assert inserted == {completion_id}
+
+        # Re-adding same completion should insert nothing
+        inserted_again = await experiment_storage.add_completions(
+            inserted_experiment.id,
+            [CompletionIDTuple(completion_id=completion_id, version_id=version.id, input_id=agent_input.id)],
+        )
+        assert inserted_again == set()
+
+    async def test_add_completion_unknown_version_or_input(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+    ):
+        # No inputs/versions inserted; should raise when adding completion
+        completion_id = uuid.uuid4()
+        with pytest.raises(ObjectNotFoundError):
+            await experiment_storage.add_completions(
+                inserted_experiment.id,
+                [
+                    CompletionIDTuple(
+                        completion_id=completion_id,
+                        version_id="unknown-version",
+                        input_id="unknown-input",
+                    ),
+                ],
+            )
+
+
+class TestStartCompletion:
+    async def test_start_then_double_start_raises(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+    ):
+        # Prepare input, version, and completion
+        agent_input = AgentInput(messages=[Message.with_text("Hi")], variables=None)
+        version = Version(model="gpt-4o")
+        await experiment_storage.add_inputs(inserted_experiment.id, [agent_input])
+        await experiment_storage.add_versions(inserted_experiment.id, [version])
+
+        completion_id = uuid.uuid4()
+        await experiment_storage.add_completions(
+            inserted_experiment.id,
+            [CompletionIDTuple(completion_id=completion_id, version_id=version.id, input_id=agent_input.id)],
+        )
+
+        # First start should succeed
+        await experiment_storage.start_completion(inserted_experiment.id, completion_id)
+
+        # Second start should raise DuplicateValueError
+        with pytest.raises(DuplicateValueError):
+            await experiment_storage.start_completion(inserted_experiment.id, completion_id)
+
+    async def test_start_nonexistent_completion_raises(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+    ):
+        with pytest.raises(ObjectNotFoundError):
+            await experiment_storage.start_completion(inserted_experiment.id, uuid.uuid4())
+
+
+class TestFailCompletion:
+    async def test_fail_flow(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+    ):
+        # Prepare input, version, and completion
+        agent_input = AgentInput(messages=[Message.with_text("Hi")], variables=None)
+        version = Version(model="gpt-4o")
+        await experiment_storage.add_inputs(inserted_experiment.id, [agent_input])
+        await experiment_storage.add_versions(inserted_experiment.id, [version])
+
+        completion_id = uuid.uuid4()
+        await experiment_storage.add_completions(
+            inserted_experiment.id,
+            [CompletionIDTuple(completion_id=completion_id, version_id=version.id, input_id=agent_input.id)],
+        )
+
+        # Failing before start should raise DuplicateValueError (exists but not started)
+        with pytest.raises(DuplicateValueError):
+            await experiment_storage.fail_completion(inserted_experiment.id, completion_id)
+
+        # Start then fail should succeed, and allow starting again
+        await experiment_storage.start_completion(inserted_experiment.id, completion_id)
+        await experiment_storage.fail_completion(inserted_experiment.id, completion_id)
+        await experiment_storage.start_completion(inserted_experiment.id, completion_id)
+
+    async def test_fail_nonexistent_completion_raises(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+    ):
+        with pytest.raises(ObjectNotFoundError):
+            await experiment_storage.fail_completion(inserted_experiment.id, uuid.uuid4())

@@ -7,7 +7,7 @@ from asyncpg.pool import PoolConnectionProxy
 from core.domain.annotation import Annotation
 from core.domain.exceptions import ObjectNotFoundError
 from core.storage.annotation_storage import AnnotationStorage, ContextFilter, TargetFilter
-from core.storage.psql._psql_base_storage import JSONDict, PsqlBaseRow, PsqlBaseStorage
+from core.storage.psql._psql_base_storage import JSONDict, PsqlBaseRow, PsqlBaseStorage, WithUpdatedAtRow
 from core.utils.fields import datetime_zero
 from core.utils.uuid import uuid7
 
@@ -172,7 +172,7 @@ class PsqlAnnotationStorage(PsqlBaseStorage, AnnotationStorage):
             )
 
 
-class _AnnotationRow(PsqlBaseRow):
+class _AnnotationRow(PsqlBaseRow, WithUpdatedAtRow):
     """A representation of an annotation row"""
 
     slug: str = ""

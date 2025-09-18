@@ -57,6 +57,8 @@ CREATE TABLE experiment_outputs (
     output_messages JSONB,
     output_error JSONB,
     output_preview VARCHAR(255),
+    cost_usd DOUBLE PRECISION,
+    duration_seconds DOUBLE PRECISION,
     CONSTRAINT experiment_outputs_experiment_version_input_unique UNIQUE (experiment_uid, version_uid, input_uid),
     CONSTRAINT experiment_outputs_experiment_completion_unique UNIQUE (experiment_uid, completion_id)
 );
