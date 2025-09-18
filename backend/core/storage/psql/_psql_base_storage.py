@@ -1,9 +1,11 @@
 import json
+from collections.abc import Iterable, Sequence
 from contextlib import asynccontextmanager, contextmanager
 from datetime import datetime
 from typing import Annotated, Any
 
 import asyncpg
+import pydantic_core
 from asyncpg.pool import PoolConnectionProxy
 from pydantic import BaseModel, BeforeValidator, PlainSerializer
 
@@ -35,7 +37,7 @@ class PsqlBaseStorage:
 
     @classmethod
     def _validate[B: BaseModel](cls, b: type[B], row: asyncpg.Record):
-        return b.model_validate(dict(row))
+        return b.model_validate({k: v for k, v in row.items() if v is not None})
 
     @classmethod
     def table(cls) -> str:
@@ -143,8 +145,11 @@ class PsqlBaseRow(BaseModel):
     uid: int | None = None
     tenant_uid: int = 0
     created_at: datetime | None = None
-    updated_at: datetime | None = None
     deleted_at: datetime | None = None
+
+
+class WithUpdatedAtRow(BaseModel):
+    updated_at: datetime | None = None
 
 
 class AgentLinkedRow(PsqlBaseRow):
@@ -152,8 +157,10 @@ class AgentLinkedRow(PsqlBaseRow):
     agent_slug: str | None = None  # from JOIN queries
 
 
-def _serialize_json(value: Any):
-    return json.dumps(value)
+def psql_serialize_json(value: Any):
+    if value is None:
+        return None
+    return pydantic_core.to_json(value, exclude_none=True).decode()
 
 
 def _deserialize_json(value: Any) -> Any:
@@ -163,8 +170,15 @@ def _deserialize_json(value: Any) -> Any:
 
 
 JSONValidator = BeforeValidator(_deserialize_json)
-JSONSerializer = PlainSerializer(_serialize_json)
+JSONSerializer = PlainSerializer(psql_serialize_json)
 
 
 type JSONDict = Annotated[dict[str, Any], JSONValidator, JSONSerializer]
 type JSONList = Annotated[list[Any], JSONValidator, JSONSerializer]
+
+
+def insert_iterator(fields: Sequence[str], values: Iterable[BaseModel]):
+    field_set = set(fields)
+    for v in values:
+        dumped = v.model_dump(include=field_set)
+        yield [dumped.get(f) for f in fields]

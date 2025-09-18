@@ -171,6 +171,8 @@ async def playground_service() -> PlaygroundService:
         deps.storage_builder.agents(tenant.uid),
         deps.storage_builder.experiments(tenant.uid),
         deps.storage_builder.completions(tenant.uid),
+        deps.storage_builder.deployments(tenant.uid),
+        deps.tenant_event_router(tenant.uid),
     )
 
 

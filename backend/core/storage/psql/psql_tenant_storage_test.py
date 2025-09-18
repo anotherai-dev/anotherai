@@ -512,3 +512,18 @@ class TestDecrementCredits:
         # Should raise ObjectNotFoundError
         with pytest.raises(ObjectNotFoundError, match="Tenant with uid 99999 not found"):
             await tenant_storage.decrement_credits(10.0)
+
+
+class TestTenantByUID:
+    async def test_success(self, tenant_storage: PsqlTenantStorage, purged_psql: asyncpg.Pool):
+        inserted_tenant = await _insert_tenant(purged_psql, "uid-tenant", "owner123")
+        tenant = await tenant_storage.tenant_by_uid(inserted_tenant.uid)
+
+        assert tenant.uid == inserted_tenant.uid
+        assert tenant.slug == inserted_tenant.slug
+        assert tenant.owner_id == inserted_tenant.owner_id
+        assert tenant.org_id == inserted_tenant.org_id
+
+    async def test_not_found(self, tenant_storage: PsqlTenantStorage, purged_psql: asyncpg.Pool):
+        with pytest.raises(ObjectNotFoundError, match="Tenant with uid = \\$1 not found"):
+            await tenant_storage.tenant_by_uid(999999)
