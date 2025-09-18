@@ -194,3 +194,4 @@ def fake_deployment(**kwargs: Any):
         metadata=None,
     )
     return base.model_copy(update=kwargs)
+

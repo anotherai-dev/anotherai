@@ -144,7 +144,7 @@ class PlaygroundService:
         if experiment.versions:
             await self._start_experiment_completions(
                 experiment_id,
-                version_ids=(IDType.VERSION.wrap(v.id) for v in experiment.versions),
+                version_ids=(v.id for v in experiment.versions),
                 input_ids=(input.id for input in inputs),
             )
 

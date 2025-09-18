@@ -1,12 +1,41 @@
 # pyright: reportPrivateUsage=false
 
 from typing import Any
+from unittest.mock import Mock
 
 import pytest
 
+from core.domain.agent_input import AgentInput
 from core.domain.exceptions import BadRequestError
-from protocol.api._api_models import Version
-from protocol.api._services.playground_service import _validate_version, _version_with_override
+from protocol.api._api_models import Input, Version
+from protocol.api._services.playground_service import PlaygroundService, _validate_version, _version_with_override
+from tests.fake_models import fake_experiment
+
+
+@pytest.fixture
+def mock_completion_runner():
+    from core.services.completion_runner import CompletionRunner
+
+    return Mock(spec=CompletionRunner)
+
+
+@pytest.fixture
+def playground_service(
+    mock_completion_runner: Mock,
+    mock_agent_storage: Mock,
+    mock_experiment_storage: Mock,
+    mock_completion_storage: Mock,
+    mock_deployment_storage: Mock,
+    mock_event_router: Mock,
+):
+    return PlaygroundService(
+        completion_runner=mock_completion_runner,
+        agent_storage=mock_agent_storage,
+        experiment_storage=mock_experiment_storage,
+        completion_storage=mock_completion_storage,
+        deployment_storage=mock_deployment_storage,
+        event_router=mock_event_router,
+    )
 
 
 class TestValidateVersion:
@@ -60,3 +89,35 @@ class TestVersionWithOverride:
         base = Version(model="gpt-4o-mini-latest")
         with pytest.raises(BadRequestError, match="Invalid version with override"):
             _version_with_override(base, override)
+
+
+class TestAddInputsToExperiment:
+    async def test_compute_preview(self, playground_service: PlaygroundService, mock_experiment_storage: Mock):
+        mock_experiment_storage.get_experiment.return_value = fake_experiment()
+
+        inputs = [
+            Input(
+                variables={
+                    # A very long transcript
+                    "transcript": "Good morning everyone. I'm calling from our headquarters in London to discuss the quarterly results. We had excellent performance in our Tokyo office this quarter, with sales up 15%. Our team in Berlin also exceeded expectations. Next month, I'll be traveling to Sydney to meet with our Australian partners, and then heading to Toronto for the North American summit.",
+                },
+            ),
+        ]
+
+        def _add_inputs(experiment_id: str, inputs: list[AgentInput]):
+            return {i.id for i in inputs}
+
+        mock_experiment_storage.add_inputs.side_effect = _add_inputs
+
+        added = await playground_service.add_inputs_to_experiment(
+            "test-experiment",
+            inputs,
+            None,
+        )
+        assert added == ["anotherai/input/3d79eb2916c751bdc814311f6e473f2b"]
+        added_inputs: list[AgentInput] = mock_experiment_storage.add_inputs.call_args[0][1]
+        assert len(added_inputs) == 1
+        assert added_inputs[0].variables == inputs[0].variables
+        assert added_inputs[0].id == "3d79eb2916c751bdc814311f6e473f2b"
+        assert added_inputs[0].preview
+        assert len(added_inputs[0].preview) <= 255

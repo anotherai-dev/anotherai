@@ -100,16 +100,14 @@ def _output_preview(output: AgentOutput):
 
 
 def assign_input_preview(input: AgentInput):
-    if not input.preview:
-        input.preview = _input_preview(
-            input.variables,
-            input.messages,
-        )
+    input.preview = _input_preview(
+        input.variables,
+        input.messages,
+    )[:255]
 
 
 def assign_output_preview(output: AgentOutput):
-    if not output.preview:
-        output.preview = _output_preview(output) or ""
+    output.preview = (_output_preview(output) or "")[:255]
 
 
 def assign_run_previews(completion: AgentCompletion):
