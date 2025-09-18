@@ -1,10 +1,12 @@
 import re
+import time
 from typing import Any, NamedTuple
 
 import structlog
 
 from core.domain.agent import Agent
 from core.domain.agent_input import AgentInput
+from core.domain.cache_usage import CacheUsage
 from core.domain.exceptions import BadRequestError, JSONSchemaValidationError, ObjectNotFoundError
 from core.domain.message import Message
 from core.domain.models.model_data_mapping import get_model_id
@@ -12,17 +14,24 @@ from core.domain.models.models import Model
 from core.domain.tenant_data import TenantData
 from core.domain.version import Version
 from core.providers._base.provider_error import MissingModelError
+from core.runners.agent_completion_builder import AgentCompletionBuilder
+from core.runners.runner import Runner
 from core.services.completion_runner import CompletionRunner
 from core.services.messages.messages_utils import json_schema_for_template_and_variables
 from core.services.models_service import suggest_model
 from core.storage.deployment_storage import DeploymentStorage
 from core.utils.schema_sanitation import streamline_schema, validate_schema
+from core.utils.stream_response_utils import safe_streaming_response
+from core.utils.uuid import uuid7
 from protocol.api._run_models import (
     CHAT_COMPLETION_REQUEST_UNSUPPORTED_FIELDS,
+    OpenAIProxyChatCompletionChunk,
     OpenAIProxyChatCompletionRequest,
     OpenAIProxyResponseFormat,
 )
 from protocol.api._services.run._run_conversions import (
+    completion_chunk_choice_final_from_completion,
+    completion_chunk_choice_from_output,
     completion_response_from_domain,
     request_apply_to_version,
     request_messages_to_domain,
@@ -109,6 +118,61 @@ class RunService:
         agent_input: AgentInput
         metadata: dict[str, Any]
 
+    async def _cached_response(
+        self,
+        completion_id: str,
+        use_cache: CacheUsage | None,
+        stream: bool,
+        prepared_run: PreparedRun,
+        deprecated_function: bool,
+    ):
+        cached = await self._completion_runner.check_cache(
+            completion_id=completion_id,
+            agent=Agent(id=prepared_run.agent_id, uid=0),
+            version=prepared_run.version,
+            input=prepared_run.agent_input,
+            metadata=prepared_run.metadata,
+            use_cache=use_cache or "auto",
+        )
+        if not cached:
+            return None
+
+        if stream:
+            # Building an iterator with a single chunk
+            async def _iter():
+                yield completion_chunk_choice_final_from_completion(cached, None, deprecated_function)
+
+            return safe_streaming_response(_iter)
+
+        return completion_response_from_domain(
+            completion=cached,
+            deprecated_function=deprecated_function,
+        )
+
+    async def _stream(self, runner: Runner, builder: AgentCompletionBuilder, request: OpenAIProxyChatCompletionRequest):
+        async def _stream_generator():
+            async for chunk in self._completion_runner.stream(runner, builder):
+                if chunk.final_chunk:
+                    completion = builder.completion
+                    if not completion:
+                        _log.error("Completion not found")
+                        completion = builder.build(chunk.final_chunk)
+                    choice = completion_chunk_choice_final_from_completion(
+                        completion,
+                        chunk,
+                        request.function_call is not None,
+                    )
+                else:
+                    choice = completion_chunk_choice_from_output(chunk, request.function_call is not None)
+                yield OpenAIProxyChatCompletionChunk(
+                    id=builder.id,
+                    created=int(time.time()),
+                    model=builder.version.model or "",
+                    choices=[choice],
+                )
+
+        return safe_streaming_response(_stream_generator)
+
     async def run(self, request: OpenAIProxyChatCompletionRequest, start_time: float):
         # First we need to locate the agent
         try:
@@ -151,22 +215,36 @@ class RunService:
         if request.metadata:
             prepared_run.metadata.update(request.metadata)
 
-        completion = await self._completion_runner.run(
+        stream = request.stream or False
+        deprecated_function = request.function_call is not None
+        completion_id = str(uuid7())
+        if cached := await self._cached_response(
+            completion_id,
+            request.use_cache or "auto",
+            stream=stream,
+            prepared_run=prepared_run,
+            deprecated_function=deprecated_function,
+        ):
+            return cached
+
+        runner, builder = await self._completion_runner.prepare(
             agent=Agent(id=prepared_run.agent_id, uid=0),  # agent will be automatically created
             version=prepared_run.version,
             input=prepared_run.agent_input,
             start_time=start_time,
             metadata=prepared_run.metadata,
             timeout=None,
-            use_cache=request.use_cache or "auto",
             use_fallback=use_fallback,
             conversation_id=request.conversation_id,
-            completion_id=None,
+            completion_id=completion_id,
         )
+        if stream:
+            return await self._stream(runner, builder, request)
+
+        completion = await self._completion_runner.run(runner, builder)
         return completion_response_from_domain(
             completion=completion,
             deprecated_function=request.function_call is not None,
-            org=self._tenant,
         )
 
     async def _prepare_for_deployment(

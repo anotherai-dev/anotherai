@@ -1,5 +1,3 @@
-import contextlib
-import json
 from typing import Any, Literal, override
 
 from httpx import Response
@@ -8,7 +6,6 @@ from pydantic import BaseModel, ValidationError
 from core.domain.message import MessageDeprecated
 from core.domain.models import Model, Provider
 from core.domain.tool_call import ToolCallRequest
-from core.providers._base.abstract_provider import RawCompletion
 from core.providers._base.httpx_provider import HTTPXProvider
 from core.providers._base.llm_usage import LLMUsage
 from core.providers._base.provider_error import (
@@ -18,7 +15,7 @@ from core.providers._base.provider_error import (
     UnknownProviderError,
 )
 from core.providers._base.provider_options import ProviderOptions
-from core.providers._base.streaming_context import ParsedResponse, ToolCallRequestBuffer
+from core.providers._base.streaming_context import ParsedResponse
 from core.providers._base.utils import get_provider_config_env
 from core.providers.google.google_provider_domain import (
     native_tool_name_to_internal,
@@ -29,7 +26,6 @@ from .mistral_domain import (
     CompletionChunk,
     CompletionRequest,
     CompletionResponse,
-    DeltaMessage,
     MistralAIMessage,
     MistralError,
     MistralTool,
@@ -177,79 +173,12 @@ class MistralAIProvider(HTTPXProvider[MistralAIConfig, CompletionResponse]):
             url=get_provider_config_env("MISTRAL_API_URL", index, "https://api.mistral.ai/v1/chat/completions"),
         )
 
-    def _extra_stream_delta_tool_calls(
-        self,
-        delta: DeltaMessage,
-        tool_call_request_buffer: dict[int, ToolCallRequestBuffer],
-    ) -> list[ToolCallRequest]:
-        tool_calls: list[ToolCallRequest] = []
-        for tool_call in delta.tool_calls or []:
-            if tool_call.index is None:
-                raise FailedGenerationError(
-                    msg=f"Model returned a tool call with no index: {tool_call}",
-                    capture=True,
-                )
-            if tool_call.index not in tool_call_request_buffer:
-                tool_call_request_buffer[tool_call.index] = ToolCallRequestBuffer(
-                    id=tool_call.id,
-                    tool_name=native_tool_name_to_internal(tool_call.function.name)
-                    if tool_call.function.name
-                    else None,
-                    tool_input=json.dumps(tool_call.function.arguments)
-                    if isinstance(tool_call.function.arguments, dict)
-                    else tool_call.function.arguments,
-                )
-            else:
-                arg_delta = (
-                    json.dumps(tool_call.function.arguments)
-                    if isinstance(tool_call.function.arguments, dict)
-                    else tool_call.function.arguments
-                )
-                tool_call_request_buffer[tool_call.index].tool_input += arg_delta
-
-            candidate_tool_call = tool_call_request_buffer[tool_call.index]
-            if (
-                candidate_tool_call.id is not None
-                and candidate_tool_call.tool_name is not None
-                and candidate_tool_call.tool_input != ""
-            ):
-                with contextlib.suppress(json.JSONDecodeError):
-                    # That means the tool call was not finalized
-                    tool_calls.append(
-                        ToolCallRequest(
-                            id=candidate_tool_call.id,
-                            tool_name=native_tool_name_to_internal(candidate_tool_call.tool_name),
-                            tool_input_dict=json.loads(candidate_tool_call.tool_input),
-                        ),
-                    )
-
-        return tool_calls
-
     @override
-    def _extract_stream_delta(
-        self,
-        sse_event: bytes,
-        raw_completion: RawCompletion,
-        tool_call_request_buffer: dict[int, ToolCallRequestBuffer],
-    ):
+    def _extract_stream_delta(self, sse_event: bytes):
         if sse_event == b"[DONE]":
-            return ParsedResponse("")
+            return ParsedResponse()
         raw = CompletionChunk.model_validate_json(sse_event)
-        if raw.choices:
-            for choice in raw.choices:
-                if choice.finish_reason == "length":
-                    raise MaxTokensExceededError(
-                        msg="Model returned a response with a LENGTH finish reason, meaning the maximum number of tokens was exceeded.",
-                        raw_completion=str(raw.choices),
-                    )
-        if raw.usage:
-            raw_completion.usage = raw.usage.to_domain()
-        if raw.choices and raw.choices[0].delta:
-            tool_calls = self._extra_stream_delta_tool_calls(raw.choices[0].delta, tool_call_request_buffer)
-
-            return ParsedResponse(raw.choices[0].delta.content or "", tool_calls=tool_calls)
-
-        return ParsedResponse("")
+        return raw.to_parsed_response()
 
     def _compute_prompt_token_count(
         self,

@@ -60,6 +60,10 @@ class Message(BaseModel):
     def has_files(self) -> bool:
         return any(content.file for content in self.content)
 
+    @property
+    def has_tool_call_request(self) -> bool:
+        return any(content.tool_call_request for content in self.content)
+
     def to_deprecated(self) -> MessageDeprecated:
         # TODO: remove this method
         content = "\n\n".join(

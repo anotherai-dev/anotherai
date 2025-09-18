@@ -64,6 +64,7 @@ from protocol.api._api_models import (
     ModelWithID,
     Output,
     OutputSchema,
+    PlaygroundOutput,
     SupportsModality,
     TokenUsage,
     Tool,
@@ -740,4 +741,13 @@ def trace_to_domain(trace: Trace) -> DomainTrace:
         name=trace.name or "",
         tool_input_preview=trace.tool_input_preview or "",
         tool_output_preview=trace.tool_output_preview or "",
+    )
+
+
+def playground_output_completion_from_domain(completion: DomainCompletion):
+    return PlaygroundOutput.Completion(
+        id=completion.id,
+        output=output_from_domain(completion.agent_output),
+        cost_usd=completion.cost_usd,
+        duration_seconds=completion.duration_seconds,
     )
