@@ -33,7 +33,27 @@ def fake_version(**kwargs: Any):
         tool_choice=None,
         prompt=[Message.with_text("Your name is {{name}}", role="system")],
     )
-    return version.model_copy(update=kwargs)
+    # Using model_validate to force validation and recompute the id
+    return version.model_validate(
+        {
+            **version.model_dump(exclude={"id"}),
+            **kwargs,
+        },
+    )
+
+
+def fake_input(**kwargs: Any):
+    base = AgentInput(
+        variables={
+            "name": "John",
+        },
+    )
+    return base.model_validate(
+        {
+            **base.model_dump(exclude={"id"}),
+            **kwargs,
+        },
+    )
 
 
 def fake_completion(agent: Agent | None = None, id_rand: int = 1, **kwargs: Any):
@@ -194,4 +214,3 @@ def fake_deployment(**kwargs: Any):
         metadata=None,
     )
     return base.model_copy(update=kwargs)
-

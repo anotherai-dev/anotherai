@@ -1,4 +1,5 @@
 import asyncio
+import itertools
 import json
 import time
 from collections.abc import Iterable
@@ -114,8 +115,8 @@ class PlaygroundService:
             # Now we create completions for each version / input combination
             await self._start_experiment_completions(
                 experiment_id,
-                inserted_ids,
-                [input.id for input in experiment.inputs],
+                input_ids=[input.id for input in experiment.inputs],
+                version_ids=inserted_ids,
             )
 
         return [IDType.VERSION.wrap(id) for id in inserted_ids]
@@ -145,7 +146,7 @@ class PlaygroundService:
             await self._start_experiment_completions(
                 experiment_id,
                 version_ids=(v.id for v in experiment.versions),
-                input_ids=(input.id for input in inputs),
+                input_ids=(input.id for input in domain_inputs),
             )
 
         return [IDType.INPUT.wrap(id) for id in inserted_ids]
@@ -158,8 +159,7 @@ class PlaygroundService:
     ):
         completions_to_insert = [
             CompletionIDTuple(completion_id=uuid7(), version_id=version_id, input_id=input_id)
-            for version_id in version_ids
-            for input_id in input_ids
+            for version_id, input_id in itertools.product(version_ids, input_ids)
         ]
         inserted_completions_ids = await self._experiment_storage.add_completions(
             experiment_id,
