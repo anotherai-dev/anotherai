@@ -326,11 +326,7 @@ def test_sanitize_query_multiple_statements():
                 table="completions",
                 select=[
                     SQLSelectField(column="agent_id"),
-                    SQLSelectField(
-                        column="CASE WHEN created_at >= datetime('now', '-7 days') THEN 1 END",
-                        function="count",
-                        alias="completions_last_7_days",
-                    ),
+                    SQLSelectField(column="CASE WHEN created_at >= datetime('now', '-7 days') THEN 1 END", function="count", alias="completions_last_7_days"),
                     SQLSelectField(column="cost_usd", function="sum", alias="total_cost"),
                 ],
                 group_by=SQLGroupBy(fields=[SQLField(column="agent_id")]),
@@ -570,7 +566,7 @@ def test_sqlquery_from_raw_invalid(query: str, match: str):
                 order_by=[SQLOrderBy(field=SQLField(column="agent_id"), direction="asc")],
                 limit=100,
             ),
-            "SELECT agent_id, sum(cost_usd), count(*), avg(duration_seconds) AS avg_duration FROM events WHERE status = 'completed' AND cost_usd > 0 GROUP BY agent_id ORDER BY agent_id ASC LIMIT 20",
+            "SELECT agent_id, sum(cost_usd), count(*), avg(duration_seconds) AS avg_duration FROM events WHERE status = 'completed' AND cost_usd > 0 GROUP BY agent_id ORDER BY agent_id ASC LIMIT 100",
             id="complex query with all clauses",
         ),
     ],
