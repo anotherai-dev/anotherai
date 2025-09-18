@@ -154,6 +154,49 @@ If that variable is not present, the backend expects means to validate a JWT tok
 
 The Web Client currently only supports Clerk based authentication, which is also disabled by default. It can be activated by providing the `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` environment variables (note that the `NEXT_PUBLIC_...` key must be available at build time).
 
+### Configuring the Clickhouse User
+
+The ClickHouse database is exposed to the end user via a dedicated readonly clickhouse user that can only access the tenant's data.
+
+The main ClickHouse user is then only used to:
+- insert data into the database
+- migrate the database (only if `MIGRATE_STORAGE_ON_STARTUP=1`)
+- create a readonly user for each tenant
+
+The default clickhouse user works fine. Below is an example setup on how to create a dedicated user with minimal permissions:
+
+```sql
+-- Create the database
+CREATE DATABASE anotherai;
+-- Create the user
+CREATE USER anotherai IDENTIFIED WITH sha256_password BY '...';
+-- Grant readwrite access to the database
+GRANT SELECT, INSERT, ALTER UPDATE, ALTER DELETE ON anotherai.* TO anotherai;
+-- Grant `GRANT` permission for SELECT so it can propagate SELECT privileges to the readonly user
+GRANT SELECT ON anotherai.* TO anotherai WITH GRANT OPTION;
+-- Allow the user to create the readonly user
+GRANT CREATE USER ON *.* TO anotherai;
+-- Allow the user to create and update row policies
+GRANT CREATE ROW POLICY ON anotherai.* TO anotherai;
+GRANT ALTER  ROW POLICY ON anotherai.* TO anotherai;   -- if they must edit
+GRANT DROP   ROW POLICY ON anotherai.* TO anotherai;   -- if they must delete
+```
+
+### Configuring the PostgreSQL User
+
+The PSQL tenant isolation works by setting policies on each table. [Migrate tests](/backend/core/storage/psql/migrations/migrate_test.py) are used to ensure that the policies are correctly set on each table. Usually, the default PSQL user has admin permissions that allows bypassing the policies. It is then recommended to create a dedicated user with minimal permissions to access the database.
+
+Below is an example setup on how to create a dedicated user with minimal permissions:
+
+```sql
+-- Create the user
+CREATE USER anotherai IDENTIFIED WITH sha256_password BY '...';
+-- Grant readwrite access to the database
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO anotherai;
+-- Set default policies for new tables
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO anotherai;
+```
+
 ## Join the community
 
 If you have questions about AnotherAI, reach out to our team and community on our community [Slack](https://join.slack.com/t/anotherai-dev/shared_invite/zt-3av2prezr-Lz10~8o~rSRQE72m_PyIJA).
