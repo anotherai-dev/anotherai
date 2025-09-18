@@ -352,6 +352,109 @@ class TestGetExperiment:
         with pytest.raises(ObjectNotFoundError):
             _ = await experiment_storage.get_experiment(sample_experiment.id)
 
+    async def test_get_experiment_include_versions(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+    ):
+        v1 = Version(model="gpt-4o")
+        v2 = Version(model="gpt-4o-mini")
+        inserted = await experiment_storage.add_versions(inserted_experiment.id, [v1, v2])
+        assert inserted == {v1.id, v2.id}
+
+        # Request only version ids
+        exp_ids_only = await experiment_storage.get_experiment(
+            inserted_experiment.id,
+            include={"versions.id"},
+        )
+        assert exp_ids_only.versions is not None
+        ids_only = sorted([v.id for v in exp_ids_only.versions])
+        assert ids_only == sorted([v1.id, v2.id])
+        # Minimal versions should still have id but no model
+        assert all(v.id for v in exp_ids_only.versions)
+        assert all(v.model is None for v in exp_ids_only.versions)
+
+        # Request full versions
+        exp_full = await experiment_storage.get_experiment(
+            inserted_experiment.id,
+            include={"versions"},
+        )
+        assert exp_full.versions is not None
+        full_ids = sorted([v.id for v in exp_full.versions])
+        assert full_ids == sorted([v1.id, v2.id])
+        # Ensure model field is present
+        models = sorted([m for m in (v.model for v in exp_full.versions) if m is not None])
+        assert models == sorted(["gpt-4o", "gpt-4o-mini"])
+
+    async def test_get_experiment_include_inputs(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+    ):
+        i1 = AgentInput(messages=[Message.with_text("I1")], variables=None, preview="I1")
+        i2 = AgentInput(messages=None, variables={"x": 1}, preview="I2")
+        inserted = await experiment_storage.add_inputs(inserted_experiment.id, [i1, i2])
+        assert inserted == {i1.id, i2.id}
+
+        # Request only input ids
+        exp_ids_only = await experiment_storage.get_experiment(
+            inserted_experiment.id,
+            include={"inputs.id"},
+        )
+        assert exp_ids_only.inputs is not None
+        ids_only = sorted([i.id for i in exp_ids_only.inputs])
+        assert ids_only == sorted([i1.id, i2.id])
+        assert all(i.messages is None and i.variables is None for i in exp_ids_only.inputs)
+
+        # Request full inputs
+        exp_full = await experiment_storage.get_experiment(
+            inserted_experiment.id,
+            include={"inputs"},
+        )
+        assert exp_full.inputs is not None
+        full_ids = sorted([i.id for i in exp_full.inputs])
+        assert full_ids == sorted([i1.id, i2.id])
+        previews = sorted([i.preview for i in exp_full.inputs])
+        assert previews == ["I1", "I2"]
+
+    async def test_get_experiment_include_outputs(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+    ):
+        # Prepare inputs, versions and one output
+        agent_input = AgentInput(messages=[Message.with_text("Question")], variables=None, preview="Q")
+        version = Version(model="gpt-4o")
+        await experiment_storage.add_inputs(inserted_experiment.id, [agent_input])
+        await experiment_storage.add_versions(inserted_experiment.id, [version])
+        completion_id = uuid7()
+        await experiment_storage.add_completions(
+            inserted_experiment.id,
+            [CompletionIDTuple(completion_id=completion_id, version_id=version.id, input_id=agent_input.id)],
+        )
+        await experiment_storage.start_completion(inserted_experiment.id, completion_id)
+        await experiment_storage.add_completion_output(
+            inserted_experiment.id,
+            completion_id,
+            CompletionOutputTuple(
+                output=AgentOutput(messages=[Message.with_text("Answer")], preview="Answer"),
+                cost_usd=1.0,
+                duration_seconds=2.0,
+            ),
+        )
+
+        # Request outputs
+        exp = await experiment_storage.get_experiment(inserted_experiment.id, include={"outputs"})
+        assert exp.outputs is not None
+        assert len(exp.outputs) == 1
+        out = exp.outputs[0]
+        assert out.completion_id == completion_id
+        # get_experiment includes outputs with include={"output"} so messages should be present
+        assert out.output is not None
+        assert out.output.preview == "Answer"
+        assert out.output.messages is not None
+        assert out.output.messages[0].content[0].text == "Answer"
+
 
 class TestAddInputs:
     async def test_add_single_input(
@@ -596,6 +699,60 @@ class TestListExperimentCompletions:
         completions = await experiment_storage.list_experiment_completions(inserted_experiment.id)
         assert len(completions) == 1
         assert completions[0].completion_id == inserted_completion
+
+    async def test_list_experiment_completions_include(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+    ):
+        # Create an input and a version, then a completion with an output
+        agent_input = AgentInput(messages=[Message.with_text("Hi")], variables=None)
+        version = Version(model="gpt-4o")
+        await experiment_storage.add_inputs(inserted_experiment.id, [agent_input])
+        await experiment_storage.add_versions(inserted_experiment.id, [version])
+
+        completion_id = uuid7()
+        await experiment_storage.add_completions(
+            inserted_experiment.id,
+            [
+                CompletionIDTuple(
+                    completion_id=completion_id,
+                    version_id=version.id,
+                    input_id=agent_input.id,
+                ),
+            ],
+        )
+        await experiment_storage.start_completion(inserted_experiment.id, completion_id)
+        await experiment_storage.add_completion_output(
+            inserted_experiment.id,
+            completion_id,
+            CompletionOutputTuple(
+                output=AgentOutput(messages=[Message.with_text("Answer")], preview="Answer"),
+                cost_usd=1.0,
+                duration_seconds=2.0,
+            ),
+        )
+
+        # Without include, output messages and error should not be loaded, preview remains
+        outputs_no_include = await experiment_storage.list_experiment_completions(inserted_experiment.id)
+        assert len(outputs_no_include) == 1
+        out = outputs_no_include[0]
+        assert out.completion_id == completion_id
+        assert out.output is not None
+        assert out.output.preview == "Answer"
+        assert out.output.messages is None
+        assert out.output.error is None
+
+        # With include={"output"}, messages should be present
+        outputs_with_include = await experiment_storage.list_experiment_completions(
+            inserted_experiment.id,
+            include={"output"},
+        )
+        assert len(outputs_with_include) == 1
+        out_inc = outputs_with_include[0]
+        assert out_inc.output is not None
+        assert out_inc.output.messages is not None
+        assert out_inc.output.messages[0].content[0].text == "Answer"
 
 
 async def test_output_flow(inserted_experiment: Experiment, experiment_storage: PsqlExperimentStorage):

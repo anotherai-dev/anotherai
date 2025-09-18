@@ -157,6 +157,60 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
             count = await connection.fetchval(query, *arguments)
             return count or 0
 
+    async def _list_experiment_versions(
+        self,
+        connection: PoolConnectionProxy,
+        experiment_uid: int,
+        version_ids: set[str] | None = None,
+        full=False,
+    ) -> list[Version]:
+        select = "*" if full else "version_id"
+        where = ["experiment_uid = $1"]
+        args: list[Any] = [experiment_uid]
+        if version_ids:
+            where.append("version_id = ANY($2)")
+            args.append(version_ids)
+        rows = await connection.fetch(
+            f"SELECT {select} FROM experiment_versions WHERE {' AND '.join(where)}",  # noqa: S608
+            experiment_uid,
+        )
+        return [self._validate(_ExperimentVersionRow, row).to_domain() for row in rows]
+
+    async def _list_experiment_inputs(
+        self,
+        connection: PoolConnectionProxy,
+        experiment_uid: int,
+        input_ids: set[str] | None = None,
+        full=False,
+    ) -> list[AgentInput]:
+        select = "*" if full else "input_id"
+        where: list[str] = ["experiment_uid = $1"]
+        args: list[Any] = [experiment_uid]
+        if input_ids:
+            where.append("input_id = ANY($2)")
+            args.append(input_ids)
+        rows = await connection.fetch(
+            f"SELECT {select} FROM experiment_inputs WHERE {' AND '.join(where)}",  # noqa: S608
+            experiment_uid,
+        )
+        return [self._validate(_ExperimentInputRow, row).to_domain() for row in rows]
+
+    @classmethod
+    def _include_versions(cls, include: set[ExperimentFields]) -> bool | None:
+        if "versions" in include:
+            return True
+        if "versions.id" in include:
+            return False
+        return None
+
+    @classmethod
+    def _include_inputs(cls, include: set[ExperimentFields]) -> bool | None:
+        if "inputs" in include:
+            return True
+        if "inputs.id" in include:
+            return False
+        return None
+
     @override
     async def get_experiment(
         self,
@@ -181,7 +235,37 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
             if row is None:
                 raise ObjectNotFoundError(f"Experiment not found: {experiment_id}")
 
-            return self._validate(_ExperimentRow, row).to_domain()
+            experiment_uid = row["uid"]
+            versions: list[Version] | None = None
+            inputs: list[AgentInput] | None = None
+            outputs: list[ExperimentOutput] | None = None
+            if include:
+                version_included = self._include_versions(include)
+                if version_included is not None:
+                    versions = await self._list_experiment_versions(
+                        connection,
+                        experiment_uid,
+                        version_ids=version_ids,
+                        full=version_included,
+                    )
+                input_included = self._include_inputs(include)
+                if input_included is not None:
+                    inputs = await self._list_experiment_inputs(
+                        connection,
+                        experiment_uid,
+                        input_ids=input_ids,
+                        full=input_included,
+                    )
+                if "outputs" in include:
+                    outputs = await self._list_experiment_completions(
+                        connection,
+                        experiment_uid=experiment_uid,
+                        version_ids=version_ids,
+                        input_ids=input_ids,
+                        include={"output"},
+                    )
+
+            return self._validate(_ExperimentRow, row).to_domain(versions=versions, inputs=inputs, outputs=outputs)
 
     async def _experiment_uid(self, connection: PoolConnectionProxy, experiment_id: str) -> int:
         row = await connection.fetchrow(
@@ -343,6 +427,34 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
                 completion_id,
             )
 
+    async def _list_experiment_completions(
+        self,
+        connection: PoolConnectionProxy,
+        experiment_uid: int,
+        version_ids: set[str] | None = None,
+        input_ids: set[str] | None = None,
+        include: set[ExperimentOutputFields] | None = None,
+    ) -> list[ExperimentOutput]:
+        selects = _ExperimentOutputRow.select_fields(include)
+        args: list[Any] = [experiment_uid]
+        where: list[str] = ["experiment_outputs.experiment_uid = $1"]
+        if version_ids:
+            where.append(f"ev.version_id = ANY(${len(args) + 1})")
+            args.append(version_ids)
+        if input_ids:
+            where.append(f"ei.input_id = ANY(${len(args) + 1})")
+            args.append(input_ids)
+
+        rows = await connection.fetch(
+            f"""SELECT {", ".join(selects)}, ei.input_id as input_id, ev.version_id as version_id
+            FROM experiment_outputs
+            LEFT JOIN experiment_inputs ei ON ei.uid = experiment_outputs.input_uid
+            LEFT JOIN experiment_versions ev ON ev.uid = experiment_outputs.version_uid
+            WHERE {" AND ".join(where)}""",  # noqa: S608
+            *args,
+        )
+        return safe_map(rows, lambda x: self._validate(_ExperimentOutputRow, x).to_domain(), log)
+
     @override
     async def list_experiment_completions(
         self,
@@ -353,24 +465,13 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
     ) -> list[ExperimentOutput]:
         async with self._connect() as connection:
             experiment_uid = await self._experiment_uid(connection, experiment_id)
-            args: list[Any] = [experiment_uid]
-            where: list[str] = ["experiment_outputs.experiment_uid = $1"]
-            if version_ids:
-                where.append(f"ev.version_id = ANY(${len(args) + 1})")
-                args.append(version_ids)
-            if input_ids:
-                where.append(f"ei.input_id = ANY(${len(args) + 1})")
-                args.append(input_ids)
-
-            rows = await connection.fetch(
-                f"""SELECT experiment_outputs.*, ei.input_id as input_id, ev.version_id as version_id
-                FROM experiment_outputs
-                LEFT JOIN experiment_inputs ei ON ei.uid = experiment_outputs.input_uid
-                LEFT JOIN experiment_versions ev ON ev.uid = experiment_outputs.version_uid
-                WHERE {" AND ".join(where)}""",  # noqa: S608
-                *args,
+            return await self._list_experiment_completions(
+                connection,
+                experiment_uid,
+                version_ids=version_ids,
+                input_ids=input_ids,
+                include=include,
             )
-            return safe_map(rows, lambda x: self._validate(_ExperimentOutputRow, x).to_domain(), log)
 
 
 class _ExperimentRow(AgentLinkedRow, WithUpdatedAtRow):
@@ -393,7 +494,12 @@ class _ExperimentRow(AgentLinkedRow, WithUpdatedAtRow):
         except ValueError:
             return None
 
-    def to_domain(self) -> Experiment:
+    def to_domain(
+        self,
+        versions: list[Version] | None = None,
+        inputs: list[AgentInput] | None = None,
+        outputs: list[ExperimentOutput] | None = None,
+    ) -> Experiment:
         return Experiment(
             id=self.slug,
             created_at=self.created_at or datetime_zero(),
@@ -406,6 +512,9 @@ class _ExperimentRow(AgentLinkedRow, WithUpdatedAtRow):
             run_ids=self.run_ids or [],
             metadata=self.metadata or None,
             use_cache=self._use_cache_to_domain(),
+            versions=versions,
+            inputs=inputs,
+            outputs=outputs,
         )
 
 
@@ -530,3 +639,14 @@ class _ExperimentOutputRow(PsqlBaseRow):
                 },
             ),
         )
+
+    @classmethod
+    def select_fields(cls, include: set[ExperimentOutputFields] | None = None, prefix: str = "experiment_outputs"):
+        base_fields = set(cls.model_fields.keys())
+        base_fields.remove("input_id")
+        base_fields.remove("version_id")
+        if not include or "output" not in include:
+            base_fields.remove("output_messages")
+            base_fields.remove("output_error")
+
+        return [f"{prefix}.{f}" for f in base_fields]
