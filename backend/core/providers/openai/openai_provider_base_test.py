@@ -1,5 +1,6 @@
 # pyright: reportPrivateUsage=false
 
+import json
 from typing import Any, cast
 
 import pytest
@@ -10,11 +11,9 @@ from core.domain.message import Message, MessageContent
 from core.domain.models import Model, Provider
 from core.domain.tool_call import ToolCallRequest, ToolCallResult
 from core.providers._base.abstract_provider import RawCompletion
-from core.providers._base.httpx_provider import ParsedResponse
 from core.providers._base.llm_usage import LLMUsage
-from core.providers._base.provider_error import MaxTokensExceededError, ProviderInvalidFileError
+from core.providers._base.provider_error import ProviderInvalidFileError
 from core.providers._base.provider_options import ProviderOptions
-from core.providers._base.streaming_context import StreamingContext
 from core.providers.openai.openai_domain import (
     ChoiceDelta,
     CompletionRequest,
@@ -28,6 +27,7 @@ from core.providers.openai.openai_domain import (
     Usage,
 )
 from core.providers.openai.openai_provider_base import OpenAIProviderBase, OpenAIProviderBaseConfig
+from core.runners.runner_output import ToolCallRequestDelta
 from tests import fake_models as test_models
 from tests.utils import fixtures_json
 
@@ -70,14 +70,6 @@ def base_provider() -> _TestOpenAIProviderBase:
 def test_extract_stream_delta_max_tokens_exceeded() -> None:
     """Test that length finish_reason raises MaxTokensExceededError."""
     provider = _TestOpenAIProviderBase()
-    raw_completion = RawCompletion(
-        response="",
-        usage=LLMUsage(
-            prompt_token_count=0,
-            completion_token_count=0,
-            model_context_window_size=0,
-        ),
-    )
 
     event = (
         StreamedResponse(
@@ -93,23 +85,13 @@ def test_extract_stream_delta_max_tokens_exceeded() -> None:
         .encode()
     )
 
-    with pytest.raises(MaxTokensExceededError) as exc_info:
-        provider._extract_stream_delta(event, raw_completion, {})  # pyright: ignore[reportPrivateUsage]
-
-    assert "maximum number of tokens was exceeded" in str(exc_info.value)
+    res = provider._extract_stream_delta(event)
+    assert res.finish_reason == "max_context"
 
 
 def test_extract_stream_delta_with_content() -> None:
     """Test successful extraction of content from stream delta."""
     provider = _TestOpenAIProviderBase()
-    raw_completion = RawCompletion(
-        response="",
-        usage=LLMUsage(
-            prompt_token_count=0,
-            completion_token_count=0,
-            model_context_window_size=0,
-        ),
-    )
 
     event = (
         StreamedResponse(
@@ -125,23 +107,15 @@ def test_extract_stream_delta_with_content() -> None:
         .encode()
     )
 
-    result = provider._extract_stream_delta(event, raw_completion, {})  # pyright: ignore[reportPrivateUsage]
+    result = provider._extract_stream_delta(event)
 
-    assert result.content == "test content"
-    assert result.tool_calls == []
+    assert result.delta == "test content"
+    assert result.tool_call_requests is None
 
 
 def test_extract_stream_delta_with_tool_calls() -> None:
     """Test successful extraction of tool calls from stream delta."""
     provider = _TestOpenAIProviderBase()
-    raw_completion = RawCompletion(
-        response="",
-        usage=LLMUsage(
-            prompt_token_count=0,
-            completion_token_count=0,
-            model_context_window_size=0,
-        ),
-    )
 
     event = (
         StreamedResponse(
@@ -170,28 +144,20 @@ def test_extract_stream_delta_with_tool_calls() -> None:
         .encode()
     )
 
-    result = provider._extract_stream_delta(event, raw_completion, tool_call_request_buffer={})  # pyright: ignore[reportPrivateUsage]
+    result = provider._extract_stream_delta(event)
 
-    assert result.content == ""
-    assert result.tool_calls is not None
-    assert len(result.tool_calls) == 1
-    tool_call = result.tool_calls[0]
+    assert result.delta is None
+    assert result.tool_call_requests is not None
+    assert len(result.tool_call_requests) == 1
+    tool_call = result.tool_call_requests[0]
     assert tool_call.id == "call_123"
     assert tool_call.tool_name == "test_tool"
-    assert tool_call.tool_input_dict == {"arg1": "value1"}
+    assert tool_call.arguments == '{"arg1": "value1"}'
 
 
 def test_extract_stream_delta_with_usage() -> None:
     """Test successful extraction of usage information from stream delta."""
     provider = _TestOpenAIProviderBase()
-    raw_completion = RawCompletion(
-        response="",
-        usage=LLMUsage(
-            prompt_token_count=0,
-            completion_token_count=0,
-            model_context_window_size=0,
-        ),
-    )
 
     event = (
         StreamedResponse(
@@ -212,43 +178,26 @@ def test_extract_stream_delta_with_usage() -> None:
         .encode()
     )
 
-    provider._extract_stream_delta(event, raw_completion, {})  # pyright: ignore[reportPrivateUsage]
+    val = provider._extract_stream_delta(event)
 
-    assert raw_completion.usage is not None
-    assert raw_completion.usage.prompt_token_count == 10
-    assert raw_completion.usage.completion_token_count == 5
+    assert val.usage is not None
+    assert val.usage.prompt_token_count == 10
+    assert val.usage.completion_token_count == 5
 
 
 def test_extract_stream_delta_empty_choices() -> None:
     """Test handling of response with empty choices."""
     provider = _TestOpenAIProviderBase()
-    raw_completion = RawCompletion(
-        response="",
-        usage=LLMUsage(
-            prompt_token_count=0,
-            completion_token_count=0,
-            model_context_window_size=0,
-        ),
-    )
 
     event = StreamedResponse(choices=[]).model_dump_json().encode()
 
-    result = provider._extract_stream_delta(event, raw_completion, {})  # pyright: ignore[reportPrivateUsage]
-
-    assert result == ParsedResponse(content="")
+    result = provider._extract_stream_delta(event)
+    assert result.is_empty()
 
 
 def test_extract_stream_delta_with_incomplete_tool_call() -> None:
     """Test that incomplete JSON in tool call arguments results in no tool call being added."""
     provider = _TestOpenAIProviderBase()
-    raw_completion = RawCompletion(
-        response="",
-        usage=LLMUsage(
-            prompt_token_count=0,
-            completion_token_count=0,
-            model_context_window_size=0,
-        ),
-    )
 
     # Create an event with a tool call that has incomplete JSON (missing closing brace)
     event = (
@@ -278,161 +227,76 @@ def test_extract_stream_delta_with_incomplete_tool_call() -> None:
         .encode()
     )
 
-    result = provider._extract_stream_delta(event, raw_completion, {})  # pyright: ignore[reportPrivateUsage]
+    result = provider._extract_stream_delta(event)
 
-    assert result.content == ""
-    assert result.tool_calls == []
-
-
-def test_extract_stream_delta_consecutive_fragments() -> None:
-    """Test that multiple consecutive SSE events with partial JSON fragments for a tool call are correctly accumulated to form a valid JSON tool call."""
-    provider = _TestOpenAIProviderBase()
-    raw_completion = RawCompletion(
-        response="",
-        usage=LLMUsage(
-            prompt_token_count=0,
-            completion_token_count=0,
-            model_context_window_size=0,
-        ),
-    )
-
-    # Fragments that when concatenated form a valid JSON: {"query": "latest Jazz Lakers score February 2025"}
-    fragments = [
-        '{"',
-        "query",
-        '":"',
-        "latest",
-        " Jazz",
-        " Lakers",
-        " score",
-        " February",
-        " 202",
-        "5",
-        '"}',
-    ]
-
-    stream_context = StreamingContext(RawCompletion(response="", usage=LLMUsage()), json=True)
-
-    # Process all fragments except the last one; these should not yield a complete tool call
-    for fragment in fragments[:-1]:
-        event = (
-            StreamedResponse(
-                choices=[
-                    ChoiceDelta(
-                        index=0,
-                        delta=ChoiceDelta.MessageDelta(
-                            content=None,
-                            tool_calls=[
-                                StreamedToolCall(
-                                    id="complex_call",
-                                    type="function",
-                                    function=StreamedToolCallFunction(
-                                        name="complex_tool",
-                                        arguments=fragment,
-                                    ),
-                                    index=0,
-                                ),
-                            ],
-                        ),
-                        finish_reason=None,
-                    ),
-                ],
-            )
-            .model_dump_json()
-            .encode()
-        )
-        result = provider._extract_stream_delta(event, raw_completion, stream_context.tool_call_request_buffer)  # pyright: ignore[reportPrivateUsage]
-        # Before the final fragment, no complete tool call should be formed
-        assert result.tool_calls == []
-
-    # Process the final fragment which should complete the JSON
-    final_fragment = fragments[-1]
-    final_event = (
-        StreamedResponse(
-            choices=[
-                ChoiceDelta(
-                    index=0,
-                    delta=ChoiceDelta.MessageDelta(
-                        content=None,
-                        tool_calls=[
-                            StreamedToolCall(
-                                id="complex_call",
-                                type="function",
-                                function=StreamedToolCallFunction(
-                                    name="complex_tool",
-                                    arguments=final_fragment,
-                                ),
-                                index=0,
-                            ),
-                        ],
-                    ),
-                    finish_reason=None,
-                ),
-            ],
-        )
-        .model_dump_json()
-        .encode()
-    )
-    final_result = provider._extract_stream_delta(final_event, raw_completion, stream_context.tool_call_request_buffer)  # pyright: ignore[reportPrivateUsage]
-
-    # Now, the accumulated fragments should form a valid JSON tool call
-    assert final_result.tool_calls is not None
-    assert len(final_result.tool_calls) == 1
-    tool_call = final_result.tool_calls[0]
-    assert tool_call.id == "complex_call"
-    assert tool_call.tool_name == "complex_tool"
-    assert tool_call.tool_input_dict == {"query": "latest Jazz Lakers score February 2025"}
-
-
-def test_extract_stream_delta_from_fixture() -> None:
-    """Test processing streaming tool call events from a fixture file and verify aggregated tool calls."""
-    import json
-
-    provider = _TestOpenAIProviderBase()
-    raw_completion = RawCompletion(
-        response="",
-        usage=LLMUsage(
-            prompt_token_count=0,
-            completion_token_count=0,
-            model_context_window_size=0,
-        ),
-    )
-
-    data = fixtures_json("openai", "stream_with_tools.json")
-
-    # Feed each event sequentially to the provider
-
-    tool_calls: list[ToolCallRequest] = []
-
-    stream_context = StreamingContext(RawCompletion(response="", usage=LLMUsage()), json=True)
-
-    for event in data["events"]:
-        event_bytes = json.dumps(event).encode("utf-8")
-        response = provider._extract_stream_delta(event_bytes, raw_completion, stream_context.tool_call_request_buffer)  # pyright: ignore[reportPrivateUsage]
-        tool_calls.extend(response.tool_calls or [])
-
-    assert tool_calls == [
-        ToolCallRequest(
-            tool_name="get_temperature",
-            tool_input_dict={"city_code": "125321"},
-            id="call_AU0Fw2imWtuWlmaLHXnwkZCQ",
-        ),
-        ToolCallRequest(
-            tool_name="get_rain_probability",
-            tool_input_dict={"city_code": "125321"},
-            id="call_VtkV4ZpNh3nHxS84JnCiriVj",
-        ),
-        ToolCallRequest(
-            tool_name="get_wind_speed",
-            tool_input_dict={"city_code": "125321"},
-            id="call_wfkYlsz09dYJvzoXn7spvgpy",
-        ),
-        ToolCallRequest(
-            tool_name="get_weather_conditions",
-            tool_input_dict={"city_code": "125321"},
-            id="call_3oHEEsy8LFQectXu7wTSOiPx",
+    assert result.delta is None
+    assert result.tool_call_requests == [
+        ToolCallRequestDelta(
+            id="call_456",
+            idx=0,
+            tool_name="incomplete_tool",
+            arguments='{"arg1": "value1"',
         ),
     ]
+
+
+class TestExtractStreamDelta:
+    def _load_fixture(self, provider: OpenAIProviderBase[_TestProviderConfig], fixture_name: str):
+        raw_completion = RawCompletion(response="", usage=LLMUsage())
+        streaming_context = provider._streaming_context(raw_completion)
+
+        fixture_data = fixtures_json(f"openai/{fixture_name}")["events"]
+        for sse in fixture_data:
+            delta = provider._extract_stream_delta(json.dumps(sse).encode())
+            streaming_context.add_chunk(delta)
+
+        final_chunk = streaming_context.complete(
+            lambda raw, reasoning, tool_calls: provider._build_structured_output(
+                lambda x: x,
+                raw,
+                reasoning,
+                tool_calls,
+            ),
+        )
+
+        return streaming_context, final_chunk
+
+    def test_extract_stream_delta_from_fixture(self) -> None:
+        """Test processing streaming tool call events from a fixture file and verify aggregated tool calls."""
+
+        provider = _TestOpenAIProviderBase()
+        _, final_chunk = self._load_fixture(
+            provider,
+            "stream_with_tools.json",
+        )
+
+        assert final_chunk.final_chunk
+        assert final_chunk.final_chunk.tool_call_requests == [
+            ToolCallRequest(
+                index=0,
+                tool_name="get_temperature",
+                tool_input_dict={"city_code": "125321"},
+                id="call_AU0Fw2imWtuWlmaLHXnwkZCQ",
+            ),
+            ToolCallRequest(
+                index=1,
+                tool_name="get_rain_probability",
+                tool_input_dict={"city_code": "125321"},
+                id="call_VtkV4ZpNh3nHxS84JnCiriVj",
+            ),
+            ToolCallRequest(
+                index=2,
+                tool_name="get_wind_speed",
+                tool_input_dict={"city_code": "125321"},
+                id="call_wfkYlsz09dYJvzoXn7spvgpy",
+            ),
+            ToolCallRequest(
+                index=3,
+                tool_name="get_weather_conditions",
+                tool_input_dict={"city_code": "125321"},
+                id="call_3oHEEsy8LFQectXu7wTSOiPx",
+            ),
+        ]
 
 
 @pytest.mark.parametrize(
@@ -485,7 +349,7 @@ def test_compute_prompt_token_count(messages: list[dict[str, Any]], expected_tok
     provider = _TestOpenAIProviderBase()
     model = Model.GPT_4O_2024_08_06
 
-    result = provider._compute_prompt_token_count(messages, model)  # pyright: ignore[reportPrivateUsage]
+    result = provider._compute_prompt_token_count(messages, model)
     # This is a high-level smoke test that '_compute_prompt_token_count' does not raise and return a value
     assert result == expected_token_count
 
@@ -609,7 +473,7 @@ def test_invalid_request_error_too_many_images() -> None:
     )
 
     # Test the _invalid_request_error method
-    result = provider._invalid_request_error(error_payload, response)  # pyright: ignore[reportPrivateUsage]
+    result = provider._invalid_request_error(error_payload, response)
 
     # Verify it returns ProviderInvalidFileError
     assert isinstance(result, ProviderInvalidFileError)

@@ -26,7 +26,7 @@ from protocol.api._services.conversions import (
     experiments_url,
     input_to_domain,
     message_to_domain,
-    output_from_domain,
+    playground_output_completion_from_domain,
     tool_to_domain,
 )
 
@@ -109,19 +109,32 @@ class PlaygroundService:
         use_cache: CacheUsage,
     ) -> PlaygroundOutput.Completion:
         _log.debug("Playground: Running single completion", version_id=version.id, input_id=input.id)
+        completion_id = completion_id or str(uuid7())
+        agent_input = input_to_domain(input)
         try:
-            completion = await self._completion_runner.run(
+            cached = await self._completion_runner.check_cache(
+                completion_id=completion_id,
+                agent=Agent(id=agent_id, uid=0),
+                version=version,
+                input=agent_input,
+                metadata=metadata,
+                use_cache=use_cache or "auto",
+            )
+            if cached:
+                return playground_output_completion_from_domain(cached)
+            runner, builder = await self._completion_runner.prepare(
                 agent=Agent(id=agent_id, uid=0),  # agent will be automatically created
                 version=version,
-                input=input_to_domain(input),
+                input=agent_input,
                 start_time=start_time,
                 metadata=metadata,
                 timeout=None,
-                use_cache=use_cache,
                 use_fallback="never",
                 conversation_id=None,
                 completion_id=completion_id,
             )
+            completion = await self._completion_runner.run(runner, builder)
+
         except Exception as e:  # noqa: BLE001
             _log.debug(
                 "Playground: Running single completion failed",
@@ -139,12 +152,7 @@ class PlaygroundService:
             version_id=version.id,
             input_id=input.id,
         )
-        return PlaygroundOutput.Completion(
-            id=completion.id,
-            output=output_from_domain(completion.agent_output),
-            cost_usd=completion.cost_usd,
-            duration_seconds=completion.duration_seconds,
-        )
+        return playground_output_completion_from_domain(completion)
 
     async def _extract_inputs_from_query(self, query: str) -> list[Input]:
         # Replacing wildcard
