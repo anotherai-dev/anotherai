@@ -1,4 +1,5 @@
 import json
+from collections.abc import Iterable, Sequence
 from contextlib import asynccontextmanager, contextmanager
 from datetime import datetime
 from typing import Annotated, Any
@@ -143,8 +144,11 @@ class PsqlBaseRow(BaseModel):
     uid: int | None = None
     tenant_uid: int = 0
     created_at: datetime | None = None
-    updated_at: datetime | None = None
     deleted_at: datetime | None = None
+
+
+class WithUpdatedAtRow(PsqlBaseRow):
+    updated_at: datetime | None = None
 
 
 class AgentLinkedRow(PsqlBaseRow):
@@ -168,3 +172,10 @@ JSONSerializer = PlainSerializer(_serialize_json)
 
 type JSONDict = Annotated[dict[str, Any], JSONValidator, JSONSerializer]
 type JSONList = Annotated[list[Any], JSONValidator, JSONSerializer]
+
+
+def insert_iterator(fields: Sequence[str], values: Iterable[BaseModel]):
+    field_set = set(fields)
+    for v in values:
+        dumped = v.model_dump(include=field_set)
+        yield [dumped.get(f) for f in fields]

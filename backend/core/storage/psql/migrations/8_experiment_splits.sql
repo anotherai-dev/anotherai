@@ -8,6 +8,7 @@ CREATE TABLE experiment_inputs (
     deleted_at TIMESTAMP,
     input_messages JSONB,
     input_variables JSONB,
+    input_preview VARCHAR(255),
     -- No duplicate inputs within an experiment
     CONSTRAINT experiment_inputs_experiment_input_unique UNIQUE (experiment_uid, input_id)
 );

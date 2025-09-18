@@ -4,6 +4,7 @@ from typing import Any
 from structlog import get_logger
 
 from core.domain.agent_completion import AgentCompletion
+from core.domain.agent_input import AgentInput
 from core.domain.agent_output import AgentOutput
 from core.domain.message import Message
 from core.domain.tool_call import ToolCallRequest
@@ -98,11 +99,21 @@ def _output_preview(output: AgentOutput):
     return ""
 
 
+def assign_input_preview(input: AgentInput):
+    if not input.preview:
+        input.preview = _input_preview(
+            input.variables,
+            input.messages,
+        )
+
+
+def assign_output_preview(output: AgentOutput):
+    if not output.preview:
+        output.preview = _output_preview(output) or ""
+
+
 def assign_run_previews(completion: AgentCompletion):
     if not completion.agent_input.preview:
-        completion.agent_input.preview = _input_preview(
-            completion.agent_input.variables,
-            completion.agent_input.messages,
-        )
+        assign_input_preview(completion.agent_input)
     if not completion.agent_output.preview:
-        completion.agent_output.preview = _output_preview(completion.agent_output) or ""
+        assign_output_preview(completion.agent_output)

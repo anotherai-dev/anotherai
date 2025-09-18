@@ -5,8 +5,10 @@ import asyncpg
 import pytest
 
 from core.domain.agent import Agent
+from core.domain.agent_input import AgentInput
 from core.domain.exceptions import ObjectNotFoundError
 from core.domain.experiment import Experiment
+from core.domain.message import Message
 from core.storage.psql.psql_agent_storage import PsqlAgentsStorage
 from core.storage.psql.psql_experiment_storage import PsqlExperimentStorage
 from tests.fake_models import fake_experiment
@@ -22,6 +24,16 @@ async def test_agent(agent_storage: PsqlAgentsStorage):
 @pytest.fixture
 def sample_experiment(test_agent: Agent):
     return fake_experiment(id=f"test-experiment-{uuid.uuid4().hex[:8]}", agent_id=test_agent.id)
+
+
+@pytest.fixture
+async def inserted_experiment(
+    test_agent: Agent,
+    sample_experiment: Experiment,
+    experiment_storage: PsqlExperimentStorage,
+):
+    await experiment_storage.create(sample_experiment)
+    return sample_experiment
 
 
 class TestCreate:
@@ -332,3 +344,41 @@ class TestGetExperiment:
 
         with pytest.raises(ObjectNotFoundError):
             _ = await experiment_storage.get_experiment(sample_experiment.id)
+
+
+class TestAddInputs:
+    async def test_add_single_input(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+    ):
+        input = AgentInput(messages=[Message.with_text("Hello")], variables={"a": "b"})
+        inserted = await experiment_storage.add_inputs(inserted_experiment.id, [input])
+        assert inserted == {"96566260da4cac46ded8c8d969adaa74"}
+
+        # If I try again, nothing should happen
+        inserted = await experiment_storage.add_inputs(inserted_experiment.id, [input])
+        assert inserted == set()
+
+    async def test_add_multiple_inputs(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+    ):
+        input1 = AgentInput(messages=[Message.with_text("Hello")], variables={"a": "b"})
+        input2 = AgentInput(messages=[Message.with_text("World")], variables={"x": 1})
+
+        inserted = await experiment_storage.add_inputs(inserted_experiment.id, [input1, input2])
+        assert inserted == {input1.id, input2.id}
+
+        # Re-adding should insert nothing
+        inserted_again = await experiment_storage.add_inputs(inserted_experiment.id, [input1, input2])
+        assert inserted_again == set()
+
+    async def test_add_inputs_nonexistent_experiment(
+        self,
+        experiment_storage: PsqlExperimentStorage,
+    ):
+        input = AgentInput(messages=[Message.with_text("Hello")], variables={"a": "b"})
+        with pytest.raises(ObjectNotFoundError):
+            await experiment_storage.add_inputs("nonexistent-exp", [input])

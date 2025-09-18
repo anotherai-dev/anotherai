@@ -23,6 +23,7 @@ from core.domain.exceptions import (
 from core.domain.models.model_data_mapping import get_model_id
 from core.domain.version import Version as DomainVersion
 from core.services.completion_runner import CompletionRunner
+from core.services.store_completion._run_previews import assign_input_preview, assign_output_preview
 from core.storage.agent_storage import AgentStorage
 from core.storage.completion_storage import CompletionStorage
 from core.storage.deployment_storage import DeploymentStorage
@@ -133,6 +134,8 @@ class PlaygroundService:
             raise BadRequestError("Exactly one of inputs and input_query must be provided")
 
         domain_inputs = [input_to_domain(input) for input in inputs]
+        for input in domain_inputs:
+            assign_input_preview(input)
         self._check_compatibility(experiment.versions, domain_inputs)
 
         inserted_ids = await self._experiment_storage.add_inputs(experiment_id, domain_inputs)
@@ -252,7 +255,7 @@ class PlaygroundService:
             version=version,
             input=input,
             metadata=metadata,
-            use_cache=use_cache or "auto",
+            use_cache=use_cache or CacheUsage.AUTO,
         )
         if cached:
             return CompletionOutputTuple(
@@ -377,6 +380,7 @@ class PlaygroundService:
             metadata={"anotherai/experiment_id": event.experiment_id},
             use_cache=experiment.use_cache,
         )
+        assign_output_preview(output.output)
 
         # Now we have an output, we can just store it
         await self._experiment_storage.add_completion_output(
