@@ -105,6 +105,8 @@ export function CompletionsTable({
       onRowClick={hasIdColumn ? handleRowClick : undefined}
       maxHeight={maxHeight}
       maxRowHeight="200px"
+      enableLazyLoading={true}
+      lazyLoadBatchSize={20}
     />
   );
 }
