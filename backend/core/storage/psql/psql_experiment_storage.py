@@ -155,6 +155,9 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
 
             return self._validate(_ExperimentRow, row).to_domain()
 
+    @override
+    async def add_inputs()
+
 
 class _ExperimentRow(AgentLinkedRow):
     """A representation of an experiment row"""
@@ -180,3 +183,5 @@ class _ExperimentRow(AgentLinkedRow):
             run_ids=self.run_ids or [],
             metadata=self.metadata or None,
         )
+
+class _ExperimentInputRow(BaseModel)
