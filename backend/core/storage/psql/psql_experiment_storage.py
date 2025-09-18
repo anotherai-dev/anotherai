@@ -333,7 +333,7 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
         async with self._connect() as connection:
             experiment_uid = await self._experiment_uid(connection, experiment_id)
             _ = await connection.execute(
-                "UPDATE experiment_outputs SET completed_at = CURRENT_TIMESTAMP, output_messages = $1, output_error = $2, output_preview = $3 WHERE experiment_uid = $4 AND completion_id = $5",
+                "UPDATE experiment_outputs SET completed_at = CURRENT_TIMESTAMP, output_messages = $1, output_error = $2, output_preview = $3, cost_usd = $4, duration_seconds = $5 WHERE experiment_uid = $6 AND completion_id = $7",
                 psql_serialize_json(output.output.messages),
                 psql_serialize_json(output.output.error),
                 output.output.preview,
@@ -354,9 +354,9 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
         async with self._connect() as connection:
             experiment_uid = await self._experiment_uid(connection, experiment_id)
             args: list[Any] = [experiment_uid]
-            where: list[str] = ["experiment_uid = $1"]
+            where: list[str] = ["experiment_outputs.experiment_uid = $1"]
             if version_ids:
-                where.append(f"ei.version_id = ANY(${len(args) + 1})")
+                where.append(f"ev.version_id = ANY(${len(args) + 1})")
                 args.append(version_ids)
             if input_ids:
                 where.append(f"ei.input_id = ANY(${len(args) + 1})")
@@ -365,8 +365,8 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
             rows = await connection.fetch(
                 f"""SELECT experiment_outputs.*, ei.input_id as input_id, ev.version_id as version_id
                 FROM experiment_outputs
-                JOIN experiment_inputs ei ON ei.uid = experiment_outputs.input_id
-                JOIN experiment_versions ev ON ev.uid = experiment_outputs.version_id
+                LEFT JOIN experiment_inputs ei ON ei.uid = experiment_outputs.input_uid
+                LEFT JOIN experiment_versions ev ON ev.uid = experiment_outputs.version_uid
                 WHERE {" AND ".join(where)}""",  # noqa: S608
                 *args,
             )
@@ -526,7 +526,7 @@ class _ExperimentOutputRow(PsqlBaseRow):
                 {
                     "messages": self.output_messages,
                     "error": self.output_error,
-                    "preview": self.output_preview,
+                    "preview": self.output_preview or "",
                 },
             ),
         )

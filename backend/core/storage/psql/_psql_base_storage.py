@@ -37,7 +37,7 @@ class PsqlBaseStorage:
 
     @classmethod
     def _validate[B: BaseModel](cls, b: type[B], row: asyncpg.Record):
-        return b.model_validate(dict(row))
+        return b.model_validate({k: v for k, v in row.items() if v is not None})
 
     @classmethod
     def table(cls) -> str:
@@ -158,6 +158,8 @@ class AgentLinkedRow(PsqlBaseRow):
 
 
 def psql_serialize_json(value: Any):
+    if value is None:
+        return None
     return pydantic_core.to_json(value, exclude_none=True).decode()
 
 

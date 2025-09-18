@@ -1,3 +1,5 @@
+# pyright: reportPrivateUsage=false
+import asyncio
 import uuid
 from datetime import UTC, datetime
 
@@ -6,13 +8,16 @@ import pytest
 
 from core.domain.agent import Agent
 from core.domain.agent_input import AgentInput
+from core.domain.agent_output import AgentOutput
+from core.domain.error import Error
 from core.domain.exceptions import DuplicateValueError, ObjectNotFoundError
 from core.domain.experiment import Experiment
 from core.domain.message import Message
 from core.domain.version import Version
-from core.storage.experiment_storage import CompletionIDTuple
+from core.storage.experiment_storage import CompletionIDTuple, CompletionOutputTuple
 from core.storage.psql.psql_agent_storage import PsqlAgentsStorage
 from core.storage.psql.psql_experiment_storage import PsqlExperimentStorage
+from core.utils.uuid import uuid7
 from tests.fake_models import fake_experiment
 
 
@@ -515,3 +520,141 @@ class TestFailCompletion:
     ):
         with pytest.raises(ObjectNotFoundError):
             await experiment_storage.fail_completion(inserted_experiment.id, uuid.uuid4())
+
+
+@pytest.fixture
+async def inserted_input(inserted_experiment: Experiment, experiment_storage: PsqlExperimentStorage):
+    agent_input = AgentInput(messages=[Message.with_text("Hi")], variables={"x": 1})
+    await experiment_storage.add_inputs(inserted_experiment.id, [agent_input])
+    return agent_input
+
+
+@pytest.fixture
+async def inserted_version(inserted_experiment: Experiment, experiment_storage: PsqlExperimentStorage):
+    version = Version(model="gpt-4o")
+    await experiment_storage.add_versions(inserted_experiment.id, [version])
+    return version
+
+
+class TestAddCompletion:
+    async def test_add_completion(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+        inserted_input: AgentInput,
+        inserted_version: Version,
+    ):
+        completion_id = uuid7()
+        values = await experiment_storage.add_completions(
+            inserted_experiment.id,
+            [
+                CompletionIDTuple(
+                    completion_id=completion_id,
+                    version_id=inserted_version.id,
+                    input_id=inserted_input.id,
+                ),
+            ],
+        )
+        assert values == {completion_id}
+
+        # Try again, it should do nothing
+        values = await experiment_storage.add_completions(
+            inserted_experiment.id,
+            [
+                CompletionIDTuple(
+                    completion_id=completion_id,
+                    version_id=inserted_version.id,
+                    input_id=inserted_input.id,
+                ),
+            ],
+        )
+        assert values == set()
+
+
+@pytest.fixture
+async def inserted_completion(
+    inserted_experiment: Experiment,
+    experiment_storage: PsqlExperimentStorage,
+    inserted_input: AgentInput,
+    inserted_version: Version,
+):
+    completion_id = uuid7()
+    await experiment_storage.add_completions(
+        inserted_experiment.id,
+        [CompletionIDTuple(completion_id=completion_id, version_id=inserted_version.id, input_id=inserted_input.id)],
+    )
+    return completion_id
+
+
+class TestListExperimentCompletions:
+    async def test_list_experiment_completions(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+        inserted_completion: uuid.UUID,
+    ):
+        completions = await experiment_storage.list_experiment_completions(inserted_experiment.id)
+        assert len(completions) == 1
+        assert completions[0].completion_id == inserted_completion
+
+
+async def test_output_flow(inserted_experiment: Experiment, experiment_storage: PsqlExperimentStorage):
+    # First add 2 inputs
+    input1 = AgentInput(messages=[Message.with_text("I1")], variables=None, preview="I1")
+    input2 = AgentInput(messages=None, variables={"x": 1}, preview="I2")
+    inserted_inputs = await experiment_storage.add_inputs(inserted_experiment.id, [input1, input2])
+    assert inserted_inputs == {input1.id, input2.id}
+    # Then add 2 versions
+    version1 = Version(model="gpt-4o")
+    version2 = Version(model="gpt-4o-mini")
+    inserted_versions = await experiment_storage.add_versions(inserted_experiment.id, [version1, version2])
+    assert inserted_versions == {version1.id, version2.id}
+
+    # Then add 4 completions
+    completions = [
+        CompletionIDTuple(completion_id=uuid7(), version_id=vid, input_id=iid)
+        for vid in [version1.id, version2.id]
+        for iid in [input1.id, input2.id]
+    ]
+    inserted_completions = await experiment_storage.add_completions(inserted_experiment.id, completions)
+    assert inserted_completions == {cid.completion_id for cid in completions}
+    completion_id_list = [cid.completion_id for cid in completions]
+
+    # Create tasks for each completion
+    async def _completion_success(cid: uuid.UUID):
+        await experiment_storage.start_completion(inserted_experiment.id, cid)
+        await experiment_storage.add_completion_output(
+            inserted_experiment.id,
+            cid,
+            CompletionOutputTuple(
+                output=AgentOutput(messages=[Message.with_text("Answer")], preview="Answer"),
+                cost_usd=1.23,
+                duration_seconds=4.56,
+            ),
+        )
+
+    async def _completion_failure(cid: uuid.UUID):
+        await experiment_storage.start_completion(inserted_experiment.id, cid)
+        await experiment_storage.add_completion_output(
+            inserted_experiment.id,
+            cid,
+            CompletionOutputTuple(
+                output=AgentOutput(error=Error(message="Error"), preview="Answer"),
+                cost_usd=1.23,
+                duration_seconds=4.56,
+            ),
+        )
+
+    async def _other_error(cid: uuid.UUID):
+        await experiment_storage.start_completion(inserted_experiment.id, cid)
+        await experiment_storage.fail_completion(inserted_experiment.id, cid)
+
+    async with asyncio.TaskGroup() as tg:
+        tg.create_task(_completion_success(completion_id_list[0]))
+        tg.create_task(_completion_failure(completion_id_list[1]))
+        tg.create_task(_other_error(completion_id_list[2]))
+        # Last one will still be going
+
+    outputs = await experiment_storage.list_experiment_completions(inserted_experiment.id)
+    assert len(outputs) == 4
+    assert {o.completion_id for o in outputs} == inserted_completions
