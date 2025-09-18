@@ -26,7 +26,6 @@ from core.providers._base.provider_error import (
     UnknownProviderError,
 )
 from core.providers._base.provider_options import ProviderOptions
-from core.providers._base.provider_output import ProviderOutput
 from core.providers.xai.xai_domain import CompletionRequest
 from core.providers.xai.xai_provider import XAIConfig, XAIProvider
 from tests import fake_models as test_models
@@ -38,6 +37,10 @@ def xai_provider():
     return XAIProvider(
         config=XAIConfig(api_key="test"),
     )
+
+
+def _output_factory(x: str) -> Any:
+    return json.loads(x)
 
 
 class TestBuildRequest:
@@ -203,17 +206,17 @@ class TestSingleStream:
 
         raw_chunks = provider._single_stream(  # pyright: ignore [reportPrivateUsage]
             request={"messages": [{"role": "user", "content": "Hello"}]},
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
-            partial_output_factory=lambda x: ProviderOutput(x),
+            output_factory=_output_factory,
             raw_completion=raw,
             options=ProviderOptions(model=Model.GPT_3_5_TURBO_1106, max_tokens=10, temperature=0, output_schema={}),
         )
 
         parsed_chunks = [o async for o in raw_chunks]
 
-        assert len(parsed_chunks) == 2
-        assert parsed_chunks[0][0] == {"greeting": "Hello James!"}
-        assert parsed_chunks[1][0] == {"greeting": "Hello James!"}
+        assert len(parsed_chunks) == 4
+        final_chunk = parsed_chunks[-1].final_chunk
+        assert final_chunk is not None
+        assert final_chunk.agent_output == {"greeting": "Hello James!"}
 
         assert len(httpx_mock.get_requests()) == 1
 
@@ -247,8 +250,7 @@ class TestSingleStream:
                     },
                 ],
             },
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
-            partial_output_factory=lambda x: ProviderOutput(x),
+            output_factory=_output_factory,
             raw_completion=raw,
             options=ProviderOptions(
                 model=Model.GROK_3_MINI_BETA,
@@ -260,9 +262,10 @@ class TestSingleStream:
 
         parsed_chunks = [o async for o in raw_chunks]
 
-        assert len(parsed_chunks) == 2
-        assert parsed_chunks[0][0] == {"answer": "Oh it has 30 words!"}
-        assert parsed_chunks[1][0] == {"answer": "Oh it has 30 words!"}
+        assert len(parsed_chunks) == 4
+        final_chunk = parsed_chunks[-1].final_chunk
+        assert final_chunk is not None
+        assert final_chunk.agent_output == {"answer": "Oh it has 30 words!"}
 
         assert len(httpx_mock.get_requests()) == 1
 
@@ -274,8 +277,7 @@ class TestSingleStream:
         streamer = xai_provider.stream(
             [Message.with_text("Hello")],
             options=ProviderOptions(model=Model.GROK_3_MINI_BETA),
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
-            partial_output_factory=lambda x: ProviderOutput(x),
+            output_factory=_output_factory,
         )
 
         chunks = [copy.deepcopy(o) async for o in streamer]
@@ -283,7 +285,7 @@ class TestSingleStream:
 
         reasoning = [c.reasoning for c in chunks]
         assert reasoning[0] == "First"
-        assert reasoning[1] == "First response"
+        assert reasoning[1] == " response"
 
 
 class TestStream:
@@ -311,11 +313,10 @@ class TestStream:
                 temperature=0,
                 output_schema={"type": "object"},
             ),
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
-            partial_output_factory=lambda x: ProviderOutput(x),
+            output_factory=_output_factory,
         )
         chunks = [o async for o in streamer]
-        assert len(chunks) == 2
+        assert len(chunks) == 4
 
         # Not sure why the pyright in the CI reports an error here
         request = httpx_mock.get_requests()[0]
@@ -353,8 +354,7 @@ class TestStream:
         streamer = provider.stream(
             [Message.with_text("Hello")],
             options=ProviderOptions(model=Model.GPT_3_5_TURBO_1106, max_tokens=10, temperature=0),
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
-            partial_output_factory=lambda x: ProviderOutput(x),
+            output_factory=_output_factory,
         )
         # TODO: be stricter about what error is returned here
         with pytest.raises(UnknownProviderError) as e:
@@ -390,10 +390,10 @@ class TestComplete:
                 temperature=0,
                 output_schema={"type": "object"},
             ),
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+            output_factory=_output_factory,
         )
-        assert o.output
-        assert o.tool_calls is None
+        assert o.agent_output
+        assert o.tool_call_requests is None
         # Not sure why the pyright in the CI reports an error here
         request = httpx_mock.get_requests()[0]
         assert request.method == "POST"  # pyright: ignore reportUnknownMemberType
@@ -450,10 +450,10 @@ class TestComplete:
                 # No output schema means the model will return a string
                 output_schema=None,
             ),
-            output_factory=lambda x, _: ProviderOutput(x),
+            output_factory=lambda x: x,
         )
-        assert o.output
-        assert o.tool_calls is None
+        assert o.agent_output
+        assert o.tool_call_requests is None
         # Not sure why the pyright in the CI reports an error here
         request = httpx_mock.get_requests()[0]
         assert request.method == "POST"  # pyright: ignore reportUnknownMemberType
@@ -473,7 +473,7 @@ class TestComplete:
             await provider.complete(
                 [Message.with_text("Hello")],
                 options=ProviderOptions(model=Model.GPT_3_5_TURBO_1106, max_tokens=10, temperature=0),
-                output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+                output_factory=_output_factory,
             )
 
         details = e.value.serialized().details
@@ -505,10 +505,10 @@ class TestComplete:
                 structured_generation=True,
                 output_schema={"type": "object"},
             ),
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+            output_factory=_output_factory,
         )
-        assert o.output
-        assert o.tool_calls is None
+        assert o.agent_output
+        assert o.tool_call_requests is None
 
         # Not sure why the pyright in the CI reports an error here
         request = httpx_mock.get_requests()[0]
@@ -556,7 +556,7 @@ class TestComplete:
             await provider.complete(
                 [Message.with_text("Hello")],
                 options=ProviderOptions(model=Model.GPT_4O_2024_08_06, max_tokens=10, temperature=0),
-                output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+                output_factory=_output_factory,
             )
 
         response = e.value.serialized()
@@ -579,7 +579,7 @@ class TestComplete:
             await provider.complete(
                 [Message.with_text("Hello")],
                 options=ProviderOptions(model=Model.GPT_4O_2024_08_06, max_tokens=10, temperature=0),
-                output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+                output_factory=_output_factory,
             )
 
         response = e.value.serialized()
@@ -599,7 +599,7 @@ class TestComplete:
             await xai_provider.complete(
                 [Message.with_text("Hello")],
                 options=ProviderOptions(model=Model.GPT_4O_2024_08_06, max_tokens=10, temperature=0),
-                output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+                output_factory=_output_factory,
             )
 
         assert e.value.store_task_run is False
@@ -613,7 +613,7 @@ class TestComplete:
         completion = await xai_provider.complete(
             [Message.with_text("Hello")],
             options=ProviderOptions(model=Model.GPT_4O_2024_08_06, max_tokens=10, temperature=0),
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+            output_factory=_output_factory,
         )
 
         assert completion.reasoning
@@ -651,19 +651,15 @@ class TestCheckValid:
 
 class TestExtractStreamDelta:
     def test_extract_stream_delta(self, xai_provider: XAIProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
         delta = xai_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
             b'{"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"gpt-3.5-turbo-1106","system_fingerprint":"fp_44132a4de3","usage": {"prompt_tokens": 35, "completion_tokens": 109, "total_tokens": 144},"choices":[{"index":0,"delta":{"content":"\\"greeting\\": \\"Hello James!\\"\\n}"},"logprobs":null,"finish_reason":null}]}',
-            raw_completion,
-            {},
         )
-        assert delta.content == '"greeting": "Hello James!"\n}'
-        assert raw_completion.usage == LLMUsage(prompt_token_count=35, completion_token_count=109)
+        assert delta.delta == '"greeting": "Hello James!"\n}'
+        assert delta.usage == LLMUsage(prompt_token_count=35, completion_token_count=109)
 
     def test_done(self, xai_provider: XAIProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-        delta = xai_provider._extract_stream_delta(b"[DONE]", raw_completion, {})  # pyright: ignore[reportPrivateUsage]
-        assert delta.content == ""
+        delta = xai_provider._extract_stream_delta(b"[DONE]")  # pyright: ignore[reportPrivateUsage]
+        assert delta.is_empty()
 
 
 class TestMaxTokensExceededError:
@@ -678,7 +674,7 @@ class TestMaxTokensExceededError:
             await provider.complete(
                 [Message.with_text("Hello")],
                 options=ProviderOptions(model=Model.GPT_4O_2024_08_06, max_tokens=10, temperature=0),
-                output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+                output_factory=_output_factory,
             )
         assert (
             e.value.args[0]
@@ -701,8 +697,7 @@ class TestMaxTokensExceededError:
             async for _ in provider._single_stream(  # pyright: ignore reportPrivateUsage
                 {"messages": [{"role": "user", "content": "Hello"}]},
                 options=ProviderOptions(model=Model.GPT_4O_2024_08_06, max_tokens=10, temperature=0),
-                output_factory=lambda x, _: ProviderOutput(json.loads(x)),
-                partial_output_factory=lambda x: ProviderOutput(x),
+                output_factory=_output_factory,
                 raw_completion=RawCompletion(response="", usage=LLMUsage()),
             ):
                 pass

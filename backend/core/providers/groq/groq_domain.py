@@ -5,12 +5,16 @@ from pydantic import BaseModel, Field
 
 from core.domain.exceptions import UnpriceableRunError
 from core.domain.file import File
+from core.domain.finish_reason import FinishReason
 from core.domain.message import MessageDeprecated
 from core.domain.models import Model
 from core.domain.tool import Tool
 from core.domain.tool_call import ToolCallRequest, ToolCallResult
 from core.providers._base.llm_usage import LLMUsage
 from core.providers._base.provider_error import ModelDoesNotSupportModeError
+from core.providers._base.streaming_context import ParsedResponse
+from core.providers.google.google_provider_domain import native_tool_name_to_internal
+from core.runners.runner_output import ToolCallRequestDelta
 from core.utils.token_utils import tokens_from_string
 
 GroqRole = Literal["system", "user", "assistant", "tool"]
@@ -182,6 +186,12 @@ class _BaseChoice(BaseModel):
     index: int | None = None
     finish_reason: str | None = None
 
+    @property
+    def parsed_finish_reason(self) -> FinishReason | None:
+        if self.finish_reason == "length":
+            return "max_context"
+        return None
+
 
 class Choice(_BaseChoice):
     message: GroqMessage
@@ -197,6 +207,14 @@ class StreamedToolCall(BaseModel):
         arguments: str | None = None
 
     function: Function
+
+    def to_domain(self) -> ToolCallRequestDelta:
+        return ToolCallRequestDelta(
+            id=self.id or "",
+            idx=self.index,
+            tool_name=native_tool_name_to_internal(self.function.name) if self.function.name else "",
+            arguments=self.function.arguments or "",
+        )
 
 
 class ChoiceDelta(_BaseChoice):
@@ -230,11 +248,21 @@ class StreamedResponse(BaseModel):
     choices: list[ChoiceDelta]
     usage: Usage | None = None
 
-    class XGroq(BaseModel):
-        usage: Usage | None = None
-        error: str | None = None
+    def to_parsed_response(self) -> ParsedResponse:
+        usage = self.usage.to_domain() if self.usage else None
+        if not self.choices:
+            return ParsedResponse(usage=usage)
 
-    x_groq: XGroq | None = None
+        choice = self.choices[0]
+
+        return ParsedResponse(
+            delta=choice.delta.content,
+            tool_call_requests=[tool_call.to_domain() for tool_call in choice.delta.tool_calls]
+            if choice.delta.tool_calls
+            else None,
+            usage=usage,
+            finish_reason=choice.parsed_finish_reason,
+        )
 
 
 class GroqError(BaseModel):

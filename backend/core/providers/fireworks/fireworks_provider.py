@@ -1,8 +1,4 @@
 import copy
-import json
-from collections.abc import AsyncIterator
-from contextvars import ContextVar
-from json import JSONDecodeError
 from typing import Any, Literal, override
 
 from httpx import Response
@@ -16,7 +12,6 @@ from core.domain.models.utils import get_model_data
 from core.domain.tool_call import ToolCallRequest
 from core.providers._base.httpx_provider import HTTPXProvider
 from core.providers._base.llm_usage import LLMUsage
-from core.providers._base.models import RawCompletion
 from core.providers._base.provider_error import (
     FailedGenerationError,
     InvalidGenerationError,
@@ -25,7 +20,7 @@ from core.providers._base.provider_error import (
     UnknownProviderError,
 )
 from core.providers._base.provider_options import ProviderOptions
-from core.providers._base.streaming_context import ParsedResponse, ToolCallRequestBuffer
+from core.providers._base.streaming_context import ParsedResponse
 from core.providers._base.utils import get_provider_config_env
 from core.providers.fireworks.fireworks_domain import (
     CompletionRequest,
@@ -89,9 +84,6 @@ class FireworksConfig(BaseModel):
 
 
 class FireworksAIProvider(HTTPXProvider[FireworksConfig, CompletionResponse]):
-    # A context var to track if we are in a thinking tag
-    _thinking_tag_context = ContextVar[bool | None]("_thinking_tag_context", default=None)
-
     def _response_format(self, options: ProviderOptions, model_data: ModelData):
         if options.enabled_tools:
             # We disable structured generation if tools are enabled
@@ -320,123 +312,12 @@ class FireworksAIProvider(HTTPXProvider[FireworksConfig, CompletionResponse]):
         return True
 
     @override
-    async def wrap_sse(self, raw: AsyncIterator[bytes], termination_chars: bytes = b"\n\n"):
-        self._thinking_tag_context.set(None)
-
-        # Call parent's wrap_sse implementation
-        async for chunk in super().wrap_sse(raw, termination_chars):
-            yield chunk
-
-    def _check_for_closing_thinking_tag(self, content: str, tool_calls: list[ToolCallRequest] | None):
-        index = content.find("</think>")
-        if index == -1:
-            return ParsedResponse("", content, tool_calls=tool_calls)
-
-        self._thinking_tag_context.set(False)
-        return ParsedResponse(content[index + len("</think>") :], content[:index], tool_calls=tool_calls)
-
-    def _check_for_thinking_tag(self, content: str, tool_calls: list[ToolCallRequest] | None):
-        # We only consider full tags in streams for now
-        index = content.find("<think>")
-        if index == -1:
-            return ParsedResponse(content, tool_calls=tool_calls)
-
-        self._thinking_tag_context.set(True)
-        thinking_content = content[index + len("<think>") :]
-        return self._check_for_closing_thinking_tag(thinking_content, tool_calls)
-
-    def _process_tool_call(
-        self,
-        tool_call: Any,
-        tool_call_request_buffer: dict[int, ToolCallRequestBuffer],
-    ) -> ToolCallRequest | None:
-        # Check if a tool call at that index is already in the buffer
-        if tool_call.index not in tool_call_request_buffer:
-            tool_call_request_buffer[tool_call.index] = ToolCallRequestBuffer()
-
-        buffered_tool_call = tool_call_request_buffer[tool_call.index]
-
-        if tool_call.id and not buffered_tool_call.id:
-            buffered_tool_call.id = tool_call.id
-
-        if tool_call.function.name and not buffered_tool_call.tool_name:
-            buffered_tool_call.tool_name = tool_call.function.name
-
-        if tool_call.function.arguments:
-            buffered_tool_call.tool_input += tool_call.function.arguments
-
-        if buffered_tool_call.id and buffered_tool_call.tool_name and buffered_tool_call.tool_input:
-            try:
-                tool_input_dict = json.loads(buffered_tool_call.tool_input)
-            except JSONDecodeError:
-                # That means the tool call is not full streamed yet
-                return None
-
-            return ToolCallRequest(
-                id=buffered_tool_call.id,
-                tool_name=native_tool_name_to_internal(buffered_tool_call.tool_name),
-                tool_input_dict=tool_input_dict,
-            )
-        return None
-
-    def _process_tool_calls(
-        self,
-        delta_tool_calls: list[Any] | None,
-        tool_call_request_buffer: dict[int, ToolCallRequestBuffer],
-    ) -> list[ToolCallRequest]:
-        if not delta_tool_calls:
-            return []
-
-        return [
-            call
-            for tool_call in delta_tool_calls
-            if (call := self._process_tool_call(tool_call, tool_call_request_buffer))
-        ]
-
-    def _handle_thinking_context(
-        self,
-        content: str,
-        tool_calls: list[ToolCallRequest] | None,
-    ) -> ParsedResponse:
-        match self._thinking_tag_context.get():
-            case False:
-                return ParsedResponse(content, tool_calls=tool_calls)
-            case None:
-                return self._check_for_thinking_tag(content, tool_calls)
-            case True:
-                return self._check_for_closing_thinking_tag(content, tool_calls)
-
-        # We should never be here
-        self.logger.error("Unexpected thinking tag context", extra={"context": self._thinking_tag_context.get()})
-        return ParsedResponse("")
-
-    @override
-    def _extract_stream_delta(
-        self,
-        sse_event: bytes,
-        raw_completion: RawCompletion,
-        tool_call_request_buffer: dict[int, ToolCallRequestBuffer],
-    ):
+    def _extract_stream_delta(self, sse_event: bytes):
         if sse_event == b"[DONE]":
-            return ParsedResponse("")
+            return ParsedResponse()
 
         raw = StreamedResponse.model_validate_json(sse_event)
-        for choice in raw.choices:
-            if choice.finish_reason == "length":
-                raise MaxTokensExceededError(
-                    msg="Model returned a response with a LENGTH finish reason, meaning the maximum number of tokens was exceeded.",
-                    raw_completion=str(raw.choices),
-                )
-        if raw.usage:
-            raw_completion.usage = raw.usage.to_domain()
-
-        if not raw.choices or not raw.choices[0]:
-            return ParsedResponse("")
-
-        tools_calls = self._process_tool_calls(raw.choices[0].delta.tool_calls, tool_call_request_buffer)
-        content = raw.choices[0].delta.content or ""
-
-        return self._handle_thinking_context(content, tools_calls)
+        return raw.to_parsed_response()
 
     def _compute_prompt_token_count(
         self,

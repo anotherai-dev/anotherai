@@ -15,7 +15,6 @@ from core.domain.tool_call import ToolCallRequest
 from core.providers._base.abstract_provider import ProviderConfigInterface
 from core.providers._base.httpx_provider import HTTPXProvider
 from core.providers._base.llm_usage import LLMCompletionUsage, LLMUsage
-from core.providers._base.models import RawCompletion
 from core.providers._base.provider_error import (
     ContentModerationError,
     FailedGenerationError,
@@ -30,7 +29,6 @@ from core.providers._base.provider_error import (
     UnknownProviderError,
 )
 from core.providers._base.provider_options import ProviderOptions
-from core.providers._base.streaming_context import ParsedResponse, ToolCallRequestBuffer
 from core.providers.google.google_provider_domain import (
     BLOCK_THRESHOLD,
     Candidate,
@@ -259,6 +257,10 @@ class GoogleProviderBase[GoogleConfigVar: GoogleProviderBaseConfig](HTTPXProvide
                         # Capturing so we can see why this happens
                         capture=True,
                     )
+                case "RECITATION":
+                    raise FailedGenerationError(
+                        msg="Model returned a RECITATION finish reason",
+                    )
                 case _:
                     pass
 
@@ -293,25 +295,6 @@ class GoogleProviderBase[GoogleConfigVar: GoogleProviderBaseConfig](HTTPXProvide
             # More than one part means the model has returned a reasoning step
             index = 1
         return parts[index].text or ""
-
-    @override
-    def _extract_files(self, response: CompletionResponse) -> list[File] | None:
-        if not response.candidates:
-            return None
-        candidate = response.candidates[0]
-        if not candidate.content:
-            return None
-
-        files = [
-            File(
-                content_type=part.inlineData.mimeType,
-                data=part.inlineData.data,
-            )
-            for part in candidate.content.parts
-            if part.inlineData
-        ]
-
-        return files or None
 
     @override
     def _extract_usage(self, response: CompletionResponse) -> LLMUsage | None:
@@ -493,59 +476,9 @@ class GoogleProviderBase[GoogleConfigVar: GoogleProviderBaseConfig](HTTPXProvide
         return llm_usage.prompt_token_count - llm_usage.prompt_audio_token_count
 
     @override
-    def _extract_stream_delta(
-        self,
-        sse_event: bytes,
-        raw_completion: RawCompletion,
-        tool_call_request_buffer: dict[int, ToolCallRequestBuffer],
-    ):
+    def _extract_stream_delta(self, sse_event: bytes):
         raw = StreamedResponse.model_validate_json(sse_event)
-
-        if (
-            raw.usageMetadata is not None
-            and raw.usageMetadata.promptTokenCount is not None
-            and raw.usageMetadata.candidatesTokenCount is not None
-        ):
-            raw_completion.usage = raw.usageMetadata.to_domain()
-
-        if not raw.candidates:
-            # No candidates so we can just skip
-            return ParsedResponse("")
-
-        if raw.candidates[0].finishReason == "RECITATION":
-            raise FailedGenerationError(
-                msg="Gemini API returned a RECITATION finish reason, see https://issuetracker.google.com/issues/331677495",
-            )
-
-        self._check_finish_reason(raw.candidates)
-
-        if not raw.candidates or not raw.candidates[0] or not raw.candidates[0].content:
-            return ParsedResponse("")
-
-        thoughts = ""
-        response = ""
-
-        native_tool_calls: list[ToolCallRequest] = []
-        for part in raw.candidates[0].content.parts:
-            if part.thought:
-                thoughts += part.text or ""
-            else:
-                response += part.text or ""
-
-            if part.functionCall:
-                native_tool_calls.append(
-                    ToolCallRequest(
-                        id="",
-                        tool_name=native_tool_name_to_internal(part.functionCall.name),
-                        tool_input_dict=part.functionCall.args or {},
-                    ),
-                )
-
-        return ParsedResponse(
-            response,
-            thoughts,
-            native_tool_calls,
-        )
+        return raw.to_parsed_response()
 
 
 def _merge_messages(messages: list[MessageDeprecated], role: MessageDeprecated.Role):

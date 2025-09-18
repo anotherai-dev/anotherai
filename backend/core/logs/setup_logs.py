@@ -1,6 +1,8 @@
 import logging
 import os
+from typing import Any
 
+import pydantic_core
 import structlog
 from sentry_sdk import init as sentry_init
 from sentry_sdk.integrations.fastapi import FastApiIntegration
@@ -28,9 +30,13 @@ def setup_sentry():
         )
 
 
+def _json_serializer(value: Any, indent: int | None = None, *args: Any, **kwargs: Any) -> str:
+    return pydantic_core.to_json(value, fallback=str, indent=indent, exclude_none=True).decode()
+
+
 def _renderer(json: bool | None = None):
     if (json is None and os.environ.get("JSON_LOGS") == "1") or json:
-        return structlog.processors.JSONRenderer()
+        return structlog.processors.JSONRenderer(serializer=_json_serializer)
     return structlog.dev.ConsoleRenderer()
 
 

@@ -1,8 +1,7 @@
-
+# pyright: reportPrivateUsage=false
 import json
 import logging
 import os
-from collections.abc import Callable
 from typing import Any, cast
 from unittest.mock import Mock, patch
 
@@ -31,8 +30,6 @@ from core.providers._base.provider_error import (
     ProviderInternalError,
 )
 from core.providers._base.provider_options import ProviderOptions
-from core.providers._base.provider_output import ProviderOutput
-from core.providers._base.streaming_context import ToolCallRequestBuffer
 from core.providers.amazon_bedrock.amazon_bedrock_domain import (
     AmazonBedrockMessage,
     AmazonBedrockSystemMessage,
@@ -58,6 +55,10 @@ def amazon_provider():
         provider = AmazonBedrockProvider()
     provider.logger = Mock(spec=logging.Logger)
     return provider
+
+
+def _output_factory(x: str):
+    return json.loads(x)
 
 
 class TestAmazonBedrockProvider:
@@ -470,7 +471,7 @@ async def test_complete_500(httpx_mock: HTTPXMock, amazon_provider: AmazonBedroc
         await amazon_provider.complete(
             [Message.with_text("Hello")],
             options=ProviderOptions(model=Model.CLAUDE_3_5_SONNET_20240620, max_tokens=10, temperature=0),
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+            output_factory=_output_factory,
         )
 
     details = e.value.serialized().details
@@ -494,17 +495,11 @@ class TestExtractContentStr:
         amazon_provider.logger.warning.assert_not_called()  # type: ignore
 
 
-@pytest.fixture
-def output_factory() -> Callable[[str, bool], ProviderOutput]:
-    return lambda x, _: ProviderOutput(json.loads(x))
-
-
 class TestCompleteWithRetry:
     async def test_complete_with_retry(
         self,
         amazon_provider: AmazonBedrockProvider,
         httpx_mock: HTTPXMock,
-        output_factory: Callable[[str, bool], ProviderOutput],
     ):
         # First response has an invalid json
         httpx_mock.add_response(
@@ -530,8 +525,8 @@ class TestCompleteWithRetry:
         messages = [Message.with_text("Hello")]
         options = ProviderOptions(model=Model.CLAUDE_3_5_SONNET_20240620, max_tokens=10, temperature=0)
 
-        o = await amazon_provider.complete(messages, options, output_factory=output_factory)
-        assert o.output == {"text": "Hello"}
+        o = await amazon_provider.complete(messages, options, output_factory=_output_factory)
+        assert o.agent_output == {"text": "Hello"}
 
         reqs = httpx_mock.get_requests()
         assert len(reqs) == 2
@@ -597,7 +592,6 @@ async def test_cost_is_set_to_0_if_error_occurs_in_usage_computation(
     error_class: type[Exception],
     amazon_provider: AmazonBedrockProvider,
     httpx_mock: HTTPXMock,
-    output_factory: Callable[[str, bool], ProviderOutput],
 ):
     class _Context(BaseModel):
         id: str = ""
@@ -629,7 +623,7 @@ async def test_cost_is_set_to_0_if_error_occurs_in_usage_computation(
 
     with patch.object(amazon_provider, "_compute_llm_completion_cost") as mock_compute_llm_completion_usage:
         mock_compute_llm_completion_usage.side_effect = error_class("test")
-        _ = await amazon_provider.complete(messages, options, output_factory=output_factory)
+        _ = await amazon_provider.complete(messages, options, output_factory=_output_factory)
         _builder_context = builder_context.get()
         assert _builder_context is not None
         assert len(_builder_context.llm_completions) == 1
@@ -637,22 +631,10 @@ async def test_cost_is_set_to_0_if_error_occurs_in_usage_computation(
         assert _builder_context.llm_completions[0].usage.completion_cost_usd is None  # check that cost is set to None
 
 
-class TestExtractStreamDelta:
-    def test_extract_stream_delta(self, amazon_provider: AmazonBedrockProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-        delta = amazon_provider._extract_stream_delta(  # pyright: ignore reportPrivateUsage
-            b'{"usage":{"inputTokens":35,"outputTokens":109,"totalTokens":144},"delta":{"text":"hello"}}',
-            raw_completion,
-            {},
-        )
-        assert delta.content == "hello"
-        assert raw_completion.usage == LLMUsage(prompt_token_count=35, completion_token_count=109)
-
-
 class TestPrepareCompletion:
     async def test_role_before_content(self, amazon_provider: AmazonBedrockProvider):
         """Test that the 'role' key appears before 'content' in the prepared request."""
-        request = amazon_provider._build_request(  # pyright: ignore[reportPrivateUsage]
+        request = amazon_provider._build_request(
             messages=[MessageDeprecated(role=MessageDeprecated.Role.USER, content="Hello")],
             options=ProviderOptions(model=Model.CLAUDE_3_5_SONNET_20240620, max_tokens=10, temperature=0),
             stream=False,
@@ -675,85 +657,32 @@ class TestPrepareCompletion:
 
 class TestStreamingWithTools:
     def test_extract_stream_delta_with_tool_start(self, amazon_provider: AmazonBedrockProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-        tool_call_request_buffer: dict[int, ToolCallRequestBuffer] = {}
-
         # Test tool start event
-        delta = amazon_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
+        delta = amazon_provider._extract_stream_delta(
             b'{"contentBlockIndex": 1, "start": {"toolUse": {"name": "test_tool", "toolUseId": "test_id"}}}',
-            raw_completion,
-            tool_call_request_buffer,
         )
 
-        assert delta.content == ""
-        assert len(tool_call_request_buffer) == 1
-        assert tool_call_request_buffer[1].id == "test_id"
-        assert tool_call_request_buffer[1].tool_name == "test_tool"
-        assert tool_call_request_buffer[1].tool_input == ""
+        assert delta.delta is None
+        assert delta.tool_call_requests
+        assert len(delta.tool_call_requests) == 1
+        assert delta.tool_call_requests[0].idx == 1
+        assert delta.tool_call_requests[0].id == "test_id"
+        assert delta.tool_call_requests[0].tool_name == "test_tool"
+        assert delta.tool_call_requests[0].arguments == ""
 
     def test_extract_stream_delta_with_tool_use_input(self, amazon_provider: AmazonBedrockProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-        tool_call_request_buffer = {
-            1: ToolCallRequestBuffer(id="test_id", tool_name="test_tool", tool_input=""),
-        }
-
         # Test tool use input event
-        delta = amazon_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
+        delta = amazon_provider._extract_stream_delta(
             b'{"contentBlockIndex": 1, "delta": {"toolUse": {"input": "{\\"param\\": \\""}}}',
-            raw_completion,
-            tool_call_request_buffer,
         )
 
-        assert delta.content == ""
-        assert tool_call_request_buffer[1].tool_input == '{"param": "'
-
-        # Test complete JSON input
-        delta = amazon_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
-            b'{"contentBlockIndex": 1, "delta": {"toolUse": {"input": "value\\"}"}}}',
-            raw_completion,
-            tool_call_request_buffer,
-        )
-
-        tool_calls = delta.tool_calls
-        assert tool_calls is not None
-        assert len(tool_calls) == 1
-        assert tool_calls[0].id == "test_id"
-        assert tool_calls[0].tool_name == "test_tool"  # Assuming native_tool_name_to_internal returns same name
-        assert tool_calls[0].tool_input_dict == {"param": "value"}
-
-    def test_extract_stream_delta_with_missing_content_block_index(self, amazon_provider: AmazonBedrockProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-        tool_call_request_buffer: dict[int, ToolCallRequestBuffer] = {}
-
-        with pytest.raises(ValueError, match="Can't parse tool call input without a content block index"):
-            amazon_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
-                b'{"start": {"toolUse": {"name": "test_tool", "toolUseId": "test_id"}}}',
-                raw_completion,
-                tool_call_request_buffer,
-            )
-
-    def test_extract_stream_delta_with_missing_buffer(self, amazon_provider: AmazonBedrockProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-
-        with pytest.raises(ValueError, match="Can't find tool call request buffer for content block index 1"):
-            amazon_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
-                b'{"contentBlockIndex": 1, "delta": {"toolUse": {"input": "test"}}}',
-                raw_completion,
-                {},
-            )
-
-    def test_extract_stream_delta_with_invalid_content_block_index(self, amazon_provider: AmazonBedrockProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-        tool_call_request_buffer = {
-            2: ToolCallRequestBuffer(id="test_id", tool_name="test_tool", tool_input=""),
-        }
-
-        with pytest.raises(ValueError, match="Can't find tool call request buffer for content block index 1"):
-            amazon_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
-                b'{"contentBlockIndex": 1, "delta": {"toolUse": {"input": "test"}}}',
-                raw_completion,
-                tool_call_request_buffer,
-            )
+        assert delta.delta is None
+        assert delta.tool_call_requests
+        assert len(delta.tool_call_requests) == 1
+        assert delta.tool_call_requests[0].idx == 1
+        assert delta.tool_call_requests[0].id == ""
+        assert delta.tool_call_requests[0].tool_name == ""
+        assert delta.tool_call_requests[0].arguments == '{"param": "'
 
 
 class TestNativeTools:
@@ -776,7 +705,7 @@ class TestNativeTools:
             usage=Usage(inputTokens=1, outputTokens=1, totalTokens=1),
         )
 
-        tool_calls = amazon_provider._extract_native_tool_calls(response)  # pyright: ignore[reportPrivateUsage]
+        tool_calls = amazon_provider._extract_native_tool_calls(response)
         assert len(tool_calls) == 1
         assert tool_calls[0].id == "test_id"
         assert tool_calls[0].tool_name == "test_tool"  # Assuming native_tool_name_to_internal returns same name
@@ -795,7 +724,7 @@ class TestNativeTools:
             usage=Usage(inputTokens=1, outputTokens=1, totalTokens=1),
         )
 
-        tool_calls = amazon_provider._extract_native_tool_calls(response)  # pyright: ignore[reportPrivateUsage]
+        tool_calls = amazon_provider._extract_native_tool_calls(response)
         assert len(tool_calls) == 0
 
     def test_build_request_with_tools(self, amazon_provider: AmazonBedrockProvider):
@@ -813,7 +742,7 @@ class TestNativeTools:
             ],
         )
 
-        request = amazon_provider._build_request(messages, options, stream=False)  # pyright: ignore[reportPrivateUsage]
+        request = amazon_provider._build_request(messages, options, stream=False)
         assert isinstance(request, CompletionRequest)
         assert request.toolConfig is not None
         assert len(request.toolConfig.tools) == 1
@@ -841,63 +770,73 @@ class TestNativeTools:
             ],
         )
 
-        request = amazon_provider._build_request(messages, options, stream=False)  # pyright: ignore[reportPrivateUsage]
+        request = amazon_provider._build_request(messages, options, stream=False)
         assert isinstance(request, CompletionRequest)
         assert request.toolConfig is not None
         assert request.toolConfig.tools[0].toolSpec.description is None
 
 
-class TestStreamingWithToolsFixture:
-    async def test_stream_with_tools(
-        self,
-        amazon_provider: AmazonBedrockProvider,
-    ):
+class TestSingleStream:
+    async def test_stream_with_tools(self, amazon_provider: AmazonBedrockProvider):
+        # TODO: this test should use an httpx mock instead
+
+        fixture_data: list[dict[str, Any]] = fixtures_json("bedrock/bedrock_stream_with_tools.json")["SSEs"]
         raw_completion = RawCompletion(response="", usage=LLMUsage())
-        tool_call_request_buffer: dict[int, ToolCallRequestBuffer] = {}
-        tool_calls: list[ToolCallRequest] = []
-        content: str = ""
+        streaming_context = amazon_provider._streaming_context(raw_completion)
 
-        fixture_data = fixtures_json("bedrock/bedrock_stream_with_tools.json")
-
-        for sse in fixture_data["SSEs"]:
-            delta = amazon_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
+        for sse in fixture_data:
+            delta = amazon_provider._extract_stream_delta(
                 json.dumps(sse).encode(),
-                raw_completion,
-                tool_call_request_buffer,
             )
-            content += delta.content
-            if delta.tool_calls:
-                tool_calls.extend(delta.tool_calls)
+            streaming_context.add_chunk(delta)
+
+        final_chunk = streaming_context.complete(
+            lambda raw, reasoning, tool_calls: amazon_provider._build_structured_output(
+                lambda x: x,
+                raw,
+                reasoning,
+                tool_calls,
+            ),
+        )
 
         # Verify the content and tool calls
-        assert content == "\n\nNow, I'll retrieve the weather information using the city code:"
+        assert final_chunk.final_chunk
+        assert (
+            final_chunk.final_chunk.agent_output
+            == "\n\nNow, I'll retrieve the weather information using the city code:"
+        )
 
         # Verify tool calls were correctly extracted
-        assert tool_calls == [
-            ToolCallRequest(
-                id="tooluse_BbrvqbWgQmyeB79TM7dDRA",
-                tool_name="get_temperature",
-                tool_input_dict={"city_code": "125321"},
-            ),
-            ToolCallRequest(
-                id="tooluse_Lh3H3N-FSQ2B6gW1LYaKXQ",
-                tool_name="get_rain_probability",
-                tool_input_dict={"city_code": "125321"},
-            ),
-            ToolCallRequest(
-                id="tooluse_e6nmRdHAQCO4-eQeZzI8bw",
-                tool_name="get_wind_speed",
-                tool_input_dict={"city_code": "125321"},
-            ),
-            ToolCallRequest(
-                id="tooluse_ojzBRrx5T6G1g1TZCfzFlA",
-                tool_name="get_weather_conditions",
-                tool_input_dict={"city_code": "125321"},
-            ),
-        ]
+        assert final_chunk.final_chunk.tool_call_requests is not None
+        assert len(final_chunk.final_chunk.tool_call_requests) == 4
+        assert final_chunk.final_chunk.tool_call_requests[0] == ToolCallRequest(
+            index=1,
+            id="tooluse_BbrvqbWgQmyeB79TM7dDRA",
+            tool_name="get_temperature",
+            tool_input_dict={"city_code": "125321"},
+        )
+        assert final_chunk.final_chunk.tool_call_requests[1] == ToolCallRequest(
+            index=2,
+            id="tooluse_Lh3H3N-FSQ2B6gW1LYaKXQ",
+            tool_name="get_rain_probability",
+            tool_input_dict={"city_code": "125321"},
+        )
+        assert final_chunk.final_chunk.tool_call_requests[2] == ToolCallRequest(
+            index=3,
+            id="tooluse_e6nmRdHAQCO4-eQeZzI8bw",
+            tool_name="get_wind_speed",
+            tool_input_dict={"city_code": "125321"},
+        )
+
+        assert final_chunk.final_chunk.tool_call_requests[3] == ToolCallRequest(
+            index=4,
+            id="tooluse_ojzBRrx5T6G1g1TZCfzFlA",
+            tool_name="get_weather_conditions",
+            tool_input_dict={"city_code": "125321"},
+        )
 
         # Verify usage metrics were captured
-        assert raw_completion.usage == LLMUsage(
+        assert streaming_context.usage == LLMUsage(
             prompt_token_count=1133,
             completion_token_count=130,
         )
@@ -979,7 +918,7 @@ class TestExtractReasoningSteps:
             usage=Usage(inputTokens=100, outputTokens=50),
         )
 
-        reasoning = amazon_provider._extract_reasoning_steps(response)  # pyright: ignore[reportPrivateUsage]
+        reasoning = amazon_provider._extract_reasoning_steps(response)
         assert (
             reasoning
             == """Let me think about this step by step...
@@ -1009,7 +948,7 @@ Now I need to consider another approach..."""
             usage=Usage(inputTokens=100, outputTokens=50),
         )
 
-        reasoning_steps = amazon_provider._extract_reasoning_steps(response)  # pyright: ignore[reportPrivateUsage]
+        reasoning_steps = amazon_provider._extract_reasoning_steps(response)
 
         assert reasoning_steps is None
 
@@ -1026,7 +965,7 @@ Now I need to consider another approach..."""
             usage=Usage(inputTokens=100, outputTokens=50),
         )
 
-        reasoning_steps = amazon_provider._extract_reasoning_steps(response)  # pyright: ignore[reportPrivateUsage]
+        reasoning_steps = amazon_provider._extract_reasoning_steps(response)
 
         assert reasoning_steps is None
 
@@ -1055,7 +994,7 @@ class TestBuildRequestWithThinking:
 
             request = cast(
                 CompletionRequest,
-                amazon_provider._build_request(  # pyright: ignore[reportPrivateUsage]
+                amazon_provider._build_request(
                     messages=[MessageDeprecated(role=MessageDeprecated.Role.USER, content="Hello")],
                     options=options,
                     stream=False,
@@ -1084,7 +1023,7 @@ class TestBuildRequestWithThinking:
 
         request = cast(
             CompletionRequest,
-            amazon_provider._build_request(  # pyright: ignore[reportPrivateUsage]
+            amazon_provider._build_request(
                 messages=[MessageDeprecated(role=MessageDeprecated.Role.USER, content="Hello")],
                 options=options,
                 stream=False,
@@ -1098,86 +1037,73 @@ class TestBuildRequestWithThinking:
         assert request.inferenceConfig.maxTokens == 1000
 
 
-class TestThinkingStreamingDeltas:
+class TestExtractStreamDelta:
+    def test_extract_stream_delta(self, amazon_provider: AmazonBedrockProvider):
+        delta = amazon_provider._extract_stream_delta(  # pyright: ignore reportPrivateUsage
+            b'{"usage":{"inputTokens":35,"outputTokens":109,"totalTokens":144},"delta":{"text":"hello"}}',
+        )
+        assert delta.delta == "hello"
+        assert delta.usage == LLMUsage(prompt_token_count=35, completion_token_count=109)
+
     def test_extract_stream_delta_with_thinking(self, amazon_provider: AmazonBedrockProvider):
         """Test handling of thinking deltas in streaming."""
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-        tool_call_request_buffer: dict[int, ToolCallRequestBuffer] = {}
 
         # Test thinking delta
-        delta = amazon_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
+        delta = amazon_provider._extract_stream_delta(
             b'{"contentBlockIndex": 0, "delta": {"reasoningContent": {"text": "I need to analyze this request..."}}}',
-            raw_completion,
-            tool_call_request_buffer,
         )
 
-        assert delta.content == ""
+        assert delta.delta is None
         assert delta.reasoning == "I need to analyze this request..."
-        assert delta.tool_calls == []
+        assert delta.tool_call_requests is None
 
     def test_extract_stream_delta_with_reasoning_content(self, amazon_provider: AmazonBedrockProvider):
         """Test handling of reasoningContent deltas in streaming."""
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-        tool_call_request_buffer: dict[int, ToolCallRequestBuffer] = {}
 
         # Test reasoningContent delta
-        delta = amazon_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
+        delta = amazon_provider._extract_stream_delta(
             b'{"contentBlockIndex": 0, "delta": {"reasoningContent": {"text": "I need to analyze this request..."}}}',
-            raw_completion,
-            tool_call_request_buffer,
         )
 
-        assert delta.content == ""
+        assert delta.delta is None
         assert delta.reasoning == "I need to analyze this request..."
-        assert delta.tool_calls == []
+        assert delta.tool_call_requests is None
 
     def test_extract_stream_delta_with_text_and_thinking(self, amazon_provider: AmazonBedrockProvider):
         """Test handling of mixed text and thinking deltas."""
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-        tool_call_request_buffer: dict[int, ToolCallRequestBuffer] = {}
 
         # Test text delta
-        text_delta = amazon_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
+        text_delta = amazon_provider._extract_stream_delta(
             b'{"contentBlockIndex": 0, "delta": {"text": "Here is my response: "}}',
-            raw_completion,
-            tool_call_request_buffer,
         )
 
-        assert text_delta.content == "Here is my response: "
+        assert text_delta.delta == "Here is my response: "
         assert text_delta.reasoning is None
-        assert text_delta.tool_calls == []
+        assert text_delta.tool_call_requests is None
 
         # Test thinking delta
-        thinking_delta = amazon_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
+        thinking_delta = amazon_provider._extract_stream_delta(
             b'{"contentBlockIndex": 1, "delta": {"reasoningContent": {"text": "Let me verify this approach..."}}}',
-            raw_completion,
-            tool_call_request_buffer,
         )
 
-        assert thinking_delta.content == ""
+        assert thinking_delta.delta is None
         assert thinking_delta.reasoning == "Let me verify this approach..."
-        assert thinking_delta.tool_calls == []
+        assert thinking_delta.tool_call_requests is None
 
     def test_extract_stream_delta_without_thinking(self, amazon_provider: AmazonBedrockProvider):
         """Test normal streaming without thinking deltas."""
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-        tool_call_request_buffer: dict[int, ToolCallRequestBuffer] = {}
 
         # Test regular text delta
-        delta = amazon_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
+        delta = amazon_provider._extract_stream_delta(
             b'{"delta": {"text": "Normal response text"}}',
-            raw_completion,
-            tool_call_request_buffer,
         )
 
-        assert delta.content == "Normal response text"
+        assert delta.delta == "Normal response text"
         assert delta.reasoning is None
-        assert delta.tool_calls == []
+        assert delta.tool_call_requests is None
 
     def test_stream_thinking_aggregation(self, amazon_provider: AmazonBedrockProvider):
         """Test aggregation of multiple thinking deltas."""
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-        tool_call_request_buffer: dict[int, ToolCallRequestBuffer] = {}
 
         # Simulate multiple thinking delta events
         thinking_events = [
@@ -1188,11 +1114,7 @@ class TestThinkingStreamingDeltas:
 
         reasoning_content = ""
         for event in thinking_events:
-            delta = amazon_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
-                event,
-                raw_completion,
-                tool_call_request_buffer,
-            )
+            delta = amazon_provider._extract_stream_delta(event)
 
             if delta.reasoning:
                 reasoning_content += delta.reasoning
@@ -1204,20 +1126,14 @@ class TestThinkingStreamingDeltas:
         )
         assert reasoning_content == expected_content
 
-
-class TestUsageWithThinking:
     def test_extract_stream_delta_with_usage_and_thinking(self, amazon_provider: AmazonBedrockProvider):
         """Test that usage metrics are correctly extracted alongside thinking deltas."""
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-        tool_call_request_buffer: dict[int, ToolCallRequestBuffer] = {}
 
         # Test delta with both usage and thinking
-        delta = amazon_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
+        delta = amazon_provider._extract_stream_delta(
             b'{"usage": {"inputTokens": 150, "outputTokens": 200, "totalTokens": 350}, "delta": {"reasoningContent": {"text": "Processing request..."}}}',
-            raw_completion,
-            tool_call_request_buffer,
         )
 
-        assert delta.content == ""
+        assert delta.delta is None
         assert delta.reasoning == "Processing request..."
-        assert raw_completion.usage == LLMUsage(prompt_token_count=150, completion_token_count=200)
+        assert delta.usage == LLMUsage(prompt_token_count=150, completion_token_count=200)
