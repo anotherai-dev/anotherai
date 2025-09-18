@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from contextlib import asynccontextmanager, contextmanager
-from tkinter.constants import X
 from typing import TypeVar, override
 
 import httpx
@@ -264,7 +263,7 @@ class HTTPXProviderBase[ProviderConfigVar: ProviderConfigInterface, ProviderRequ
             _ = await self.complete(
                 messages=[Message.with_text(text="Respond with an empty json", role="user")],
                 options=options,
-                output_factory=lambda x: X,
+                output_factory=lambda x: x,
             )
             return True
         except InvalidProviderConfigError:
