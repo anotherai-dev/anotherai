@@ -125,11 +125,11 @@ class Runner:
 
     def _should_use_cache(self, cache: CacheUsage) -> bool:
         match cache:
-            case "never":
+            case CacheUsage.NEVER:
                 return False
-            case "always":
+            case CacheUsage.ALWAYS:
                 return True
-            case "auto":
+            case CacheUsage.AUTO:
                 return self._version.temperature == 0 and not self._version.enabled_tools
 
     @asynccontextmanager

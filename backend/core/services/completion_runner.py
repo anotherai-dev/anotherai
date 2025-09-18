@@ -68,11 +68,12 @@ class CompletionRunner:
         agent: Agent,
         version: Version,
         input: AgentInput,
-        use_cache: CacheUsage,
+        use_cache: CacheUsage | None,
         metadata: dict[str, Any],
     ) -> AgentCompletion | None:
+        use_cache = use_cache or CacheUsage.AUTO
         # Attempt to retrieve from cache if possible
-        if use_cache == "always" or (use_cache == "auto" and version.should_use_auto_cache()):
+        if use_cache == CacheUsage.ALWAYS or (use_cache == CacheUsage.AUTO and version.should_use_auto_cache()):
             with capture_errors(_log, "Error fetching cached output"):
                 completion = await self._from_cache(completion_id, agent, version, input, metadata)
                 if completion:

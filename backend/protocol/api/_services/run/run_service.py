@@ -132,7 +132,7 @@ class RunService:
             version=prepared_run.version,
             input=prepared_run.agent_input,
             metadata=prepared_run.metadata,
-            use_cache=use_cache or "auto",
+            use_cache=use_cache,
         )
         if not cached:
             return None
@@ -220,7 +220,7 @@ class RunService:
         completion_id = str(uuid7())
         if cached := await self._cached_response(
             completion_id,
-            request.use_cache or "auto",
+            request.use_cache,
             stream=stream,
             prepared_run=prepared_run,
             deprecated_function=deprecated_function,
