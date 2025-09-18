@@ -1,5 +1,5 @@
 import { cx } from "class-variance-authority";
-import { ReactNode } from "react";
+import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface SimpleTableProps {
   // Column headers (first row)
@@ -23,6 +23,12 @@ export interface SimpleTableProps {
   maxHeight?: string;
   // Max height for individual rows
   maxRowHeight?: string;
+  // Enable lazy loading for large datasets (default: false)
+  enableLazyLoading?: boolean;
+  // Number of rows to render initially and load per batch (default: 50)
+  lazyLoadBatchSize?: number;
+  // Height of each row in pixels for virtual scrolling calculation (default: 50)
+  estimatedRowHeight?: number;
 }
 
 export function SimpleTableComponent({
@@ -37,6 +43,8 @@ export function SimpleTableComponent({
   columnWidths,
   maxHeight,
   maxRowHeight,
+  enableLazyLoading = false,
+  lazyLoadBatchSize = 50,
 }: SimpleTableProps) {
   const alignmentClasses = {
     top: "align-top",
@@ -66,8 +74,69 @@ export function SimpleTableComponent({
     return { width: width };
   };
 
+  // Lazy loading state and logic
+  const [visibleRowCount, setVisibleRowCount] = useState(enableLazyLoading ? lazyLoadBatchSize : data.length);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const tableBodyRef = useRef<HTMLTableSectionElement>(null);
+
+  // Memoized visible data
+  const visibleData = useMemo(() => {
+    return enableLazyLoading ? data.slice(0, visibleRowCount) : data;
+  }, [data, visibleRowCount, enableLazyLoading]);
+
+  // Load more rows function
+  const loadMoreRows = useCallback(() => {
+    if (!enableLazyLoading || isLoadingMore || visibleRowCount >= data.length) {
+      return;
+    }
+
+    setIsLoadingMore(true);
+
+    // Simulate loading delay (can be removed if not needed)
+    setTimeout(() => {
+      setVisibleRowCount((prev) => Math.min(prev + lazyLoadBatchSize, data.length));
+      setIsLoadingMore(false);
+    }, 100);
+  }, [enableLazyLoading, isLoadingMore, visibleRowCount, data.length, lazyLoadBatchSize]);
+
+  // Scroll event handler for infinite scroll
+  const handleScroll = useCallback(
+    (e: Event) => {
+      if (!enableLazyLoading) return;
+
+      const target = e.target as HTMLElement;
+      const scrollTop = target.scrollTop;
+      const scrollHeight = target.scrollHeight;
+      const clientHeight = target.clientHeight;
+
+      // Load more when near bottom (within 200px)
+      if (scrollHeight - scrollTop - clientHeight < 200) {
+        loadMoreRows();
+      }
+    },
+    [enableLazyLoading, loadMoreRows]
+  );
+
+  // Set up scroll listener
+  useEffect(() => {
+    const container = containerRef.current?.querySelector(".overflow-auto");
+    if (!container || !enableLazyLoading) return;
+
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, [handleScroll, enableLazyLoading]);
+
+  // Reset visible row count when data changes
+  useEffect(() => {
+    if (enableLazyLoading) {
+      setVisibleRowCount(Math.min(lazyLoadBatchSize, data.length));
+    }
+  }, [data, enableLazyLoading, lazyLoadBatchSize]);
+
   return (
     <div
+      ref={containerRef}
       className={cx(
         "bg-gradient-to-b from-white to-gray-50 border border-gray-200 rounded-[2px] overflow-hidden relative",
         className
@@ -90,13 +159,13 @@ export function SimpleTableComponent({
             </tr>
           </thead>
 
-          <tbody className="bg-transparent">
-            {data.map((row, rowIndex) => (
+          <tbody ref={tableBodyRef} className="bg-transparent">
+            {visibleData.map((row, rowIndex) => (
               <tr
                 key={rowIndex}
                 className={cx(
                   "relative",
-                  rowIndex < data.length - 1 &&
+                  rowIndex < visibleData.length - 1 &&
                     "after:content-[''] after:absolute after:bottom-0 after:left-2 after:right-2 after:h-px after:bg-gray-200",
                   (onRowClick || onRowHover) && "hover:bg-gray-50",
                   onRowClick && "cursor-pointer"
@@ -130,6 +199,22 @@ export function SimpleTableComponent({
                 ))}
               </tr>
             ))}
+            {enableLazyLoading && visibleRowCount < data.length && (
+              <tr>
+                <td colSpan={columnHeaders.length} className="px-4 py-8 text-center text-xs text-gray-500">
+                  {isLoadingMore ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+                      Loading more rows...
+                    </div>
+                  ) : (
+                    <button onClick={loadMoreRows} className="text-blue-600 hover:text-blue-800 underline">
+                      Load more rows ({data.length - visibleRowCount} remaining)
+                    </button>
+                  )}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
