@@ -435,7 +435,7 @@ class Experiment(BaseModel):
     agent_id: str = Field(description="The agent that created the experiment.")
 
     class Completion(BaseModel):
-        id: str
+        id: UUID
         # Only IDs are provided here but they have the same format as in the full object (completion.input.id)
         input: ModelWithID
         version: ModelWithID

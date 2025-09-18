@@ -69,31 +69,27 @@ async def test_playground_tool(test_api_client: IntegrationTestClient):
         "get_experiment_outputs",
         {"experiment_id": experiment_id, "max_wait_time_seconds": 1},
     )
-    assert len(res["completions"]) == 8
 
-    # None of the completions should be started
+    completions = res["completions"]
+    assert len(completions) == 8
 
-    # completions = res["completions"]
-    # assert len(completions) == 8
-    # await test_api_client.wait_for_background()
+    # I can also fetch the experiment
+    exp = await test_api_client.get(f"/v1/experiments/{res['experiment_id']}")
+    assert exp["title"] == "Capital Extractor Test Experiment"
+    assert len(exp["versions"]) == 4
+    assert len(exp["inputs"]) == 2
+    assert len(exp["completions"]) == 8
 
-    # # I can also fetch the experiment
-    # exp = await test_api_client.get(f"/v1/experiments/{res['experiment_id']}")
-    # assert exp["title"] == "Capital Extractor Test Experiment"
-    # assert len(exp["versions"]) == 4
-    # assert len(exp["inputs"]) == 2
-    # assert len(exp["completions"]) == 8
-
-    # assert sorted((i for i in exp["inputs"]), key=lambda i: i["id"]) == [
-    #     {
-    #         "id": "901cd050e54511e4ef4065ddf3ddbdfd",
-    #         "variables": {"name": "Toulouse"},
-    #     },
-    #     {
-    #         "id": "bc4ad381493577d2d4654c590fff2765",
-    #         "variables": {"name": "Pittsburgh"},
-    #     },
-    # ]
+    assert sorted((i for i in exp["inputs"]), key=lambda i: i["id"]) == [
+        {
+            "id": "901cd050e54511e4ef4065ddf3ddbdfd",
+            "variables": {"name": "Toulouse"},
+        },
+        {
+            "id": "bc4ad381493577d2d4654c590fff2765",
+            "variables": {"name": "Pittsburgh"},
+        },
+    ]
 
 
 async def test_with_no_variables(test_api_client: IntegrationTestClient):

@@ -28,20 +28,17 @@ class ExperimentService:
         self.annotation_storage = annotation_storage
 
     async def get_experiment(self, experiment_id: str) -> Experiment:
-        exp = await self.experiment_storage.get_experiment(experiment_id)
+        exp = await self.experiment_storage.get_experiment(experiment_id, include={"versions", "inputs", "outputs"})
 
-        res = await asyncio.gather(
-            self.annotation_storage.list(
-                target=TargetFilter(completion_id=set(exp.run_ids)),
-                context=None,
-                since=None,
-                limit=100,
-            ),
-            self.completion_storage.completions_by_ids(exp.run_ids, exclude={"traces"}),
+        annotations = await self.annotation_storage.list(
+            target=TargetFilter(completion_id=set(exp.run_ids)),
+            context=None,
+            since=None,
+            limit=100,
         )
 
         # getting annotations as needed
-        return experiment_from_domain(exp, res[1], res[0])
+        return experiment_from_domain(exp, annotations)
 
     async def list_experiments(self, agent_id: str | None = None, limit: int = 10, offset: int = 0) -> Page[Experiment]:
         if agent_id:
@@ -54,7 +51,7 @@ class ExperimentService:
             self.experiment_storage.list_experiments(agent_uid=agent_uid, since=None, limit=limit, offset=offset),
             self.experiment_storage.count_experiments(agent_uid=agent_uid, since=None),
         )
-        items = [experiment_from_domain(e, [], []) for e in exp]
+        items = [experiment_from_domain(e, []) for e in exp]
         return Page(items=items, total=total_count)
 
     async def set_experiment_result(self, experiment_id: str, result: str) -> None:
@@ -71,7 +68,7 @@ class ExperimentService:
         domain_exp = create_experiment_to_domain(experiment)
         await self.experiment_storage.create(domain_exp, agent_uid=agent.uid)
         add_background_task(self.completion_storage.store_experiment(domain_exp))
-        return experiment_from_domain(domain_exp, [], [])
+        return experiment_from_domain(domain_exp, [])
 
     async def create_experiment_mcp(
         self,
