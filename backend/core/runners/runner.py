@@ -355,14 +355,6 @@ class Runner:
         options: ProviderOptions,
         messages: list[Message],
     ) -> AsyncIterator[RunnerOutputChunk]:
-        streamable = provider.is_streamable(
-            options.model,
-            options.enabled_tools,
-        )
-        if not streamable:
-            yield (await self._build_output_from_messages(provider, options, messages)).as_chunk()
-            return
-
         if not provider.is_streamable(options.model, options.enabled_tools):
             yield (await self._build_output_from_messages(provider, options, messages)).as_chunk()
             return

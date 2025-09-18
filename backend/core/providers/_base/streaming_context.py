@@ -72,6 +72,7 @@ class ParsedResponse(NamedTuple):
         return all(v is None for v in self)
 
 
+# TODO: add tests
 class StreamingContext:
     def __init__(self, raw_completion: RawCompletion):
         # self.streamer = JSONStreamParser() if json else RawStreamParser()
@@ -95,6 +96,9 @@ class StreamingContext:
         return self._runner_output
 
     def _add_tool_call_delta(self, chunk: ToolCallRequestDelta):
+        # We cannot create a map here since some providers match tool calls by ID or by index
+        # Reversed iteration should be somewhat efficient since it is very likely that the tool
+        # being updated is the last one
         for b in reversed(self._tool_call_buffers):
             if b.should_handle_delta(chunk):
                 b.add_delta(chunk)
