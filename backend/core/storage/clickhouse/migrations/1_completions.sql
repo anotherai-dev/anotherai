@@ -65,9 +65,16 @@ ENGINE = ReplacingMergeTree(updated_at) --
 PARTITION BY toDate(UUIDv7ToDateTime(id)) -- Composite primary key, needs to be sparse
 PRIMARY KEY (tenant_uid, toDate(UUIDv7ToDateTime(id)))
 ORDER BY (
-        tenant_uid ASC,
-        toDate(UUIDv7ToDateTime(id)) ASC,
-        toUInt128(id) ASC -- Order by run uuid converted to UInt128 to avoid sorting error
+        tenant_uid,
+        toDate(UUIDv7ToDateTime(id)),
+        -- We should probably have order by UUIDv7ToDateTime(id) here to be consistent with the previous
+        -- value. However from testing, it seems that clickhouse is capable of understanding 
+        -- perfectly that UUIDv7ToDateTime(id) and toUInt128(id) are in the same order
+        -- so changing this would not improve performance
+        -- When https://clickhouse.com/docs/operations/settings/merge-tree-settings#allow_experimental_reverse_key
+        -- is supported, we should change this to a reverse order so that completions are naturally ordered
+        -- "most recent first" and so we can remove the "replace ORDER BY created_at DESC" hack
+        toUInt128(id) -- Order by run uuid converted to datetime to avoid sorting error
     );
 -- Using experimental reverse would be good here but it's not supported by clickhouse cloud yet
 -- Add a bloom filters

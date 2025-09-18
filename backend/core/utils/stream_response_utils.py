@@ -10,8 +10,8 @@ from core.utils.streams import format_model_for_sse
 _log = get_logger(__name__)
 
 
-def safe_streaming_response(
-    stream_generator: Callable[[], AsyncIterator[BaseModel]],
+def safe_streaming_response[T: BaseModel](
+    stream_generator: Callable[[], AsyncIterator[T]],
     media_type: str = "text/event-stream",
 ) -> StreamingResponse:
     """
