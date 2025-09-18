@@ -1,6 +1,5 @@
 from fastapi import APIRouter
 
-from core.domain.exceptions import BadRequestError
 from protocol.api._dependencies._lifecycle import LifecycleDependenciesDep
 from protocol.api._dependencies._misc import RequestStartDep
 from protocol.api._dependencies._services import CompletionRunnerDep
@@ -23,7 +22,5 @@ async def chat_completions(
     start_time: RequestStartDep,
     tenant: TenantDep,
 ):
-    if request.stream:
-        raise BadRequestError("Streaming is not yet supported")
     run_service = RunService(tenant, completion_runner, dependencies.storage_builder.deployments(tenant.uid))
     return await run_service.run(request, start_time)

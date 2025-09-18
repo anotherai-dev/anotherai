@@ -24,7 +24,6 @@ from core.providers._base.provider_error import (
     StructuredGenerationError,
 )
 from core.providers._base.provider_options import ProviderOptions
-from core.providers._base.provider_output import ProviderOutput
 from core.providers.openai.azure_open_ai_provider.azure_openai_config import AzureOpenAIConfig
 from core.providers.openai.azure_open_ai_provider.azure_openai_provider import (
     _AZURE_API_REGION_METADATA_KEY,  # pyright: ignore [reportPrivateUsage]
@@ -37,10 +36,6 @@ from tests.utils import fixture_bytes, fixtures_json
 @pytest.fixture
 def azure_openai_provider():
     return AzureOpenAIProvider()
-
-
-def _output_factory(x: str, *args: Any, **kwargs: Any):
-    return ProviderOutput(json.loads(x))
 
 
 class TestValues(unittest.TestCase):
@@ -205,23 +200,21 @@ class TestSingleStream:
 
         raw_chunks = azure_openai_provider._single_stream(  # pyright: ignore [reportPrivateUsage]
             request={"messages": [{"role": "user", "content": "Hello"}]},
-            output_factory=_output_factory,
-            partial_output_factory=ProviderOutput,
+            output_factory=lambda x: json.loads(x),
             raw_completion=raw,
             options=ProviderOptions(model=Model.GPT_4O_2024_11_20, max_tokens=10, temperature=0, output_schema={}),
         )
 
-        parsed_chunks = [(chunk.output, chunk.tool_calls) async for chunk in raw_chunks]
+        parsed_chunks = [chunk async for chunk in raw_chunks]
 
-        assert len(parsed_chunks) == 13
-
-        expected_chunk: dict[str, Any] = {
+        assert len(parsed_chunks) == 21
+        final_chunk = parsed_chunks[-1].final_chunk
+        assert final_chunk is not None
+        assert final_chunk.agent_output == {
             "summary": "Artificial intelligence (AI) has significantly impacted various industries.",
             "word_count": 91,
         }
-        assert parsed_chunks[0][0] == expected_chunk
-        assert parsed_chunks[1][0] == expected_chunk
-        assert parsed_chunks[2][0] == expected_chunk
+
         assert len(httpx_mock.get_requests()) == 1
 
     async def test_max_message_length(self, httpx_mock: HTTPXMock, azure_openai_provider: AzureOpenAIProvider):
@@ -235,12 +228,11 @@ class TestSingleStream:
         with pytest.raises(MaxTokensExceededError) as e:
             raw_chunks = azure_openai_provider._single_stream(  # pyright: ignore [reportPrivateUsage]
                 request={"messages": [{"role": "user", "content": "Hello"}]},
-                output_factory=_output_factory,
-                partial_output_factory=ProviderOutput,
+                output_factory=lambda x: json.loads(x),
                 raw_completion=raw,
                 options=ProviderOptions(model=Model.GPT_4O_2024_11_20, max_tokens=10, temperature=0),
             )
-            [chunk.output async for chunk in raw_chunks]
+            [chunk async for chunk in raw_chunks]
         assert e.value.store_task_run
 
 
@@ -252,11 +244,10 @@ class TestStream:
         streamer = azure_openai_provider.stream(
             [Message.with_text("Hello")],
             options=ProviderOptions(model=Model.GPT_4O_2024_11_20, max_tokens=10, temperature=0, output_schema={}),
-            output_factory=_output_factory,
-            partial_output_factory=ProviderOutput,
+            output_factory=lambda x: json.loads(x),
         )
         chunks = [chunk async for chunk in streamer]
-        assert len(chunks) == 13
+        assert len(chunks) == 21
 
         # Not sure why the pyright in the CI reports an error here
         request = httpx_mock.get_requests()[0]
@@ -294,7 +285,7 @@ class TestComplete:
             await azure_openai_provider.complete(
                 [Message.with_text("Hello")],
                 options=ProviderOptions(model=Model.GPT_4O_2024_11_20, max_tokens=10, temperature=0),
-                output_factory=_output_factory,
+                output_factory=lambda x: json.loads(x),
             )
 
     # Tests overlap with single stream above but check the entire structure
@@ -314,10 +305,10 @@ class TestComplete:
                 ),
             ],
             options=ProviderOptions(model=Model.GPT_4O_2024_11_20, max_tokens=10, temperature=0, output_schema={}),
-            output_factory=_output_factory,
+            output_factory=lambda x: json.loads(x),
         )
-        assert chunk.output
-        assert chunk.tool_calls is None
+        assert chunk.agent_output
+        assert chunk.tool_call_requests is None
         # Not sure why the pyright in the CI reports an error here
         request = httpx_mock.get_requests()[0]
         assert request.method == "POST"  # pyright: ignore reportUnknownMemberType
@@ -360,7 +351,7 @@ class TestComplete:
             await azure_openai_provider.complete(
                 [Message.with_text("Hello")],
                 options=ProviderOptions(model=Model.GPT_4O_2024_11_20, max_tokens=10, temperature=0),
-                output_factory=_output_factory,
+                output_factory=lambda x: json.loads(x),
             )
 
         details = e.value.serialized().details
@@ -391,10 +382,10 @@ class TestComplete:
                 structured_generation=True,
                 output_schema={"type": "object"},
             ),
-            output_factory=_output_factory,
+            output_factory=lambda x: json.loads(x),
         )
-        assert chunk.output
-        assert chunk.tool_calls is None
+        assert chunk.agent_output
+        assert chunk.tool_call_requests is None
 
         # Not sure why the pyright in the CI reports an error here
         request = httpx_mock.get_requests()[0]
@@ -443,7 +434,7 @@ class TestComplete:
             await azure_openai_provider.complete(
                 [Message.with_text("Hello")],
                 options=ProviderOptions(model=Model.GPT_4O_2024_11_20, max_tokens=10, temperature=0),
-                output_factory=_output_factory,
+                output_factory=lambda x: json.loads(x),
             )
 
         assert e.value.store_task_run
@@ -452,19 +443,15 @@ class TestComplete:
 
 class TestExtractStreamDelta:
     def test_extract_stream_delta(self, azure_openai_provider: AzureOpenAIProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
         delta = azure_openai_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
             b'{"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"gpt-3.5-turbo-1106","system_fingerprint":"fp_44132a4de3","usage": {"prompt_tokens": 35, "completion_tokens": 109, "total_tokens": 144},"choices":[{"index":0,"delta":{"content":"\\"greeting\\": \\"Hello James!\\"\\n}"},"logprobs":null,"finish_reason":null}]}',
-            raw_completion,
-            {},
         )
-        assert delta.content == '"greeting": "Hello James!"\n}'
-        assert raw_completion.usage == LLMUsage(prompt_token_count=35, completion_token_count=109)
+        assert delta.delta == '"greeting": "Hello James!"\n}'
+        assert delta.usage == LLMUsage(prompt_token_count=35, completion_token_count=109)
 
     def test_done(self, azure_openai_provider: AzureOpenAIProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-        delta = azure_openai_provider._extract_stream_delta(b"[DONE]", raw_completion, {})  # pyright: ignore[reportPrivateUsage]
-        assert delta.content == ""
+        delta = azure_openai_provider._extract_stream_delta(b"[DONE]")  # pyright: ignore[reportPrivateUsage]
+        assert delta.is_empty()
 
 
 class TestRequiresDownloadingFile:
@@ -604,7 +591,7 @@ class TestUnsupportedParameterError:
             await azure_openai_provider.complete(
                 [Message.with_text("Hello")],
                 options=ProviderOptions(model=Model.GPT_4O_2024_11_20, max_tokens=10, temperature=0),
-                output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+                output_factory=lambda x: json.loads(x),
             )
 
     async def test_tools_unsupported_no_param(self, azure_openai_provider: AzureOpenAIProvider, httpx_mock: HTTPXMock):
@@ -623,7 +610,7 @@ class TestUnsupportedParameterError:
             await azure_openai_provider.complete(
                 [Message.with_text("Hello")],
                 options=ProviderOptions(model=Model.GPT_4O_2024_11_20, max_tokens=10, temperature=0),
-                output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+                output_factory=lambda x: json.loads(x),
             )
 
 

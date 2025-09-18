@@ -131,7 +131,7 @@ describe("SqlKeywordExtension", () => {
         AND p.published = true
         AND (p.created_at >= '2023-01-01' OR p.updated_at >= '2023-01-01')
         ORDER BY p.created_at DESC, u.name ASC
-        LIMIT 100 OFFSET 0
+        LIMIT 20 OFFSET 0
       `.trim();
 
       // Test that we can handle regex matching on long text

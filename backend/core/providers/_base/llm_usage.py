@@ -56,3 +56,9 @@ class LLMUsage(LLMPromptUsage, LLMCompletionUsage):
                 cost_usd=self.completion_cost_usd or 0,
             ),
         )
+
+    def apply(self, other: "LLMUsage"):
+        for k in other.model_fields_set:
+            attr = getattr(other, k, None)
+            if attr is not None:
+                setattr(self, k, attr)

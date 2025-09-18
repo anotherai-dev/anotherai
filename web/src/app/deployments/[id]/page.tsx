@@ -29,7 +29,7 @@ export default function DeploymentDetailPage() {
   const archiveDeployment = useDeployments((state) => state.archiveDeployment);
 
   // Fetch completions for this specific deployment
-  const completionsQuery = `SELECT id, input_messages, input_variables, output_messages, output_error, updated_at as date FROM completions WHERE metadata['anotherai/deployment_id'] = '${deploymentId}' ORDER BY created_at DESC LIMIT 100`;
+  const completionsQuery = `SELECT id, input_messages, input_variables, output_messages, output_error, updated_at as date FROM completions WHERE metadata['anotherai/deployment_id'] = '${deploymentId}' ORDER BY created_at DESC LIMIT 20`;
   const {
     data: completionsData,
     isLoading: isLoadingCompletions,
