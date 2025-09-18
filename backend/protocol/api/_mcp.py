@@ -122,7 +122,7 @@ async def add_inputs_to_experiment(
             An input can include a set of variables used in the templated prompt or a list of messages to be appended
             to the prompt. Either inputs or input_query must be provided.""",
         ),
-    ],
+    ] = None,
     input_query: Annotated[
         str | None,
         Field(
@@ -130,7 +130,7 @@ async def add_inputs_to_experiment(
             the associated inputs. Must yield the input_variables and input_messages columns. Use this instead of
             query_completions() + inputs parameter when retrying existing completions.""",
         ),
-    ],
+    ] = None,
 ) -> list[str]:
     """Adds inputs to an existing experiment if they are not already present, and creates the completions for the added
     inputs based on the experiment's versions.
@@ -145,13 +145,19 @@ async def get_experiment_outputs(
     experiment_id: str,
     version_ids: list[str] | None = None,
     input_ids: list[str] | None = None,
+    max_wait_time_seconds: float = 30,
 ) -> PlaygroundOutput:
     """Returns the outputs of an experiment. Waits for completions if they are not ready.
     - If version_ids are provided, only the outputs of the specified versions are returned.
     - If input_ids are provided, only the outputs of the specified inputs are returned.
     - If both version_ids and input_ids are provided, the outputs of the specified versions and inputs are returned.
     """
-    return await (await _mcp_utils.playground_service()).get_experiment_outputs(experiment_id, version_ids, input_ids)
+    return await (await _mcp_utils.playground_service()).get_experiment_outputs(
+        experiment_id,
+        version_ids,
+        input_ids,
+        max_wait_time_seconds,
+    )
 
 
 # ------------------------------------------------------------

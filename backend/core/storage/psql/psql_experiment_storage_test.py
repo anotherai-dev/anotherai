@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 
 import asyncpg
 import pytest
+from asyncpg.pool import PoolConnectionProxy
 
 from core.domain.agent import Agent
 from core.domain.agent_input import AgentInput
@@ -454,6 +455,85 @@ class TestGetExperiment:
         assert out.output.preview == "Answer"
         assert out.output.messages is not None
         assert out.output.messages[0].content[0].text == "Answer"
+
+
+class TestListExperimentVersions:
+    async def test_list_experiment_versions(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+        purged_psql_tenant_conn: PoolConnectionProxy,
+    ):
+        v1 = Version(model="gpt-4o")
+        v2 = Version(model="gpt-4o-mini")
+        inserted = await experiment_storage.add_versions(inserted_experiment.id, [v1, v2])
+        assert inserted == {v1.id, v2.id}
+
+        experiment_uid = await purged_psql_tenant_conn.fetchval(
+            "SELECT uid FROM experiments WHERE slug = $1",
+            inserted_experiment.id,
+        )
+        assert experiment_uid
+
+        # Minimal selection: ids only
+        ids_only = await experiment_storage._list_experiment_versions(
+            purged_psql_tenant_conn,
+            experiment_uid,
+            full=False,
+        )
+        assert sorted([v.id for v in ids_only]) == sorted([v1.id, v2.id])
+        assert all(v.model is None for v in ids_only)
+
+        # Full selection with filtering
+        full_filtered = await experiment_storage._list_experiment_versions(
+            purged_psql_tenant_conn,
+            experiment_uid,
+            version_ids={v1.id},
+            full=True,
+        )
+        assert len(full_filtered) == 1
+        assert full_filtered[0].id == v1.id
+        assert full_filtered[0].model == "gpt-4o"
+
+
+class TestListExperimentInputs:
+    async def test_list_experiment_inputs(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+        purged_psql_tenant_conn: PoolConnectionProxy,
+    ):
+        i1 = AgentInput(messages=[Message.with_text("I1")], variables=None, preview="I1")
+        i2 = AgentInput(messages=None, variables={"x": 1}, preview="I2")
+        inserted = await experiment_storage.add_inputs(inserted_experiment.id, [i1, i2])
+        assert inserted == {i1.id, i2.id}
+
+        experiment_uid = await purged_psql_tenant_conn.fetchval(
+            "SELECT uid FROM experiments WHERE slug = $1",
+            inserted_experiment.id,
+        )
+        assert experiment_uid
+
+        # Minimal selection: ids only
+        ids_only = await experiment_storage._list_experiment_inputs(
+            purged_psql_tenant_conn,
+            experiment_uid,
+            full=False,
+        )
+        assert sorted([i.id for i in ids_only]) == sorted([i1.id, i2.id])
+        assert all(i.messages is None and i.variables is None for i in ids_only)
+
+        # Full selection with filtering
+        full_filtered = await experiment_storage._list_experiment_inputs(
+            purged_psql_tenant_conn,
+            experiment_uid,
+            input_ids={i2.id},
+            full=True,
+        )
+        assert len(full_filtered) == 1
+        assert full_filtered[0].id == i2.id
+        assert full_filtered[0].variables == {"x": 1}
+        assert full_filtered[0].preview == "I2"
 
 
 class TestAddInputs:

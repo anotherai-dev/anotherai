@@ -172,7 +172,7 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
             args.append(version_ids)
         rows = await connection.fetch(
             f"SELECT {select} FROM experiment_versions WHERE {' AND '.join(where)}",  # noqa: S608
-            experiment_uid,
+            *args,
         )
         return [self._validate(_ExperimentVersionRow, row).to_domain() for row in rows]
 
@@ -191,7 +191,7 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
             args.append(input_ids)
         rows = await connection.fetch(
             f"SELECT {select} FROM experiment_inputs WHERE {' AND '.join(where)}",  # noqa: S608
-            experiment_uid,
+            *args,
         )
         return [self._validate(_ExperimentInputRow, row).to_domain() for row in rows]
 

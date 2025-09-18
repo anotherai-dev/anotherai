@@ -353,8 +353,8 @@ class PlaygroundService:
         if (
             not experiment.versions
             or not experiment.inputs
-            or len(experiment.versions) == 1
-            or len(experiment.inputs) == 1
+            or len(experiment.versions) != 1
+            or len(experiment.inputs) != 1
         ):
             # Fatal exception, likely because an input or version was deleted in the mean time
             # TODO: handle proper fallback

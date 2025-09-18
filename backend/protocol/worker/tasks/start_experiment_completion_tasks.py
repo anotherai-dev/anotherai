@@ -1,5 +1,6 @@
 from core.domain.events import StartExperimentCompletionEvent
 from protocol.worker._dependencies import PlaygroundServiceDep
+from protocol.worker.tasks._types import TASK
 from protocol.worker.worker import broker
 
 
@@ -9,3 +10,6 @@ async def start_experiment_completion(
     playground_service: PlaygroundServiceDep,
 ):
     await playground_service.start_experiment_completion(event)
+
+
+TASKS: list[TASK[StartExperimentCompletionEvent]] = [start_experiment_completion]

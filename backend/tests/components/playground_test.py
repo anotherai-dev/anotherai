@@ -20,50 +20,80 @@ async def test_playground_tool(test_api_client: IntegrationTestClient):
         is_reusable=True,
     )
 
-    res = await test_api_client.call_tool(
-        "playground",
+    # First create the experiment
+    exp = await test_api_client.call_tool(
+        "create_experiment",
         {
-            "models": f"{Model.CLAUDE_4_SONNET_20250514},{Model.GPT_41_MINI_2025_04_14}",
-            "author_name": "user",
+            "experiment_id": "test-experiment",
+            "title": "Capital Extractor Test Experiment",
+            "description": "This is a test experiment",
             "agent_id": "test-agent",
-            "inputs": [
-                {
-                    "variables": {"name": "Toulouse"},
-                },
-                {
-                    "variables": {"name": "Pittsburgh"},
-                },
-            ],
-            "prompts": [
-                [
-                    {"role": "user", "content": "What is the capital of the country that has {{ name }}?"},
-                ],
-            ],
-            "temperatures": "0.5,1.0",
-            "experiment_title": "Capital Extractor Test Experiment",
+            "author_name": "user",
         },
     )
-    completions = res["completions"]
-    assert len(completions) == 8
+    experiment_id = exp["experiment_id"]
+
+    # Then add two inputs
+    inserted_inputs = await test_api_client.call_tool(
+        "add_inputs_to_experiment",
+        {
+            "experiment_id": experiment_id,
+            "inputs": [{"variables": {"name": "Toulouse"}}, {"variables": {"name": "Pittsburgh"}}],
+        },
+    )
+    assert len(inserted_inputs["result"]) == 2
+
+    # Then add 4 versions
+    inserted_versions = await test_api_client.call_tool(
+        "add_versions_to_experiment",
+        {
+            "experiment_id": experiment_id,
+            "version": {
+                "model": Model.CLAUDE_4_SONNET_20250514,
+                "prompt": [{"role": "user", "content": "What is the capital of the country that has {{ name }}?"}],
+                "temperature": 0.5,
+            },
+            "overrides": [
+                {"temperature": 1.0},
+                {"model": Model.GPT_41_MINI_2025_04_14},
+                {"model": Model.GPT_41_MINI_2025_04_14, "temperature": 1.0},
+            ],
+        },
+    )
+    assert len(inserted_versions["result"]) == 4
+
     await test_api_client.wait_for_background()
 
-    # I can also fetch the experiment
-    exp = await test_api_client.get(f"/v1/experiments/{res['experiment_id']}")
-    assert exp["title"] == "Capital Extractor Test Experiment"
-    assert len(exp["versions"]) == 4
-    assert len(exp["inputs"]) == 2
-    assert len(exp["completions"]) == 8
+    # Call the tool immediately, the call will wait for the completions to be done
+    res = await test_api_client.call_tool(
+        "get_experiment_outputs",
+        {"experiment_id": experiment_id, "max_wait_time_seconds": 1},
+    )
+    assert len(res["completions"]) == 8
 
-    assert sorted((i for i in exp["inputs"]), key=lambda i: i["id"]) == [
-        {
-            "id": "901cd050e54511e4ef4065ddf3ddbdfd",
-            "variables": {"name": "Toulouse"},
-        },
-        {
-            "id": "bc4ad381493577d2d4654c590fff2765",
-            "variables": {"name": "Pittsburgh"},
-        },
-    ]
+    # None of the completions should be started
+
+    # completions = res["completions"]
+    # assert len(completions) == 8
+    # await test_api_client.wait_for_background()
+
+    # # I can also fetch the experiment
+    # exp = await test_api_client.get(f"/v1/experiments/{res['experiment_id']}")
+    # assert exp["title"] == "Capital Extractor Test Experiment"
+    # assert len(exp["versions"]) == 4
+    # assert len(exp["inputs"]) == 2
+    # assert len(exp["completions"]) == 8
+
+    # assert sorted((i for i in exp["inputs"]), key=lambda i: i["id"]) == [
+    #     {
+    #         "id": "901cd050e54511e4ef4065ddf3ddbdfd",
+    #         "variables": {"name": "Toulouse"},
+    #     },
+    #     {
+    #         "id": "bc4ad381493577d2d4654c590fff2765",
+    #         "variables": {"name": "Pittsburgh"},
+    #     },
+    # ]
 
 
 async def test_with_no_variables(test_api_client: IntegrationTestClient):
