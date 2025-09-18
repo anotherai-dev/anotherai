@@ -74,7 +74,7 @@ class ExperimentService:
         self,
         experiment_id: str | None,
         title: str,
-        description: str,
+        description: str | None,
         agent_id: str,
         metadata: dict[str, Any] | None,
         author_name: str,

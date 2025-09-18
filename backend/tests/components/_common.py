@@ -135,3 +135,51 @@ class IntegrationTestClient:
                 ],
             },
         )
+
+    async def playground(
+        self,
+        version: dict[str, Any] | str,
+        overrides: list[dict[str, Any]] | None = None,
+        inputs: list[dict[str, Any]] | None = None,
+        input_query: str | None = None,
+        experiment_id: str | None = None,
+        experiment_title: str = "Capital Extractor Test Experiment",
+        agent_id: str = "test-agent",
+        use_cache: str | None = None,
+    ):
+        exp_res = await self.call_tool(
+            "create_experiment",
+            {
+                "experiment_id": experiment_id,
+                "title": experiment_title,
+                "agent_id": agent_id,
+                "author_name": "user",
+                "use_cache": use_cache or "auto",
+            },
+        )
+        experiment_id = exp_res["experiment_id"]
+
+        await self.call_tool(
+            "add_inputs_to_experiment",
+            {
+                "experiment_id": experiment_id,
+                "inputs": inputs,
+                "input_query": input_query,
+            },
+        )
+
+        await self.call_tool(
+            "add_versions_to_experiment",
+            {
+                "experiment_id": experiment_id,
+                "version": version,
+                "overrides": overrides,
+            },
+        )
+
+        await self.wait_for_background()
+
+        return await self.call_tool(
+            "get_experiment_outputs",
+            {"experiment_id": experiment_id, "max_wait_time_seconds": 1},
+        )

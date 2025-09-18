@@ -46,11 +46,11 @@ type AuthorName = Annotated[
 
 @mcp.tool(annotations=ToolAnnotations(idempotentHint=True))
 async def create_experiment(
-    experiment_id: str | None,
     title: str,
-    description: str,
     agent_id: str,
-    author_name: AuthorName,
+    experiment_id: str | None = None,
+    description: str | None = None,
+    author_name: AuthorName = "user",
     use_cache: CacheUsage = CacheUsage.AUTO,
     metadata: dict[str, Any] | None = None,
 ) -> PlaygroundOutput:

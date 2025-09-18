@@ -23,6 +23,7 @@ from core.domain.exceptions import (
 from core.domain.models.model_data_mapping import get_model_id
 from core.domain.version import Version as DomainVersion
 from core.services.completion_runner import CompletionRunner
+from core.services.messages.messages_utils import json_schema_for_template
 from core.services.store_completion._run_previews import assign_input_preview, assign_output_preview
 from core.storage.agent_storage import AgentStorage
 from core.storage.completion_storage import CompletionStorage
@@ -34,6 +35,7 @@ from protocol.api._api_models import Input, Output, PlaygroundOutput, Version
 from protocol.api._services.conversions import (
     experiments_url,
     input_to_domain,
+    message_to_domain,
     output_from_domain,
     version_from_domain,
     version_to_domain,
@@ -413,6 +415,11 @@ def _validate_version(version: Version) -> Version:
         version.model = get_model_id(version.model)
     except ValueError as e:
         raise BadRequestError(f"Invalid model: {version.model}") from e
+
+    if version.prompt and not version.input_variables_schema:
+        variables, _ = json_schema_for_template([message_to_domain(m) for m in version.prompt], {})
+        version.input_variables_schema = variables
+
     return version
 
 
