@@ -51,7 +51,7 @@ async def create_experiment(
     description: str,
     agent_id: str,
     author_name: AuthorName,
-    use_cache: CacheUsage,
+    use_cache: CacheUsage = CacheUsage.AUTO,
     metadata: dict[str, Any] | None = None,
 ) -> PlaygroundOutput:
     """Creates a new experiment and returns the experiment id. If an experiment id is provided and an experiment exists
@@ -68,6 +68,7 @@ async def create_experiment(
         agent_id=agent_id,
         metadata=metadata,
         author_name=author_name,
+        use_cache=use_cache,
     )
 
 
