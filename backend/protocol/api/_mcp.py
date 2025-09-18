@@ -6,6 +6,7 @@ from typing import Annotated, Any
 from mcp.types import ToolAnnotations
 from pydantic import Field
 
+from core.domain.cache_usage import CacheUsage
 from core.services.documentation.documentation_search import DocumentationSearch
 from protocol.api import _mcp_utils
 from protocol.api._api_models import (
@@ -50,6 +51,7 @@ async def create_experiment(
     description: str,
     agent_id: str,
     author_name: AuthorName,
+    use_cache: CacheUsage,
     metadata: dict[str, Any] | None = None,
 ) -> PlaygroundOutput:
     """Creates a new experiment and returns the experiment id. If an experiment id is provided and an experiment exists

@@ -7,7 +7,16 @@ from core.domain.agent_output import AgentOutput
 from core.domain.experiment import Experiment, ExperimentOutput
 from core.domain.version import Version
 
-type ExperimentFields = Literal["agent_id", "versions.id", "inputs.id", "outputs"]
+type ExperimentFields = Literal[
+    "agent_id",
+    "versions.id",
+    "inputs.id",
+    "versions",
+    "inputs",
+    "outputs",
+    "use_cache",
+    "metadata",
+]
 
 type ExperimentOutputFields = Literal["output"]
 
@@ -16,6 +25,12 @@ class CompletionIDTuple(NamedTuple):
     completion_id: UUID
     version_id: str
     input_id: str
+
+
+class CompletionOutputTuple(NamedTuple):
+    output: AgentOutput
+    cost_usd: float | None
+    duration_seconds: float | None
 
 
 class ExperimentStorage(Protocol):
@@ -62,12 +77,22 @@ class ExperimentStorage(Protocol):
         Raises a DuplicateValueError if a completion already exists for the experiment, input and version."""
         ...
 
-    async def start_completion(self, experiment_id: str, completion_id: str) -> None:
+    async def start_completion(self, experiment_id: str, completion_id: UUID) -> None:
         """Mark a completion as started in an experiment.
         If the completion is already started, raises a DuplicateValueError"""
         ...
 
-    async def add_completion_output(self, experiment_id: str, completion_id: str, output: AgentOutput) -> None:
+    async def fail_completion(self, experiment_id: str, completion_id: UUID) -> None:
+        """Mark a completion as failed in an experiment.
+        The completion can be started again"""
+        ...
+
+    async def add_completion_output(
+        self,
+        experiment_id: str,
+        completion_id: UUID,
+        output: CompletionOutputTuple,
+    ) -> None:
         """Sets the output for a completion in an experiment. Completion is marked as completed.
         Raises a DuplicateValueError if the completion is already completed."""
         ...

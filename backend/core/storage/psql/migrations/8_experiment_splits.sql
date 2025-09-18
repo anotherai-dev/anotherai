@@ -68,3 +68,5 @@ ALTER COLUMN tenant_uid
 SET DEFAULT current_setting('app.tenant_uid')::BIGINT;
 -- ------------------------------------------------------------
 -- Once migrated we should remove the run_ids column from the experiments
+ALTER TABLE experiments
+ADD COLUMN use_cache VARCHAR(64);

@@ -2,6 +2,7 @@ import asyncio
 from typing import Any, final
 
 from core.domain.agent import Agent
+from core.domain.cache_usage import CacheUsage
 from core.domain.exceptions import ObjectNotFoundError
 from core.storage.agent_storage import AgentStorage
 from core.storage.annotation_storage import AnnotationStorage, TargetFilter
@@ -80,6 +81,7 @@ class ExperimentService:
         agent_id: str,
         metadata: dict[str, Any] | None,
         author_name: str,
+        use_cache: CacheUsage,
     ) -> PlaygroundOutput:
         # TODO: handle duplicates
         exp = await self.create_experiment(
@@ -90,6 +92,7 @@ class ExperimentService:
                 agent_id=agent_id,
                 metadata=metadata,
                 author_name=author_name,
+                use_cache=use_cache,
             ),
         )
 

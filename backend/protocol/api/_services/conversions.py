@@ -389,6 +389,7 @@ def create_experiment_to_domain(experiment: CreateExperimentRequest) -> DomainEx
         description=experiment.description or "",
         metadata=experiment.metadata or None,
         result=None,
+        use_cache=experiment.use_cache,
     )
 
 

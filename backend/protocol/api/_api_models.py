@@ -4,10 +4,12 @@ or in the conversion layer."""
 
 from datetime import date, datetime
 from typing import Annotated, Any, Literal
+from uuid import UUID
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pydantic.json_schema import SkipJsonSchema
 
+from core.domain.cache_usage import CacheUsage
 from core.domain.reasoning_effort import ReasoningEffort
 from core.domain.tool_choice import ToolChoice
 from core.utils.fields import datetime_factory
@@ -95,6 +97,8 @@ class OutputSchema(BaseModel):
 
 
 class Version(BaseModel):
+    model_config = ConfigDict(revalidate_instances="always", extra="forbid", strict=True)
+
     id: str = Field(description="The id of the version. Auto generated.", default="")
     model: str
     temperature: float | None = None
@@ -462,11 +466,12 @@ class CreateExperimentRequest(BaseModel):
     agent_id: str
     metadata: dict[str, Any] | None = None
     author_name: str
+    use_cache: CacheUsage | None = None
 
 
 class PlaygroundOutput(BaseModel):
     class Completion(BaseModel):
-        id: str
+        id: UUID
         input_id: str
         version_id: str
         output: Output

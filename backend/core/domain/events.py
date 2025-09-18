@@ -24,7 +24,7 @@ class UserConnectedEvent(Event):
     organization_id: str | None
 
 
-class StartExperimentCompletion(Event):
+class StartExperimentCompletionEvent(Event):
     experiment_id: str
     completion_id: UUID
     version_id: str

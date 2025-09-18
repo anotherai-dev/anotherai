@@ -1,17 +1,19 @@
 from datetime import datetime
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 from core.domain.agent_input import AgentInput
 from core.domain.agent_output import AgentOutput
 from core.domain.annotation import Annotation
+from core.domain.cache_usage import CacheUsage
 from core.domain.version import Version
 from core.utils.fields import datetime_zero
 
 
-class ExperimentOutput:
-    completion_id: str
+class ExperimentOutput(BaseModel):
+    completion_id: UUID
     version_id: str
     input_id: str
     created_at: datetime = Field(default_factory=datetime_zero)
@@ -33,11 +35,13 @@ class Experiment(BaseModel):
     result: str | None
     agent_id: str
 
+    use_cache: CacheUsage | None = None
+
     run_ids: list[str] = Field(default_factory=list)
 
     annotations: list[Annotation] = Field(default_factory=list)
 
-    metadata: dict[str, Any] | None
+    metadata: dict[str, Any] | None = None
 
     versions: list[Version] | None = None
 
