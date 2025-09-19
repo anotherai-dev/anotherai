@@ -229,7 +229,7 @@ async def test_completion_query(test_api_client: IntegrationTestClient):
         "add_inputs_to_experiment",
         {
             "experiment_id": experiment_id2,
-            "input_query": "SELECT input_variables, input_messages FROM completions",
+            "query": "SELECT input_variables, input_messages FROM completions",
         },
     )
     await test_api_client.call_tool(
