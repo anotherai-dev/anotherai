@@ -20,7 +20,6 @@ from protocol.api._api_models import (
     Input,
     Model,
     Page,
-    PlaygroundOutput,
     QueryCompletionResponse,
     SearchDocumentationResponse,
     Version,
@@ -48,7 +47,7 @@ type AuthorName = Annotated[
 async def create_experiment(
     title: str,
     agent_id: str,
-    experiment_id: str | None = None,
+    id: Annotated[str | None, Field(description="The id of the experiment. Auto generated if not provided.")] = None,
     description: str | None = None,
     author_name: AuthorName = "user",
     use_cache: Annotated[
@@ -66,7 +65,7 @@ async def create_experiment(
             "experiment.",
         ),
     ] = None,
-) -> PlaygroundOutput:
+) -> Experiment:
     """Creates a new experiment and returns the experiment id. If an experiment id is provided and an experiment exists
     with the same id and for the same agent, the existing experiment is updated and returned.
 
@@ -75,7 +74,7 @@ async def create_experiment(
     - Use the add_inputs_to_experiment tool to add inputs to the experiment.
     """
     return await (await _mcp_utils.experiment_service()).create_experiment_mcp(
-        experiment_id=experiment_id,
+        experiment_id=id,
         title=title,
         description=description,
         agent_id=agent_id,
@@ -83,11 +82,6 @@ async def create_experiment(
         author_name=author_name,
         use_cache=use_cache,
     )
-
-
-@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
-async def get_experiment(id: str) -> Experiment:
-    return await (await _mcp_utils.experiment_service()).get_experiment(id)
 
 
 @mcp.tool(annotations=ToolAnnotations(idempotentHint=True))
@@ -160,22 +154,25 @@ async def add_inputs_to_experiment(
 
 
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
-async def get_experiment_outputs(
-    experiment_id: str,
-    version_ids: list[str] | None = None,
-    input_ids: list[str] | None = None,
-    max_wait_time_seconds: float = 30,
-) -> PlaygroundOutput:
-    """Returns the outputs of an experiment. Waits for completions if they are not ready.
-    - If version_ids are provided, only the outputs of the specified versions are returned.
-    - If input_ids are provided, only the outputs of the specified inputs are returned.
-    - If both version_ids and input_ids are provided, the outputs of the specified versions and inputs are returned.
-    """
-    return await (await _mcp_utils.playground_service()).get_experiment_outputs(
-        experiment_id,
-        version_ids,
-        input_ids,
-        max_wait_time_seconds,
+async def get_experiment(
+    id: Annotated[str, Field(description="the id of the experiment")],
+    version_ids: Annotated[list[str] | None, Field(description="version ids to filter the experiment outputs")] = None,
+    input_ids: Annotated[list[str] | None, Field(description="input ids to filter the experiment outputs")] = None,
+    max_wait_time_seconds: Annotated[
+        float,
+        Field(
+            description="the maximum amount of time to wait for the experiment's completions to be ready. "
+            "At the end of the time, the experiment is returned even if the completions are not ready.",
+        ),
+    ] = 30,
+) -> Experiment:
+    """Waits for the experiment's completions to be ready and returns the experiment,
+    including the associated versions and inputs and outputs."""
+    return await (await _mcp_utils.experiment_service()).wait_for_experiment(
+        id,
+        version_ids=version_ids,
+        input_ids=input_ids,
+        max_wait_time_seconds=max_wait_time_seconds,
     )
 
 

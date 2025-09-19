@@ -443,11 +443,11 @@ class Experiment(BaseModel):
         cost_usd: float
         duration_seconds: float
 
-    completions: list[Completion] = Field(description="The completions of the experiment.")
+    completions: list[Completion] | None = Field(description="The completions of the experiment.")
 
-    versions: list[Version]
+    versions: list[Version] | None
 
-    inputs: list[Input]
+    inputs: list[Input] | None
 
     annotations: list[Annotation] | None = Field(
         description="Annotations associated with the experiment, either tied to the experiment only or to a completion within the experiment.",
@@ -467,20 +467,6 @@ class CreateExperimentRequest(BaseModel):
     metadata: dict[str, Any] | None = None
     author_name: str
     use_cache: CacheUsage | None = None
-
-
-class PlaygroundOutput(BaseModel):
-    class Completion(BaseModel):
-        id: UUID
-        input_id: str
-        version_id: str
-        output: Output
-        cost_usd: float | None
-        duration_seconds: float | None
-
-    experiment_id: str
-    experiment_url: str
-    completions: list[Completion]
 
 
 # ----------------------------------------
