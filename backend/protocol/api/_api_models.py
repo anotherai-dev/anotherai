@@ -4,10 +4,12 @@ or in the conversion layer."""
 
 from datetime import date, datetime
 from typing import Annotated, Any, Literal
+from uuid import UUID
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pydantic.json_schema import SkipJsonSchema
 
+from core.domain.cache_usage import CacheUsage
 from core.domain.reasoning_effort import ReasoningEffort
 from core.domain.tool_choice import ToolChoice
 from core.utils.fields import datetime_factory
@@ -95,6 +97,8 @@ class OutputSchema(BaseModel):
 
 
 class Version(BaseModel):
+    model_config = ConfigDict(revalidate_instances="always", extra="forbid", strict=True)
+
     id: str = Field(description="The id of the version. Auto generated.", default="")
     model: str
     temperature: float | None = None
@@ -431,7 +435,7 @@ class Experiment(BaseModel):
     agent_id: str = Field(description="The agent that created the experiment.")
 
     class Completion(BaseModel):
-        id: str
+        id: UUID
         # Only IDs are provided here but they have the same format as in the full object (completion.input.id)
         input: ModelWithID
         version: ModelWithID
@@ -439,11 +443,11 @@ class Experiment(BaseModel):
         cost_usd: float
         duration_seconds: float
 
-    completions: list[Completion] = Field(description="The completions of the experiment.")
+    completions: list[Completion] | None = Field(description="The completions of the experiment.")
 
-    versions: list[Version]
+    versions: list[Version] | None
 
-    inputs: list[Input]
+    inputs: list[Input] | None
 
     annotations: list[Annotation] | None = Field(
         description="Annotations associated with the experiment, either tied to the experiment only or to a completion within the experiment.",
@@ -462,18 +466,7 @@ class CreateExperimentRequest(BaseModel):
     agent_id: str
     metadata: dict[str, Any] | None = None
     author_name: str
-
-
-class PlaygroundOutput(BaseModel):
-    class Completion(BaseModel):
-        id: str
-        output: Output
-        cost_usd: float | None
-        duration_seconds: float | None
-
-    experiment_id: str
-    experiment_url: str
-    completions: list[Completion]
+    use_cache: CacheUsage | None = None
 
 
 # ----------------------------------------

@@ -11,6 +11,7 @@ interface EditableFolderNameProps {
 
 export interface EditableFolderNameRef {
   startEditing: () => void;
+  isEditing: () => boolean;
 }
 
 const EditableFolderName = forwardRef<EditableFolderNameRef, EditableFolderNameProps>(function EditableFolderName(
@@ -37,8 +38,9 @@ const EditableFolderName = forwardRef<EditableFolderNameRef, EditableFolderNameP
     ref,
     () => ({
       startEditing,
+      isEditing: () => isEditing,
     }),
-    [startEditing]
+    [startEditing, isEditing]
   );
 
   // Reset edit value when name changes from outside

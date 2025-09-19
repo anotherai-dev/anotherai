@@ -953,7 +953,8 @@ class TestCachedOutput:
         # Retrieve the cached output
         output = await client.cached_output(version_id=completion.version.id, input_id=completion.agent_input.id)
         assert output
-        assert output.model_dump(exclude={"preview"}) == completion.agent_output.model_dump(exclude={"preview"})
+        assert output[0] == completion.id
+        assert output[1].model_dump(exclude={"preview"}) == completion.agent_output.model_dump(exclude={"preview"})
 
     async def test_cached_output_none(self, client: ClickhouseClient):
         """Test that None is returned when there is no cached output"""

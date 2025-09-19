@@ -16,6 +16,7 @@ from core.domain.deployment import Deployment as DomainDeployment
 from core.domain.error import Error as DomainError
 from core.domain.exceptions import BadRequestError
 from core.domain.experiment import Experiment as DomainExperiment
+from core.domain.experiment import ExperimentOutput
 from core.domain.file import File
 from core.domain.inference_usage import CompletionUsage as DomainCompletionUsage
 from core.domain.inference_usage import InferenceUsage as DomainInferenceUsage
@@ -341,27 +342,8 @@ def completion_to_domain(completion: Completion) -> DomainCompletion:
 
 def experiment_from_domain(
     experiment: DomainExperiment,
-    completions: list[DomainCompletion],
     annotations: list[DomainAnnotation],
 ) -> Experiment:
-    versions: dict[str, Version] = {}
-    inputs: dict[str, Input] = {}
-    experiment_completions: list[Experiment.Completion] = []
-
-    for completion in completions:
-        versions[completion.version.id] = version_from_domain(completion.version)
-        inputs[completion.agent_input.id] = input_from_domain(completion.agent_input)
-        experiment_completions.append(
-            Experiment.Completion(
-                id=completion.id,
-                version=ModelWithID(id=completion.version.id),
-                input=ModelWithID(id=completion.agent_input.id),
-                output=output_from_domain(completion.agent_output),
-                cost_usd=completion.cost_usd or 0.0,
-                duration_seconds=completion.duration_seconds or 0.0,
-            ),
-        )
-
     return Experiment(
         id=experiment.id,
         agent_id=experiment.agent_id,
@@ -370,9 +352,9 @@ def experiment_from_domain(
         title=experiment.title,
         description=experiment.description,
         result=experiment.result,
-        completions=experiment_completions,
-        versions=list(versions.values()),
-        inputs=list(inputs.values()),
+        completions=[experiment_completion_from_domain(c) for c in experiment.outputs] if experiment.outputs else None,
+        versions=[version_from_domain(v) for v in experiment.versions] if experiment.versions else None,
+        inputs=[input_from_domain(i) for i in experiment.inputs] if experiment.inputs else None,
         annotations=[annotation_from_domain(a) for a in annotations] if annotations else None,
         metadata=experiment.metadata or None,
         url=experiments_url(experiment.id),
@@ -388,6 +370,7 @@ def create_experiment_to_domain(experiment: CreateExperimentRequest) -> DomainEx
         description=experiment.description or "",
         metadata=experiment.metadata or None,
         result=None,
+        use_cache=experiment.use_cache,
     )
 
 
@@ -740,4 +723,15 @@ def trace_to_domain(trace: Trace) -> DomainTrace:
         name=trace.name or "",
         tool_input_preview=trace.tool_input_preview or "",
         tool_output_preview=trace.tool_output_preview or "",
+    )
+
+
+def experiment_completion_from_domain(completion: ExperimentOutput) -> Experiment.Completion:
+    return Experiment.Completion(
+        id=completion.completion_id,
+        version=ModelWithID(id=completion.version_id),
+        input=ModelWithID(id=completion.input_id),
+        output=output_from_domain(completion.output) if completion.output else Output(),
+        cost_usd=completion.cost_usd or 0.0,
+        duration_seconds=completion.duration_seconds or 0.0,
     )
