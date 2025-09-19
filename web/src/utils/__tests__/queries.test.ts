@@ -180,7 +180,7 @@ describe("Query Building Utilities", () => {
         expect(index).toBeGreaterThan(lastIndex);
         lastIndex = index;
       });
-      
+
       // Should also contain OFFSET since we now use pagination variables
       expect(defaultQuery).toContain("OFFSET");
     });

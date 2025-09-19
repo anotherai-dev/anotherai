@@ -1,9 +1,9 @@
 import {
+  calculatePaginationParams,
   detectPaginationVariables,
   extractLimitFromQuery,
-  replacePaginationVariables,
-  calculatePaginationParams,
   processPaginationQuery,
+  replacePaginationVariables,
 } from "../pagination";
 
 describe("Pagination Utilities", () => {
@@ -71,15 +71,16 @@ describe("Pagination Utilities", () => {
       const query = "SELECT * FROM completions LIMIT {limit:UInt32} OFFSET {offset:UInt32}";
       const params = { limit: 25, offset: 50 };
       const result = replacePaginationVariables(query, params);
-      
+
       expect(result).toBe("SELECT * FROM completions LIMIT 25 OFFSET 50");
     });
 
     it("handles multiple occurrences of variables", () => {
-      const query = "SELECT *, {limit:UInt32} as page_size FROM completions LIMIT {limit:UInt32} OFFSET {offset:UInt32}";
+      const query =
+        "SELECT *, {limit:UInt32} as page_size FROM completions LIMIT {limit:UInt32} OFFSET {offset:UInt32}";
       const params = { limit: 10, offset: 20 };
       const result = replacePaginationVariables(query, params);
-      
+
       expect(result).toBe("SELECT *, 10 as page_size FROM completions LIMIT 10 OFFSET 20");
     });
 
@@ -87,7 +88,7 @@ describe("Pagination Utilities", () => {
       const query = "SELECT * FROM completions LIMIT {LIMIT:UINT32} OFFSET {OFFSET:UINT32}";
       const params = { limit: 15, offset: 30 };
       const result = replacePaginationVariables(query, params);
-      
+
       expect(result).toBe("SELECT * FROM completions LIMIT 15 OFFSET 30");
     });
 
@@ -95,7 +96,7 @@ describe("Pagination Utilities", () => {
       const query = "SELECT * FROM completions LIMIT {limit:UInt32} OFFSET {offset:UInt32}";
       const params = { limit: 0, offset: 0 };
       const result = replacePaginationVariables(query, params);
-      
+
       expect(result).toBe("SELECT * FROM completions LIMIT 0 OFFSET 0");
     });
 
@@ -103,7 +104,7 @@ describe("Pagination Utilities", () => {
       const query = "SELECT * FROM completions LIMIT 20 OFFSET 0";
       const params = { limit: 25, offset: 50 };
       const result = replacePaginationVariables(query, params);
-      
+
       expect(result).toBe(query);
     });
   });
@@ -144,7 +145,7 @@ describe("Pagination Utilities", () => {
     it("processes query with pagination variables", () => {
       const query = "SELECT * FROM completions LIMIT {limit:UInt32} OFFSET {offset:UInt32}";
       const result = processPaginationQuery(query, 2, 15);
-      
+
       expect(result.processedQuery).toBe("SELECT * FROM completions LIMIT 15 OFFSET 15");
       expect(result.hasPagination).toBe(true);
       expect(result.paginationInfo).toEqual({
@@ -157,7 +158,7 @@ describe("Pagination Utilities", () => {
     it("handles query without pagination variables", () => {
       const query = "SELECT * FROM completions LIMIT 20 OFFSET 0";
       const result = processPaginationQuery(query, 2, 15);
-      
+
       expect(result.processedQuery).toBe(query);
       expect(result.hasPagination).toBe(false);
       expect(result.paginationInfo).toEqual({
@@ -170,7 +171,7 @@ describe("Pagination Utilities", () => {
     it("uses default values when not provided", () => {
       const query = "SELECT * FROM completions LIMIT {limit:UInt32} OFFSET {offset:UInt32}";
       const result = processPaginationQuery(query);
-      
+
       expect(result.processedQuery).toBe("SELECT * FROM completions LIMIT 20 OFFSET 0");
       expect(result.hasPagination).toBe(true);
       expect(result.paginationInfo).toEqual({
@@ -183,7 +184,7 @@ describe("Pagination Utilities", () => {
     it("uses provided page size when pagination variables are detected", () => {
       const query = "SELECT * FROM completions WHERE id > 100 LIMIT {limit:UInt32} OFFSET {offset:UInt32}";
       const result = processPaginationQuery(query, 1, 25);
-      
+
       // Should use provided page size when pagination variables are detected
       expect(result.paginationInfo.pageSize).toBe(25);
     });
@@ -199,7 +200,7 @@ describe("Pagination Utilities", () => {
         OFFSET {offset:UInt32}
       `;
       const result = processPaginationQuery(query, 3, 10);
-      
+
       expect(result.hasPagination).toBe(true);
       expect(result.processedQuery).toContain("LIMIT 10");
       expect(result.processedQuery).toContain("OFFSET 20");
