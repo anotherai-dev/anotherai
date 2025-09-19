@@ -1,4 +1,3 @@
-import asyncio
 import itertools
 import json
 import time
@@ -19,7 +18,6 @@ from core.domain.exceptions import (
     BadRequestError,
     DuplicateValueError,
     InternalError,
-    OperationTimeoutError,
 )
 from core.domain.models.model_data_mapping import get_model_id
 from core.domain.version import Version as DomainVersion
@@ -30,18 +28,16 @@ from core.storage.agent_storage import AgentStorage
 from core.storage.completion_storage import CompletionStorage
 from core.storage.deployment_storage import DeploymentStorage
 from core.storage.experiment_storage import CompletionIDTuple, CompletionOutputTuple, ExperimentStorage
-from core.utils.hash import HASH_REGEXP_32, hash_model, is_hash_32
+from core.utils.hash import hash_model, is_hash_32
 from core.utils.uuid import uuid7
-from protocol.api._api_models import Input, Output, PlaygroundOutput, Version
+from protocol.api._api_models import Input, Version
 from protocol.api._services.conversions import (
-    experiments_url,
     input_to_domain,
     message_to_domain,
-    output_from_domain,
     version_from_domain,
     version_to_domain,
 )
-from protocol.api._services.utils_service import IDType, sanitize_id, sanitize_ids
+from protocol.api._services.utils_service import IDType, sanitize_id
 
 _log = get_logger(__name__)
 
@@ -178,66 +174,6 @@ class PlaygroundService:
                     input_id=c.input_id,
                 ),
             )
-
-    async def _fetch_playground_output(
-        self,
-        experiment_id: str,
-        version_ids: set[str] | None,
-        input_ids: set[str] | None,
-    ) -> PlaygroundOutput:
-        completions = await self._experiment_storage.list_experiment_completions(
-            experiment_id,
-            version_ids=version_ids,
-            input_ids=input_ids,
-            include={"output"},
-        )
-
-        def _completion_iter():
-            for c in completions:
-                if not c.output or not c.cost_usd or not c.duration_seconds:
-                    _log.warning("Playground: Completion is not properly completed", completion_id=c.completion_id)
-                yield PlaygroundOutput.Completion(
-                    id=c.completion_id,
-                    input_id=c.input_id,
-                    version_id=c.version_id,
-                    output=output_from_domain(c.output) if c.output else Output(),
-                    cost_usd=c.cost_usd,
-                    duration_seconds=c.duration_seconds,
-                )
-
-        return PlaygroundOutput(
-            experiment_id=experiment_id,
-            experiment_url=experiments_url(experiment_id),
-            completions=list(_completion_iter()),
-        )
-
-    async def get_experiment_outputs(
-        self,
-        experiment_id: str,
-        version_ids: list[str] | None,
-        input_ids: list[str] | None,
-        max_wait_time_seconds: float = 30,
-    ) -> PlaygroundOutput:
-        sanitized_versions = sanitize_ids(version_ids, IDType.VERSION, HASH_REGEXP_32) if version_ids else None
-        sanitized_inputs = sanitize_ids(input_ids, IDType.INPUT, HASH_REGEXP_32) if input_ids else None
-
-        start_time = time.time()
-
-        while time.time() - start_time < max_wait_time_seconds:
-            # First fetch completions to check that all are properly completed
-            completions = await self._experiment_storage.list_experiment_completions(
-                experiment_id,
-                version_ids=sanitized_versions,
-                input_ids=sanitized_inputs,
-            )
-            if all(c.completed_at for c in completions):
-                return await self._fetch_playground_output(experiment_id, sanitized_versions, sanitized_inputs)
-
-            # TODO: check that all completions are properly started
-
-            await asyncio.sleep(5)
-
-        raise OperationTimeoutError(f"Playground: Experiment outputs not ready after {max_wait_time_seconds} seconds")
 
     async def _run_version(
         self,
