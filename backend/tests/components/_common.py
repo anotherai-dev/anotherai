@@ -146,6 +146,7 @@ class IntegrationTestClient:
         experiment_title: str = "Capital Extractor Test Experiment",
         agent_id: str = "test-agent",
         use_cache: str | None = None,
+        experiment_kwargs: dict[str, Any] | None = None,
     ):
         exp_res = await self.call_tool(
             "create_experiment",
@@ -155,6 +156,7 @@ class IntegrationTestClient:
                 "agent_id": agent_id,
                 "author_name": "user",
                 "use_cache": use_cache or "auto",
+                **(experiment_kwargs or {}),
             },
         )
         experiment_id = exp_res["experiment_id"]
