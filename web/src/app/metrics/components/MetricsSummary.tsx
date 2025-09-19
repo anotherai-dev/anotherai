@@ -1,47 +1,57 @@
 "use client";
 
 import { useMemo } from "react";
+import { TimeRangeOption } from "@/components/TimeRangeSelector";
 import { useCompletionsQuery } from "@/store/completions";
 
-export function MetricsSummary() {
+interface MetricsSummaryProps {
+  timeRange: TimeRangeOption;
+}
+
+export function MetricsSummary({ timeRange }: MetricsSummaryProps) {
+  // Generate WHERE clause for time filtering
+  const getTimeFilter = () => {
+    if (timeRange.days === 0) return "";
+    return `WHERE created_at >= now() - INTERVAL ${timeRange.days} DAY`;
+  };
   // Original metrics
   const { data: totalCostData, isLoading: isLoadingTotalCost } = useCompletionsQuery(
-    "SELECT COALESCE(SUM(cost_usd), 0) AS total_cost FROM completions"
+    `SELECT COALESCE(SUM(cost_usd), 0) AS total_cost FROM completions ${getTimeFilter()}`
   );
   const { data: totalCompletionsData, isLoading: isLoadingTotalCompletions } = useCompletionsQuery(
-    "SELECT COUNT(*) AS total_completions FROM completions"
+    `SELECT COUNT(*) AS total_completions FROM completions ${getTimeFilter()}`
   );
   const { data: avgCostData, isLoading: isLoadingAvgCost } = useCompletionsQuery(
-    "SELECT COALESCE(AVG(cost_usd), 0) AS avg_cost FROM completions WHERE cost_usd > 0"
+    `SELECT COALESCE(AVG(cost_usd), 0) AS avg_cost FROM completions ${getTimeFilter()} ${getTimeFilter() ? "AND" : "WHERE"} cost_usd > 0`
   );
   const { data: avgDurationData, isLoading: isLoadingAvgDuration } = useCompletionsQuery(
-    "SELECT COALESCE(AVG(duration_seconds), 0) AS avg_duration FROM completions WHERE duration_seconds > 0"
+    `SELECT COALESCE(AVG(duration_seconds), 0) AS avg_duration FROM completions ${getTimeFilter()} ${getTimeFilter() ? "AND" : "WHERE"} duration_seconds > 0`
   );
   const { data: successRateData, isLoading: isLoadingSuccessRate } = useCompletionsQuery(
-    "SELECT COALESCE((COUNTIf(output_error = '') * 100.0 / COUNT(*)), 0) AS success_rate FROM completions"
+    `SELECT COALESCE((COUNTIf(output_error = '') * 100.0 / COUNT(*)), 0) AS success_rate FROM completions ${getTimeFilter()}`
   );
   const { data: activeAgentsData, isLoading: isLoadingActiveAgents } = useCompletionsQuery(
-    "SELECT COUNT(DISTINCT agent_id) AS active_agents FROM completions"
+    `SELECT COUNT(DISTINCT agent_id) AS active_agents FROM completions ${getTimeFilter()}`
   );
 
   // Additional metrics
   const { data: mostUsedModelData, isLoading: isLoadingMostUsedModel } = useCompletionsQuery(
-    "SELECT version_model AS model, COUNT(*) AS count FROM completions GROUP BY version_model ORDER BY count DESC LIMIT 1"
+    `SELECT version_model AS model, COUNT(*) AS count FROM completions ${getTimeFilter()} GROUP BY version_model ORDER BY count DESC LIMIT 1`
   );
   const { data: totalFailedData, isLoading: isLoadingTotalFailed } = useCompletionsQuery(
-    "SELECT COUNT(*) AS total_failed FROM completions WHERE output_error != ''"
+    `SELECT COUNT(*) AS total_failed FROM completions ${getTimeFilter()} ${getTimeFilter() ? "AND" : "WHERE"} output_error != ''`
   );
   const { data: mostActiveAgentData, isLoading: isLoadingMostActiveAgent } = useCompletionsQuery(
-    "SELECT agent_id, COUNT(*) AS count FROM completions GROUP BY agent_id ORDER BY count DESC LIMIT 1"
+    `SELECT agent_id, COUNT(*) AS count FROM completions ${getTimeFilter()} GROUP BY agent_id ORDER BY count DESC LIMIT 1`
   );
   const { data: avgDailyCompletionsData, isLoading: isLoadingAvgDaily } = useCompletionsQuery(
-    "SELECT AVG(daily_count) AS avg_daily FROM (SELECT toDate(created_at) AS date, COUNT(*) AS daily_count FROM completions GROUP BY date)"
+    `SELECT AVG(daily_count) AS avg_daily FROM (SELECT toDate(created_at) AS date, COUNT(*) AS daily_count FROM completions ${getTimeFilter()} GROUP BY date)`
   );
   const { data: monthlySpendingData, isLoading: isLoadingMonthlySpending } = useCompletionsQuery(
     "SELECT COALESCE(SUM(cost_usd), 0) AS monthly_cost FROM completions WHERE toYYYYMM(created_at) = toYYYYMM(now())"
   );
   const { data: responseTimeRangeData, isLoading: isLoadingResponseTimeRange } = useCompletionsQuery(
-    "SELECT MIN(duration_seconds) AS min_time, MAX(duration_seconds) AS max_time FROM completions WHERE duration_seconds > 0"
+    `SELECT MIN(duration_seconds) AS min_time, MAX(duration_seconds) AS max_time FROM completions ${getTimeFilter()} ${getTimeFilter() ? "AND" : "WHERE"} duration_seconds > 0`
   );
 
   // Check if any queries are still loading
