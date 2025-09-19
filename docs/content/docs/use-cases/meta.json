@@ -1,0 +1,15 @@
+{
+  "title": "Use Cases",
+  "icon": "UserGroup",
+  "defaultOpen": true,
+  "pages": [
+    "fundamentals",
+    "user-feedback",
+    "increasing-agent-reliability",
+    "checking-new-models",
+    "lowering-costs",
+    "connecting-agents",
+    "migrate-from-workflowai",
+    "for-product-managers"
+  ]
+}

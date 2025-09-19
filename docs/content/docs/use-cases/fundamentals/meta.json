@@ -1,0 +1,15 @@
+{
+  "title": "Fundamentals",
+  "defaultOpen": true,
+  "pages": [
+    "building",
+    "migrating",
+    "improving",
+    "experiments",
+    "annotations",
+    "evaluating",
+    "debugging",
+    "deployments",
+    "metrics"
+  ]
+}

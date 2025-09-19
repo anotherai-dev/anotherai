@@ -1,0 +1,47 @@
+---
+title: Overview
+summary: Explore the powerful features that make AnotherAI the ideal platform for building and deploying AI agents.
+description: Discover how AnotherAI simplifies AI agent development.
+---
+
+import { Card, Cards } from "fumadocs-ui/components/card";
+import { BrainCircuit, Cpu, DollarSign, FileJson, HardDrive, Image, Key, Variable } from "lucide-react";
+
+We built AnotherAI with two main goals in mind:
+
+1. Provide all the tools needed for your AI agents to build high-quality, reliable agents for you.
+2. Provide you the observability tools to effectively monitor the agents that have been built.
+
+## Explore Features
+
+<Cards>
+  <Card title="Models" href="/features/models" icon={<Cpu />}>
+    Get instant access to over 100+ of the latest AI models from all major providers. All with just a single API key.
+  </Card>
+  <Card title="Input Variables" href="/features/input-variables" icon={<Variable />}>
+    Unlock clearer versioning and code-free updates by separating static agent content from dynamic data using Jinja2
+    templates.
+  </Card>
+  <Card title="Structured Outputs" href="/features/structured-outputs" icon={<FileJson />}>
+    Ensure your agents always generate the output format you want by utilizing structured outputs with Pydantic, Zod, or
+    JSON Schema.
+  </Card>
+  <Card title="Reasoning Models" href="/features/reasoning" icon={<BrainCircuit />}>
+    Enable step-by-step reasoning for complex problem solving and configure reasoning effort levels to balance quality
+    and cost.
+  </Card>
+  <Card title="Caching" href="/features/caching" icon={<HardDrive />}>
+    Save time and money with intelligent request caching.
+  </Card>
+  <Card title="Cost Tracking" href="/features/cost" icon={<DollarSign />}>
+    Access agent costs with detailed metadata, and create customized cost views for easy visualization and monitoring of
+    trends.
+  </Card>
+  <Card title="Modalities" href="/features/modalities" icon={<Image />}>
+    Create diverse agents that process text, images, and audio inputs across compatible models.
+  </Card>
+  <Card title="API Keys" href="/features/api-keys" icon={<Key />}>
+    Access everything AnotherAI has to offer with a single API key: connect your IDE via MCP and unlock access to 100+
+    models.
+  </Card>
+</Cards>
