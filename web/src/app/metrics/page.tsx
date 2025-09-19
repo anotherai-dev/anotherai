@@ -1,9 +1,10 @@
 "use client";
 
 import { MetricsCustomViewsInstructions } from "@/components/MetricsCustomViewsInstructions";
-import { MetricsSection } from "@/components/MetricsSection";
 import { PageHeader } from "@/components/PageHeader";
 import { QueryGraphCard } from "@/components/QueryGraphCard";
+import { MetricsSection } from "./components/MetricsSection";
+import { MetricsSummary } from "./components/MetricsSummary";
 
 export default function MetricsPage() {
   return (
@@ -15,6 +16,12 @@ export default function MetricsPage() {
         descriptionRightContent={<MetricsCustomViewsInstructions />}
         className="pb-2"
       />
+
+      <MetricsSection title="Summary">
+        <div className="lg:col-span-2">
+          <MetricsSummary />
+        </div>
+      </MetricsSection>
 
       <MetricsSection title="Cost Analytics">
         <QueryGraphCard
