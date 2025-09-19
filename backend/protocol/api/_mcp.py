@@ -51,8 +51,21 @@ async def create_experiment(
     experiment_id: str | None = None,
     description: str | None = None,
     author_name: AuthorName = "user",
-    use_cache: CacheUsage = CacheUsage.AUTO,
-    metadata: dict[str, Any] | None = None,
+    use_cache: Annotated[
+        CacheUsage,
+        Field(
+            description="Whether to use cache when creating completions for the experiment."
+            " By default the cache is always used.",
+        ),
+    ] = CacheUsage.ALWAYS,
+    metadata: Annotated[
+        dict[str, Any] | None,
+        Field(
+            description="Metadata associated with the experiment. Can be used to store additional "
+            "information about the experiment. If provided, will be added to all completions created for the "
+            "experiment.",
+        ),
+    ] = None,
 ) -> PlaygroundOutput:
     """Creates a new experiment and returns the experiment id. If an experiment id is provided and an experiment exists
     with the same id and for the same agent, the existing experiment is updated and returned.
@@ -120,15 +133,21 @@ async def add_inputs_to_experiment(
         Field(
             description="""The inputs to use for the playground. A completion will be generated per input per version.
             An input can include a set of variables used in the templated prompt or a list of messages to be appended
-            to the prompt. Either inputs or input_query must be provided.""",
+            to the prompt. Either inputs or query must be provided.""",
         ),
     ] = None,
-    input_query: Annotated[
+    query: Annotated[
         str | None,
         Field(
-            description="""🔄 PREFERRED for re-running existing inputs: SQL query to fetch completions and use
-            the associated inputs. Must yield the input_variables and input_messages columns. Use this instead of
-            query_completions() + inputs parameter when retrying existing completions.""",
+            description="""🔄 PREFERRED when using existing inputs: SQL query to fetch and use
+            inputs present in the database. Always provide the agent_id in the WHERE clause.
+            Must yield the input_variables and input_messages columns. Use
+            instead of calling query_completions() when the user refers to existing inputs or completions, e-g
+            "retry the last 10 completions", "try the model against the completions in the evaluation dataset""",
+            examples=[
+                "SELECT input_variables, input_messages FROM completions WHERE agent_id = 'email-summarizer'",
+                "SELECT input_variables, input_messages FROM completions WHERE agent_id = 'email-summarizer' AND metadata['dataset'] = 'evaluation'",
+            ],
         ),
     ] = None,
 ) -> list[str]:
@@ -137,7 +156,7 @@ async def add_inputs_to_experiment(
 
     Returns the ids of the added inputs.
     """
-    return await (await _mcp_utils.playground_service()).add_inputs_to_experiment(experiment_id, inputs, input_query)
+    return await (await _mcp_utils.playground_service()).add_inputs_to_experiment(experiment_id, inputs, query)
 
 
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))

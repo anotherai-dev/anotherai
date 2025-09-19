@@ -164,7 +164,7 @@ class IntegrationTestClient:
             {
                 "experiment_id": experiment_id,
                 "inputs": inputs,
-                "input_query": input_query,
+                "query": input_query,
             },
         )
 
