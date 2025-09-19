@@ -46,6 +46,10 @@ class PsqlTenantStorage(PsqlBaseStorage, TenantStorage):
             return self.validate_row(row)
 
     @override
+    async def tenant_by_uid(self, tenant_uid: int) -> TenantData:
+        return await self._tenant_where("uid = $1", tenant_uid)
+
+    @override
     async def tenant_by_org_id(self, org_id: str) -> TenantData:
         return await self._tenant_where("org_id = $1", org_id)
 

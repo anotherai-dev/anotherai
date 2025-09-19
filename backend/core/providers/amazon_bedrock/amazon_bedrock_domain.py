@@ -5,6 +5,7 @@ import re
 from typing import Annotated, Any, Literal, Self
 
 from pydantic import BaseModel, BeforeValidator, Field, ValidationError
+from structlog import get_logger
 
 from core.domain.exceptions import InternalError, InvalidRunOptionsError, UnpriceableRunError
 from core.domain.file import File as DomainImage
@@ -14,9 +15,11 @@ from core.domain.tool import Tool as DomainTool
 from core.domain.tool_choice import ToolChoice as DomainToolChoice
 from core.providers._base.llm_usage import LLMUsage
 from core.providers._base.provider_error import ModelDoesNotSupportModeError
+from core.providers._base.streaming_context import ParsedResponse
 from core.providers.google.google_provider_domain import (
     internal_tool_name_to_native_tool_call,
 )
+from core.runners.runner_output import ToolCallRequestDelta
 from core.utils.dicts import TwoWayDict
 from core.utils.json_utils import safe_extract_dict_from_json
 from core.utils.token_utils import tokens_from_string
@@ -39,6 +42,8 @@ MIME_TO_FORMAT_MAP = TwoWayDict[str, AnthropicImageFormat](
     ("image/gif", "gif"),
     ("image/webp", "webp"),
 )
+
+_log = get_logger(__name__)
 
 
 def _sanitize_tool_id(tool_id: str) -> str:
@@ -308,6 +313,14 @@ class StreamedResponse(BaseModel):
         class ToolUseBlockDelta(BaseModel):
             input: str
 
+            def to_domain(self, idx: int) -> ToolCallRequestDelta:
+                return ToolCallRequestDelta(
+                    id="",
+                    idx=idx,
+                    tool_name="",
+                    arguments=self.input,
+                )
+
         toolUse: ToolUseBlockDelta | None = None
 
         class ReasoningContentDelta(BaseModel):
@@ -323,6 +336,14 @@ class StreamedResponse(BaseModel):
             name: str
             toolUseId: _ToolUseID
 
+            def to_domain(self, idx: int) -> ToolCallRequestDelta:
+                return ToolCallRequestDelta(
+                    id=self.toolUseId,
+                    idx=idx,
+                    tool_name=self.name,
+                    arguments="",
+                )
+
         toolUse: ToolUse | None = None
 
         class ThinkingBlock(BaseModel):
@@ -333,6 +354,40 @@ class StreamedResponse(BaseModel):
     start: Start | None = None
 
     usage: Usage | None = None
+
+    def to_parsed_response(self) -> ParsedResponse:
+        tool_calls: list[ToolCallRequestDelta] = []
+        reasoning: str | None = None
+        completion_text: str | None = None
+
+        if self.start:
+            if self.start.toolUse:
+                if self.contentBlockIndex is None:
+                    _log.error("Content block index is not set", response=self)
+                else:
+                    tool_calls.append(self.start.toolUse.to_domain(self.contentBlockIndex or 0))
+
+            if self.start.thinking:
+                reasoning = self.start.thinking.thinking
+        if self.delta:
+            if self.delta.reasoningContent:
+                reasoning = self.delta.reasoningContent.text
+            if self.delta.toolUse:
+                if self.contentBlockIndex is None:
+                    _log.error("Content block index is not set", response=self)
+                else:
+                    tool_calls.append(self.delta.toolUse.to_domain(self.contentBlockIndex or 0))
+
+            completion_text = self.delta.text
+
+        # TODO: finish reason???
+
+        return ParsedResponse(
+            delta=completion_text,
+            reasoning=reasoning,
+            tool_call_requests=tool_calls or None,
+            usage=self.usage.to_domain() if self.usage else None,
+        )
 
 
 def message_or_system(message: dict[str, Any]) -> AmazonBedrockMessage | AmazonBedrockSystemMessage:

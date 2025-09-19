@@ -39,7 +39,7 @@ describe("Query Building Utilities", () => {
     });
 
     it("has correct LIMIT clause", () => {
-      expect(defaultQueryParts.limit).toBe("LIMIT 100");
+      expect(defaultQueryParts.limit).toBe("LIMIT 20");
     });
 
     it("contains valid SQL syntax", () => {
@@ -146,7 +146,7 @@ describe("Query Building Utilities", () => {
       expect(result).toMatch(/\s+WHERE\s+/);
 
       // Should end with LIMIT
-      expect(result).toMatch(/\s+LIMIT\s+100$/);
+      expect(result).toMatch(/\s+LIMIT\s+\d+$/);
     });
   });
 

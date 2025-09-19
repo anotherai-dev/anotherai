@@ -48,3 +48,24 @@ async def test_structured_output(provider: Provider, model: Model, openai_client
     assert res.choices[0].message.parsed
     assert res.choices[0].message.parsed.capital == "Paris"
     assert res.choices[0].message.parsed.country == "France"
+
+
+@pytest.mark.parametrize(("provider", "model"), MODEL_PROVIDERS)
+async def test_raw_string_streaming(provider: Provider, model: Model, openai_client: AsyncOpenAI):
+    res = await openai_client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": "What is the meaning of life?"}],
+        extra_body={
+            "provider": provider,
+            "use_fallback": "never",
+            "use_cache": "never",
+            "agent_id": "test_raw_string_completion",
+        },
+        metadata={"provider": provider},
+        stream=True,
+    )
+    aggs: list[str] = []
+    async for chunk in res:
+        aggs.append(chunk.choices[0].delta.content or "")  # noqa: PERF401
+    assert len(aggs) > 0
+    print("".join(aggs))  # noqa: T201

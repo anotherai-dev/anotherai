@@ -1,3 +1,7 @@
-from typing import Literal
+from enum import StrEnum
 
-type CacheUsage = Literal["auto", "always", "never"]
+
+class CacheUsage(StrEnum):
+    AUTO = "auto"
+    ALWAYS = "always"
+    NEVER = "never"

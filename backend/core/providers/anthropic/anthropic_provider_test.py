@@ -21,7 +21,6 @@ from core.domain.tool_choice import ToolChoice, ToolChoiceFunction
 from core.providers._base.llm_usage import LLMUsage
 from core.providers._base.models import RawCompletion
 from core.providers._base.provider_error import (
-    FailedGenerationError,
     MaxTokensExceededError,
     ProviderBadRequestError,
     ProviderError,
@@ -29,19 +28,14 @@ from core.providers._base.provider_error import (
     ServerOverloadedError,
 )
 from core.providers._base.provider_options import ProviderOptions
-from core.providers._base.provider_output import ProviderOutput
-from core.providers._base.streaming_context import ToolCallRequestBuffer
 from core.providers.anthropic.anthropic_domain import (
     AnthropicMessage,
     AntToolChoice,
-    CompletionChunk,
     CompletionRequest,
     CompletionResponse,
     ContentBlock,
-    SignatureDelta,
     TextContent,
     ThinkingContent,
-    ThinkingDelta,
     ToolUseContent,
     Usage,
 )
@@ -56,8 +50,8 @@ def anthropic_provider():
     )
 
 
-def _output_factory(x: str, _: bool):
-    return ProviderOutput(x)
+def _output_factory(x: str):
+    return x
 
 
 class TestMaxTokens:
@@ -157,7 +151,7 @@ class TestBuildRequest:
     def test_build_request(self, anthropic_provider: AnthropicProvider):
         request = cast(
             CompletionRequest,
-            anthropic_provider._build_request(  # pyright: ignore[reportPrivateUsage]
+            anthropic_provider._build_request(
                 messages=[
                     MessageDeprecated(role=MessageDeprecated.Role.SYSTEM, content="Hello 1"),
                     MessageDeprecated(role=MessageDeprecated.Role.USER, content="Hello"),
@@ -184,7 +178,7 @@ class TestBuildRequest:
     def test_build_request_without_max_tokens(self, anthropic_provider: AnthropicProvider):
         request = cast(
             CompletionRequest,
-            anthropic_provider._build_request(  # pyright: ignore[reportPrivateUsage]
+            anthropic_provider._build_request(
                 messages=[
                     MessageDeprecated(role=MessageDeprecated.Role.SYSTEM, content="Hello 1"),
                     MessageDeprecated(role=MessageDeprecated.Role.USER, content="Hello"),
@@ -213,7 +207,7 @@ class TestBuildRequest:
 
         request = cast(
             CompletionRequest,
-            anthropic_provider._build_request(  # pyright: ignore[reportPrivateUsage]
+            anthropic_provider._build_request(
                 messages=[message],
                 options=options,
                 stream=False,
@@ -251,7 +245,7 @@ class TestBuildRequest:
         model = Model.CLAUDE_3_5_SONNET_20241022  # Use a specific model for simplicity
         request = cast(
             CompletionRequest,
-            anthropic_provider._build_request(  # pyright: ignore[reportPrivateUsage]
+            anthropic_provider._build_request(
                 messages=[MessageDeprecated(role=MessageDeprecated.Role.USER, content="Hello")],
                 options=ProviderOptions(model=model, tool_choice=tool_choice_option),
                 stream=False,
@@ -262,7 +256,7 @@ class TestBuildRequest:
     def test_build_request_no_messages(self, anthropic_provider: AnthropicProvider):
         request = cast(
             CompletionRequest,
-            anthropic_provider._build_request(  # pyright: ignore[reportPrivateUsage]
+            anthropic_provider._build_request(
                 messages=[
                     MessageDeprecated(role=MessageDeprecated.Role.SYSTEM, content="You are a helpful assistant."),
                 ],
@@ -298,7 +292,7 @@ class TestBuildRequest:
 
             request = cast(
                 CompletionRequest,
-                anthropic_provider._build_request(  # pyright: ignore[reportPrivateUsage]
+                anthropic_provider._build_request(
                     messages=[MessageDeprecated(role=MessageDeprecated.Role.USER, content="Hello")],
                     options=options,
                     stream=False,
@@ -326,7 +320,7 @@ class TestBuildRequest:
 
         request = cast(
             CompletionRequest,
-            anthropic_provider._build_request(  # pyright: ignore[reportPrivateUsage]
+            anthropic_provider._build_request(
                 messages=[MessageDeprecated(role=MessageDeprecated.Role.USER, content="Hello")],
                 options=options,
                 stream=False,
@@ -368,10 +362,9 @@ class TestSingleStream:
 
         raw = RawCompletion(usage=LLMUsage(), response="")
 
-        raw_chunks = anthropic_provider._single_stream(  # pyright: ignore[reportPrivateUsage]
+        raw_chunks = anthropic_provider._single_stream(
             request={"messages": [{"role": "user", "content": "Hello"}]},
-            output_factory=_output_factory,
-            partial_output_factory=lambda x: ProviderOutput(x),
+            output_factory=lambda x: json.loads(x),
             raw_completion=raw,
             options=ProviderOptions(
                 model=Model.CLAUDE_3_5_SONNET_20241022,
@@ -383,13 +376,12 @@ class TestSingleStream:
 
         parsed_chunks = [o async for o in raw_chunks]
 
-        assert len(parsed_chunks) == 8
-        assert parsed_chunks[0][0] == {
+        assert len(parsed_chunks) == 9
+        assert parsed_chunks[-1].final_chunk
+        assert parsed_chunks[-1].final_chunk.agent_output == {
             "response": "Looking at Figure 2 in the document, Claude 3.5 Sonnet New) - the upgraded version -%- Multilingual: 48).",
         }
-        assert parsed_chunks[1][0] == {
-            "response": "Looking at Figure 2 in the document, Claude 3.5 Sonnet New) - the upgraded version -%- Multilingual: 48).",
-        }
+
         assert raw.usage.prompt_token_count == 32507
         assert raw.usage.completion_token_count == 233
 
@@ -407,10 +399,9 @@ class TestSingleStream:
 
         raw = RawCompletion(usage=LLMUsage(), response="")
 
-        raw_chunks = anthropic_provider._single_stream(  # pyright: ignore[reportPrivateUsage]
+        raw_chunks = anthropic_provider._single_stream(
             request={"messages": [{"role": "user", "content": "Hello"}]},
-            output_factory=_output_factory,
-            partial_output_factory=lambda x: ProviderOutput(x),
+            output_factory=lambda x: json.loads(x),
             raw_completion=raw,
             options=ProviderOptions(
                 model=Model.CLAUDE_3_5_SONNET_20241022,
@@ -422,11 +413,10 @@ class TestSingleStream:
 
         parsed_chunks = [o async for o in raw_chunks]
 
-        assert len(parsed_chunks) == 4
-        assert parsed_chunks[0][0] == {
-            "response": " Looking at the human preference win rates shown in Figure 2 of the document. ",
-        }
-        assert parsed_chunks[1][0] == {
+        assert len(parsed_chunks) == 5
+        assert parsed_chunks[1].delta == ' {"response": " Looking'
+        assert parsed_chunks[-1].final_chunk
+        assert parsed_chunks[-1].final_chunk.agent_output == {
             "response": " Looking at the human preference win rates shown in Figure 2 of the document. ",
         }
 
@@ -454,8 +444,8 @@ class TestComplete:
             output_factory=_output_factory,
         )
 
-        assert o.output
-        assert o.tool_calls is None
+        assert o.agent_output
+        assert o.tool_call_requests is None
 
         request = httpx_mock.get_requests()[0]
         assert request.method == "POST"
@@ -505,8 +495,8 @@ class TestComplete:
             output_factory=_output_factory,
         )
 
-        assert o.output
-        assert o.tool_calls is None
+        assert o.agent_output
+        assert o.tool_call_requests is None
 
         request = httpx_mock.get_requests()[0]
         assert request.method == "POST"
@@ -554,8 +544,8 @@ class TestComplete:
             output_factory=_output_factory,
         )
 
-        assert o.output
-        assert o.tool_calls is None
+        assert o.agent_output
+        assert o.tool_call_requests is None
 
         request = httpx_mock.get_requests()[0]
         assert request.method == "POST"
@@ -580,8 +570,8 @@ class TestComplete:
             output_factory=_output_factory,
         )
 
-        assert o.output
-        assert o.tool_calls is None
+        assert o.agent_output
+        assert o.tool_call_requests is None
 
         request = httpx_mock.get_requests()[0]
         assert request.method == "POST"
@@ -676,17 +666,14 @@ class TestMaxTokensExceeded:
 
         raw = RawCompletion(usage=LLMUsage(), response="")
 
-        with pytest.raises(MaxTokensExceededError) as e:
-            async for _ in anthropic_provider._single_stream(  # pyright: ignore[reportPrivateUsage]
+        with pytest.raises(MaxTokensExceededError):
+            async for _ in anthropic_provider._single_stream(
                 request={"messages": [{"role": "user", "content": "Hello"}]},
                 output_factory=_output_factory,
-                partial_output_factory=lambda x: ProviderOutput(x),
                 raw_completion=raw,
                 options=ProviderOptions(model=Model.CLAUDE_3_5_SONNET_20241022, max_tokens=10, temperature=0),
             ):
                 pass
-
-        assert e.value.args[0] == "Model returned MAX_TOKENS stop reason, the max tokens limit was exceeded."
 
 
 class TestPrepareCompletion:
@@ -694,7 +681,7 @@ class TestPrepareCompletion:
         """Test that the 'role' key appears before 'content' in the prepared request."""
         request = cast(
             CompletionRequest,
-            anthropic_provider._build_request(  # pyright: ignore[reportPrivateUsage]
+            anthropic_provider._build_request(
                 messages=[MessageDeprecated(role=MessageDeprecated.Role.USER, content="Hello")],
                 options=ProviderOptions(model=Model.CLAUDE_3_5_SONNET_20241022, max_tokens=10, temperature=0),
                 stream=False,
@@ -717,32 +704,42 @@ class TestPrepareCompletion:
 
 
 class TestExtractStreamDelta:
+    def _load_fixture(self, anthropic_provider: AnthropicProvider, fixture_name: str):
+        raw_completion = RawCompletion(response="", usage=LLMUsage())
+        streaming_context = anthropic_provider._streaming_context(raw_completion)
+
+        fixture_data = fixtures_json(f"anthropic/{fixture_name}")["SSEs"]
+        for sse in fixture_data:
+            delta = anthropic_provider._extract_stream_delta(json.dumps(sse).encode())
+            streaming_context.add_chunk(delta)
+
+        final_chunk = streaming_context.complete(
+            lambda raw, reasoning, tool_calls: anthropic_provider._build_structured_output(
+                lambda x: x,
+                raw,
+                reasoning,
+                tool_calls,
+            ),
+        )
+
+        return streaming_context, final_chunk
+
     async def test_stream_with_tools(
         self,
         anthropic_provider: AnthropicProvider,
     ):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-        tool_call_request_buffer: dict[int, ToolCallRequestBuffer] = {}
-        tool_calls: list[ToolCallRequest] = []
-        content: str = ""
-
-        fixture_data = fixtures_json("anthropic/anthropic_with_tools_streaming_fixture.json")
-        for sse in fixture_data["SSEs"]:
-            delta = anthropic_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
-                json.dumps(sse).encode(),
-                raw_completion,
-                tool_call_request_buffer,
-            )
-            content += delta.content
-            if delta.tool_calls:
-                tool_calls.extend(delta.tool_calls)
-
+        streaming_context, final_chunk = self._load_fixture(
+            anthropic_provider,
+            "anthropic_with_tools_streaming_fixture.json",
+        )
         # Verify the content and tool calls
-        assert content == "I'll help you search for the latest Jazz vs Lakers game score."
+        assert final_chunk.final_chunk
+        assert final_chunk.final_chunk.agent_output == "I'll help you search for the latest Jazz vs Lakers game score."
 
         # Verify tool calls were correctly extracted
-        assert tool_calls == [
+        assert final_chunk.final_chunk.tool_call_requests == [
             ToolCallRequest(
+                index=1,
                 id="toolu_018BjmfDhLuQh15ghjQmwaWF",
                 tool_name="@search-google",
                 tool_input_dict={"query": "Jazz Lakers latest game score 2025"},
@@ -750,52 +747,49 @@ class TestExtractStreamDelta:
         ]
 
         # Verify usage metrics were captured
-        assert raw_completion.usage == LLMUsage(
+        assert streaming_context.usage == LLMUsage(
             prompt_token_count=717,
             completion_token_count=75,
+            prompt_token_count_cached=0,
         )
 
     async def test_stream_with_multiple_tools(
         self,
         anthropic_provider: AnthropicProvider,
     ):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-        tool_call_request_buffer: dict[int, ToolCallRequestBuffer] = {}
-        tool_calls: list[ToolCallRequest] = []
-        content: str = ""
-
-        fixture_data = fixtures_json("anthropic/anthropic_with_multiple_tools_streaming_fixture.json")
-        for sse in fixture_data["SSEs"]:
-            delta = anthropic_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
-                json.dumps(sse).encode(),
-                raw_completion,
-                tool_call_request_buffer,
-            )
-            content += delta.content
-            if delta.tool_calls:
-                tool_calls.extend(delta.tool_calls)
+        streaming_context, final_chunk = self._load_fixture(
+            anthropic_provider,
+            "anthropic_with_multiple_tools_streaming_fixture.json",
+        )
 
         # Verify the content and tool calls
-        assert content == "\n\nNow I'll get all the weather information using the city code:"
+        assert final_chunk.final_chunk is not None
+        assert (
+            final_chunk.final_chunk.agent_output == "\n\nNow I'll get all the weather information using the city code:"
+        )
 
         # Verify tool calls were correctly extracted
-        assert tool_calls == [
+        assert final_chunk.final_chunk.tool_call_requests == [
             ToolCallRequest(
+                index=1,
                 tool_name="get_temperature",
                 tool_input_dict={"city_code": "125321"},
                 id="toolu_019eEEq7enPNzjU6z6X34y7i",
             ),
             ToolCallRequest(
+                index=2,
                 tool_name="get_rain_probability",
                 tool_input_dict={"city_code": "125321"},
                 id="toolu_01UgGE25XyALN9fmi7QD3Q8u",
             ),
             ToolCallRequest(
+                index=3,
                 tool_name="get_wind_speed",
                 tool_input_dict={"city_code": "125321"},
                 id="toolu_01PRcJww2rnhd3BPbVdbkuXG",
             ),
             ToolCallRequest(
+                index=4,
                 tool_name="get_weather_conditions",
                 tool_input_dict={"city_code": "125321"},
                 id="toolu_01AS6J6V1Jp6awe6vh4zf4eJ",
@@ -803,54 +797,25 @@ class TestExtractStreamDelta:
         ]
 
         # Verify usage metrics were captured
-        LLMUsage(
+        assert streaming_context.usage == LLMUsage(
             completion_token_count=194,
             prompt_token_count=1191.0,
+            prompt_token_count_cached=0,
         )
-
-    def test_message_start(self, anthropic_provider: AnthropicProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-        delta = anthropic_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
-            json.dumps(
-                {
-                    "type": "message_start",
-                    "message": {
-                        "id": "msg_123",
-                        "type": "message",
-                        "role": "assistant",
-                        "content": [],
-                        "model": "claude-3-5-sonnet-20241022",
-                        "usage": {
-                            "input_tokens": 100,
-                            "output_tokens": 50,
-                        },
-                    },
-                },
-            ).encode(),
-            raw_completion,
-            {},
-        )
-        assert delta.content == ""
-        assert raw_completion.usage == LLMUsage(prompt_token_count=100, completion_token_count=50)
 
     def test_raised_error(self, anthropic_provider: AnthropicProvider):
         with pytest.raises(ServerOverloadedError):
-            anthropic_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
+            anthropic_provider._extract_stream_delta(
                 json.dumps(
                     {
                         "type": "error",
                         "error": {"type": "overloaded_error", "message": "Server is overloaded"},
                     },
                 ).encode(),
-                RawCompletion(response="", usage=LLMUsage()),
-                {},
             )
 
     def test_content_block_start_with_tool(self, anthropic_provider: AnthropicProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-        tool_call_request_buffer: dict[int, ToolCallRequestBuffer] = {}
-
-        delta = anthropic_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
+        delta = anthropic_provider._extract_stream_delta(
             json.dumps(
                 {
                     "type": "content_block_start",
@@ -862,25 +827,19 @@ class TestExtractStreamDelta:
                     },
                 },
             ).encode(),
-            raw_completion,
-            tool_call_request_buffer,
         )
 
-        assert delta.content == ""
-        assert len(tool_call_request_buffer) == 1
+        assert delta.delta is None
+        assert delta.tool_call_requests is not None
+        assert len(delta.tool_call_requests) == 1
+        assert delta.tool_call_requests[0].idx == 0
+        assert delta.tool_call_requests[0].id == "tool_123"
+        assert delta.tool_call_requests[0].tool_name == "@search-google"
+        assert delta.tool_call_requests[0].arguments == ""
 
     def test_content_block_delta_with_tool_input(self, anthropic_provider: AnthropicProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-        tool_call_request_buffer = {
-            0: ToolCallRequestBuffer(
-                id="tool_123",
-                tool_name="@search-google",
-                tool_input='{"query": "',
-            ),
-        }
-
         # Test partial JSON input
-        delta = anthropic_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
+        delta = anthropic_provider._extract_stream_delta(
             json.dumps(
                 {
                     "type": "content_block_delta",
@@ -891,84 +850,55 @@ class TestExtractStreamDelta:
                     },
                 },
             ).encode(),
-            raw_completion,
-            tool_call_request_buffer,
         )
 
-        assert delta.content == ""
-        tool_calls = delta.tool_calls
-        assert tool_calls is not None
-        assert len(tool_calls) == 1
-        tool_call = tool_calls[0]
-        assert tool_call.id == "tool_123"
-        assert tool_call.tool_name == "@search-google"
-        assert tool_call.tool_input_dict == {"query": "latest news"}
+        assert delta.delta is None
+        assert delta.tool_call_requests is not None
+        assert len(delta.tool_call_requests) == 1
+        assert delta.tool_call_requests[0].idx == 0
+        assert delta.tool_call_requests[0].id == ""
+        assert delta.tool_call_requests[0].tool_name == ""
+        assert delta.tool_call_requests[0].arguments == 'latest news"}'
 
     def test_message_delta_with_max_tokens(self, anthropic_provider: AnthropicProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-
-        with pytest.raises(MaxTokensExceededError) as exc_info:
-            anthropic_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
-                json.dumps(
-                    {
-                        "type": "message_delta",
-                        "delta": {
-                            "stop_reason": "max_tokens",
-                            "stop_sequence": None,
-                        },
-                        "usage": {
-                            "output_tokens": 100,
-                        },
+        data = anthropic_provider._extract_stream_delta(
+            json.dumps(
+                {
+                    "type": "message_delta",
+                    "delta": {
+                        "stop_reason": "max_tokens",
+                        "stop_sequence": None,
                     },
-                ).encode(),
-                raw_completion,
-                {},
-            )
+                    "usage": {
+                        "output_tokens": 100,
+                    },
+                },
+            ).encode(),
+        )
 
-        assert "Model returned MAX_TOKENS stop reason" in str(exc_info.value)
-        assert raw_completion.usage == LLMUsage(completion_token_count=100)
+        assert data.finish_reason == "max_context"
 
     def test_ping_and_stop_events(self, anthropic_provider: AnthropicProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-
         # Test ping event
-        delta = anthropic_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
+        delta = anthropic_provider._extract_stream_delta(
             json.dumps({"type": "ping"}).encode(),
-            raw_completion,
-            {},
         )
-        assert delta.content == ""
+        assert delta.delta is None
 
         # Test message_stop event
-        delta = anthropic_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
+        delta = anthropic_provider._extract_stream_delta(
             json.dumps({"type": "message_stop"}).encode(),
-            raw_completion,
-            {},
         )
-        assert delta.content == ""
+        assert delta.delta is None
 
         # Test content_block_stop event
-        delta = anthropic_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
+        delta = anthropic_provider._extract_stream_delta(
             json.dumps({"type": "content_block_stop", "index": 0}).encode(),
-            raw_completion,
-            {},
         )
-        assert delta.content == ""
-
-    def test_invalid_json(self, anthropic_provider: AnthropicProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-
-        delta = anthropic_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
-            b"invalid json",
-            raw_completion,
-            {},
-        )
-        assert delta.content == ""
+        assert delta.delta is None
 
     def test_content_block_delta_with_text(self, anthropic_provider: AnthropicProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-
-        delta = anthropic_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
+        delta = anthropic_provider._extract_stream_delta(
             json.dumps(
                 {
                     "type": "content_block_delta",
@@ -979,17 +909,14 @@ class TestExtractStreamDelta:
                     },
                 },
             ).encode(),
-            raw_completion,
-            {},
         )
 
-        assert delta.content == "Hello world"
-        assert delta.tool_calls == []
+        assert delta.delta is not None
+        assert delta.delta == "Hello world"
+        assert delta.tool_call_requests is None
 
     def test_content_block_start_with_text(self, anthropic_provider: AnthropicProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-
-        delta = anthropic_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
+        delta = anthropic_provider._extract_stream_delta(
             json.dumps(
                 {
                     "type": "content_block_start",
@@ -1000,17 +927,13 @@ class TestExtractStreamDelta:
                     },
                 },
             ).encode(),
-            raw_completion,
-            {},
         )
 
-        assert delta.content == ""
-        assert delta.tool_calls == []
+        assert delta.delta == ""
+        assert delta.tool_call_requests is None
 
     def test_message_delta_with_stop_reason(self, anthropic_provider: AnthropicProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-
-        delta = anthropic_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
+        delta = anthropic_provider._extract_stream_delta(
             json.dumps(
                 {
                     "type": "message_delta",
@@ -1023,55 +946,10 @@ class TestExtractStreamDelta:
                     },
                 },
             ).encode(),
-            raw_completion,
-            {},
         )
 
-        assert delta.content == ""
-        assert raw_completion.usage == LLMUsage(completion_token_count=75)
-        assert raw_completion.finish_reason == "end_turn"
-
-    def test_missing_index_in_content_block_start(self, anthropic_provider: AnthropicProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-
-        with pytest.raises(FailedGenerationError) as exc_info:
-            anthropic_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
-                json.dumps(
-                    {
-                        "type": "content_block_start",
-                        "content_block": {
-                            "type": "tool_use",
-                            "id": "tool_123",
-                            "name": "@search-google",
-                        },
-                    },
-                ).encode(),
-                raw_completion,
-                {},
-            )
-
-        assert "Missing required fields in content block start" in str(exc_info.value)
-
-    def test_content_block_delta_with_unknown_tool_call(self, anthropic_provider: AnthropicProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-
-        with pytest.raises(FailedGenerationError) as exc_info:
-            anthropic_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
-                json.dumps(
-                    {
-                        "type": "content_block_delta",
-                        "index": 1,
-                        "delta": {
-                            "type": "input_json_delta",
-                            "partial_json": '{"query": "test"}',
-                        },
-                    },
-                ).encode(),
-                raw_completion,
-                {},
-            )
-
-        assert "Received content block delta for unknown tool call" in str(exc_info.value)
+        assert delta.delta is None
+        assert delta.usage == LLMUsage(completion_token_count=75)
 
 
 def get_dummy_provider() -> AnthropicProvider:
@@ -1086,7 +964,7 @@ def test_extract_content_str_valid() -> None:
         usage=Usage(input_tokens=0, output_tokens=0),
         stop_reason=None,
     )
-    text = provider._extract_content_str(response)  # pyright: ignore[reportPrivateUsage]
+    text = provider._extract_content_str(response)
     assert text == "Hello world"
 
 
@@ -1098,7 +976,7 @@ def test_extract_content_str_empty_content() -> None:
         stop_reason=None,
     )
     with pytest.raises(ProviderInternalError):
-        provider._extract_content_str(response)  # pyright: ignore[reportPrivateUsage]
+        provider._extract_content_str(response)
 
 
 def test_extract_content_str_max_tokens() -> None:
@@ -1109,7 +987,7 @@ def test_extract_content_str_max_tokens() -> None:
         stop_reason="max_tokens",
     )
     with pytest.raises(MaxTokensExceededError) as exc_info:
-        provider._extract_content_str(response)  # pyright: ignore[reportPrivateUsage]
+        provider._extract_content_str(response)
     assert exc_info.value.args[0] == "Model returned MAX_TOKENS stop reason, the max tokens limit was exceeded."
 
 
@@ -1122,7 +1000,7 @@ class TestUnknownError:
             if isinstance(payload, dict):
                 payload = json.dumps(payload)
             res = Response(status_code=status_code, text=payload)
-            return anthropic_provider._unknown_error(res)  # pyright: ignore[reportPrivateUsage]
+            return anthropic_provider._unknown_error(res)
 
         return _build_unknown_error
 
@@ -1189,7 +1067,7 @@ class TestExtractReasoningSteps:
             usage=Usage(input_tokens=100, output_tokens=50),
         )
 
-        reasoning = anthropic_provider._extract_reasoning_steps(response)  # pyright: ignore[reportPrivateUsage]
+        reasoning = anthropic_provider._extract_reasoning_steps(response)
         assert (
             reasoning
             == """Let me think about this step by step...
@@ -1212,7 +1090,7 @@ Now I need to consider another approach..."""
             usage=Usage(input_tokens=100, output_tokens=50),
         )
 
-        reasoning_steps = anthropic_provider._extract_reasoning_steps(response)  # pyright: ignore[reportPrivateUsage]
+        reasoning_steps = anthropic_provider._extract_reasoning_steps(response)
 
         assert reasoning_steps is None
 
@@ -1223,104 +1101,6 @@ Now I need to consider another approach..."""
             usage=Usage(input_tokens=100, output_tokens=50),
         )
 
-        reasoning_steps = anthropic_provider._extract_reasoning_steps(response)  # pyright: ignore[reportPrivateUsage]
+        reasoning_steps = anthropic_provider._extract_reasoning_steps(response)
 
         assert reasoning_steps is None
-
-
-class TestThinkingStreamingDeltas:
-    def test_handle_content_block_delta_with_thinking(self, anthropic_provider: AnthropicProvider):
-        """Test handling of thinking deltas in streaming."""
-
-        _raw_completion = RawCompletion(response="", usage=LLMUsage())
-        tool_call_request_buffer: dict[int, ToolCallRequestBuffer] = {}
-
-        # Create a chunk with thinking delta
-        chunk = CompletionChunk(
-            type="content_block_delta",
-            index=0,
-            delta=ThinkingDelta(
-                type="thinking_delta",
-                thinking="I need to analyze this request...",
-            ),
-        )
-
-        delta = anthropic_provider._handle_content_block_delta(  # pyright: ignore[reportPrivateUsage]
-            chunk,
-            tool_call_request_buffer,
-        )
-
-        assert delta.content == "I need to analyze this request..."
-        assert delta.reasoning == "I need to analyze this request..."
-        assert delta.tool_calls == []
-
-    def test_handle_content_block_delta_with_signature(self, anthropic_provider: AnthropicProvider):
-        """Test handling of signature deltas in streaming."""
-
-        _raw_completion = RawCompletion(response="", usage=LLMUsage())
-        tool_call_request_buffer: dict[int, ToolCallRequestBuffer] = {}
-
-        # Create a chunk with signature delta
-        chunk = CompletionChunk(
-            type="content_block_delta",
-            index=0,
-            delta=SignatureDelta(
-                type="signature_delta",
-                signature="sig_456",
-            ),
-        )
-
-        delta = anthropic_provider._handle_content_block_delta(  # pyright: ignore[reportPrivateUsage]
-            chunk,
-            tool_call_request_buffer,
-        )
-
-        assert delta.content == ""  # Signature deltas don't contribute to text output
-        assert delta.reasoning is None
-        assert delta.tool_calls == []
-
-    def test_stream_with_thinking_deltas(self, anthropic_provider: AnthropicProvider):
-        """Test streaming with thinking deltas integrated."""
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-        tool_call_request_buffer: dict[int, ToolCallRequestBuffer] = {}
-
-        # Test sequence of thinking deltas
-        thinking_events = [
-            {
-                "type": "content_block_delta",
-                "index": 0,
-                "delta": {
-                    "type": "thinking_delta",
-                    "thinking": "First, I need to understand the problem...",
-                },
-            },
-            {
-                "type": "content_block_delta",
-                "index": 0,
-                "delta": {
-                    "type": "thinking_delta",
-                    "thinking": "Now I should consider the options...",
-                },
-            },
-            {
-                "type": "content_block_delta",
-                "index": 0,
-                "delta": {
-                    "type": "signature_delta",
-                    "signature": "thinking_signature_123",
-                },
-            },
-        ]
-
-        reasoning_content = ""
-        for event in thinking_events:
-            delta = anthropic_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
-                json.dumps(event).encode(),
-                raw_completion,
-                tool_call_request_buffer,
-            )
-
-            if delta.reasoning:
-                reasoning_content += delta.reasoning
-
-        assert reasoning_content == "First, I need to understand the problem...Now I should consider the options..."

@@ -4,12 +4,14 @@ from collections.abc import AsyncIterator, Sequence
 from contextlib import asynccontextmanager
 from typing import Any
 
+from pydantic import ValidationError
 from structlog import get_logger
 
 from core.domain.agent import Agent
 from core.domain.agent_completion import AgentCompletion
 from core.domain.agent_input import AgentInput
 from core.domain.cache_usage import CacheUsage
+from core.domain.exceptions import JSONSchemaValidationError
 from core.domain.fallback_option import FallbackOption
 from core.domain.message import Message, MessageContent
 from core.domain.metrics import send_counter
@@ -21,16 +23,20 @@ from core.domain.typology import IOTypology, Typology
 from core.domain.version import Version
 from core.providers._base.abstract_provider import AbstractProvider
 from core.providers._base.builder_context import builder_context
-from core.providers._base.provider_error import MaxToolCallIterationError, ModelDoesNotSupportModeError, ProviderError
+from core.providers._base.provider_error import (
+    InvalidGenerationError,
+    MaxToolCallIterationError,
+    ModelDoesNotSupportModeError,
+    ProviderError,
+)
 from core.providers._base.provider_options import ProviderOptions
-from core.providers._base.provider_output import ProviderOutput
 from core.providers.factory.abstract_provider_factory import AbstractProviderFactory
 from core.runners._message_fixer import fix_messages
 from core.runners._message_renderer import MessageRenderer
 from core.runners._runner_file_handler import RunnerFileHandler
 from core.runners.agent_completion_builder import AgentCompletionBuilder
 from core.runners.provider_pipeline import ProviderPipeline
-from core.runners.runner_output import RunnerOutput
+from core.runners.runner_output import RunnerOutput, RunnerOutputChunk
 from core.runners.utils import cleanup_provider_json
 from core.utils.json_utils import parse_tolerant_json
 from core.utils.schemas import clean_json_string
@@ -52,7 +58,6 @@ class Runner:
         metadata: dict[str, Any] | None,
         metric_tags: dict[str, Any] | None,
         provider_factory: AbstractProviderFactory,
-        stream_deltas: bool,
         timeout: float,
         use_fallback: FallbackOption,
         max_tool_call_iterations: int = 10,
@@ -70,7 +75,6 @@ class Runner:
             **(metric_tags or {}),
         }
         self._provider_factory: AbstractProviderFactory = provider_factory
-        self._stream_deltas: bool = stream_deltas
         self._timeout: float = timeout
         self._use_fallback: FallbackOption = use_fallback
         self._max_tool_call_iterations: int = max_tool_call_iterations
@@ -121,11 +125,11 @@ class Runner:
 
     def _should_use_cache(self, cache: CacheUsage) -> bool:
         match cache:
-            case "never":
+            case CacheUsage.NEVER:
                 return False
-            case "always":
+            case CacheUsage.ALWAYS:
                 return True
-            case "auto":
+            case CacheUsage.AUTO:
                 return self._version.temperature == 0 and not self._version.enabled_tools
 
     @asynccontextmanager
@@ -167,20 +171,19 @@ class Runner:
                 )
                 raise e
 
-    async def stream(
-        self,
-        builder: AgentCompletionBuilder,
-    ) -> AsyncIterator[RunnerOutput]:
+    async def stream(self, builder: AgentCompletionBuilder) -> AsyncIterator[RunnerOutputChunk]:
         _ = builder_context.set(builder)  # pyright: ignore [reportArgumentType]
 
         async with self._wrap_for_metric():
             async for o in self._stream_output(builder):
                 # Making sure the chunk is built
-                if o.final:
+                if final := o.final_chunk:
                     if builder.completion:
                         _log.warning("Task run already built. Likely had multiple final chunks")
                     # Forcing here, just in case we are in a case where we had multiple final chunks
-                    _ = builder.build(o, force=True)
+                    builder.build(final, force=True)
+                    yield o
+                    break
                 yield o
 
     def _build_provider_data(
@@ -197,7 +200,6 @@ class Runner:
             task_name=self._agent.id,
             structured_generation=is_structured_generation_enabled,
             tenant=self._tenant_slug,
-            stream_deltas=self._stream_deltas,
             top_p=self._version.top_p,
             presence_penalty=self._version.presence_penalty,
             frequency_penalty=self._version.frequency_penalty,
@@ -331,31 +333,110 @@ class Runner:
                 options,
                 self.output_factory,
             )
-            internal_tools, external_tools = self._split_tools(provider_output.tool_calls)
+            internal_tools, external_tools = self._split_tools(provider_output.tool_call_requests)
 
             # TODO: external_tools
             if internal_tools:
                 raise NotImplementedError("Internal tools are not supported yet")
 
-            return self._final_run_output(provider_output, external_tools)
+            return RunnerOutput(
+                agent_output=provider_output.agent_output,
+                reasoning=provider_output.reasoning,
+                tool_call_requests=external_tools,
+            )
 
         raise MaxToolCallIterationError(
             f"Tool calls failed to converge after {self._max_tool_call_iterations} iterations",
         )
 
-    async def _stream_output(self, builder: AgentCompletionBuilder) -> AsyncIterator[RunnerOutput]:
-        """
-        The function that does the actual input -> output conversion, should
-        be overriden in each subclass but not called directly.
+    async def _stream_task_output_from_messages(
+        self,
+        provider: AbstractProvider[Any, Any],
+        options: ProviderOptions,
+        messages: list[Message],
+    ) -> AsyncIterator[RunnerOutputChunk]:
+        if not provider.is_streamable(options.model, options.enabled_tools):
+            yield (await self._build_output_from_messages(provider, options, messages)).as_chunk()
+            return
 
-        By default this function streams the entire output once
-        """
-        # TODO: implement streaming
-        yield await self._build_output(builder)
+        iteration_count = 0
 
-    def output_factory(self, raw: str, partial: bool = False) -> ProviderOutput:
+        while iteration_count < self._max_tool_call_iterations:
+            iteration_count += 1
+
+            chunk: RunnerOutputChunk | None = None
+            final_output: RunnerOutput | None = None
+            async for chunk in provider.stream(
+                messages,
+                options,
+                output_factory=self.output_factory,
+            ):
+                final_output = chunk.final_chunk
+                if final_output:
+                    # We will stream the final output after the end of the stream.
+                    # This way the provider has time to perform any operation on the context if needed
+                    continue
+                yield chunk
+
+            if not final_output:
+                # We never had any output, we can stop the stream
+                _log.error("No output from provider")
+                return
+
+            internal_tools, _ = self._split_tools(final_output.tool_call_requests)
+
+            if not internal_tools:
+                if chunk:
+                    yield chunk
+                return
+
+            # TODO:
+            raise NotImplementedError("Internal tools are not supported yet")
+
+            # # We add the returned tool calls to the external tool cache
+            # # TODO:
+            # # await self._external_tool_cache.ingest(external_tools)
+
+            # try:
+            #     tool_results = await self._run_tool_calls(output.tool_calls, messages)
+            # except ToolCallRecursionError:
+            #     # If all tool calls have already been called with the same arguments, we stop the iteration
+            #     # and return the output as is
+            #     if output.output:
+            #         yield await self._final_run_output(output, include_tool_calls=False)
+            #         return
+            #     raise MaxToolCallIterationError(
+            #         f"Tool calls failed to converge after {iteration_count} iterations",
+            #         capture=True,
+            #     )
+            # messages = self._append_tool_call_requests_to_messages(messages, output.tool_calls)
+            # messages = self.append_tool_result_to_messages(messages, tool_results)
+
+        raise MaxToolCallIterationError(
+            f"Tool calls failed to converge after {self._max_tool_call_iterations} iterations",
+        )
+
+    async def _stream_output(self, builder: AgentCompletionBuilder) -> AsyncIterator[RunnerOutputChunk]:
+        pipeline = self._build_pipeline(builder)
+        for provider, options, _ in pipeline.provider_iterator():
+            with pipeline.wrap_provider_call(provider):
+                messages = await self._build_messages(builder.agent_input)
+                async for o in self._stream_task_output_from_messages(
+                    provider,
+                    options,
+                    messages,
+                ):
+                    yield o
+                return
+
+        pipeline.raise_on_end()
+
+    def output_factory(self, raw: str) -> Any:
+        """Builds an output from a raw string.
+        Output can either be a string or a structured output
+        """
         if self._version.output_schema is None:
-            return ProviderOutput(raw)
+            return raw
 
         json_str = raw.replace("\t", "\\t")
         # Acting on the string is probably unefficient, we do multiple decodes and encode
@@ -375,35 +456,15 @@ class Runner:
             json_dict = parse_tolerant_json(json_str)
         json_dict = cleanup_provider_json(json_dict)
 
-        return self.build_structured_output(json_dict, partial=partial)
-
-    def build_structured_output(self, output: Any, partial: bool):
-        if self._stream_deltas and partial:
-            final_output = output
-        else:
-            final_output = self._version.validate_output(output, partial=partial)
-
-        # We should be sertt
-        return ProviderOutput(final_output)
-
-    def _final_run_output(
-        self,
-        output: ProviderOutput,
-        tool_call_requests: list[ToolCallRequest] | None,
-    ) -> RunnerOutput:
-        # TODO: tools
-
-        return RunnerOutput(
-            agent_output=output.output,
-            reasoning=output.reasoning,
-            tool_call_requests=tool_call_requests,
-            final=True,
-        )
+        try:
+            return self._version.validate_output(json_dict)
+        except (ValidationError, JSONSchemaValidationError) as e:
+            raise InvalidGenerationError(msg=str(e), partial_output=raw) from e
 
     def _split_tools(
         self,
-        tool_calls: list[ToolCallRequest] | None,
-    ) -> tuple[list[ToolCallRequest] | None, list[ToolCallRequest] | None]:
+        tool_calls: Sequence[ToolCallRequest] | None,
+    ) -> tuple[Sequence[ToolCallRequest] | None, Sequence[ToolCallRequest] | None]:
         """Split tools into internal and external tools"""
         if not tool_calls:
             return None, None

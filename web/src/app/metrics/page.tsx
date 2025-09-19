@@ -25,7 +25,7 @@ export default function MetricsPage() {
 
       <MetricsSection title="Cost Analytics">
         <QueryGraphCard
-          title="Daily Cost Trend"
+          title="Daily Cost Trend (All Time)"
           subtitle="Daily cost trend across all time periods (USD)"
           graphType="line"
           query="SELECT toDate(created_at) AS date, SUM(cost_usd) AS total_cost FROM completions GROUP BY date ORDER BY date ASC"
@@ -37,7 +37,7 @@ export default function MetricsPage() {
         />
 
         <QueryGraphCard
-          title="Cost by Model"
+          title="Cost by Model (All Time)"
           subtitle="Cost distribution across different AI models"
           graphType="pie"
           query="SELECT version_model AS model, SUM(cost_usd) AS total_cost FROM completions WHERE cost_usd > 0 GROUP BY model ORDER BY total_cost DESC LIMIT 10"
@@ -49,8 +49,8 @@ export default function MetricsPage() {
         />
 
         <QueryGraphCard
-          title="Cost by Agent"
-          subtitle="Cost breakdown by agent/deployment"
+          title="Cost by Agent (All Time)"
+          subtitle="Cost breakdown by agent/deployment across all time periods"
           graphType="bar"
           query="SELECT agent_id, SUM(cost_usd) AS total_cost FROM completions GROUP BY agent_id ORDER BY total_cost DESC"
           customGraph={{
@@ -64,7 +64,7 @@ export default function MetricsPage() {
 
       <MetricsSection title="Usage Metrics">
         <QueryGraphCard
-          title="Daily Completions"
+          title="Daily Completions (All Time)"
           subtitle="Number of completions per day over all time"
           graphType="line"
           query="SELECT toDate(created_at) AS date, COUNT(*) AS completions FROM completions GROUP BY date ORDER BY date ASC"
@@ -76,8 +76,8 @@ export default function MetricsPage() {
         />
 
         <QueryGraphCard
-          title="Completions by Model"
-          subtitle="Completion counts per AI model"
+          title="Completions by Model (All Time)"
+          subtitle="Completion counts per AI model across all time periods"
           graphType="bar"
           query="SELECT version_model AS model, COUNT(*) AS completions FROM completions GROUP BY model ORDER BY completions DESC"
           customGraph={{
@@ -88,7 +88,7 @@ export default function MetricsPage() {
         />
 
         <QueryGraphCard
-          title="Completions by Agent"
+          title="Daily Completions by Agent (All Time)"
           subtitle="Completion trends per agent over time"
           graphType="bar"
           query="SELECT toDate(created_at) AS date, agent_id, COUNT(*) AS completions FROM completions GROUP BY date, agent_id ORDER BY date ASC"
@@ -103,7 +103,7 @@ export default function MetricsPage() {
 
       <MetricsSection title="Performance Metrics">
         <QueryGraphCard
-          title="Average Response Time"
+          title="Daily Average Response Time (All Time)"
           subtitle="Average response time by date (seconds)"
           graphType="line"
           query="SELECT toDate(created_at) AS date, AVG(duration_seconds) AS avg_response_time FROM completions GROUP BY date ORDER BY date ASC"
@@ -115,7 +115,7 @@ export default function MetricsPage() {
         />
 
         <QueryGraphCard
-          title="Success Rate"
+          title="Daily Success Rate (All Time)"
           subtitle="Successful vs failed completions over time"
           graphType="line"
           query="SELECT toDate(created_at) AS date, COUNTIf(output_error = '') AS success, COUNTIf(output_error != '') AS failed, COUNT(*) AS total, (COUNTIf(output_error = '') / COUNT(*)) AS success_rate FROM completions GROUP BY date ORDER BY date ASC"

@@ -15,9 +15,10 @@ async def _reset_psql():
     db_name = splits[-1]
     rest = "/".join(splits[:-1])
 
+    print(rest)
     conn = await asyncpg.connect(dsn=rest)
-    await conn.execute(f"DROP DATABASE IF EXISTS {db_name};")
-    await conn.execute(f"CREATE DATABASE {db_name};")
+    await conn.execute(f'DROP DATABASE IF EXISTS "{db_name}"')
+    await conn.execute(f"CREATE DATABASE {db_name}")
     await conn.close()
 
 
