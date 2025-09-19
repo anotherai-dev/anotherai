@@ -1,3 +1,4 @@
+from collections.abc import Collection
 from datetime import datetime
 from typing import Any, override
 from uuid import UUID
@@ -161,7 +162,7 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
         self,
         connection: PoolConnectionProxy,
         experiment_uid: int,
-        version_ids: set[str] | None = None,
+        version_ids: Collection[str] | None = None,
         full=False,
     ) -> list[Version]:
         select = "*" if full else "version_id"
@@ -180,7 +181,7 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
         self,
         connection: PoolConnectionProxy,
         experiment_uid: int,
-        input_ids: set[str] | None = None,
+        input_ids: Collection[str] | None = None,
         full=False,
     ) -> list[AgentInput]:
         select = "*" if full else "input_id"
@@ -216,8 +217,8 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
         self,
         experiment_id: str,
         include: set[ExperimentFields] | None = None,
-        version_ids: set[str] | None = None,
-        input_ids: set[str] | None = None,
+        version_ids: Collection[str] | None = None,
+        input_ids: Collection[str] | None = None,
     ) -> Experiment:
         # TODO:
         async with self._connect() as connection:
@@ -431,8 +432,8 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
         self,
         connection: PoolConnectionProxy,
         experiment_uid: int,
-        version_ids: set[str] | None = None,
-        input_ids: set[str] | None = None,
+        version_ids: Collection[str] | None = None,
+        input_ids: Collection[str] | None = None,
         include: set[ExperimentOutputFields] | None = None,
     ) -> list[ExperimentOutput]:
         selects = _ExperimentOutputRow.select_fields(include)
@@ -459,8 +460,8 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
     async def list_experiment_completions(
         self,
         experiment_id: str,
-        version_ids: set[str] | None = None,
-        input_ids: set[str] | None = None,
+        version_ids: Collection[str] | None = None,
+        input_ids: Collection[str] | None = None,
         include: set[ExperimentOutputFields] | None = None,
     ) -> list[ExperimentOutput]:
         async with self._connect() as connection:

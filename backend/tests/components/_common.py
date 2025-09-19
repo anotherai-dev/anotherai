@@ -151,7 +151,7 @@ class IntegrationTestClient:
         exp_res = await self.call_tool(
             "create_experiment",
             {
-                "experiment_id": experiment_id,
+                "id": experiment_id,
                 "title": experiment_title,
                 "agent_id": agent_id,
                 "author_name": "user",
@@ -159,7 +159,7 @@ class IntegrationTestClient:
                 **(experiment_kwargs or {}),
             },
         )
-        experiment_id = exp_res["experiment_id"]
+        experiment_id = exp_res["id"]
 
         await self.call_tool(
             "add_inputs_to_experiment",
@@ -182,6 +182,6 @@ class IntegrationTestClient:
         await self.wait_for_background()
 
         return await self.call_tool(
-            "get_experiment_outputs",
-            {"experiment_id": experiment_id, "max_wait_time_seconds": 1},
+            "get_experiment",
+            {"id": experiment_id, "max_wait_time_seconds": 1},
         )

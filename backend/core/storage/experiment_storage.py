@@ -1,3 +1,4 @@
+from collections.abc import Collection
 from datetime import datetime
 from typing import Literal, NamedTuple, Protocol
 from uuid import UUID
@@ -57,8 +58,8 @@ class ExperimentStorage(Protocol):
         self,
         experiment_id: str,
         include: set[ExperimentFields] | None = None,
-        version_ids: set[str] | None = None,
-        input_ids: set[str] | None = None,
+        version_ids: Collection[str] | None = None,
+        input_ids: Collection[str] | None = None,
     ) -> Experiment: ...
 
     async def add_inputs(self, experiment_id: str, inputs: list[AgentInput]) -> set[str]:
@@ -101,8 +102,8 @@ class ExperimentStorage(Protocol):
     async def list_experiment_completions(
         self,
         experiment_id: str,
-        version_ids: set[str] | None = None,
-        input_ids: set[str] | None = None,
+        version_ids: Collection[str] | None = None,
+        input_ids: Collection[str] | None = None,
         include: set[ExperimentOutputFields] | None = None,
     ) -> list[ExperimentOutput]:
         """Returns the completions of an experiment.

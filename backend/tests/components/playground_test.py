@@ -25,14 +25,14 @@ async def test_playground_tool(test_api_client: IntegrationTestClient):
     exp = await test_api_client.call_tool(
         "create_experiment",
         {
-            "experiment_id": "test-experiment",
+            "id": "test-experiment",
             "title": "Capital Extractor Test Experiment",
             "description": "This is a test experiment",
             "agent_id": "test-agent",
             "author_name": "user",
         },
     )
-    experiment_id = exp["experiment_id"]
+    experiment_id = exp["id"]
 
     # Then add two inputs
     inserted_inputs = await test_api_client.call_tool(
@@ -66,15 +66,15 @@ async def test_playground_tool(test_api_client: IntegrationTestClient):
     await test_api_client.wait_for_background()
 
     res = await test_api_client.call_tool(
-        "get_experiment_outputs",
-        {"experiment_id": experiment_id, "max_wait_time_seconds": 1},
+        "get_experiment",
+        {"id": experiment_id, "max_wait_time_seconds": 1},
     )
 
     completions = res["completions"]
     assert len(completions) == 8
 
     # I can also fetch the experiment
-    exp = await test_api_client.get(f"/v1/experiments/{res['experiment_id']}")
+    exp = await test_api_client.get(f"/v1/experiments/{res['id']}")
     assert exp["title"] == "Capital Extractor Test Experiment"
     assert len(exp["versions"]) == 4
     assert len(exp["inputs"]) == 2
@@ -109,7 +109,7 @@ async def test_with_no_variables(test_api_client: IntegrationTestClient):
     await test_api_client.call_tool(
         "create_experiment",
         {
-            "experiment_id": experiment_id,
+            "id": experiment_id,
             "title": "Capital Extractor Test Experiment",
             "description": "This is a test experiment",
             "agent_id": "test-agent",
@@ -140,15 +140,15 @@ async def test_with_no_variables(test_api_client: IntegrationTestClient):
     await test_api_client.wait_for_background()
 
     res = await test_api_client.call_tool(
-        "get_experiment_outputs",
-        {"experiment_id": experiment_id, "max_wait_time_seconds": 1},
+        "get_experiment",
+        {"id": experiment_id, "max_wait_time_seconds": 1},
     )
 
     completions = res["completions"]
     assert len(completions) == 2
 
     # Fetch the experiment
-    exp2 = await test_api_client.get(f"/v1/experiments/{res['experiment_id']}")
+    exp2 = await test_api_client.get(f"/v1/experiments/{res['id']}")
     # 2 versions, they both have an empty prompt
     assert len(exp2["versions"]) == 2
     assert all(not v.get("prompt") for v in exp2["versions"])
@@ -176,7 +176,7 @@ async def test_completion_query(test_api_client: IntegrationTestClient):
     await test_api_client.call_tool(
         "create_experiment",
         {
-            "experiment_id": experiment_id,
+            "id": experiment_id,
             "title": "Capital Extractor Test Experiment",
             "description": "This is a test experiment",
             "agent_id": "test-agent",
@@ -207,8 +207,8 @@ async def test_completion_query(test_api_client: IntegrationTestClient):
     )
     await test_api_client.wait_for_background()
     res1 = await test_api_client.call_tool(
-        "get_experiment_outputs",
-        {"experiment_id": experiment_id, "max_wait_time_seconds": 1},
+        "get_experiment",
+        {"id": experiment_id, "max_wait_time_seconds": 1},
     )
     completions = res1["completions"]
     assert len(completions) == 4
@@ -218,7 +218,7 @@ async def test_completion_query(test_api_client: IntegrationTestClient):
     await test_api_client.call_tool(
         "create_experiment",
         {
-            "experiment_id": experiment_id2,
+            "id": experiment_id2,
             "title": "Capital Extractor Test Experiment",
             "description": "This is a test experiment",
             "agent_id": "test-agent",
@@ -241,8 +241,8 @@ async def test_completion_query(test_api_client: IntegrationTestClient):
     )
     await test_api_client.wait_for_background()
     res2 = await test_api_client.call_tool(
-        "get_experiment_outputs",
-        {"experiment_id": experiment_id2, "max_wait_time_seconds": 1},
+        "get_experiment",
+        {"id": experiment_id2, "max_wait_time_seconds": 1},
     )
     assert len(res2["completions"]) == 2  # 2 inputs * 1 model
 
