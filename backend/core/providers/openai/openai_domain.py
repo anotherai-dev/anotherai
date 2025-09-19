@@ -278,6 +278,7 @@ class OAIToolFunctionChoice(BaseModel):
 
 class CompletionRequest(BaseModel):
     temperature: float | None
+    # max_tokens is deprecated https://platform.openai.com/docs/api-reference/chat/create
     max_completion_tokens: int | None
     model: str
     messages: list[OpenAIMessage | OpenAIToolMessage]
