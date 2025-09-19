@@ -1,4 +1,6 @@
 import asyncio
+import time
+from collections.abc import Collection
 from typing import Any, final
 
 from core.domain.agent import Agent
@@ -9,8 +11,10 @@ from core.storage.annotation_storage import AnnotationStorage, TargetFilter
 from core.storage.completion_storage import CompletionStorage
 from core.storage.experiment_storage import ExperimentStorage
 from core.utils.background import add_background_task
-from protocol.api._api_models import CreateExperimentRequest, Experiment, Page, PlaygroundOutput
+from core.utils.hash import HASH_REGEXP_32
+from protocol.api._api_models import CreateExperimentRequest, Experiment, Page
 from protocol.api._services.conversions import create_experiment_to_domain, experiment_from_domain
+from protocol.api._services.utils_service import IDType, sanitize_ids
 
 
 @final
@@ -27,8 +31,48 @@ class ExperimentService:
         self.completion_storage = completion_storage
         self.annotation_storage = annotation_storage
 
-    async def get_experiment(self, experiment_id: str) -> Experiment:
-        exp = await self.experiment_storage.get_experiment(experiment_id, include={"versions", "inputs", "outputs"})
+    async def wait_for_experiment(
+        self,
+        experiment_id: str,
+        version_ids: list[str] | None,
+        input_ids: list[str] | None,
+        max_wait_time_seconds: float,
+    ) -> Experiment:
+        # we need a list here because we want to order the returned outputs the same way the versions and inputs
+        # are ordered
+        sanitized_versions = list(sanitize_ids(version_ids, IDType.VERSION, HASH_REGEXP_32)) if version_ids else None
+        sanitized_inputs = list(sanitize_ids(input_ids, IDType.INPUT, HASH_REGEXP_32)) if input_ids else None
+
+        start_time = time.time()
+
+        while time.time() - start_time < max_wait_time_seconds:
+            # First fetch completions to check that all are properly completed
+            completions = await self.experiment_storage.list_experiment_completions(
+                experiment_id,
+                version_ids=sanitized_versions,
+                input_ids=sanitized_inputs,
+            )
+            if all(c.completed_at for c in completions):
+                break
+
+            # TODO: check that all completions are properly started
+
+            await asyncio.sleep(5)
+
+        return await self.get_experiment(experiment_id, version_ids, input_ids)
+
+    async def get_experiment(
+        self,
+        experiment_id: str,
+        version_ids: Collection[str] | None,
+        input_ids: Collection[str] | None,
+    ) -> Experiment:
+        exp = await self.experiment_storage.get_experiment(
+            experiment_id,
+            include={"versions", "inputs", "outputs"},
+            version_ids=version_ids,
+            input_ids=input_ids,
+        )
 
         annotations = await self.annotation_storage.list(
             target=TargetFilter(completion_id=set(exp.run_ids)),
@@ -79,9 +123,9 @@ class ExperimentService:
         metadata: dict[str, Any] | None,
         author_name: str,
         use_cache: CacheUsage,
-    ) -> PlaygroundOutput:
+    ) -> Experiment:
         # TODO: handle duplicates
-        exp = await self.create_experiment(
+        return await self.create_experiment(
             CreateExperimentRequest(
                 id=experiment_id,
                 title=title,
@@ -92,5 +136,3 @@ class ExperimentService:
                 use_cache=use_cache,
             ),
         )
-
-        return PlaygroundOutput(experiment_id=exp.id, experiment_url=exp.url, completions=[])

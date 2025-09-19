@@ -1,6 +1,5 @@
 from datetime import UTC, datetime
 from typing import Literal
-from uuid import UUID
 
 from pydantic import TypeAdapter
 from pydantic_core import ValidationError
@@ -66,7 +65,6 @@ from protocol.api._api_models import (
     ModelWithID,
     Output,
     OutputSchema,
-    PlaygroundOutput,
     SupportsModality,
     TokenUsage,
     Tool,
@@ -354,9 +352,9 @@ def experiment_from_domain(
         title=experiment.title,
         description=experiment.description,
         result=experiment.result,
-        completions=[experiment_completion_from_domain(c) for c in experiment.outputs] if experiment.outputs else [],
-        versions=[version_from_domain(v) for v in experiment.versions] if experiment.versions else [],
-        inputs=[input_from_domain(i) for i in experiment.inputs] if experiment.inputs else [],
+        completions=[experiment_completion_from_domain(c) for c in experiment.outputs] if experiment.outputs else None,
+        versions=[version_from_domain(v) for v in experiment.versions] if experiment.versions else None,
+        inputs=[input_from_domain(i) for i in experiment.inputs] if experiment.inputs else None,
         annotations=[annotation_from_domain(a) for a in annotations] if annotations else None,
         metadata=experiment.metadata or None,
         url=experiments_url(experiment.id),
@@ -725,17 +723,6 @@ def trace_to_domain(trace: Trace) -> DomainTrace:
         name=trace.name or "",
         tool_input_preview=trace.tool_input_preview or "",
         tool_output_preview=trace.tool_output_preview or "",
-    )
-
-
-def playground_output_completion_from_domain(completion: DomainCompletion):
-    return PlaygroundOutput.Completion(
-        id=UUID(completion.id),  # TODO: remove conversion
-        input_id=completion.agent_input.id,
-        version_id=completion.version.id,
-        output=output_from_domain(completion.agent_output),
-        cost_usd=completion.cost_usd,
-        duration_seconds=completion.duration_seconds,
     )
 
 

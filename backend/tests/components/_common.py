@@ -146,25 +146,27 @@ class IntegrationTestClient:
         experiment_title: str = "Capital Extractor Test Experiment",
         agent_id: str = "test-agent",
         use_cache: str | None = None,
+        experiment_kwargs: dict[str, Any] | None = None,
     ):
         exp_res = await self.call_tool(
             "create_experiment",
             {
-                "experiment_id": experiment_id,
+                "id": experiment_id,
                 "title": experiment_title,
                 "agent_id": agent_id,
                 "author_name": "user",
                 "use_cache": use_cache or "auto",
+                **(experiment_kwargs or {}),
             },
         )
-        experiment_id = exp_res["experiment_id"]
+        experiment_id = exp_res["id"]
 
         await self.call_tool(
             "add_inputs_to_experiment",
             {
                 "experiment_id": experiment_id,
                 "inputs": inputs,
-                "input_query": input_query,
+                "query": input_query,
             },
         )
 
@@ -180,6 +182,6 @@ class IntegrationTestClient:
         await self.wait_for_background()
 
         return await self.call_tool(
-            "get_experiment_outputs",
-            {"experiment_id": experiment_id, "max_wait_time_seconds": 1},
+            "get_experiment",
+            {"id": experiment_id, "max_wait_time_seconds": 1},
         )

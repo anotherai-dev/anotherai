@@ -85,12 +85,13 @@ Experiments are containers for testing and comparing different model configurati
 - Each experiment has a unique ID and can be annotated with feedback
 - Results are documented for future reference and learning
 
-**Creating experiments with the playground tool:**
-The `playground` tool enables systematic testing across multiple dimensions:
+**Creating experiments:**
+AnotherAI provides a collection of tools (`create_experiment`, `add_inputs_to_experiment`, `add_versions_to_experiment`, get_experiment) that allowing experimenting with different parameters and inputs for a given agent:
 - Test multiple models in parallel (e.g., "gpt-4o-mini,claude-3-5-sonnet-20241022")
 - Compare different prompt variations and temperatures
 - Test with structured inputs using template variables
 - Automatically track cost and performance metrics
+- Allows retrying existing inputs through SQL queries
 
 The tool creates a matrix of completions testing all combinations of models, prompts, inputs, and temperatures.
 
