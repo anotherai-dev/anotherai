@@ -84,7 +84,7 @@ class ViewService:
 
     async def _validate_query(self, query: str):
         try:
-            _ = await self._completion_storage.raw_query(query)
+            _ = await self._completion_storage.raw_query(query.replace("{limit}", "1").replace("{offset}", "0"))
         except Exception as e:
             raise BadRequestError(f"Invalid query: {e!s}") from e
 
