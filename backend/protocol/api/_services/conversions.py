@@ -666,6 +666,8 @@ def usage_from_domain(usage: DomainInferenceUsage) -> InferenceUsage:
         completion=CompletionUsage(
             text_token_count=usage.completion.text_token_count,
             cost_usd=usage.completion.cost_usd,
+            cached_token_count=usage.completion.cached_token_count,
+            reasoning_token_count=usage.completion.reasoning_token_count,
         ),
     )
 
@@ -683,6 +685,8 @@ def usage_to_domain(usage: InferenceUsage) -> DomainInferenceUsage:
         completion=DomainCompletionUsage(
             text_token_count=usage.completion.text_token_count,
             cost_usd=usage.completion.cost_usd,
+            cached_token_count=usage.completion.cached_token_count,
+            reasoning_token_count=usage.completion.reasoning_token_count,
         ),
     )
 
