@@ -46,7 +46,7 @@ class CompletionRunner:
         async with asyncio.timeout(
             timeout_seconds + 0.050,  # Just a safety, the underlying client should timeout on its own
         ):
-            from_cache = await self._completion_storage.cached_output(
+            from_cache = await self._completion_storage.cached_completion(
                 version_id=version.id,
                 input_id=input.id,
                 timeout_seconds=timeout_seconds,
@@ -58,13 +58,17 @@ class CompletionRunner:
                 agent=agent,
                 version=version,
                 agent_input=input,
-                agent_output=from_cache[1],
+                agent_output=from_cache.agent_output,
                 messages=[],
                 traces=[],
                 metadata={
                     **metadata,
-                    "anotherai/cached_from": from_cache[0],
+                    "anotherai/cached_from": from_cache.id,
+                    "anotherai/original_cost_usd": from_cache.cost_usd,
+                    "anotherai/original_duration_seconds": from_cache.duration_seconds,
                 },
+                cost_usd=0,
+                duration_seconds=0,
             )
             self._event_router(StoreCompletionEvent(completion=completion))
             return completion

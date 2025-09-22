@@ -10,13 +10,12 @@ from clickhouse_connect.driver.query import QueryResult
 from pydantic.main import BaseModel
 
 from core.domain.agent_completion import AgentCompletion
-from core.domain.agent_output import AgentOutput
 from core.domain.annotation import Annotation
 from core.domain.exceptions import BadRequestError, InvalidQueryError, ObjectNotFoundError
 from core.domain.experiment import Experiment
 from core.domain.version import Version
 from core.storage.clickhouse._models._ch_annotation import ClickhouseAnnotation
-from core.storage.clickhouse._models._ch_completion import ClickhouseCompletion, parse_messages
+from core.storage.clickhouse._models._ch_completion import ClickhouseCompletion
 from core.storage.clickhouse._models._ch_experiment import ClickhouseExperiment
 from core.storage.clickhouse._models._ch_field_utils import data_and_columns, zip_columns
 from core.storage.clickhouse._utils import clone_client, sanitize_query, sanitize_readonly_privileges
@@ -217,7 +216,7 @@ class ClickhouseClient(CompletionStorage):
         return Version.model_validate_json(result.result_rows[0][1]), str(result.result_rows[0][0])
 
     @override
-    async def cached_output(
+    async def cached_completion(
         self,
         version_id: str,
         input_id: str,
@@ -234,13 +233,11 @@ class ClickhouseClient(CompletionStorage):
         )
         if not result.result_rows:
             return None
-        row = result.result_rows[0]
-        messages = parse_messages(row[1])
-        return str(row[0]), AgentOutput(messages=messages)
+        return self._map_completion(result, result.result_rows[0])
 
 
 _CACHED_OUTPUT_QUERY = """
-SELECT id, output_messages FROM completions PREWHERE input_id = {input_id:FixedString(32)} WHERE version_id = {version_id:FixedString(32)} and output_error = '' LIMIT 1
+SELECT id, cost_millionth_usd, duration_ds, output_messages FROM completions PREWHERE input_id = {input_id:FixedString(32)} WHERE version_id = {version_id:FixedString(32)} and output_error = '' LIMIT 1
 """
 
 
