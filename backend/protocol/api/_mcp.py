@@ -172,8 +172,18 @@ async def get_experiment(
     """Waits for the experiment's completions to be ready and returns the experiment,
     including the associated versions and inputs and outputs.
 
-    If max token size is provided, the experiment is provided in chunks. Use when the experiment is too large to
-    fit in the context window of the model.
+    Pagination:
+    When max_chunk_token_size is provided, the experiment data is returned in chunks to handle large responses
+    that exceed MCP client output limits. To paginate through the full experiment:
+
+    1. First call: Set max_chunk_token_size to your desired chunk size (e.g., 10000). Leave chunk_offset as None or 0.
+    2. Response: Returns a ChunkedResponse with:
+       - chunk: A string containing the JSON fragment for this portion of the data
+       - next_chunk_offset: An integer indicating where to start the next chunk, or None if this is the last chunk
+    3. Subsequent calls: Use the next_chunk_offset value from the previous response as the chunk_offset parameter
+    4. End condition: When next_chunk_offset is None, you have retrieved all data
+
+    Without max_chunk_token_size, returns the complete Experiment object directly.
     """
     return _mcp_utils.chunk(
         await (await _mcp_utils.experiment_service()).wait_for_experiment(
