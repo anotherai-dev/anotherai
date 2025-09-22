@@ -348,6 +348,7 @@ def experiment_from_domain(
         id=experiment.id,
         agent_id=experiment.agent_id,
         created_at=_sanitize_datetime(experiment.created_at),
+        updated_at=_sanitize_datetime(experiment.updated_at) if experiment.updated_at else None,
         author_name=experiment.author_name,
         title=experiment.title,
         description=experiment.description,
@@ -665,6 +666,8 @@ def usage_from_domain(usage: DomainInferenceUsage) -> InferenceUsage:
         completion=CompletionUsage(
             text_token_count=usage.completion.text_token_count,
             cost_usd=usage.completion.cost_usd,
+            cached_token_count=usage.completion.cached_token_count,
+            reasoning_token_count=usage.completion.reasoning_token_count,
         ),
     )
 
@@ -682,6 +685,8 @@ def usage_to_domain(usage: InferenceUsage) -> DomainInferenceUsage:
         completion=DomainCompletionUsage(
             text_token_count=usage.completion.text_token_count,
             cost_usd=usage.completion.cost_usd,
+            cached_token_count=usage.completion.cached_token_count,
+            reasoning_token_count=usage.completion.reasoning_token_count,
         ),
     )
 

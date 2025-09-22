@@ -426,6 +426,7 @@ class ExperimentItem(BaseModel):
 class Experiment(BaseModel):
     id: str
     created_at: datetime
+    updated_at: datetime | None = Field(description="When the experiment was last updated.")
     author_name: str
     url: str
 
@@ -710,7 +711,14 @@ class View(BaseModel):
 
     id: str = Field(default="", description="Unique identifier for the view")
     title: str = Field(description="View title")
-    query: str = Field(description="SQL query to filter/aggregate completions")
+    query: str = Field(
+        description="SQL query to filter/aggregate completions. If using pagination, "
+        "add a `LIMIT {limit}` and `OFFSET {offset}` clauses as needed. The template arguments will "
+        "be replaced client side with actual values.",
+        examples=[
+            "SELECT * FROM completions LIMIT {limit} OFFSET {offset}",
+        ],
+    )
 
     graph: Graph | None = None
 

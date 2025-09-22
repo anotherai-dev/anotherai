@@ -73,12 +73,12 @@ export function MetricsCustomViewsInstructions() {
     >
       <button
         onClick={() => {}}
-        className="bg-white border border-gray-200 text-gray-900 hover:bg-gray-100 cursor-pointer px-2 py-1 rounded-[2px] h-8 flex items-center justify-center shadow-sm shadow-black/5"
+        className="bg-white border border-gray-200 text-gray-900 hover:bg-gray-100 cursor-pointer px-3 py-2 rounded-[2px] flex items-center justify-center shadow-sm shadow-black/5"
         title="Make your own custom views"
       >
-        <div className="flex items-center gap-2 px-0.5">
-          <Info size={12} />
-          <span className="text-xs font-medium">Make your own custom views</span>
+        <div className="flex items-center gap-2">
+          <Info size={14} />
+          <span className="text-[13px] font-medium">Make your own custom views</span>
         </div>
       </button>
     </HoverPopover>
