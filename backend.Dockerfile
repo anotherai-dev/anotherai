@@ -9,7 +9,7 @@ FROM python:${PYTHON_VERSION}-alpine${ALPINE_VERSION} AS base
 # poppler is needed for pdf processing
 # Other upgrades are due for CVEs
 RUN apk update && \
-    apk add --no-cache ffmpeg poppler-utils sqlite-libs>=3.48.0-r3 libexpat >= 2.7.2-r0 && \
+    apk add --no-cache ffmpeg poppler-utils sqlite-libs>=3.48.0-r3 libexpat>=2.7.2-r0 && \
     apk upgrade --available --no-cache libssl3 libcrypto3 libxml2 xz-libs
 
 # Builder stage
