@@ -435,10 +435,6 @@ class _BaseExperiment(BaseModel):
     result: str | None = Field(description="A user defined result of the experiment.")
     agent_id: str = Field(description="The agent that created the experiment.")
 
-    versions: list[Version] | None
-
-    inputs: list[Input] | None
-
     metadata: dict[str, Any] | None = Field(
         default=None,
         description="Metadata associated with the experiment. Can be used to store additional information about the experiment.",
@@ -455,6 +451,10 @@ class Experiment(_BaseExperiment):
         cost_usd: float
         duration_seconds: float
 
+    versions: list[Version] | None
+
+    inputs: list[Input] | None
+
     completions: list[Completion] | None = Field(description="The completions of the experiment.")
 
     annotations: list[Annotation] | None = Field(
@@ -463,6 +463,8 @@ class Experiment(_BaseExperiment):
 
 
 class MCPExperiment(_BaseExperiment):
+    input_query: Annotated[str, Field(description="A SQL query to fetch the inputs of the experiment.")]
+    version_query: Annotated[str, Field(description="A SQL query to fetch the versions of the experiment.")]
     completion_query: Annotated[str, Field(description="A SQL query to fetch the completions of the experiment.")]
 
 

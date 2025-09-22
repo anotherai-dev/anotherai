@@ -65,17 +65,27 @@ class ExperimentService:
 
         exp = await self.experiment_storage.get_experiment(
             experiment_id,
-            include={"versions", "inputs"},
             version_ids=version_ids,
             input_ids=input_ids,
         )
 
+        from_where = f"""FROM completions
+WHERE metadata['anotherai/experiment_id'] = '{exp.id}' AND UUIDv7ToDateTime(id) > '{exp.created_at.isoformat()}'"""
+
         return mcp_experiment_from_domain(
             exp,
-            f"""
-            -- the cost_usd and duration_seconds are coalesced to handle cases where the completion was cached
-            SELECT id, input_id, version_id, output_id, output_messages, output_error, COALESCE(cost_usd, toFloat64OrNull(metadata['anotherai/original_cost_usd'])), COALESCE(duration_seconds, toFloat64OrNull(metadata['anotherai/original_duration_seconds']))
-            FROM completions WHERE metadata['anotherai/experiment_id'] = '{exp.id}'""",  # noqa: S608 # exp.id is sanitized
+            completion_query=f"""
+-- the cost_usd and duration_seconds are coalesced to handle cases where the completion was cached
+SELECT id, input_id, version_id, output_id, output_messages, output_error, COALESCE(cost_usd, toFloat64OrNull(metadata['anotherai/original_cost_usd'])), COALESCE(duration_seconds, toFloat64OrNull(metadata['anotherai/original_duration_seconds']))
+{from_where}""",
+            version_query=f"""
+SELECT version_id, version
+{from_where}
+LIMIT 1 BY version_id""",
+            input_query=f"""
+SELECT input_id, input_variables, input_messages
+{from_where}
+LIMIT 1 BY input_id""",
         )
 
     async def get_experiment(

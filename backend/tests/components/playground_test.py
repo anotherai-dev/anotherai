@@ -70,12 +70,33 @@ async def test_playground_tool(test_api_client: IntegrationTestClient):
         {"id": experiment_id, "max_wait_time_seconds": 1},
     )
 
+    # Try the completion query
     completions_query = res["completion_query"]
     completions = await test_api_client.call_tool(
         "query_completions",
         {"query": completions_query},
     )
     assert len(completions["rows"]) == 8
+
+    # Try the version query
+    version_query = res["version_query"]
+    versions = await test_api_client.call_tool(
+        "query_completions",
+        {"query": version_query},
+    )
+    assert {v["version_id"] for v in versions["rows"]} == {
+        v.removeprefix("anotherai/version/") for v in inserted_versions["result"]
+    }
+
+    # Try the input query
+    input_query = res["input_query"]
+    inputs = await test_api_client.call_tool(
+        "query_completions",
+        {"query": input_query},
+    )
+    assert {i["input_id"] for i in inputs["rows"]} == {
+        i.removeprefix("anotherai/input/") for i in inserted_inputs["result"]
+    }
 
     # I can also fetch the experiment
     exp = await test_api_client.get(f"/v1/experiments/{res['id']}")
