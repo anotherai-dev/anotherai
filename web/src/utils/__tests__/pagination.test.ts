@@ -76,8 +76,7 @@ describe("Pagination Utilities", () => {
     });
 
     it("handles multiple occurrences of variables", () => {
-      const query =
-        "SELECT *, {limit} as page_size FROM completions LIMIT {limit} OFFSET {offset}";
+      const query = "SELECT *, {limit} as page_size FROM completions LIMIT {limit} OFFSET {offset}";
       const params = { limit: 10, offset: 20 };
       const result = replacePaginationVariables(query, params);
 
