@@ -195,6 +195,7 @@ class PlaygroundService:
             input=input,
             metadata=metadata,
             use_cache=use_cache,
+            timeout_seconds=0.5,  # Will run in background here so we have plenty of time
         )
         if cached:
             return CompletionOutputTuple(

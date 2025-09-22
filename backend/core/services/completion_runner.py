@@ -41,9 +41,16 @@ class CompletionRunner:
         version: Version,
         input: AgentInput,
         metadata: dict[str, Any],
+        timeout_seconds: float,
     ) -> AgentCompletion | None:
-        async with asyncio.timeout(0.150):  # 150 ms, cached output clickhouse query should exit after 100ms
-            from_cache = await self._completion_storage.cached_output(version_id=version.id, input_id=input.id)
+        async with asyncio.timeout(
+            timeout_seconds + 0.050,  # Just a safety, the underlying client should timeout on its own
+        ):
+            from_cache = await self._completion_storage.cached_output(
+                version_id=version.id,
+                input_id=input.id,
+                timeout_seconds=timeout_seconds,
+            )
             if not from_cache:
                 return None
             completion = AgentCompletion(
@@ -70,12 +77,20 @@ class CompletionRunner:
         input: AgentInput,
         use_cache: CacheUsage | None,
         metadata: dict[str, Any],
+        timeout_seconds: float = 0.150,
     ) -> AgentCompletion | None:
         use_cache = use_cache or CacheUsage.AUTO
         # Attempt to retrieve from cache if possible
         if use_cache == CacheUsage.ALWAYS or (use_cache == CacheUsage.AUTO and version.should_use_auto_cache()):
             with capture_errors(_log, "Error fetching cached output"):
-                completion = await self._from_cache(completion_id, agent, version, input, metadata)
+                completion = await self._from_cache(
+                    completion_id,
+                    agent,
+                    version,
+                    input,
+                    metadata,
+                    timeout_seconds=timeout_seconds,
+                )
                 if completion:
                     return completion
         return None

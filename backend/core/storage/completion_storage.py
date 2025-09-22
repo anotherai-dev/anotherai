@@ -34,4 +34,9 @@ class CompletionStorage(Protocol):
 
     async def get_version_by_id(self, agent_id: str, version_id: str) -> tuple[Version, str]: ...
 
-    async def cached_output(self, version_id: str, input_id: str) -> tuple[str, AgentOutput] | None: ...
+    async def cached_output(
+        self,
+        version_id: str,
+        input_id: str,
+        timeout_seconds: float,
+    ) -> tuple[str, AgentOutput] | None: ...

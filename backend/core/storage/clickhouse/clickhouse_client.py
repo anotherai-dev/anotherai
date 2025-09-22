@@ -221,15 +221,15 @@ class ClickhouseClient(CompletionStorage):
         self,
         version_id: str,
         input_id: str,
-        max_memory_usage: int = 1024 * 1024 * 5,  # 5MB
-        max_execution_time: float = 0.1,  # 100ms
+        timeout_seconds: float = 0.1,  # 100ms
+        max_memory_usage: int = 1024 * 1024 * 200,  # 200MB
     ):
         result = await self._client.query(
             _CACHED_OUTPUT_QUERY,
             parameters={"version_id": version_id, "input_id": input_id},
             settings={
                 "max_memory_usage": max_memory_usage,
-                "max_execution_time": max_execution_time,
+                "max_execution_time": timeout_seconds,
             },
         )
         if not result.result_rows:
