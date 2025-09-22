@@ -1,10 +1,11 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { FilterCompletionsInstructions } from "@/components/completion-modal/FilterCompletionsInstructions";
 import { useCompletionsListSync } from "@/hooks/useCompletionsListSync";
 import { useCompletionsQuery } from "@/store/completions";
+import { processPaginationQuery } from "@/utils/pagination";
 import { defaultQuery } from "@/utils/queries";
 import { SearchSection } from "./sections/SearchSection";
 import { CompletionsTable } from "./sections/table/CompletionsTable";
@@ -14,16 +15,28 @@ export const dynamic = "force-dynamic";
 
 function CompletionsPageContent() {
   const [query, setQuery] = useQuerySync(defaultQuery);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const placeholder = "Enter SQL query (e.g., SELECT * FROM completions WHERE model = 'gpt-4') to search completions";
 
-  const { data, isLoading, error } = useCompletionsQuery(query);
+  // Process the query to handle pagination variables before sending to API
+  const processedQuery = useMemo(() => {
+    const { processedQuery } = processPaginationQuery(query, currentPage, 20);
+    return processedQuery;
+  }, [query, currentPage]);
+
+  const { data, isLoading, error } = useCompletionsQuery(processedQuery);
+
+  // Reset to page 1 when query changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query]);
 
   // Sync completions data with stored completions list for modal navigation
   useCompletionsListSync(data);
 
   return (
-    <div className="flex flex-col w-full h-full mx-auto px-4 pt-4 pb-8 gap-4 bg-gray-50">
+    <div className="flex flex-col w-full h-full mx-auto px-4 pt-4 pb-4 gap-4 bg-gray-50">
       <PageHeader
         breadcrumbs={[]}
         title="Completions"
@@ -39,7 +52,16 @@ function CompletionsPageContent() {
         isLoading={isLoading}
       />
 
-      <CompletionsTable data={data ?? []} isLoading={isLoading} error={error} currentQuery={query} />
+      <div className="flex-1 min-h-0">
+        <CompletionsTable
+          data={data ?? []}
+          isLoading={isLoading}
+          error={error}
+          currentQuery={query}
+          onPageChange={setCurrentPage}
+          currentPage={currentPage}
+        />
+      </div>
     </div>
   );
 }
