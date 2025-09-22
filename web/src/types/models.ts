@@ -166,6 +166,7 @@ export interface Completion {
 export interface Experiment {
   id: string;
   created_at: string;
+  updated_at?: string;
   author_name: string;
   title: string;
   description: string;
@@ -311,6 +312,7 @@ export interface PatchViewFolderRequest {
 export interface ExperimentListItem {
   id: string;
   created_at: string;
+  updated_at?: string;
   author_name: string;
   title: string;
   description: string;
