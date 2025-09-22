@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Cloud, FileText, Layers, Search, Settings } from "lucide-react";
+import { BarChart3, ChevronRight, Cloud, FileText, Layers, Search, Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -28,15 +28,24 @@ export default function WrappedNavigationSidebar({
 
   return (
     <div className="w-16 bg-gray-50 border-r border-gray-200 flex flex-col items-center py-4 gap-2 h-screen">
-      {/* Logo that expands sidebar when clicked */}
+      {/* Logo */}
+      <div className="flex mb-2">
+        <Image src="/sidebar-logo.png" alt="AnotherAI Logo" width={32} height={32} className="w-8 h-8" />
+      </div>
+
+      {/* Expand arrow */}
       <HoverPopover
         content={<span className="text-white text-sm">Expand Sidebar</span>}
         position="right"
-        className="flex mb-2"
+        className="flex"
         popoverClassName="bg-gray-800 rounded-[2px] px-2 py-1"
       >
-        <button onClick={() => setIsExpanded(true)} className="cursor-pointer">
-          <Image src="/sidebar-logo.png" alt="AnotherAI Logo" width={32} height={32} className="w-8 h-8" />
+        <button
+          onClick={() => setIsExpanded(true)}
+          className="p-3 rounded-md transition-colors text-gray-700 hover:bg-gray-100 cursor-pointer"
+          title="Expand sidebar"
+        >
+          <ChevronRight className="w-5 h-5" />
         </button>
       </HoverPopover>
 
