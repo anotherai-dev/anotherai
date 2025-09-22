@@ -70,8 +70,12 @@ async def test_playground_tool(test_api_client: IntegrationTestClient):
         {"id": experiment_id, "max_wait_time_seconds": 1},
     )
 
-    completions = res["completions"]
-    assert len(completions) == 8
+    completions_query = res["completion_query"]
+    completions = await test_api_client.call_tool(
+        "query_completions",
+        {"query": completions_query},
+    )
+    assert len(completions["rows"]) == 8
 
     # I can also fetch the experiment
     exp = await test_api_client.get(f"/v1/experiments/{res['id']}")
@@ -131,6 +135,7 @@ async def test_with_no_variables(test_api_client: IntegrationTestClient):
             "experiment_id": experiment_id,
             "version": {
                 "model": Model.CLAUDE_4_SONNET_20250514,
+                "prompt": [],
             },
             "overrides": [
                 {"model": Model.GPT_41_MINI_2025_04_14},
@@ -143,9 +148,13 @@ async def test_with_no_variables(test_api_client: IntegrationTestClient):
         "get_experiment",
         {"id": experiment_id, "max_wait_time_seconds": 1},
     )
+    completions_query = res["completion_query"]
+    completions = await test_api_client.call_tool(
+        "query_completions",
+        {"query": completions_query},
+    )
 
-    completions = res["completions"]
-    assert len(completions) == 2
+    assert len(completions["rows"]) == 2
 
     # Fetch the experiment
     exp2 = await test_api_client.get(f"/v1/experiments/{res['id']}")
@@ -210,8 +219,12 @@ async def test_completion_query(test_api_client: IntegrationTestClient):
         "get_experiment",
         {"id": experiment_id, "max_wait_time_seconds": 1},
     )
-    completions = res1["completions"]
-    assert len(completions) == 4
+    completions_query = res1["completion_query"]
+    completions = await test_api_client.call_tool(
+        "query_completions",
+        {"query": completions_query},
+    )
+    assert len(completions["rows"]) == 4
 
     # Now repeat with a query
     experiment_id2 = str(uuid7())
@@ -244,7 +257,14 @@ async def test_completion_query(test_api_client: IntegrationTestClient):
         "get_experiment",
         {"id": experiment_id2, "max_wait_time_seconds": 1},
     )
-    assert len(res2["completions"]) == 2  # 2 inputs * 1 model
+    query = res2["completion_query"]
+    assert query
+
+    completions = await test_api_client.call_tool(
+        "query_completions",
+        {"query": query},
+    )
+    assert len(completions["rows"]) == 2  # 2 inputs * 1 model
 
     # Add an annotation on a run
     await test_api_client.call_tool(
@@ -255,7 +275,7 @@ async def test_completion_query(test_api_client: IntegrationTestClient):
                     "text": "This is a test annotation",
                     "author_name": "user",
                     "target": {
-                        "completion_id": completions[0]["id"],
+                        "completion_id": completions["rows"][0]["id"],
                     },
                 },
             ],
