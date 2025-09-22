@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { TableComponent } from "@/components/TableComponent";
 import {
   findCompletionForInputAndVersion,
@@ -26,19 +26,22 @@ export function MatrixSection(props: Props) {
   const [columnOrder, setColumnOrder] = useState<string[]>(() => experiment.versions.map((version) => version.id));
 
   // Function to reorder columns
-  const reorderColumns = (fromIndex: number, toIndex: number) => {
-    const newOrder = [...columnOrder];
-    const [movedItem] = newOrder.splice(fromIndex, 1);
-    newOrder.splice(toIndex, 0, movedItem);
-    setColumnOrder(newOrder);
-  };
+  const reorderColumns = useCallback(
+    (fromIndex: number, toIndex: number) => {
+      const newOrder = [...columnOrder];
+      const [movedItem] = newOrder.splice(fromIndex, 1);
+      newOrder.splice(toIndex, 0, movedItem);
+      setColumnOrder(newOrder);
+    },
+    [columnOrder]
+  );
 
   // Get versions in the current column order
   const orderedVersions = useMemo(() => {
     return columnOrder
       .map((versionId) => experiment.versions.find((v) => v.id === versionId))
       .filter(Boolean) as typeof experiment.versions;
-  }, [columnOrder, experiment.versions]);
+  }, [columnOrder, experiment]);
 
   const completionsPerVersion = useMemo(() => {
     return getCompletionsPerVersion(experiment);

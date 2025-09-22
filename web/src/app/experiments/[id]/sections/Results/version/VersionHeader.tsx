@@ -131,9 +131,9 @@ export function VersionHeader(props: VersionHeaderProps) {
       onReorderColumns={onReorderColumns}
       dragIndex={dragIndex}
       versionId={version.id}
-      className="flex flex-col h-full text-xs"
+      className="firefox-version-header"
     >
-      <div className="flex-1 space-y-2">
+      <div className="firefox-version-content">
         <div onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
           <div className="flex items-center gap-2 mb-2">
             <div className="text-gray-800 font-semibold text-sm">Version {index + 1}</div>
@@ -226,7 +226,7 @@ export function VersionHeader(props: VersionHeaderProps) {
         )}
       </div>
 
-      <div className="mt-auto">
+      <div className="firefox-version-metrics">
         {(priceAndLatency || metrics) && (
           <>
             <div className="pt-2 mt-3 border-t border-gray-200" />
