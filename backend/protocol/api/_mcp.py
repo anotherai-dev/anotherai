@@ -517,6 +517,8 @@ async def get_view(id: str) -> View:
     description=f"""Create a new view or update an existing view. If no dashboard id is provided, the "default" dashboard is used.  # nosec B608
 If a dashboard with the provided id does not exist, it will be created.
 
+**IMPORTANT: Only use this tool when the user explicitly asks to create or update a view. Do not proactively create views without user request.**
+
 **Best Practice**: Avoid using `SELECT *` in your queries as it returns all 40+ columns. Instead:
 1. First use `query_completions('DESCRIBE TABLE completions')` to see all available fields
 2. Select only the fields relevant to your use case
