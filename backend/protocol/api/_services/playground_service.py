@@ -142,7 +142,7 @@ class PlaygroundService:
             await self._start_experiment_completions(
                 experiment_id,
                 version_ids=(v.id for v in experiment.versions),
-                input_ids=(input.id for input in domain_inputs),
+                input_ids=inserted_ids,
             )
 
         return [IDType.INPUT.wrap(id) for id in inserted_ids]
