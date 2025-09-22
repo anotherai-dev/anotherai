@@ -8,7 +8,7 @@ import pytest
 from core.domain.agent_input import AgentInput
 from core.domain.exceptions import BadRequestError
 from core.storage.experiment_storage import CompletionIDTuple
-from protocol.api._api_models import Input, Version
+from protocol.api._api_models import Input, Message, Version
 from protocol.api._services.playground_service import PlaygroundService, _validate_version, _version_with_override
 from tests.fake_models import fake_experiment, fake_input, fake_version
 
@@ -66,7 +66,7 @@ class TestValidateVersion:
         ],
     )
     def test_accepts_valid_models(self, model_id: str):
-        v = Version(model=model_id)
+        v = Version(model=model_id, prompt=[Message(content="You are a helpful assistant", role="system")])
         out = _validate_version(v)
         assert out.model  # normalized to canonical id or kept as is
 
@@ -80,6 +80,11 @@ class TestValidateVersion:
     def test_rejects_invalid_models(self, model_id: str):
         v = Version(model=model_id)
         with pytest.raises(BadRequestError, match="Invalid model"):
+            _validate_version(v)
+
+    def test_rejects_versions_with_no_prompt(self):
+        v = Version(model="gpt-4o-mini-latest")
+        with pytest.raises(BadRequestError, match="Versions must have an explicit prompt parameter"):
             _validate_version(v)
 
 
@@ -172,7 +177,7 @@ class TestAddInputsToExperiment:
 
         mock_experiment_storage.add_inputs.side_effect = _add_inputs
 
-        await playground_service.add_inputs_to_experiment(
+        res = await playground_service.add_inputs_to_experiment(
             "test-experiment",
             # Second input ID is 43396217dcb18701763a4d45e4de11b2
             [Input(variables={"name": "John"}), Input(variables={"name": "Jane"})],
@@ -181,6 +186,12 @@ class TestAddInputsToExperiment:
         assert patched_start_completions.call_count == 1
         # Only first input ID is included
         assert set(patched_start_completions.call_args.kwargs["input_ids"]) == {"88aebe2d32e9c7a0e8e3790db4ceddc1"}
+
+        # Order is maintained and all ids are returned
+        assert res == [
+            "anotherai/input/88aebe2d32e9c7a0e8e3790db4ceddc1",
+            "anotherai/input/43396217dcb18701763a4d45e4de11b2",
+        ]
 
 
 class TestStartExperimentCompletion:
