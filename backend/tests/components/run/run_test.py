@@ -161,6 +161,7 @@ async def test_parameters(test_case: ProviderTestCase, test_api_client: Integrat
     await test_api_client.playground(
         version={
             "model": test_case.model(),
+            "prompt": [],
             "temperature": 0.5,
             "max_output_tokens": 100,
             "top_p": 0.9,

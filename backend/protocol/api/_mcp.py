@@ -18,6 +18,7 @@ from protocol.api._api_models import (
     Deployment,
     Experiment,
     Input,
+    MCPExperiment,
     Model,
     Page,
     QueryCompletionResponse,
@@ -165,7 +166,7 @@ async def get_experiment(
             "At the end of the time, the experiment is returned even if the completions are not ready.",
         ),
     ] = 30,
-) -> Experiment:
+) -> MCPExperiment:
     """Waits for the experiment's completions to be ready and returns the experiment,
     including the associated versions and inputs and outputs."""
     return await (await _mcp_utils.experiment_service()).wait_for_experiment(
@@ -517,12 +518,17 @@ async def get_view(id: str) -> View:
     description=f"""Create a new view or update an existing view. If no dashboard id is provided, the "default" dashboard is used.  # nosec B608
 If a dashboard with the provided id does not exist, it will be created.
 
+**IMPORTANT: Only use this tool when the user explicitly asks to create or update a view. Do not proactively create views without user request.**
+
 **Best Practice**: Avoid using `SELECT *` in your queries as it returns all 40+ columns. Instead:
 1. First use `query_completions('DESCRIBE TABLE completions')` to see all available fields
 2. Select only the fields relevant to your use case
 3. This creates cleaner, more performant views
 
-**Important for Table Views**: When creating table views, include the 'id' column in your SELECT statement if you want rows to be clickable for viewing completion details. Without the 'id' column, rows will display data but won't be interactive.
+**Important for Table Views**:
+- When creating table views, include the 'id' column in your SELECT statement if you want rows to be clickable for viewing completion details. Without the 'id' column, rows will display data but won't be interactive.
+- use template parameters for pagination (`LIMIT {{limit}} OFFSET {{offset}}`)
+- run the query using the query_completions tool first on a small dataset to make sure it yield the results you would expect
 
 **Sort Order Best Practices:**
 - Time series graphs (line/bar): Use `ORDER BY date ASC` to display chronologically from past to present

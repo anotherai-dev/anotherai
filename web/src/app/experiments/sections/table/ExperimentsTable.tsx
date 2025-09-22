@@ -16,7 +16,7 @@ import { ExperimentsTableExperimentCell } from "./ExperimentsTableExperimentCell
 export const EXPERIMENTS_COLUMNS = {
   EXPERIMENT: "Experiment",
   AGENT_ID: "Agent ID",
-  CREATED_AT: "Created at",
+  UPDATED_AT: "Updated at",
   AUTHOR: "Author",
 } as const;
 
@@ -40,7 +40,7 @@ export function ExperimentsTable(props: ExperimentsTableProps) {
       EXPERIMENTS_COLUMNS.EXPERIMENT,
       EXPERIMENTS_COLUMNS.AGENT_ID,
       EXPERIMENTS_COLUMNS.AUTHOR,
-      EXPERIMENTS_COLUMNS.CREATED_AT,
+      EXPERIMENTS_COLUMNS.UPDATED_AT,
     ];
   }, []);
 
@@ -54,7 +54,8 @@ export function ExperimentsTable(props: ExperimentsTableProps) {
       },
       [EXPERIMENTS_COLUMNS.AGENT_ID]: experiment.agent_id,
       [EXPERIMENTS_COLUMNS.AUTHOR]: experiment.author_name,
-      [EXPERIMENTS_COLUMNS.CREATED_AT]: experiment.created_at,
+      // Display the more recent of created_at or updated_at
+      [EXPERIMENTS_COLUMNS.UPDATED_AT]: experiment.updated_at || experiment.created_at,
       _originalExperiment: experiment,
     }));
   }, [experiments]);
@@ -124,7 +125,7 @@ export function ExperimentsTable(props: ExperimentsTableProps) {
               case EXPERIMENTS_COLUMNS.AUTHOR:
                 return <ExperimentsBaseCell key={header} value={value} />;
 
-              case EXPERIMENTS_COLUMNS.CREATED_AT:
+              case EXPERIMENTS_COLUMNS.UPDATED_AT:
                 return <ExperimentsBaseCell key={header} value={value} formatter={formatRelativeDate} />;
 
               default:
