@@ -25,14 +25,13 @@ from core.providers._base.provider_error import (
     UnknownProviderError,
 )
 from core.providers._base.provider_options import ProviderOptions
-from core.providers._base.provider_output import ProviderOutput
 from core.providers.openai.openai_domain import CompletionRequest
 from core.providers.openai.openai_provider import OpenAIConfig, OpenAIProvider
 from tests.utils import fixture_bytes, fixtures_json
 
 
-def _output_factory(x: str, _: bool) -> ProviderOutput:
-    return ProviderOutput(x)
+def _output_factory(x: str) -> Any:
+    return x
 
 
 @pytest.fixture
@@ -226,17 +225,17 @@ class TestSingleStream:
 
         raw_chunks = provider._single_stream(  # pyright: ignore [reportPrivateUsage]
             request={"messages": [{"role": "user", "content": "Hello"}]},
-            output_factory=_output_factory,
-            partial_output_factory=lambda x: ProviderOutput(x),
+            output_factory=lambda x: json.loads(x),
             raw_completion=raw,
             options=ProviderOptions(model=Model.GPT_3_5_TURBO_1106, max_tokens=10, temperature=0, output_schema={}),
         )
 
         parsed_chunks = [o async for o in raw_chunks]
 
-        assert len(parsed_chunks) == 2
-        assert parsed_chunks[0][0] == {"greeting": "Hello James!"}
-        assert json.loads(parsed_chunks[1][0]) == {"greeting": "Hello James!"}
+        assert len(parsed_chunks) == 4
+        final_chunk = parsed_chunks[-1].final_chunk
+        assert final_chunk is not None
+        assert final_chunk.agent_output == {"greeting": "Hello James!"}
 
         assert len(httpx_mock.get_requests()) == 1
 
@@ -270,8 +269,7 @@ class TestSingleStream:
                     },
                 ],
             },
-            output_factory=_output_factory,
-            partial_output_factory=lambda x: ProviderOutput(x),
+            output_factory=lambda x: json.loads(x),
             raw_completion=raw,
             options=ProviderOptions(
                 model=Model.GPT_41_2025_04_14,
@@ -282,10 +280,10 @@ class TestSingleStream:
         )
 
         parsed_chunks = [o async for o in raw_chunks]
-
-        assert len(parsed_chunks) == 2
-        assert parsed_chunks[0][0] == {"answer": "Oh it has 30 words!"}
-        assert json.loads(parsed_chunks[1][0]) == {"answer": "Oh it has 30 words!"}
+        assert len(parsed_chunks) == 4
+        final_chunk = parsed_chunks[-1].final_chunk
+        assert final_chunk is not None
+        assert final_chunk.agent_output == {"answer": "Oh it has 30 words!"}
 
         assert len(httpx_mock.get_requests()) == 1
 
@@ -301,7 +299,6 @@ class TestSingleStream:
             raw_chunks = openai_provider._single_stream(  # pyright: ignore [reportPrivateUsage]
                 request={"messages": [{"role": "user", "content": "Hello"}]},
                 output_factory=_output_factory,
-                partial_output_factory=lambda x: ProviderOutput(x),
                 raw_completion=raw,
                 options=ProviderOptions(model=Model.GPT_41_2025_04_14, max_tokens=10, temperature=0),
             )
@@ -321,7 +318,6 @@ class TestSingleStream:
             raw_chunks = openai_provider._single_stream(  # pyright: ignore [reportPrivateUsage]
                 request={"messages": [{"role": "user", "content": "Hello"}]},
                 output_factory=_output_factory,
-                partial_output_factory=lambda x: ProviderOutput(x),
                 raw_completion=raw,
                 options=ProviderOptions(model=Model.GPT_41_2025_04_14, max_tokens=10, temperature=0),
             )
@@ -350,10 +346,9 @@ class TestStream:
             [Message.with_text("Hello")],
             options=ProviderOptions(model=Model.GPT_3_5_TURBO_1106, max_tokens=10, temperature=0, output_schema={}),
             output_factory=_output_factory,
-            partial_output_factory=lambda x: ProviderOutput(x),
         )
         chunks = [o async for o in streamer]
-        assert len(chunks) == 2
+        assert len(chunks) == 4
 
         # Not sure why the pyright in the CI reports an error here
         request = httpx_mock.get_requests()[0]
@@ -392,7 +387,6 @@ class TestStream:
             [Message.with_text("Hello")],
             options=ProviderOptions(model=Model.GPT_3_5_TURBO_1106, max_tokens=10, temperature=0, output_schema={}),
             output_factory=_output_factory,
-            partial_output_factory=lambda x: ProviderOutput(x),
         )
         # TODO: be stricter about what error is returned here
         with pytest.raises(UnknownProviderError) as e:
@@ -400,20 +394,6 @@ class TestStream:
 
         assert e.value.capture
         assert str(e.value) == "blabla"
-
-    async def test_stream_data_o1_preview(self, openai_provider: OpenAIProvider, httpx_mock: HTTPXMock):
-        mock_openai_stream(httpx_mock)
-
-        # Just checking that the o1 model actually stream
-        streamer = openai_provider.stream(
-            [Message.with_text("Hello")],
-            options=ProviderOptions(model=Model.O1_PREVIEW_2024_09_12, max_tokens=10, temperature=0, output_schema={}),
-            output_factory=_output_factory,
-            partial_output_factory=lambda x: ProviderOutput(x),
-        )
-
-        chunks = [o async for o in streamer]
-        assert len(chunks) == 2
 
 
 class TestComplete:
@@ -439,8 +419,8 @@ class TestComplete:
             options=ProviderOptions(model=Model.GPT_3_5_TURBO_1106, max_tokens=10, temperature=0, output_schema={}),
             output_factory=_output_factory,
         )
-        assert o.output
-        assert o.tool_calls is None
+        assert o.agent_output
+        assert o.tool_call_requests is None
         # Not sure why the pyright in the CI reports an error here
         request = httpx_mock.get_requests()[0]
         assert request.method == "POST"  # pyright: ignore reportUnknownMemberType
@@ -494,8 +474,8 @@ class TestComplete:
             options=ProviderOptions(model=Model.GPT_3_5_TURBO_1106, max_tokens=10, temperature=0, output_schema={}),
             output_factory=_output_factory,
         )
-        assert o.output
-        assert o.tool_calls is None
+        assert o.agent_output
+        assert o.tool_call_requests is None
         # Not sure why the pyright in the CI reports an error here
         request = httpx_mock.get_requests()[0]
         assert request.method == "POST"  # pyright: ignore reportUnknownMemberType
@@ -576,8 +556,8 @@ class TestComplete:
             ),
             output_factory=_output_factory,
         )
-        assert o.output
-        assert o.tool_calls is None
+        assert o.agent_output
+        assert o.tool_call_requests is None
 
         # Not sure why the pyright in the CI reports an error here
         request = httpx_mock.get_requests()[0]
@@ -668,7 +648,7 @@ class TestComplete:
             _ = await provider.complete(
                 [Message.with_text("Hello")],
                 options=ProviderOptions(model=Model.GPT_4O_2024_08_06, max_tokens=10, temperature=0, output_schema={}),
-                output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+                output_factory=lambda x: json.loads(x),
             )
 
         response = e.value.serialized()
@@ -728,19 +708,15 @@ class TestCheckValid:
 
 class TestExtractStreamDelta:
     def test_extract_stream_delta(self, openai_provider: OpenAIProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
         delta = openai_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
             b'{"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"gpt-3.5-turbo-1106","system_fingerprint":"fp_44132a4de3","usage": {"prompt_tokens": 35, "completion_tokens": 109, "total_tokens": 144},"choices":[{"index":0,"delta":{"content":"\\"greeting\\": \\"Hello James!\\"\\n}"},"logprobs":null,"finish_reason":null}]}',
-            raw_completion,
-            {},
         )
-        assert delta.content == '"greeting": "Hello James!"\n}'
-        assert raw_completion.usage == LLMUsage(prompt_token_count=35, completion_token_count=109)
+        assert delta.delta == '"greeting": "Hello James!"\n}'
+        assert delta.usage == LLMUsage(prompt_token_count=35, completion_token_count=109)
 
     def test_done(self, openai_provider: OpenAIProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-        delta = openai_provider._extract_stream_delta(b"[DONE]", raw_completion, {})  # pyright: ignore[reportPrivateUsage]
-        assert delta.content == ""
+        delta = openai_provider._extract_stream_delta(b"[DONE]")  # pyright: ignore[reportPrivateUsage]
+        assert delta.delta is None
 
 
 class TestRequiresDownloadingFile:
@@ -801,7 +777,6 @@ class TestMaxTokensExceededError:
                 {"messages": [{"role": "user", "content": "Hello"}]},
                 options=ProviderOptions(model=Model.GPT_4O_2024_08_06, max_tokens=10, temperature=0),
                 output_factory=_output_factory,
-                partial_output_factory=lambda x: ProviderOutput(x),
                 raw_completion=RawCompletion(response="", usage=LLMUsage()),
             ):
                 pass

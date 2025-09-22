@@ -1,7 +1,7 @@
 import contextlib
 import os
 import re
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import asyncpg
 import pytest
@@ -210,3 +210,38 @@ async def test_blob_storage():
 def frozen_time():
     with freeze_time("2024-08-12T00:00:00Z") as frozen_time:
         yield frozen_time
+
+
+@pytest.fixture
+def mock_experiment_storage():
+    from core.storage.experiment_storage import ExperimentStorage
+
+    return Mock(spec=ExperimentStorage)
+
+
+@pytest.fixture
+def mock_completion_storage():
+    from core.storage.completion_storage import CompletionStorage
+
+    return Mock(spec=CompletionStorage)
+
+
+@pytest.fixture
+def mock_agent_storage():
+    from core.storage.agent_storage import AgentStorage
+
+    return Mock(spec=AgentStorage)
+
+
+@pytest.fixture
+def mock_event_router():
+    from core.domain.events import EventRouter
+
+    return Mock(spec=EventRouter)
+
+
+@pytest.fixture
+def mock_deployment_storage():
+    from core.storage.deployment_storage import DeploymentStorage
+
+    return Mock(spec=DeploymentStorage)

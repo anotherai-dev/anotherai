@@ -6,7 +6,7 @@ import { UniversalBarChart } from "./UniversalBarChart";
 import { UniversalLineChart } from "./UniversalLineChart";
 import { UniversalPieChart } from "./UniversalPieChart";
 import { UniversalScatterChart } from "./UniversalScatterChart";
-import { transformDataForCompletionsGraph } from "./utils";
+import { formatValueWithUnit, transformDataForCompletionsGraph } from "./utils";
 
 interface CompletionsGraphProps {
   data: Record<string, unknown>[];
@@ -14,6 +14,7 @@ interface CompletionsGraphProps {
   error: Error | null;
   graph: Graph;
   title?: string;
+  showBorder?: boolean;
 }
 
 // Generate series configuration from Y axes with golden angle color distribution
@@ -22,10 +23,11 @@ function createSeriesFromYAxes(yAxes: YAxis[]) {
     key: yAxis.field,
     color: yAxis.color_hex || `hsl(${index * 137.508}deg 80% 50%)`, // Golden angle distribution for colors
     name: yAxis.label || yAxis.field,
+    unit: yAxis.unit, // Pass through the unit for per-series formatting
   }));
 }
 
-export function CompletionsGraph({ data, isLoading, error, graph }: CompletionsGraphProps) {
+export function CompletionsGraph({ data, isLoading, error, graph, showBorder = true }: CompletionsGraphProps) {
   // Memoized and optimized data transformation using utils function
   const chartData = useMemo(() => {
     return transformDataForCompletionsGraph({ data, graph });
@@ -33,7 +35,7 @@ export function CompletionsGraph({ data, isLoading, error, graph }: CompletionsG
 
   if (isLoading) {
     return (
-      <div className="bg-white border border-gray-200 rounded-[2px] flex flex-col p-6">
+      <div className={`bg-white ${showBorder ? "border border-gray-200" : ""} rounded-[2px] flex flex-col p-6`}>
         <div className="animate-pulse">
           <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
           <div className="h-64 bg-gray-100 rounded"></div>
@@ -44,7 +46,7 @@ export function CompletionsGraph({ data, isLoading, error, graph }: CompletionsG
 
   if (error) {
     return (
-      <div className="bg-white border border-gray-200 rounded-[2px] flex flex-col p-6">
+      <div className={`bg-white ${showBorder ? "border border-gray-200" : ""} rounded-[2px] flex flex-col p-6`}>
         <div className="text-red-600 text-center">
           <p className="font-semibold">Error loading chart</p>
           <p className="text-sm mt-2">{error?.error || "Unknown error"}</p>
@@ -104,6 +106,7 @@ export function CompletionsGraph({ data, isLoading, error, graph }: CompletionsG
             {...pieProps}
             colors={[primaryColor, "#10B981", "#F59E0B", "#EF4444", "#8B5CF6"]}
             showLegend={true}
+            tooltipFormatter={(value) => formatValueWithUnit(value.toString(), yAxisUnit)}
           />
         );
 
@@ -121,5 +124,9 @@ export function CompletionsGraph({ data, isLoading, error, graph }: CompletionsG
     }
   };
 
-  return <div className="bg-white border border-gray-200 rounded-[2px] flex flex-col pt-6">{renderChart()}</div>;
+  return (
+    <div className={`bg-white ${showBorder ? "border border-gray-200" : ""} rounded-[2px] flex flex-col pt-6`}>
+      {renderChart()}
+    </div>
+  );
 }

@@ -11,25 +11,20 @@ async def test_create_and_retrieve_annotation(test_api_client: IntegrationTestCl
         "openai/completion.json",
         is_reusable=True,
     )
-    res = await test_api_client.call_tool(
-        "playground",
-        {
-            "models": f"{Model.GPT_41_MINI_2025_04_14}",
-            "author_name": "user",
-            "agent_id": "test-agent",
-            "inputs": [
-                {
-                    "variables": {"name": "Toulouse"},
-                },
+    res = await test_api_client.playground(
+        version={
+            "model": Model.GPT_41_MINI_2025_04_14,
+            "prompt": [
+                {"role": "user", "content": "What is the capital of the country that has {{ name }}?"},
             ],
-            "prompts": [
-                [
-                    {"role": "user", "content": "What is the capital of the country that has {{ name }}?"},
-                ],
-            ],
-            "experiment_title": "Capital Extractor Test Experiment",
         },
+        inputs=[
+            {
+                "variables": {"name": "Toulouse"},
+            },
+        ],
     )
+
     # This will create a single completion
     assert len(res["completions"]) == 1, "sanity"
     completion_id = res["completions"][0]["id"]

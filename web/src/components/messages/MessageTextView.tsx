@@ -43,7 +43,7 @@ export function MessageTextView(props: MessageTextViewProps) {
       <div>
         <div
           ref={contentRef}
-          className={`break-all ${shouldTruncateByHeight && !isExpanded ? "overflow-hidden" : ""}`}
+          className={`break-words [overflow-wrap:anywhere] hyphens-auto ${shouldTruncateByHeight && !isExpanded ? "overflow-hidden" : ""}`}
           style={shouldTruncateByHeight && !isExpanded ? { maxHeight: `${MAX_HEIGHT_PX}px` } : {}}
         >
           {(() => {
@@ -77,7 +77,7 @@ export function MessageTextView(props: MessageTextViewProps) {
   const sharedWords = decodedSharedText!.trim().split(/\s+/);
 
   return (
-    <div className="break-all">
+    <div className="break-words [overflow-wrap:anywhere] hyphens-auto">
       {words.map((word, i) => {
         const cleanWord = word.trim().toLowerCase();
         const isShared = sharedWords.some((sharedWord) => cleanWord && sharedWord.toLowerCase() === cleanWord);

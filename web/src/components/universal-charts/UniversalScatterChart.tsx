@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef } from "react";
 import { CartesianGrid, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis } from "recharts";
 import { CustomTooltip } from "./CustomTooltip";
+import { useTooltipFormatterWithUnit } from "./useTooltipFormatterWithUnit";
 import { SeriesConfig, autoDetectSeries, ensureXFieldForChart } from "./utils";
 
 interface ChartData {
@@ -99,12 +100,11 @@ export function UniversalScatterChart({
   const xAxisTickFormatter = xAxisFormatter;
   const yAxisTickFormatter = yAxisFormatter;
 
-  const tooltipFormatterWithUnit = useCallback(
-    (value: number) => {
-      const formattedValue = tooltipFormatter(value);
-      return yAxisUnit ? `${formattedValue} ${yAxisUnit}` : formattedValue;
-    },
-    [tooltipFormatter, yAxisUnit]
+  const tooltipFormatterWithUnit = useTooltipFormatterWithUnit(
+    tooltipFormatter,
+    yAxisUnit,
+    isActuallyMultiSeries,
+    finalSeries
   );
 
   // Create axis labels with units
@@ -124,7 +124,7 @@ export function UniversalScatterChart({
 
   // Memoized canvas for text width measurement
   const measureTextWidth = useMemo(() => {
-    if (!canvasRef.current) {
+    if (!canvasRef.current && typeof document !== "undefined") {
       canvasRef.current = document.createElement("canvas");
     }
 

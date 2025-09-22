@@ -1,5 +1,3 @@
-import json
-from json import JSONDecodeError
 from typing import Any, override
 
 from httpx import Response
@@ -13,7 +11,6 @@ from core.domain.models.utils import get_model_data
 from core.domain.tool_call import ToolCallRequest
 from core.providers._base.httpx_provider import HTTPXProvider
 from core.providers._base.llm_usage import LLMUsage
-from core.providers._base.models import RawCompletion
 from core.providers._base.provider_error import (
     ContentModerationError,
     FailedGenerationError,
@@ -26,7 +23,7 @@ from core.providers._base.provider_error import (
     UnknownProviderError,
 )
 from core.providers._base.provider_options import ProviderOptions
-from core.providers._base.streaming_context import ParsedResponse, ToolCallRequestBuffer
+from core.providers._base.streaming_context import ParsedResponse
 from core.providers._base.utils import get_provider_config_env, get_unique_schema_name, should_use_structured_output
 from core.providers.google.google_provider_domain import (
     internal_tool_name_to_native_tool_call,
@@ -204,66 +201,12 @@ class XAIProvider(HTTPXProvider[XAIConfig, CompletionResponse]):
     def is_structured_generation_supported(self) -> bool:
         return True
 
-    def _extract_stream_delta(  # noqa: C901
-        self,
-        sse_event: bytes,
-        raw_completion: RawCompletion,
-        tool_call_request_buffer: dict[int, ToolCallRequestBuffer],
-    ):
+    @override
+    def _extract_stream_delta(self, sse_event: bytes):
         if sse_event == b"[DONE]":
-            return ParsedResponse("")
+            return ParsedResponse()
         raw = StreamedResponse.model_validate_json(sse_event)
-        for choice in raw.choices:
-            if choice.finish_reason == "length":
-                raise MaxTokensExceededError(
-                    msg="Model returned a response with a length finish reason, meaning the maximum number of tokens was exceeded.",
-                    raw_completion=raw,
-                )
-        if raw.usage:
-            raw_completion.usage = raw.usage.to_domain()
-
-        if not raw.choices:
-            return ParsedResponse("")
-
-        first_choice_delta = raw.choices[0].delta
-        tools_calls: list[ToolCallRequest] = []
-        if first_choice_delta.tool_calls:
-            for tool_call in first_choice_delta.tool_calls:
-                # Check if a tool call at that index is already in the buffer
-                if tool_call.index not in tool_call_request_buffer:
-                    tool_call_request_buffer[tool_call.index] = ToolCallRequestBuffer()
-
-                buffered_tool_call = tool_call_request_buffer[tool_call.index]
-
-                if tool_call.id and not buffered_tool_call.id:
-                    buffered_tool_call.id = tool_call.id
-
-                if tool_call.function.name and not buffered_tool_call.tool_name:
-                    buffered_tool_call.tool_name = tool_call.function.name
-
-                if tool_call.function.arguments:
-                    buffered_tool_call.tool_input += tool_call.function.arguments
-
-                if buffered_tool_call.id and buffered_tool_call.tool_name and buffered_tool_call.tool_input:
-                    try:
-                        tool_input_dict = json.loads(buffered_tool_call.tool_input)
-                    except JSONDecodeError:
-                        # That means the tool call is not full streamed yet
-                        continue
-
-                    tools_calls.append(
-                        ToolCallRequest(
-                            id=buffered_tool_call.id,
-                            tool_name=native_tool_name_to_internal(buffered_tool_call.tool_name),
-                            tool_input_dict=tool_input_dict,
-                        ),
-                    )
-
-        return ParsedResponse(
-            first_choice_delta.content or "",
-            reasoning=first_choice_delta.reasoning_content,
-            tool_calls=tools_calls,
-        )
+        return raw.to_parsed_response()
 
     def _compute_prompt_token_count(
         self,

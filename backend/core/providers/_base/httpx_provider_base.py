@@ -7,7 +7,7 @@ import httpx
 from httpx import USE_CLIENT_DEFAULT, Response
 from pydantic import BaseModel
 
-from core.domain.exceptions import InternalError, JSONSchemaValidationError
+from core.domain.exceptions import JSONSchemaValidationError
 from core.domain.message import Message
 from core.providers._base.abstract_provider import (
     AbstractProvider,
@@ -30,10 +30,9 @@ from core.providers._base.provider_error import (
     UnknownProviderError,
 )
 from core.providers._base.provider_options import ProviderOptions
-from core.providers._base.provider_output import ProviderOutput
-from core.providers._base.streaming_context import StreamingContext
+from core.runners.output_factory import OutputFactory
+from core.runners.runner_output import RunnerOutput
 from core.utils.background import add_background_task
-from core.utils.dicts import InvalidKeyPathError, set_at_keypath_str
 from core.utils.streams import JSONStreamError
 
 ResponseModel = TypeVar("ResponseModel", bound=BaseModel)
@@ -227,24 +226,20 @@ class HTTPXProviderBase[ProviderConfigVar: ProviderConfigInterface, ProviderRequ
     def _parse_response(
         self,
         response: Response,
-        output_factory: Callable[[str, bool], ProviderOutput],
+        output_factory: OutputFactory,
         raw_completion: RawCompletion,
         request: ProviderRequestVar,
-    ) -> ProviderOutput:
+    ) -> RunnerOutput:
         pass
-
-    def _assign_usage_from_structured_output(self, raw_completion: RawCompletion, structured_output: ProviderOutput):
-        if raw_completion.usage.completion_image_count is None:
-            raw_completion.usage.completion_image_count = len(structured_output.files) if structured_output.files else 0
 
     @override
     async def _single_complete(
         self,
         request: ProviderRequestVar,
-        output_factory: Callable[[str, bool], ProviderOutput],
+        output_factory: OutputFactory,
         raw_completion: RawCompletion,
         options: ProviderOptions,
-    ) -> ProviderOutput:
+    ) -> RunnerOutput:
         with self._wrap_errors(options=options, raw_completion=raw_completion):
             response = await self._execute_request(request, options)
             response = response.raise_for_status()
@@ -255,28 +250,7 @@ class HTTPXProviderBase[ProviderConfigVar: ProviderConfigInterface, ProviderRequ
                 raw_completion=raw_completion,
                 request=request,
             )
-            self._assign_usage_from_structured_output(raw_completion, parsed_response)
             return parsed_response
-
-    def _handle_chunk_output(self, context: StreamingContext, content: str) -> bool:
-        updates = context.streamer.process_chunk(content)
-        if not updates:
-            return False
-
-        for keypath, value in updates:
-            try:
-                _ = set_at_keypath_str(context.agg_output, keypath, value)
-            except InvalidKeyPathError as e:
-                raise InternalError(
-                    f"Invalid keypath in stream: {e}",
-                    extras={
-                        "aggregate": context.streamer.aggregate,
-                        "output": context.agg_output,
-                        "keypath": keypath,
-                        "value": value,
-                    },
-                ) from e
-        return True
 
     # TODO: we should likely handle streaming here as well, maybe when we merge this class
     # with httpx_provider.py
@@ -289,7 +263,7 @@ class HTTPXProviderBase[ProviderConfigVar: ProviderConfigInterface, ProviderRequ
             _ = await self.complete(
                 messages=[Message.with_text(text="Respond with an empty json", role="user")],
                 options=options,
-                output_factory=lambda x, _: ProviderOutput(x),
+                output_factory=lambda x: x,
             )
             return True
         except InvalidProviderConfigError:

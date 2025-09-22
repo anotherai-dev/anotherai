@@ -1,11 +1,12 @@
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ModelIconWithName } from "@/components/ModelIcon";
 import { SchemaViewer } from "@/components/SchemaViewer";
 import { MessagesViewer } from "@/components/messages/MessagesViewer";
 import { getVersionWithDefaults } from "@/components/utils/utils";
 import { Version } from "@/types/models";
 import { AvailableTools } from "./AvailableTools";
+import { VersionDetailsRow } from "./VersionDetailsRow";
 
 type VersionDetailsViewProps = {
   version: Version;
@@ -22,6 +23,45 @@ export function VersionDetailsView({
 }: VersionDetailsViewProps) {
   const extendedVersion = getVersionWithDefaults(version);
   const [isAdvancedExpanded, setIsAdvancedExpanded] = useState(false);
+
+  // Define which keys are already displayed
+  const displayedKeys = useMemo(() => {
+    const baseDisplayed = new Set([
+      "model",
+      "temperature",
+      "top_p",
+      "tools",
+      "use_cache",
+      "max_tokens",
+      "stream",
+      "include_usage",
+      "presence_penalty",
+      "frequency_penalty",
+      "stop",
+      "tool_choice",
+      "id",
+    ]);
+
+    if (showPrompt) baseDisplayed.add("prompt");
+    if (showOutputSchema) baseDisplayed.add("output_schema");
+
+    return baseDisplayed;
+  }, [showPrompt, showOutputSchema]);
+
+  // Get additional properties to display
+  const additionalProperties = useMemo(() => {
+    const allKeys = Object.keys(extendedVersion);
+    const additional: Array<{ key: string; value: unknown }> = [];
+
+    for (const key of allKeys) {
+      if (!displayedKeys.has(key)) {
+        const value = (extendedVersion as unknown as Record<string, unknown>)[key];
+        additional.push({ key, value });
+      }
+    }
+
+    return additional;
+  }, [extendedVersion, displayedKeys]);
 
   return (
     <div className="w-full space-y-2 py-1">
@@ -145,6 +185,11 @@ export function VersionDetailsView({
           <SchemaViewer schema={version.output_schema} showDescriptions={true} showExamples={showExamples} />
         </div>
       )}
+
+      {/* Additional Properties */}
+      {additionalProperties.map(({ key, value }) => (
+        <VersionDetailsRow key={key} keyName={key} value={value} showExamples={showExamples} />
+      ))}
     </div>
   );
 }

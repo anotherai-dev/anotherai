@@ -4,13 +4,11 @@ from collections.abc import AsyncGenerator, AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from typing import Any, Protocol
 
-from pydantic import ValidationError
 from structlog import get_logger
 from structlog.typing import FilteringBoundLogger
 
 from core.domain.exceptions import (
     InternalError,
-    JSONSchemaValidationError,
     ProviderDoesNotSupportModelError,
     UnpriceableRunError,
 )
@@ -33,9 +31,10 @@ from core.providers._base.builder_context import builder_context
 from core.providers._base.llm_completion import LLMCompletion
 from core.providers._base.llm_usage import LLMUsage
 from core.providers._base.models import RawCompletion
-from core.providers._base.provider_error import InvalidGenerationError, ProviderError
+from core.providers._base.provider_error import ProviderError
 from core.providers._base.provider_options import ProviderOptions
-from core.providers._base.provider_output import ProviderOutput
+from core.runners.output_factory import OutputFactory
+from core.runners.runner_output import RunnerOutput, RunnerOutputChunk
 from core.utils.fields import datetime_factory
 from core.utils.token_utils import tokens_from_string
 
@@ -378,13 +377,6 @@ class AbstractProvider[ProviderConfigVar: ProviderConfigInterface, ProviderReque
         raise UnpriceableRunError(f"Unknown audio price type {type(model_provider_data.audio_price)}")
 
     @classmethod
-    def _assign_usage_from_output(cls, usage: LLMUsage, output: ProviderOutput):
-        if usage.completion_image_count is None:
-            if not output.files:
-                return
-            usage.completion_image_count = output.number_of_images
-
-    @classmethod
     def error_incurs_cost(cls, error: ProviderError) -> bool | None:
         if not error.status_code:
             return None
@@ -396,7 +388,6 @@ class AbstractProvider[ProviderConfigVar: ProviderConfigInterface, ProviderReque
         cls,
         raw_completion: RawCompletion,
         llm_completion: LLMCompletion,
-        output: ProviderOutput | None = None,
         error: ProviderError | None = None,
     ):
         llm_completion.duration_seconds = round((datetime_factory() - raw_completion.start_time).total_seconds(), 2)
@@ -404,9 +395,6 @@ class AbstractProvider[ProviderConfigVar: ProviderConfigInterface, ProviderReque
         if error:
             llm_completion.error = error.serialized()
             llm_completion.provider_request_incurs_cost = cls.error_incurs_cost(error)
-
-        if output:
-            cls._assign_usage_from_output(raw_completion.usage, output)
 
         raw_completion.apply_to(llm_completion)
 
@@ -458,21 +446,6 @@ class AbstractProvider[ProviderConfigVar: ProviderConfigInterface, ProviderReque
             builder.llm_completions.append(raw)
 
         return kwargs, raw
-
-    def validate_output(
-        self,
-        content_str: str,
-        output_factory: Callable[[str, bool], ProviderOutput],
-    ) -> ProviderOutput:
-        """
-        Validates that the 'response' from the model enforces the schema of the output class ('output_cls').
-        """
-
-        try:
-            return output_factory(content_str, False)  # noqa: FBT003
-        except (ValidationError, JSONSchemaValidationError) as e:
-            partial = output_factory(content_str, True)  # noqa: FBT003
-            raise InvalidGenerationError(msg=str(e), partial_output=partial.output) from e
 
     def _add_exception_to_messages(
         self,
@@ -548,8 +521,8 @@ class AbstractProvider[ProviderConfigVar: ProviderConfigInterface, ProviderReque
         self,
         messages: list[Message],
         options: ProviderOptions,
-        output_factory: Callable[[str, bool], ProviderOutput],
-    ) -> ProviderOutput:
+        output_factory: Callable[[str], Any],
+    ) -> RunnerOutput:
         """Create a task output from a list of messages
 
         Args:
@@ -601,9 +574,9 @@ class AbstractProvider[ProviderConfigVar: ProviderConfigInterface, ProviderReque
         self,
         messages: list[Message],
         options: ProviderOptions,
-        output_factory: Callable[[str, bool], ProviderOutput],
+        output_factory: OutputFactory,
         max_attempts: int | None = None,
-    ) -> ProviderOutput:
+    ) -> RunnerOutput:
         request, raw = await self._prepare_completion_and_add_to_ctx(messages, options, stream=False)
         # raw_completion cannot be in the ProviderOutput because it should still be used on raise
         raw_completion = RawCompletion(response="", usage=raw.usage)
@@ -615,7 +588,7 @@ class AbstractProvider[ProviderConfigVar: ProviderConfigInterface, ProviderReque
                     raw_completion=raw_completion,
                     options=options,
                 )
-            self._assign_raw_completion(raw_completion, raw, output=output)
+            self._assign_raw_completion(raw_completion, raw)
             return output
         except ProviderError as e:
             _ = self._prepare_provider_error(e, options)
@@ -639,10 +612,10 @@ class AbstractProvider[ProviderConfigVar: ProviderConfigInterface, ProviderReque
     async def _single_complete(
         self,
         request: ProviderRequestVar,
-        output_factory: Callable[[str, bool], ProviderOutput],
+        output_factory: OutputFactory,
         raw_completion: RawCompletion,
         options: ProviderOptions,
-    ) -> ProviderOutput:
+    ) -> RunnerOutput:
         """Override in subclasses. This method is responsible for calling the provider completion method and fill
         the raw_completion object"""
 
@@ -653,38 +626,34 @@ class AbstractProvider[ProviderConfigVar: ProviderConfigInterface, ProviderReque
     def _single_stream(
         self,
         request: ProviderRequestVar,
-        output_factory: Callable[[str, bool], ProviderOutput],
-        partial_output_factory: Callable[[Any], ProviderOutput],
+        output_factory: OutputFactory,
         raw_completion: RawCompletion,
         options: ProviderOptions,
-    ) -> AsyncGenerator[ProviderOutput]:
+    ) -> AsyncGenerator[RunnerOutputChunk]:
         pass
 
     async def _retryable_stream(
         self,
         messages: list[Message],
         options: ProviderOptions,
-        output_factory: Callable[[str, bool], ProviderOutput],
-        partial_output_factory: Callable[[Any], ProviderOutput],
+        output_factory: OutputFactory,
         max_attempts: int | None = None,
-    ):
+    ) -> AsyncGenerator[RunnerOutputChunk]:
         stream_exc: Exception | None = None
 
         while max_attempts is None or max_attempts >= 1:
             kwargs, raw = await self._prepare_completion_and_add_to_ctx(messages, options, stream=True)
             raw_completion = RawCompletion(response="", usage=raw.usage)
             try:
-                output: ProviderOutput | None = None
                 async with self._wrap_for_metric(options.model, options.tenant):
                     async for output in self._single_stream(
                         kwargs,
                         output_factory=output_factory,
-                        partial_output_factory=partial_output_factory,
                         raw_completion=raw_completion,
                         options=options,
                     ):
                         yield output
-                self._assign_raw_completion(raw_completion, raw, output=output)
+                self._assign_raw_completion(raw_completion, raw)
                 return
             except ProviderError as e:
                 _ = self._prepare_provider_error(e, options)
@@ -706,29 +675,14 @@ class AbstractProvider[ProviderConfigVar: ProviderConfigInterface, ProviderReque
         self,
         messages: list[Message],
         options: ProviderOptions,
-        output_factory: Callable[[str, bool], ProviderOutput],
-        partial_output_factory: Callable[[Any], ProviderOutput],
-    ) -> AsyncIterator[ProviderOutput]:
-        def wrapped_partial_output_factory(obj: Any) -> ProviderOutput:
-            try:
-                return partial_output_factory(obj)
-            except (ValidationError, JSONSchemaValidationError) as e:
-                raise InvalidGenerationError(msg=str(e), provider_status_code=200) from e
-
-        o: ProviderOutput | None = None
-        try:
-            async for o in self._retryable_stream(
-                messages,
-                options,
-                output_factory=output_factory,
-                partial_output_factory=wrapped_partial_output_factory,
-            ):
-                yield o
-        except ProviderError as e:
-            if o is not None:
-                # Can be reached if the stream hits at least once
-                e.partial_output = o.output  # pyright: ignore [reportUnreachable]
-            raise e
+        output_factory: Callable[[str], Any],
+    ) -> AsyncIterator[RunnerOutputChunk]:
+        async for o in self._retryable_stream(
+            messages,
+            options,
+            output_factory=output_factory,
+        ):
+            yield o
 
     @classmethod
     def sanitize_config(cls, config: ProviderConfigVar) -> ProviderConfigVar:

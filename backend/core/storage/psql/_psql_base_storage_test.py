@@ -1,13 +1,15 @@
 # pyright: reportPrivateUsage=false
 
 
+from typing import Any
+
 import asyncpg
 import pytest
 from asyncpg.pool import PoolConnectionProxy
 
 from core.domain.agent import Agent
 from core.domain.exceptions import ObjectNotFoundError
-from core.storage.psql._psql_base_storage import PsqlBaseStorage
+from core.storage.psql._psql_base_storage import PsqlBaseStorage, _deserialize_json, psql_serialize_json
 from core.storage.psql.psql_agent_storage import PsqlAgentsStorage
 from core.storage.psql.psql_experiment_storage import PsqlExperimentStorage
 from tests.fake_models import fake_experiment
@@ -161,3 +163,10 @@ class TestExperimentIds:
         nonexistent_uids = {999, 1000}
         experiment_ids = await base_storage._experiment_ids(purged_psql_tenant_conn, nonexistent_uids)
         assert experiment_ids == {}
+
+
+@pytest.mark.parametrize(("value", "expected"), [(None, None), ({"a": 1}, '{"a":1}'), ([1, 2, 3], "[1,2,3]")])
+def test_psql_serialize_json(value: Any, expected: str | None):
+    serialized = psql_serialize_json(value)
+    assert serialized == expected
+    assert _deserialize_json(serialized) == value

@@ -2,7 +2,6 @@
 
 import json
 import logging
-import unittest
 from collections.abc import Callable
 from datetime import date
 from typing import Any
@@ -13,7 +12,7 @@ from httpx import Response
 from pytest_httpx import HTTPXMock, IteratorStream
 
 from core.domain.message import Message, MessageDeprecated
-from core.domain.models import Model, Provider
+from core.domain.models import Model
 from core.domain.models.model_data import MaxTokensData, ModelData, QualityData, SpeedData, SpeedIndex
 from core.domain.models.model_data_mapping import DisplayedProvider
 from core.domain.models.model_provider_data_mapping import GROQ_PROVIDER_DATA
@@ -30,27 +29,26 @@ from core.providers._base.provider_error import (
     UnknownProviderError,
 )
 from core.providers._base.provider_options import ProviderOptions
-from core.providers._base.provider_output import ProviderOutput
 from core.providers.groq.groq_domain import Choice, CompletionResponse, GroqMessage, Usage
 from core.providers.groq.groq_provider import _NAME_OVERRIDE_MAP, GroqConfig, GroqProvider
 from core.utils.json_utils import extract_json_str
 from tests.utils import fixture_bytes, fixtures_json
 
 
-class TestGroqProvider(unittest.TestCase):
-    def test_name(self):
-        """Test the name method returns the correct Provider enum."""
-        assert GroqProvider.name() == Provider.GROQ
+def _output_factory(x: str) -> Any:
+    return json.loads(x)
 
-    def test_required_env_vars(self):
-        """Test the required_env_vars method returOpns the correct environment variables."""
-        expected_vars = ["GROQ_API_KEY"]
-        assert GroqProvider.required_env_vars() == expected_vars
+
+@pytest.fixture
+def groq_provider():
+    provider = GroqProvider(config=GroqConfig(api_key="some_api_key"))
+    provider.logger = Mock(spec=logging.Logger)
+    return provider
 
 
 class TestStream:
     # Tests overlap with single stream above but check the entire structure
-    async def test_stream(self, httpx_mock: HTTPXMock):
+    async def test_stream(self, httpx_mock: HTTPXMock, groq_provider: GroqProvider):
         httpx_mock.add_response(
             url="https://api.groq.com/openai/v1/chat/completions",
             stream=IteratorStream(
@@ -71,18 +69,21 @@ class TestStream:
                 ],
             ),
         )
-        provider = GroqProvider()
 
-        streamer = provider.stream(
+        streamer = groq_provider.stream(
             [
                 Message.with_text("Hello"),
             ],
             options=ProviderOptions(model=Model.LLAMA_3_3_70B, max_tokens=1000, temperature=0, output_schema={}),
-            output_factory=lambda x, _: ProviderOutput(json.loads(extract_json_str(x))),
-            partial_output_factory=lambda x: ProviderOutput(x),
+            output_factory=lambda x: json.loads(extract_json_str(x)),
         )
         chunks = [o async for o in streamer]
-        assert len(chunks) == 2
+        assert len(chunks) == 12
+        assert not any(c.is_empty() for c in chunks)
+
+        final_chunk = chunks[-1].final_chunk
+        assert final_chunk
+        assert final_chunk.agent_output == {"sentiment": "positive"}
 
         # Not sure why the pyright in the CI reports an error here
         request = httpx_mock.get_requests()[0]
@@ -114,8 +115,7 @@ class TestStream:
         streamer = provider.stream(
             [Message.with_text("Hello")],
             options=ProviderOptions(model=Model.LLAMA_3_3_70B, max_tokens=10, temperature=0),
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
-            partial_output_factory=lambda x: ProviderOutput(x),
+            output_factory=_output_factory,
         )
         # TODO: be stricter about what error is returned here
         with pytest.raises(UnknownProviderError) as e:
@@ -149,10 +149,10 @@ class TestComplete:
                 Message.with_text("Hello"),
             ],
             options=ProviderOptions(model=Model.LLAMA_3_3_70B, max_tokens=10, temperature=0),
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+            output_factory=_output_factory,
         )
-        assert o.output == {"message": "Hello you"}
-        assert o.tool_calls is None
+        assert o.agent_output == {"message": "Hello you"}
+        assert o.tool_call_requests is None
         # Not sure why the pyright in the CI reports an error here
         request = httpx_mock.get_requests()[0]
         assert request.method == "POST"  # pyright: ignore reportUnknownMemberType
@@ -192,10 +192,10 @@ class TestComplete:
                 Message.with_text("Hello"),
             ],
             options=ProviderOptions(model=Model.LLAMA_3_3_70B, temperature=0),
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+            output_factory=_output_factory,
         )
-        assert o.output == {"message": "Hello you"}
-        assert o.tool_calls is None
+        assert o.agent_output == {"message": "Hello you"}
+        assert o.tool_call_requests is None
         # Not sure why the pyright in the CI reports an error here
         request = httpx_mock.get_requests()[0]
         assert request.method == "POST"  # pyright: ignore reportUnknownMemberType
@@ -227,7 +227,7 @@ class TestComplete:
             await provider.complete(
                 [Message.with_text("Hello")],
                 options=ProviderOptions(model=Model.LLAMA_3_3_70B, max_tokens=10, temperature=0),
-                output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+                output_factory=_output_factory,
             )
 
         details = e.value.serialized().details
@@ -255,12 +255,12 @@ class TestComplete:
                     ),
                 ],
             ),
-            output_factory=lambda x, _: ProviderOutput(json.loads(x) if x else {}),
+            output_factory=_output_factory,
         )
 
-        assert o.tool_calls is not None
-        assert o.tool_calls[0].tool_name == "get_current_time"
-        assert o.tool_calls[0].tool_input_dict == {"timezone": "America/New_York"}
+        assert o.tool_call_requests is not None
+        assert o.tool_call_requests[0].tool_name == "get_current_time"
+        assert o.tool_call_requests[0].tool_input_dict == {"timezone": "America/New_York"}
 
     async def test_complete_failed_generation(self, httpx_mock: HTTPXMock, groq_provider: GroqProvider):
         httpx_mock.add_response(
@@ -278,7 +278,7 @@ class TestComplete:
                     max_tokens=10,
                     temperature=0,
                 ),
-                output_factory=lambda x, _: ProviderOutput(json.loads(x) if x else {}),
+                output_factory=_output_factory,
             )
 
     async def test_complete_content_moderation(self, httpx_mock: HTTPXMock, groq_provider: GroqProvider):
@@ -293,15 +293,8 @@ class TestComplete:
             await groq_provider.complete(
                 [Message.with_text("Hello")],
                 options=ProviderOptions(model=Model.LLAMA_4_MAVERICK_BASIC, output_schema={}),
-                output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+                output_factory=_output_factory,
             )
-
-
-@pytest.fixture
-def groq_provider():
-    provider = GroqProvider(config=GroqConfig(api_key="some_api_key"))
-    provider.logger = Mock(spec=logging.Logger)
-    return provider
 
 
 class TestExtractContentStr:
@@ -354,7 +347,7 @@ class TestFinishReasonLength:
             await provider.complete(
                 [Message.with_text("Hello")],
                 options=ProviderOptions(model=Model.LLAMA_3_3_70B, max_tokens=10, temperature=0),
-                output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+                output_factory=_output_factory,
             )
         assert (
             e.value.args[0] == "Model returned a response with a length finish reason, meaning the maximum "
@@ -374,8 +367,7 @@ class TestFinishReasonLength:
         with pytest.raises(MaxTokensExceededError) as e:
             async for _ in provider._single_stream(  # pyright: ignore reportPrivateUsage
                 {"messages": [{"role": "user", "content": "Hello"}]},
-                output_factory=lambda x, _: ProviderOutput(json.loads(x)),
-                partial_output_factory=lambda x: ProviderOutput(x),
+                output_factory=_output_factory,
                 raw_completion=RawCompletion(response="", usage=LLMUsage()),
                 options=ProviderOptions(model=Model.LLAMA_3_3_70B, max_tokens=10, temperature=0),
             ):
