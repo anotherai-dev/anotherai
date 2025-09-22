@@ -43,7 +43,7 @@ export function HeaderMatchingSection(props: Props) {
           className={`flex justify-between items-center px-[8px] py-2 cursor-pointer bg-gray-50 hover:bg-gray-100/50 ${isExpanded ? "border-b border-gray-200" : ""}`}
           onClick={() => setIsExpanded(!isExpanded)}
         >
-          <div className="text-xs font-medium text-gray-900">Matching Content</div>
+          <div className="text-xs font-medium text-gray-900">Similar Parameters</div>
           <div className="text-gray-500">{isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</div>
         </div>
 
