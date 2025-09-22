@@ -23,12 +23,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "AnotherAI",
   description:
-    "Discover the newest and most powerful AI models from AnotherAI. View quality scores, pricing, capabilities, and release dates.",
+    "AnotherAI enables your AI assistant (ChatGPT, Claude Code, Cursor, ...) to become a powerful AI engineer.",
   keywords: ["AI", "AnotherAI", "models", "artificial intelligence", "API", "machine learning"],
   authors: [{ name: "AnotherAI Model Explorer" }],
   openGraph: {
     title: "AnotherAI",
-    description: "Discover the newest and most powerful AI models from AnotherAI",
+    description:
+      "AnotherAI enables your AI assistant (ChatGPT, Claude Code, Cursor, ...) to become a powerful AI engineer.",
     type: "website",
   },
 };
