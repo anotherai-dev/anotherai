@@ -19,7 +19,7 @@ import { cn } from "@/lib/cn";
 
 export { SignedIn, SignedOut } from "@clerk/nextjs";
 
-export function UserButton({ className }: { className?: string }) {
+export function UserButton({ className, avatarOnly = false }: { className?: string; avatarOnly?: boolean }) {
   const { isSignedIn, user } = useUser();
   const { organization } = useOrganization();
   const {
@@ -88,7 +88,21 @@ export function UserButton({ className }: { className?: string }) {
   }, []);
 
   // Keep the exact same visual appearance as before but make it a custom trigger
-  const triggerButton = (
+  const triggerButton = avatarOnly ? (
+    <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center hover:bg-gray-100 cursor-pointer transition-colors duration-200">
+      {user?.imageUrl ? (
+        <Image
+          src={user.imageUrl}
+          alt={fullName || email || "User"}
+          width={32}
+          height={32}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <div className="w-full h-full bg-gray-300 flex items-center justify-center"></div>
+      )}
+    </div>
+  ) : (
     <div className="flex gap-3 px-5 py-3 justify-between items-center hover:bg-gray-100 rounded-[4px] cursor-pointer transition-colors duration-200">
       <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
         {user?.imageUrl ? (
@@ -156,7 +170,7 @@ export function UserButton({ className }: { className?: string }) {
       <PopoverMenu
         trigger={triggerButton}
         align="center"
-        className="z-[9999] bg-white border border-gray-200 rounded-md shadow-lg py-1 px-1 min-w-[220px]"
+        className={`z-[9999] bg-white border border-gray-200 rounded-md shadow-lg py-1 px-1 min-w-[220px] ${avatarOnly ? "ml-2" : ""}`}
       >
         {menuItems}
       </PopoverMenu>

@@ -4,16 +4,18 @@ import { BarChart3, ChevronLeft, Cloud, FileText, Layers, Search, Settings } fro
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
 import { ApiKeysButton, UserButton } from "@/auth/components";
 import ViewsSection from "@/components/sidebar/ViewsSection";
+import WrappedNavigationSidebar from "@/components/sidebar/WrappedNavigationSidebar";
+import { useCookieState } from "@/hooks/useCookieState";
 
 interface NavigationSidebarProps {
   onOpenCommandPalette?: () => void;
+  initialExpanded?: boolean;
 }
 
-export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSidebarProps = {}) {
-  const [isExpanded, setIsExpanded] = useState(true);
+export default function NavigationSidebar({ onOpenCommandPalette, initialExpanded = true }: NavigationSidebarProps) {
+  const [isExpanded, setIsExpanded] = useCookieState("sidebar-expanded", initialExpanded);
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -25,13 +27,7 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
   };
 
   if (!isExpanded) {
-    return (
-      <div className="w-16 bg-gray-50 border-r border-gray-200 flex flex-col items-center py-4">
-        <button onClick={() => setIsExpanded(true)} className="mb-4 cursor-pointer" title="Expand sidebar">
-          <Image src="/sidebar-logo.png" alt="AnotherAI Logo" width={32} height={32} className="w-8 h-8" />
-        </button>
-      </div>
-    );
+    return <WrappedNavigationSidebar onOpenCommandPalette={onOpenCommandPalette} setIsExpanded={setIsExpanded} />;
   }
 
   return (
@@ -79,7 +75,7 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
         <div className="p-2 border-b border-gray-200">
           <Link
             href="/completions"
-            className={`flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-[2px] ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-[2px] cursor-pointer ${
               pathname === "/completions" ? "bg-blue-100 text-blue-700" : "text-gray-700 hover:bg-gray-100"
             }`}
           >
@@ -90,7 +86,7 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
           </Link>
           <Link
             href="/agents"
-            className={`flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-[2px] ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-[2px] cursor-pointer ${
               pathname === "/agents" ? "bg-blue-100 text-blue-700" : "text-gray-700 hover:bg-gray-100"
             }`}
           >
@@ -106,7 +102,7 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
           </Link>
           <Link
             href="/experiments"
-            className={`flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-[2px] ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-[2px] cursor-pointer ${
               pathname === "/experiments" ? "bg-blue-100 text-blue-700" : "text-gray-700 hover:bg-gray-100"
             }`}
           >
@@ -122,7 +118,7 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
           </Link>
           <Link
             href="/metrics"
-            className={`flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-[2px] ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-[2px] cursor-pointer ${
               pathname === "/metrics" ? "bg-blue-100 text-blue-700" : "text-gray-700 hover:bg-gray-100"
             }`}
           >
@@ -131,7 +127,7 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
           </Link>
           <Link
             href="/deployments"
-            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors mb-1 ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors mb-1 cursor-pointer ${
               pathname.startsWith("/deployments") ? "bg-blue-100 text-blue-700" : "text-gray-700 hover:bg-gray-100"
             }`}
           >
@@ -143,7 +139,7 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
             href="https://docs.anotherai.dev"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-1 text-gray-700 hover:bg-gray-100"
+            className="flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-1 text-gray-700 hover:bg-gray-100 cursor-pointer"
           >
             <Settings className="w-4 h-4" />
             MCP Set Up
@@ -152,7 +148,7 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
             href="https://docs.anotherai.dev"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-1 text-gray-700 hover:bg-gray-100"
+            className="flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-1 text-gray-700 hover:bg-gray-100 cursor-pointer"
           >
             <FileText className="w-4 h-4" />
             Documentation
@@ -161,7 +157,7 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
             href="https://docs.anotherai.dev/inference/models#list"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-1 text-gray-700 hover:bg-gray-100"
+            className="flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-1 text-gray-700 hover:bg-gray-100 cursor-pointer"
           >
             <Layers className="w-4 h-4" />
             Models
