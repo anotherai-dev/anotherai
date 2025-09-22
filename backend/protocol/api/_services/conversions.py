@@ -348,6 +348,7 @@ def experiment_from_domain(
         id=experiment.id,
         agent_id=experiment.agent_id,
         created_at=_sanitize_datetime(experiment.created_at),
+        updated_at=_sanitize_datetime(experiment.updated_at) if experiment.updated_at else None,
         author_name=experiment.author_name,
         title=experiment.title,
         description=experiment.description,

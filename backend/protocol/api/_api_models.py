@@ -426,6 +426,7 @@ class ExperimentItem(BaseModel):
 class Experiment(BaseModel):
     id: str
     created_at: datetime
+    updated_at: datetime | None = Field(description="When the experiment was last updated.")
     author_name: str
     url: str
 
