@@ -8,6 +8,7 @@ import { ToastProvider } from "@/components/ToastProvider";
 import { ApiKeysModal } from "@/components/api-keys-modal/ApiKeysModal";
 import { CompletionModal } from "@/components/completion-modal/CompletionModal";
 import { DeploymentModal } from "@/components/deployment-modal/DeploymentModal";
+import { getServerSideCookie } from "@/lib/server-cookies";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -34,7 +35,9 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Read sidebar state from cookies server-side
+  const initialSidebarExpanded = await getServerSideCookie("sidebar-expanded", true);
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
@@ -80,7 +83,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </div>
             </SignedOut>
             <SignedIn>
-              <LayoutContent>{children}</LayoutContent>
+              <LayoutContent initialSidebarExpanded={initialSidebarExpanded}>{children}</LayoutContent>
               <Suspense fallback={null}>
                 <CompletionModal />
                 <DeploymentModal />

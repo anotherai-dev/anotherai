@@ -20,7 +20,7 @@ export function SignUpButton({}: AuthComponentProps) {
   return null;
 }
 
-export function UserButton({}: { className?: string }) {
+export function UserButton({}: { className?: string; avatarOnly?: boolean }) {
   return null;
 }
 
