@@ -10,11 +10,11 @@ export interface PaginationParams {
 }
 
 /**
- * Detects if a SQL query contains pagination variables {limit:UInt32} and {offset:UInt32}
+ * Detects if a SQL query contains pagination variables {limit} and {offset}
  */
 export function detectPaginationVariables(query: string): boolean {
-  const limitPattern = /\{limit:UInt32\}/gi;
-  const offsetPattern = /\{offset:UInt32\}/gi;
+  const limitPattern = /\{limit\}/gi;
+  const offsetPattern = /\{offset\}/gi;
 
   return limitPattern.test(query) && offsetPattern.test(query);
 }
@@ -24,8 +24,8 @@ export function detectPaginationVariables(query: string): boolean {
  * Returns the limit value if found, otherwise returns null
  */
 export function extractLimitFromQuery(query: string): number | null {
-  // Look for LIMIT followed by {limit:UInt32} pattern
-  const limitMatch = query.match(/LIMIT\s+\{limit:UInt32\}/gi);
+  // Look for LIMIT followed by {limit} pattern
+  const limitMatch = query.match(/LIMIT\s+\{limit\}/gi);
   if (!limitMatch) {
     // Fall back to regular LIMIT clause
     const regularLimitMatch = query.match(/LIMIT\s+(\d+)/gi);
@@ -46,11 +46,11 @@ export function extractLimitFromQuery(query: string): number | null {
 export function replacePaginationVariables(query: string, params: PaginationParams): string {
   let result = query;
 
-  // Replace {limit:UInt32} with actual limit value
-  result = result.replace(/\{limit:UInt32\}/gi, params.limit.toString());
+  // Replace {limit} with actual limit value
+  result = result.replace(/\{limit\}/gi, params.limit.toString());
 
-  // Replace {offset:UInt32} with actual offset value
-  result = result.replace(/\{offset:UInt32\}/gi, params.offset.toString());
+  // Replace {offset} with actual offset value
+  result = result.replace(/\{offset\}/gi, params.offset.toString());
 
   return result;
 }

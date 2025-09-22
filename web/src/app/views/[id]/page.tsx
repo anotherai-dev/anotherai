@@ -23,7 +23,7 @@ export default function ViewPage() {
 
   const { view, isLoading, error, update } = useOrFetchView(viewId);
 
-  const query = view?.query + " LIMIT {limit:UInt32\} OFFSET {offset:UInt32\}";
+  const query = view?.query;
 
   // Process the view query to handle pagination variables before sending to API
   const processedQuery = useMemo(() => {

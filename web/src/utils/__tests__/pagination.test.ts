@@ -9,17 +9,17 @@ import {
 describe("Pagination Utilities", () => {
   describe("detectPaginationVariables", () => {
     it("detects pagination variables in query", () => {
-      const query = "SELECT * FROM completions LIMIT {limit:UInt32} OFFSET {offset:UInt32}";
+      const query = "SELECT * FROM completions LIMIT {limit} OFFSET {offset}";
       expect(detectPaginationVariables(query)).toBe(true);
     });
 
     it("returns false when only limit variable is present", () => {
-      const query = "SELECT * FROM completions LIMIT {limit:UInt32}";
+      const query = "SELECT * FROM completions LIMIT {limit}";
       expect(detectPaginationVariables(query)).toBe(false);
     });
 
     it("returns false when only offset variable is present", () => {
-      const query = "SELECT * FROM completions OFFSET {offset:UInt32}";
+      const query = "SELECT * FROM completions OFFSET {offset}";
       expect(detectPaginationVariables(query)).toBe(false);
     });
 
@@ -29,19 +29,19 @@ describe("Pagination Utilities", () => {
     });
 
     it("is case insensitive", () => {
-      const query = "SELECT * FROM completions LIMIT {LIMIT:UINT32} OFFSET {OFFSET:UINT32}";
+      const query = "SELECT * FROM completions LIMIT {LIMIT} OFFSET {OFFSET}";
       expect(detectPaginationVariables(query)).toBe(true);
     });
 
     it("handles mixed case variables", () => {
-      const query = "SELECT * FROM completions LIMIT {Limit:UInt32} OFFSET {Offset:UInt32}";
+      const query = "SELECT * FROM completions LIMIT {Limit} OFFSET {Offset}";
       expect(detectPaginationVariables(query)).toBe(true);
     });
   });
 
   describe("extractLimitFromQuery", () => {
     it("extracts limit from pagination variable query", () => {
-      const query = "SELECT * FROM completions LIMIT {limit:UInt32} OFFSET {offset:UInt32}";
+      const query = "SELECT * FROM completions LIMIT {limit} OFFSET {offset}";
       expect(extractLimitFromQuery(query)).toBe(20); // Default page size
     });
 
@@ -68,7 +68,7 @@ describe("Pagination Utilities", () => {
 
   describe("replacePaginationVariables", () => {
     it("replaces both limit and offset variables", () => {
-      const query = "SELECT * FROM completions LIMIT {limit:UInt32} OFFSET {offset:UInt32}";
+      const query = "SELECT * FROM completions LIMIT {limit} OFFSET {offset}";
       const params = { limit: 25, offset: 50 };
       const result = replacePaginationVariables(query, params);
 
@@ -77,7 +77,7 @@ describe("Pagination Utilities", () => {
 
     it("handles multiple occurrences of variables", () => {
       const query =
-        "SELECT *, {limit:UInt32} as page_size FROM completions LIMIT {limit:UInt32} OFFSET {offset:UInt32}";
+        "SELECT *, {limit} as page_size FROM completions LIMIT {limit} OFFSET {offset}";
       const params = { limit: 10, offset: 20 };
       const result = replacePaginationVariables(query, params);
 
@@ -85,7 +85,7 @@ describe("Pagination Utilities", () => {
     });
 
     it("is case insensitive", () => {
-      const query = "SELECT * FROM completions LIMIT {LIMIT:UINT32} OFFSET {OFFSET:UINT32}";
+      const query = "SELECT * FROM completions LIMIT {LIMIT} OFFSET {OFFSET}";
       const params = { limit: 15, offset: 30 };
       const result = replacePaginationVariables(query, params);
 
@@ -93,7 +93,7 @@ describe("Pagination Utilities", () => {
     });
 
     it("handles zero values", () => {
-      const query = "SELECT * FROM completions LIMIT {limit:UInt32} OFFSET {offset:UInt32}";
+      const query = "SELECT * FROM completions LIMIT {limit} OFFSET {offset}";
       const params = { limit: 0, offset: 0 };
       const result = replacePaginationVariables(query, params);
 
@@ -143,7 +143,7 @@ describe("Pagination Utilities", () => {
 
   describe("processPaginationQuery", () => {
     it("processes query with pagination variables", () => {
-      const query = "SELECT * FROM completions LIMIT {limit:UInt32} OFFSET {offset:UInt32}";
+      const query = "SELECT * FROM completions LIMIT {limit} OFFSET {offset}";
       const result = processPaginationQuery(query, 2, 15);
 
       expect(result.processedQuery).toBe("SELECT * FROM completions LIMIT 15 OFFSET 15");
@@ -169,7 +169,7 @@ describe("Pagination Utilities", () => {
     });
 
     it("uses default values when not provided", () => {
-      const query = "SELECT * FROM completions LIMIT {limit:UInt32} OFFSET {offset:UInt32}";
+      const query = "SELECT * FROM completions LIMIT {limit} OFFSET {offset}";
       const result = processPaginationQuery(query);
 
       expect(result.processedQuery).toBe("SELECT * FROM completions LIMIT 20 OFFSET 0");
@@ -182,7 +182,7 @@ describe("Pagination Utilities", () => {
     });
 
     it("uses provided page size when pagination variables are detected", () => {
-      const query = "SELECT * FROM completions WHERE id > 100 LIMIT {limit:UInt32} OFFSET {offset:UInt32}";
+      const query = "SELECT * FROM completions WHERE id > 100 LIMIT {limit} OFFSET {offset}";
       const result = processPaginationQuery(query, 1, 25);
 
       // Should use provided page size when pagination variables are detected
@@ -196,8 +196,8 @@ describe("Pagination Utilities", () => {
         WHERE agent_id = 'test-agent' 
           AND created_at > '2023-01-01' 
         ORDER BY created_at DESC 
-        LIMIT {limit:UInt32} 
-        OFFSET {offset:UInt32}
+        LIMIT {limit} 
+        OFFSET {offset}
       `;
       const result = processPaginationQuery(query, 3, 10);
 

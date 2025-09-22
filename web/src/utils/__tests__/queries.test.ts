@@ -39,7 +39,7 @@ describe("Query Building Utilities", () => {
     });
 
     it("has correct LIMIT clause", () => {
-      expect(defaultQueryParts.limit).toBe("LIMIT {limit:UInt32} OFFSET {offset:UInt32}");
+      expect(defaultQueryParts.limit).toBe("LIMIT {limit} OFFSET {offset}");
     });
 
     it("contains valid SQL syntax", () => {
@@ -146,7 +146,7 @@ describe("Query Building Utilities", () => {
       expect(result).toMatch(/\s+WHERE\s+/);
 
       // Should end with OFFSET clause (since default query now has pagination variables)
-      expect(result).toMatch(/\s+OFFSET\s+\{offset:UInt32\}$/);
+      expect(result).toMatch(/\s+OFFSET\s+\{offset\}$/);
     });
   });
 
