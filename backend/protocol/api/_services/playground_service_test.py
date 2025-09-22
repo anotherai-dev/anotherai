@@ -155,6 +155,33 @@ class TestAddInputsToExperiment:
         assert version_ids == {version.id}
         assert input_ids == {"88aebe2d32e9c7a0e8e3790db4ceddc1"}
 
+    async def test_only_starting_completions_for_inserted_ids(
+        self,
+        playground_service: PlaygroundService,
+        mock_experiment_storage: Mock,
+        patched_start_completions: Mock,
+    ):
+        mock_experiment_storage.get_experiment.return_value = fake_experiment(
+            versions=[fake_version()],
+        )
+        mock_experiment_storage.add_inputs.reset_mock()
+
+        def _add_inputs(experiment_id: str, inputs: list[AgentInput]):
+            assert len(inputs) == 2, "sanity"
+            return {inputs[0].id}
+
+        mock_experiment_storage.add_inputs.side_effect = _add_inputs
+
+        await playground_service.add_inputs_to_experiment(
+            "test-experiment",
+            # Second input ID is 43396217dcb18701763a4d45e4de11b2
+            [Input(variables={"name": "John"}), Input(variables={"name": "Jane"})],
+            None,
+        )
+        assert patched_start_completions.call_count == 1
+        # Only first input ID is included
+        assert set(patched_start_completions.call_args.kwargs["input_ids"]) == {"88aebe2d32e9c7a0e8e3790db4ceddc1"}
+
 
 class TestStartExperimentCompletion:
     async def test_insert_count(
