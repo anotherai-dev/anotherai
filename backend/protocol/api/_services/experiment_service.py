@@ -72,7 +72,7 @@ class ExperimentService:
 
         return mcp_experiment_from_domain(
             exp,
-            f"""SELECT id, input_id, version_id, output_id, output_messages, output_error, cost_usd, duration_seconds
+            f"""SELECT id, input_id, version_id, output_id, output_messages, output_error, COALESCE(cost_usd, metadata['anotherai/original_cost_usd']), COALESCE(duration_seconds, metadata['anotherai/original_duration_seconds'])
             FROM completions WHERE metadata['anotherai/experiment_id'] = '{exp.id}'""",  # noqa: S608 # exp.id is sanitized
         )
 

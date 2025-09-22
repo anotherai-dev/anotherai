@@ -36,11 +36,11 @@ CREATE TABLE completions (
     -- and should be ignored in aggregations
     -- Maxes out at 65535 = 6555.35 seconds = 100.92 minutes
     duration_ds UInt16,
-    duration_seconds Float64 ALIAS duration_ds / 10,
+    duration_seconds Float64 ALIAS NULLIF(duration_ds / 10, 0),
     -- Cost stored in millionths of a USD, 0 is used as a default value
     -- and should be ignored in aggregations
     cost_millionth_usd UInt32,
-    cost_usd Float64 ALIAS cost_millionth_usd / 1000000,
+    cost_usd Float64 ALIAS NULLIF(cost_millionth_usd / 1000000, 0),
     -- Metadata. Non scalars are stored as stringified JSON
     metadata Map(String, String),
     -- The origin of the run
