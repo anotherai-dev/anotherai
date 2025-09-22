@@ -423,7 +423,7 @@ class ExperimentItem(BaseModel):
     result: str | None
 
 
-class Experiment(BaseModel):
+class _BaseExperiment(BaseModel):
     id: str
     created_at: datetime
     updated_at: datetime | None = Field(description="When the experiment was last updated.")
@@ -435,6 +435,17 @@ class Experiment(BaseModel):
     result: str | None = Field(description="A user defined result of the experiment.")
     agent_id: str = Field(description="The agent that created the experiment.")
 
+    versions: list[Version] | None
+
+    inputs: list[Input] | None
+
+    metadata: dict[str, Any] | None = Field(
+        default=None,
+        description="Metadata associated with the experiment. Can be used to store additional information about the experiment.",
+    )
+
+
+class Experiment(_BaseExperiment):
     class Completion(BaseModel):
         id: UUID
         # Only IDs are provided here but they have the same format as in the full object (completion.input.id)
@@ -446,18 +457,13 @@ class Experiment(BaseModel):
 
     completions: list[Completion] | None = Field(description="The completions of the experiment.")
 
-    versions: list[Version] | None
-
-    inputs: list[Input] | None
-
     annotations: list[Annotation] | None = Field(
         description="Annotations associated with the experiment, either tied to the experiment only or to a completion within the experiment.",
     )
 
-    metadata: dict[str, Any] | None = Field(
-        default=None,
-        description="Metadata associated with the experiment. Can be used to store additional information about the experiment.",
-    )
+
+class MCPExperiment(_BaseExperiment):
+    completion_query: Annotated[str, Field(description="A SQL query to fetch the completions of the experiment.")]
 
 
 class CreateExperimentRequest(BaseModel):

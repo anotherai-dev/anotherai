@@ -56,6 +56,7 @@ from protocol.api._api_models import (
     Graph,
     InferenceUsage,
     Input,
+    MCPExperiment,
     Message,
     Model,
     ModelContextWindow,
@@ -357,6 +358,27 @@ def experiment_from_domain(
         versions=[version_from_domain(v) for v in experiment.versions] if experiment.versions else None,
         inputs=[input_from_domain(i) for i in experiment.inputs] if experiment.inputs else None,
         annotations=[annotation_from_domain(a) for a in annotations] if annotations else None,
+        metadata=experiment.metadata or None,
+        url=experiments_url(experiment.id),
+    )
+
+
+def mcp_experiment_from_domain(
+    experiment: DomainExperiment,
+    completion_query: str,
+) -> MCPExperiment:
+    return MCPExperiment(
+        id=experiment.id,
+        agent_id=experiment.agent_id,
+        created_at=_sanitize_datetime(experiment.created_at),
+        updated_at=_sanitize_datetime(experiment.updated_at) if experiment.updated_at else None,
+        author_name=experiment.author_name,
+        title=experiment.title,
+        description=experiment.description,
+        result=experiment.result,
+        completion_query=completion_query,
+        versions=[version_from_domain(v) for v in experiment.versions] if experiment.versions else None,
+        inputs=[input_from_domain(i) for i in experiment.inputs] if experiment.inputs else None,
         metadata=experiment.metadata or None,
         url=experiments_url(experiment.id),
     )

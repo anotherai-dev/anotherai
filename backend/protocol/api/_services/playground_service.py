@@ -115,7 +115,7 @@ class PlaygroundService:
                 version_ids=inserted_ids,
             )
 
-        return [IDType.VERSION.wrap(id) for id in inserted_ids]
+        return [IDType.VERSION.wrap(v.id) for v in versions]
 
     async def add_inputs_to_experiment(
         self,
@@ -145,7 +145,8 @@ class PlaygroundService:
                 input_ids=inserted_ids,
             )
 
-        return [IDType.INPUT.wrap(id) for id in inserted_ids]
+        # We return all inputs here in the same order they were provided
+        return [IDType.INPUT.wrap(d.id) for d in domain_inputs]
 
     async def _start_experiment_completions(
         self,
@@ -194,6 +195,7 @@ class PlaygroundService:
             input=input,
             metadata=metadata,
             use_cache=use_cache,
+            timeout_seconds=0.5,  # Will run in background here so we have plenty of time
         )
         if cached:
             return CompletionOutputTuple(
@@ -351,6 +353,15 @@ def _validate_version(version: Version) -> Version:
         version.model = get_model_id(version.model)
     except ValueError as e:
         raise BadRequestError(f"Invalid model: {version.model}") from e
+
+    if version.prompt is None:
+        raise BadRequestError(
+            "Versions must have an explicit prompt parameter. "
+            "You can use jinja2 templates to inject the dynamic portions of messages (pass the input variables in the input). "
+            "If comparing to an existing version, use the version_id as the base version and pass the corresponding overrides. "
+            "In the rare case where there is no way to extract a static prompt, explicitly pass an empty list of messages "
+            "as the prompt.",
+        )
 
     if version.prompt and not version.input_variables_schema:
         variables, _ = json_schema_for_template([message_to_domain(m) for m in version.prompt], {})

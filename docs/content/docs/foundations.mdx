@@ -96,15 +96,19 @@ AnotherAI provides a collection of tools (`create_experiment`, `add_inputs_to_ex
 The tool creates a matrix of completions testing all combinations of models, prompts, inputs, and temperatures.
 
 **Agent workflow:**
-1. **Create experiments** using `playground` tool for testing
-2. **Add results/conclusions** using `add_experiment_result` with:
+1. **Create experiments** with `create_experiment`.
+2. **Add inputs** with `add_inputs_to_experiment`. Here you can create new inputs if needed using the `inputs` parameter, or re-use existing inputs if needed using the `query` parameter. Always use the `query` parameter when re-using existing inputs, this will ensure that the inputs are identical.
+3. **Add versions** with `add_versions_to_experiment`. If versions already exist, in most cases you should start with an existing version as a baseline (`version` parameter). Sometimes, like when the input variables are different, it can be good to start with a completely new version.
+4. **Wait for the results** with `get_experiment`. You can ask the tool to include the full version and inputs if needed, and filter via version or input ids. The `get_experiment` tool will return a query that you can use to fetch the results.
+5. **Get the results** via the `query_completions` tool. Remember that you can paginate the results to avoid context overflows.
+6. **Add results/conclusions** using `add_experiment_result` with:
    - Performance metrics (speed, cost, accuracy)
    - Key findings and insights
    - Recommendations for next steps
    - Model comparisons and winners
-3. **Provide experiment URL** immediately for user review: `{{WEB_APP_URL}}/experiments/{experiment_id}`
-4. **Check for user feedback** using `get_annotations`
-5. **Iterate** based on feedback
+7. **Provide experiment URL** immediately for user review: `{{WEB_APP_URL}}/experiments/{experiment_id}`
+8. **Check for user feedback** using `get_annotations`
+9. **Iterate** based on feedback. You can use `add_versions_to_experiment` to add new versions or the `add_inputs_to_experiment` to add new inputs to the same experiment.
 
 Always add experiment results using `add_experiment_result` after completing any testing or analysis. This tool documents findings, performance metrics, and recommendations for future reference.
 

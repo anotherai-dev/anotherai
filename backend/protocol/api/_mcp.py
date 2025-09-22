@@ -18,6 +18,7 @@ from protocol.api._api_models import (
     Deployment,
     Experiment,
     Input,
+    MCPExperiment,
     Model,
     Page,
     QueryCompletionResponse,
@@ -165,7 +166,7 @@ async def get_experiment(
             "At the end of the time, the experiment is returned even if the completions are not ready.",
         ),
     ] = 30,
-) -> Experiment:
+) -> MCPExperiment:
     """Waits for the experiment's completions to be ready and returns the experiment,
     including the associated versions and inputs and outputs."""
     return await (await _mcp_utils.experiment_service()).wait_for_experiment(

@@ -1,7 +1,6 @@
 from typing import Any, Literal, Protocol
 
 from core.domain.agent_completion import AgentCompletion
-from core.domain.agent_output import AgentOutput
 from core.domain.annotation import Annotation
 from core.domain.experiment import Experiment
 from core.domain.version import Version
@@ -34,4 +33,9 @@ class CompletionStorage(Protocol):
 
     async def get_version_by_id(self, agent_id: str, version_id: str) -> tuple[Version, str]: ...
 
-    async def cached_output(self, version_id: str, input_id: str) -> tuple[str, AgentOutput] | None: ...
+    async def cached_completion(
+        self,
+        version_id: str,
+        input_id: str,
+        timeout_seconds: float,
+    ) -> AgentCompletion | None: ...
