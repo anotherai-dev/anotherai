@@ -2,6 +2,7 @@ import contextlib
 import json
 from typing import Any, override
 
+import pydantic_core
 from fastmcp.exceptions import ToolError
 from fastmcp.server import FastMCP
 from fastmcp.server.auth import AccessToken, AuthProvider, TokenVerifier
@@ -12,11 +13,13 @@ from mcp.types import CallToolRequestParams, ListToolsRequest
 from pydantic import BaseModel, ValidationError
 from structlog import get_logger
 from structlog.contextvars import bind_contextvars
+from transformers import AutoTokenizer
 
 from core.domain.exceptions import DefaultError, InvalidTokenError
 from core.domain.tenant_data import TenantData
 from core.providers._base.provider_error import ProviderError
 from core.services.documentation.documentation_search import DocumentationSearch
+from protocol.api._api_models import ChunkedResponse
 from protocol.api._dependencies._lifecycle import lifecyle_dependencies
 from protocol.api._dependencies._services import completion_runner
 from protocol.api._services.agent_service import AgentService
@@ -252,3 +255,26 @@ class CustomTokenVerifier(TokenVerifier):
 
 def build_auth_provider() -> AuthProvider:
     return CustomTokenVerifier()
+
+
+def chunk[T](payload: T, chunk_offset: int | None, max_chunk_token_size: int | None) -> T | ChunkedResponse:
+    if max_chunk_token_size is None:
+        return payload
+    if chunk_offset is None:
+        chunk_offset = 0
+
+    tok = AutoTokenizer.from_pretrained("bert-base-uncased", use_fast=True)
+    # We pretty print the JSON. We could use custom separators as well
+    # TODO: we should store the splits in a redis to make sure
+    # We don't return bogus data
+    serialized = pydantic_core.to_json(payload, indent=2).decode("utf-8")
+    lines = serialized.splitlines()[chunk_offset:]
+    total_token_count = 0
+
+    for idx, line in enumerate(lines):
+        line_count = len(tok.encode(line))
+        total_token_count += line_count
+        if total_token_count > max_chunk_token_size:
+            return ChunkedResponse(chunk="\n".join(lines[:idx]), next_chunk_offset=chunk_offset + len(line))
+
+    return ChunkedResponse(chunk="\n".join(lines), next_chunk_offset=None)

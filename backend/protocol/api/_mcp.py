@@ -12,13 +12,13 @@ from protocol.api import _mcp_utils
 from protocol.api._api_models import (
     Agent,
     Annotation,
+    ChunkedResponse,
     CompleteAPIKey,
     CreateAPIKeyRequest,
     CreateViewResponse,
     Deployment,
     Experiment,
     Input,
-    MCPExperiment,
     Model,
     Page,
     QueryCompletionResponse,
@@ -166,14 +166,24 @@ async def get_experiment(
             "At the end of the time, the experiment is returned even if the completions are not ready.",
         ),
     ] = 30,
-) -> MCPExperiment:
+    chunk_offset: int | None = None,
+    max_chunk_token_size: int | None = None,
+) -> Experiment | ChunkedResponse:
     """Waits for the experiment's completions to be ready and returns the experiment,
-    including the associated versions and inputs and outputs."""
-    return await (await _mcp_utils.experiment_service()).wait_for_experiment(
-        id,
-        version_ids=version_ids,
-        input_ids=input_ids,
-        max_wait_time_seconds=max_wait_time_seconds,
+    including the associated versions and inputs and outputs.
+
+    If max token size is provided, the experiment is provided in chunks. Use when the experiment is too large to
+    fit in the context window of the model.
+    """
+    return _mcp_utils.chunk(
+        await (await _mcp_utils.experiment_service()).wait_for_experiment(
+            id,
+            version_ids=version_ids,
+            input_ids=input_ids,
+            max_wait_time_seconds=max_wait_time_seconds,
+        ),
+        chunk_offset=chunk_offset,
+        max_chunk_token_size=max_chunk_token_size,
     )
 
 

@@ -1,7 +1,8 @@
 # pyright: reportPrivateUsage=false
 
 
-from protocol.api._mcp_utils import _add_string_to_property_type
+from protocol.api._api_models import ChunkedResponse
+from protocol.api._mcp_utils import _add_string_to_property_type, chunk
 
 
 class TestAddStringToPropertyType:
@@ -213,3 +214,12 @@ class TestAddStringToPropertyType:
             ],
             "description": "Complex union type",
         }
+
+
+class TestChunk:
+    def test_chunk(self):
+        """Test that chunk returns the correct chunk"""
+        payload = {"name": "John", "age": 30}
+        chunked = chunk(payload, 0, 10)
+        assert isinstance(chunked, ChunkedResponse)
+        assert chunked.chunk == "{"

@@ -854,3 +854,8 @@ class OpenAIListResult[T: BaseModel](BaseModel):
 
     object: Literal["list"] = "list"
     data: list[T]
+
+
+class ChunkedResponse(BaseModel):
+    chunk: str
+    next_chunk_offset: int | None
