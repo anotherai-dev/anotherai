@@ -28,7 +28,8 @@ export const metadata: Metadata = {
   authors: [{ name: "AnotherAI Model Explorer" }],
   openGraph: {
     title: "AnotherAI",
-    description: "AnotherAI enables your AI assistant (ChatGPT, Claude Code, Cursor, ...) to become a powerful AI engineer.",
+    description:
+      "AnotherAI enables your AI assistant (ChatGPT, Claude Code, Cursor, ...) to become a powerful AI engineer.",
     type: "website",
   },
 };
