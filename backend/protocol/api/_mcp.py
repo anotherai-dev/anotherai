@@ -167,8 +167,12 @@ async def get_experiment(
         ),
     ] = 30,
 ) -> MCPExperiment:
-    """Waits for the experiment's completions to be ready and returns the experiment,
-    including the associated versions and inputs and outputs."""
+    """Waits for the experiment's completions to be ready and returns the experiment.
+    Use the `query_completions` tool with the `input_query`, `version_query` or `completion_query` to fetch the
+    inputs, versions and completions of the experiment.
+    To compare results, keep in mind that a version is not limited to a model, so you cannot group completions by
+    model for efficiency. Instead group by version_id if needed and check the differences between versions.
+    """
     return await (await _mcp_utils.experiment_service()).wait_for_experiment(
         id,
         version_ids=version_ids,
