@@ -41,3 +41,25 @@ async def test_list_tools(test_api_client: IntegrationTestClient):
             "type": "string",
         },
     ]
+
+
+async def test_no_serialize_nulls(test_api_client: IntegrationTestClient):
+    res = await test_api_client.call_tool(
+        "create_experiment",
+        {
+            "id": "test-experiment",
+            "title": "Capital Extractor Test Experiment",
+            "description": "This is a test experiment",
+            "agent_id": "test-agent",
+            "author_name": "user",
+        },
+    )
+    assert res
+    exp = await test_api_client.call_tool(
+        "get_experiment",
+        {"id": "test-experiment", "max_wait_time_seconds": 1},
+    )
+    assert "inputs" not in exp
+    assert "versions" not in exp
+    assert "outputs" not in exp
+    assert "annotations" not in exp
