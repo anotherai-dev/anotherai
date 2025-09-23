@@ -7,6 +7,13 @@ const mockSearchParams = {
   get: mockGet,
 };
 
+// Mock React hooks
+const mockUseMemo = jest.fn();
+jest.mock("react", () => ({
+  ...jest.requireActual("react"),
+  useMemo: (fn: () => any, deps: any[]) => mockUseMemo(fn, deps),
+}));
+
 jest.mock("next/navigation", () => ({
   useSearchParams: () => mockSearchParams,
 }));
@@ -14,6 +21,9 @@ jest.mock("next/navigation", () => ({
 describe("useParsedSearchParams", () => {
   beforeEach(() => {
     mockGet.mockClear();
+    mockUseMemo.mockClear();
+    // Make useMemo call the function immediately
+    mockUseMemo.mockImplementation((fn) => fn());
   });
 
   describe("Basic functionality", () => {

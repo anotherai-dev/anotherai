@@ -308,10 +308,10 @@ describe("Version Functions", () => {
 
   describe("getVersionWithDefaults", () => {
     it("applies default values", () => {
-      const version = mockVersion();
-      const result = getVersionWithDefaults(version);
+      const version = { id: "1", model: "gpt-4" }; // Version without temperature, top_p, etc.
+      const result = getVersionWithDefaults(version as any);
 
-      expect(result.temperature).toBe(1.0);
+      expect(result.temperature).toBe(1.0); // Should be the default value
       expect(result.top_p).toBe(1.0);
       expect(result.tools).toEqual([]);
       expect(result.use_cache).toBe("auto");
