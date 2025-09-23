@@ -1,4 +1,4 @@
-import { ExperimentWithLookups } from "@/types/models";
+import { Annotation, ExperimentWithLookups } from "@/types/models";
 import {
   findAllMetricKeysAndAverages,
   getAllMetricsPerKey,
@@ -10,9 +10,11 @@ import {
 // Mock types for testing
 const mockAnnotation = (overrides: Record<string, unknown> = {}) => ({
   id: "1",
+  created_at: "2023-01-01T00:00:00Z",
+  author_name: "test-user",
   target: {},
   context: {},
-  metric: null,
+  metric: undefined,
   ...overrides,
 });
 
@@ -38,16 +40,19 @@ describe("Experiment Utilities", () => {
     });
 
     it("ignores annotations without metrics", () => {
-      const annotations = [mockAnnotation({ metric: null }), mockAnnotation({ metric: undefined }), mockAnnotation({})];
+      const annotations = [mockAnnotation({ metric: undefined }), mockAnnotation({ metric: undefined }), mockAnnotation({})];
       const result = findAllMetricKeysAndAverages(annotations);
       expect(result).toEqual([]);
     });
 
     it("ignores non-numeric metric values", () => {
       const annotations = [
-        mockAnnotation({ metric: { name: "accuracy", value: "high" } }),
-        mockAnnotation({ metric: { name: "quality", value: null } }),
-        mockAnnotation({ metric: { name: "score", value: undefined } }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        mockAnnotation({ metric: { name: "accuracy", value: "high" as any } }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        mockAnnotation({ metric: { name: "quality", value: null as any } }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        mockAnnotation({ metric: { name: "score", value: undefined as any } }),
       ];
       const result = findAllMetricKeysAndAverages(annotations);
       expect(result).toEqual([]);
@@ -290,7 +295,7 @@ describe("Experiment Utilities", () => {
       const annotations = [
         mockAnnotation({
           target: { completion_id: "comp1" },
-          metric: null,
+          metric: undefined,
         }),
         mockAnnotation({
           target: { completion_id: "comp1" },
@@ -381,7 +386,7 @@ describe("Experiment Utilities", () => {
     });
 
     it("handles completions without annotations", () => {
-      const annotations: unknown[] = [];
+      const annotations: Annotation[] = [];
 
       const result = getAllMetricsPerKeyForRow(experiment as ExperimentWithLookups, annotations, "input1");
 

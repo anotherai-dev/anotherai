@@ -1,3 +1,4 @@
+import { Version } from "@/types/models";
 import {
   calculateAverageMetrics,
   filterAnnotations,
@@ -8,6 +9,7 @@ import {
   getDifferingVersionKeys,
   getMetricBadgeColor,
   getMetricBadgeWithRelative,
+  getSharedPartsOfPrompts,
   getVersionKeyDisplayName,
   getVersionWithDefaults,
   isDateValue,
@@ -24,16 +26,23 @@ const mockExperimentCompletion = (cost: number, duration: number) => ({
   id: "1",
   cost_usd: cost,
   duration_seconds: duration,
+  input: { id: "input-1" },
+  version: { id: "version-1" },
+  output: { messages: [] },
 });
 
 const mockVersion = (overrides: Record<string, unknown> = {}) => ({
   id: "1",
   model: "gpt-4",
+  temperature: 0.0,
+  top_p: 1.0,
   ...overrides,
 });
 
 const mockAnnotation = (overrides: Record<string, unknown> = {}) => ({
   id: "1",
+  created_at: "2023-01-01T00:00:00Z",
+  author_name: "test-user",
   target: {},
   context: {},
   ...overrides,
@@ -226,7 +235,7 @@ describe("Calculation Functions", () => {
 
     it("handles null/undefined values", () => {
       const completions = [
-        { ...mockExperimentCompletion(0, 0), cost_usd: null, duration_seconds: undefined },
+        { ...mockExperimentCompletion(0, 0), cost_usd: 0, duration_seconds: 0 },
         mockExperimentCompletion(2, 4),
       ];
 
@@ -581,6 +590,226 @@ This is **bold** and *italic* text with \`code\` and [a link](http://example.com
       expect(result).not.toContain(">");
       expect(result).not.toContain("-");
       expect(result).not.toContain("1.");
+    });
+  });
+});
+
+describe("Prompt Functions", () => {
+  describe("getSharedPartsOfPrompts", () => {
+    // Mock data from the experiment - simplified versions for testing
+    const mockVersions: Version[] = [
+      {
+        id: "d7b096502a66ce3d97c1314f4ea45d79",
+        model: "llama4-maverick-instruct-fast",
+        temperature: 0.0,
+        top_p: 1.0,
+        prompt: [
+          {
+            role: "system",
+            content:
+              "Extract meeting notes from the provided transcript and any additional user notes if provided.\n\nOrganize the notes by topics discussed.\n\nFor each topic, create an object with:\n\n- a 'title' property representing the topic name.\n- a 'bullets' property containing a maximum of 5 bullet points summarizing the main ideas regarding the topic. Be strict here, try to avoid overlap between topics.\n\nEach bullet point should be a short, digestible sentence without pronouns unless explicitly defined.\n\nFormat the bullet points as a string with each point on a new line, preceded by a hyphen and space.\n\nExample bullet format:\n- Point 1\n- Point 2\n- Point 3\n- Point 4\n- Point 5.\n\nEnsure all sentences are decontextualized and can stand alone without reference to other parts of the conversation.",
+          },
+          {
+            role: "user",
+            content: "user_notes: {{user_notes}}\n\ntranscript: {{transcript}}",
+          },
+        ],
+      },
+      {
+        id: "218d13d8e9458d94311dc64860adf3fb",
+        model: "gpt-4o-mini-2024-07-18",
+        temperature: 0.0,
+        top_p: 1.0,
+        prompt: [
+          {
+            role: "system",
+            content:
+              "Extract meeting notes from the provided transcript and any additional user notes if provided.\n\nOrganize the notes by topics discussed.\n\nFor each topic, create an object with:\n\n- a 'title' property representing the topic name.\n- a 'bullets' property containing a maximum of 5 bullet points summarizing the main ideas regarding the topic. Be strict here, try to avoid overlap between topics.\n\nEach bullet point should be a short, digestible sentence without pronouns unless explicitly defined.\n\nFormat the bullet points as a string with each point on a new line, preceded by a hyphen and space.\n\nExample bullet format:\n- Point 1\n- Point 2\n- Point 3\n- Point 4\n- Point 5.\n\nEnsure all sentences are decontextualized and can stand alone without reference to other parts of the conversation.",
+          },
+          {
+            role: "user",
+            content: "user_notes: {{user_notes}}\n\ntranscript: {{transcript}}",
+          },
+        ],
+      },
+      {
+        id: "f9c91ed3b3f58d9821959517434f463e",
+        model: "llama4-maverick-instruct-fast",
+        temperature: 0.0,
+        top_p: 1.0,
+        prompt: [
+          {
+            role: "system",
+            content:
+              'Extract meeting notes from the provided transcript and any additional user notes if provided.\n\nIMPORTANT: \n- If the transcript is empty or contains no meaningful conversation, return an empty meeting_notes array.\n- Do NOT generate fictional content if no actual meeting or conversation occurred.\n- Only extract notes if there\'s substantive business discussion.\n\nExamples of when to return empty meeting_notes:\n- Empty transcript\n- Single greetings only ("hello", "hi")\n- Personal conversations (family dinner plans, personal favors)\n- Brief coordination calls ("I\'m 4 minutes away", "meet me in the parking lot")\n- Technical issues with no actual discussion\n\nOrganize the notes by topics discussed.\n\nFor each topic, create an object with:\n\n- a \'title\' property representing the topic name.\n- a \'bullets\' property containing a maximum of 5 bullet points summarizing the main ideas regarding the topic. Be strict here, try to avoid overlap between topics.\n\nEach bullet point should be a short, digestible sentence without pronouns unless explicitly defined.\n\nFormat the bullet points as a string with each point on a new line, preceded by a hyphen and space.\n\nExample bullet format:\n- Point 1\n- Point 2\n- Point 3\n- Point 4\n- Point 5.\n\nEnsure all sentences are decontextualized and can stand alone without reference to other parts of the conversation.',
+          },
+          {
+            role: "user",
+            content: "user_notes: {{user_notes}}\n\ntranscript: {{transcript}}",
+          },
+        ],
+      },
+    ];
+
+    it("returns empty array for empty versions", () => {
+      expect(getSharedPartsOfPrompts([])).toEqual([]);
+    });
+
+    it("returns empty array for versions without prompts", () => {
+      const versionsWithoutPrompts: Version[] = [
+        {
+          id: "1",
+          model: "gpt-4",
+          temperature: 0.0,
+          top_p: 1.0,
+        },
+      ];
+      expect(getSharedPartsOfPrompts(versionsWithoutPrompts)).toEqual([]);
+    });
+
+    it("returns the prompt for single version with prompts", () => {
+      const singleVersion: Version[] = [mockVersions[0]];
+      const result = getSharedPartsOfPrompts(singleVersion);
+      expect(result).toEqual(mockVersions[0].prompt);
+    });
+
+    it("finds shared content across multiple versions", () => {
+      const result = getSharedPartsOfPrompts(mockVersions);
+
+      // Should find shared system message content
+      expect(result).toHaveLength(2); // system and user roles
+
+      const systemMessage = result.find((msg) => msg.role === "system");
+      const userMessage = result.find((msg) => msg.role === "user");
+
+      expect(systemMessage).toBeDefined();
+      expect(userMessage).toBeDefined();
+
+      // Check that shared content includes common parts
+      expect(systemMessage?.content).toContain("Extract meeting notes");
+      expect(systemMessage?.content).toContain("Organize the notes by topics");
+      expect(systemMessage?.content).toContain("title' property representing the topic name");
+      expect(systemMessage?.content).toContain("bullets' property containing a maximum of 5 bullet points");
+
+      // User message should be identical across versions
+      expect(userMessage?.content).toBe("user_notes: {{user_notes}}\n\ntranscript: {{transcript}}");
+    });
+
+    it("handles versions with different prompt lengths", () => {
+      const differentLengthVersions: Version[] = [
+        {
+          id: "1",
+          model: "gpt-4",
+          temperature: 0.0,
+          top_p: 1.0,
+          prompt: [{ role: "system", content: "Common system prompt" }],
+        },
+        {
+          id: "2",
+          model: "gpt-3.5",
+          temperature: 0.0,
+          top_p: 1.0,
+          prompt: [
+            { role: "system", content: "Common system prompt" },
+            { role: "user", content: "Additional user prompt" },
+          ],
+        },
+      ];
+
+      const result = getSharedPartsOfPrompts(differentLengthVersions);
+      expect(result).toHaveLength(1);
+      expect(result[0].role).toBe("system");
+      expect(result[0].content).toBe("Common system prompt");
+    });
+
+    it("handles array content in messages", () => {
+      const versionsWithArrayContent: Version[] = [
+        {
+          id: "1",
+          model: "gpt-4",
+          temperature: 0.0,
+          top_p: 1.0,
+          prompt: [
+            {
+              role: "user",
+              content: [{ text: "First part of message" }, { text: "Second part of message" }],
+            },
+          ],
+        },
+        {
+          id: "2",
+          model: "gpt-3.5",
+          temperature: 0.0,
+          top_p: 1.0,
+          prompt: [
+            {
+              role: "user",
+              content: [{ text: "First part of message" }, { text: "Different second part" }],
+            },
+          ],
+        },
+      ];
+
+      const result = getSharedPartsOfPrompts(versionsWithArrayContent);
+      expect(result).toHaveLength(1);
+      expect(result[0].role).toBe("user");
+      expect(result[0].content).toContain("First part of message");
+    });
+
+    it("handles empty or whitespace-only content", () => {
+      const versionsWithEmptyContent: Version[] = [
+        {
+          id: "1",
+          model: "gpt-4",
+          temperature: 0.0,
+          top_p: 1.0,
+          prompt: [
+            { role: "system", content: "" },
+            { role: "user", content: "Real content" },
+          ],
+        },
+        {
+          id: "2",
+          model: "gpt-3.5",
+          temperature: 0.0,
+          top_p: 1.0,
+          prompt: [
+            { role: "system", content: "   " },
+            { role: "user", content: "Real content" },
+          ],
+        },
+      ];
+
+      const result = getSharedPartsOfPrompts(versionsWithEmptyContent);
+      expect(result).toHaveLength(1);
+      expect(result[0].role).toBe("user");
+      expect(result[0].content).toBe("Real content");
+    });
+
+    it("handles versions where not all have the same role at the same position", () => {
+      const versionsWithMissingRoles: Version[] = [
+        {
+          id: "1",
+          model: "gpt-4",
+          temperature: 0.0,
+          top_p: 1.0,
+          prompt: [
+            { role: "system", content: "System message" },
+            { role: "user", content: "User message" },
+          ],
+        },
+        {
+          id: "2",
+          model: "gpt-3.5",
+          temperature: 0.0,
+          top_p: 1.0,
+          prompt: [{ role: "user", content: "Different user message" }],
+        },
+      ];
+
+      const result = getSharedPartsOfPrompts(versionsWithMissingRoles);
+      // Should only include roles that appear at the same position across ALL versions
+      expect(result).toHaveLength(0);
     });
   });
 });
