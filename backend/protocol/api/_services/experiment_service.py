@@ -4,6 +4,7 @@ from collections.abc import Collection
 from typing import Any, final
 
 from core.domain.agent import Agent
+from core.domain.annotation import Annotation
 from core.domain.cache_usage import CacheUsage
 from core.domain.exceptions import ObjectNotFoundError
 from core.storage.agent_storage import AgentStorage
@@ -12,11 +13,14 @@ from core.storage.completion_storage import CompletionStorage
 from core.storage.experiment_storage import ExperimentStorage
 from core.utils.background import add_background_task
 from core.utils.hash import HASH_REGEXP_32
-from protocol.api._api_models import CreateExperimentRequest, Experiment, MCPExperiment, Page
+from protocol.api._api_models import CreateExperimentRequest, Experiment, Input, MCPExperiment, Page, Version
 from protocol.api._services.conversions import (
     create_experiment_to_domain,
+    experiment_completion_from_domain,
     experiment_from_domain,
+    input_from_domain,
     mcp_experiment_from_domain,
+    version_from_domain,
 )
 from protocol.api._services.utils_service import IDType, sanitize_ids
 
@@ -51,7 +55,7 @@ class ExperimentService:
 
         while time.time() - start_time < max_wait_time_seconds:
             # First fetch completions to check that all are properly completed
-            completions = await self.experiment_storage.list_experiment_completions(
+            completions = await self.experiment_storage.list_experiment_outputs(
                 experiment_id,
                 version_ids=sanitized_versions,
                 input_ids=sanitized_inputs,
@@ -65,18 +69,60 @@ class ExperimentService:
 
         exp = await self.experiment_storage.get_experiment(
             experiment_id,
-            include={"versions", "inputs"},
+            include={"versions.id", "inputs.id", "outputs.id"},
             version_ids=version_ids,
             input_ids=input_ids,
         )
+        annotation_count = 0
+        if exp.outputs:
+            annotation_count = await self.annotation_storage.count(
+                target=TargetFilter(completion_id={str(c.completion_id) for c in exp.outputs}),
+                context=None,
+            )
 
         return mcp_experiment_from_domain(
             exp,
-            f"""
-            -- the cost_usd and duration_seconds are coalesced to handle cases where the completion was cached
-            SELECT id, input_id, version_id, output_id, output_messages, output_error, COALESCE(cost_usd, toFloat64OrNull(metadata['anotherai/original_cost_usd'])), COALESCE(duration_seconds, toFloat64OrNull(metadata['anotherai/original_duration_seconds']))
-            FROM completions WHERE metadata['anotherai/experiment_id'] = '{exp.id}'""",  # noqa: S608 # exp.id is sanitized
+            len(exp.versions) if exp.versions else 0,
+            len(exp.inputs) if exp.inputs else 0,
+            len(exp.outputs) if exp.outputs else 0,
+            annotation_count,
         )
+
+    async def list_experiment_outputs(
+        self,
+        experiment_id: str,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> list[Experiment.Completion]:
+        res = await self.experiment_storage.list_experiment_outputs(
+            experiment_id,
+            limit=limit,
+            offset=offset,
+            include={"output"},
+        )
+        return [experiment_completion_from_domain(c) for c in res]
+
+    async def list_experiment_versions(
+        self,
+        experiment_id: str,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> list[Version]:
+        res = await self.experiment_storage.list_experiment_versions(
+            experiment_id,
+            limit=limit,
+            offset=offset,
+        )
+        return [version_from_domain(v) for v in res]
+
+    async def list_experiment_inputs(
+        self,
+        experiment_id: str,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> list[Input]:
+        res = await self.experiment_storage.list_experiment_inputs(experiment_id, limit=limit, offset=offset)
+        return [input_from_domain(i) for i in res]
 
     async def get_experiment(
         self,
@@ -91,12 +137,14 @@ class ExperimentService:
             input_ids=input_ids,
         )
 
-        annotations = await self.annotation_storage.list(
-            target=TargetFilter(completion_id=set(exp.run_ids)),
-            context=None,
-            since=None,
-            limit=100,
-        )
+        annotations: list[Annotation] = []
+        if exp.outputs:
+            annotations = await self.annotation_storage.list(
+                target=TargetFilter(completion_id={str(c.completion_id) for c in exp.outputs}),
+                context=None,
+                since=None,
+                limit=100,
+            )
 
         # getting annotations as needed
         return experiment_from_domain(exp, annotations)

@@ -12,6 +12,7 @@ type ExperimentFields = Literal[
     "agent_id",
     "versions.id",
     "inputs.id",
+    "outputs.id",
     "versions",
     "inputs",
     "outputs",
@@ -99,12 +100,28 @@ class ExperimentStorage(Protocol):
         Raises a DuplicateValueError if the completion is already completed."""
         ...
 
-    async def list_experiment_completions(
+    async def list_experiment_inputs(
+        self,
+        experiment_id: str,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> list[AgentInput]: ...
+
+    async def list_experiment_versions(
+        self,
+        experiment_id: str,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> list[Version]: ...
+
+    async def list_experiment_outputs(
         self,
         experiment_id: str,
         version_ids: Collection[str] | None = None,
         input_ids: Collection[str] | None = None,
         include: set[ExperimentOutputFields] | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
     ) -> list[ExperimentOutput]:
         """Returns the completions of an experiment.
         Raises an error if the version_ids or input_ids are not found in the experiment."""

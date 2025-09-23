@@ -164,6 +164,8 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
         experiment_uid: int,
         version_ids: Collection[str] | None = None,
         full=False,
+        limit: int | None = None,
+        offset: int | None = None,
     ) -> list[Version]:
         select = "*" if full else "version_id"
         where = ["experiment_uid = $1"]
@@ -171,8 +173,9 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
         if version_ids:
             where.append("version_id = ANY($2)")
             args.append(version_ids)
+        extra_str = _limit_offset_str(limit, offset, args)
         rows = await connection.fetch(
-            f"SELECT {select} FROM experiment_versions WHERE {' AND '.join(where)}",  # noqa: S608
+            f"SELECT {select} FROM experiment_versions WHERE {' AND '.join(where)} {extra_str}",  # noqa: S608
             *args,
         )
         return [self._validate(_ExperimentVersionRow, row).to_domain() for row in rows]
@@ -183,6 +186,8 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
         experiment_uid: int,
         input_ids: Collection[str] | None = None,
         full=False,
+        limit: int | None = None,
+        offset: int | None = None,
     ) -> list[AgentInput]:
         select = "*" if full else "input_id"
         where: list[str] = ["experiment_uid = $1"]
@@ -190,8 +195,11 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
         if input_ids:
             where.append("input_id = ANY($2)")
             args.append(input_ids)
+
+        extra_str = _limit_offset_str(limit, offset, args)
+
         rows = await connection.fetch(
-            f"SELECT {select} FROM experiment_inputs WHERE {' AND '.join(where)}",  # noqa: S608
+            f"SELECT {select} FROM experiment_inputs WHERE {' AND '.join(where)} {extra_str}",  # noqa: S608
             *args,
         )
         return [self._validate(_ExperimentInputRow, row).to_domain() for row in rows]
@@ -209,6 +217,14 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
         if "inputs" in include:
             return True
         if "inputs.id" in include:
+            return False
+        return None
+
+    @classmethod
+    def _include_outputs(cls, include: set[ExperimentFields]) -> bool | None:
+        if "outputs" in include:
+            return True
+        if "outputs.id" in include:
             return False
         return None
 
@@ -257,13 +273,14 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
                         input_ids=input_ids,
                         full=input_included,
                     )
-                if "outputs" in include:
+                output_included = self._include_outputs(include)
+                if output_included is not None:
                     outputs = await self._list_experiment_completions(
                         connection,
                         experiment_uid=experiment_uid,
                         version_ids=version_ids,
                         input_ids=input_ids,
-                        include={"output"},
+                        include={"output"} if output_included else None,
                     )
 
             return self._validate(_ExperimentRow, row).to_domain(versions=versions, inputs=inputs, outputs=outputs)
@@ -435,6 +452,8 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
         version_ids: Collection[str] | None = None,
         input_ids: Collection[str] | None = None,
         include: set[ExperimentOutputFields] | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
     ) -> list[ExperimentOutput]:
         selects = _ExperimentOutputRow.select_fields(include)
         args: list[Any] = [experiment_uid]
@@ -446,23 +465,28 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
             where.append(f"ei.input_id = ANY(${len(args) + 1})")
             args.append(input_ids)
 
+        extra_str = _limit_offset_str(limit, offset, args)
+
         rows = await connection.fetch(
             f"""SELECT {", ".join(selects)}, ei.input_id as input_id, ev.version_id as version_id
             FROM experiment_outputs
             LEFT JOIN experiment_inputs ei ON ei.uid = experiment_outputs.input_uid
             LEFT JOIN experiment_versions ev ON ev.uid = experiment_outputs.version_uid
-            WHERE {" AND ".join(where)}""",  # noqa: S608
+            WHERE {" AND ".join(where)}
+            {extra_str}""",  # noqa: S608
             *args,
         )
         return safe_map(rows, lambda x: self._validate(_ExperimentOutputRow, x).to_domain(), log)
 
     @override
-    async def list_experiment_completions(
+    async def list_experiment_outputs(
         self,
         experiment_id: str,
         version_ids: Collection[str] | None = None,
         input_ids: Collection[str] | None = None,
         include: set[ExperimentOutputFields] | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
     ) -> list[ExperimentOutput]:
         async with self._connect() as connection:
             experiment_uid = await self._experiment_uid(connection, experiment_id)
@@ -472,6 +496,36 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
                 version_ids=version_ids,
                 input_ids=input_ids,
                 include=include,
+                limit=limit,
+                offset=offset,
+            )
+
+    @override
+    async def list_experiment_inputs(
+        self,
+        experiment_id: str,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> list[AgentInput]:
+        async with self._connect() as connection:
+            experiment_uid = await self._experiment_uid(connection, experiment_id)
+            return await self._list_experiment_inputs(connection, experiment_uid, limit=limit, offset=offset, full=True)
+
+    @override
+    async def list_experiment_versions(
+        self,
+        experiment_id: str,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> list[Version]:
+        async with self._connect() as connection:
+            experiment_uid = await self._experiment_uid(connection, experiment_id)
+            return await self._list_experiment_versions(
+                connection,
+                experiment_uid,
+                limit=limit,
+                offset=offset,
+                full=True,
             )
 
 
@@ -651,3 +705,14 @@ class _ExperimentOutputRow(PsqlBaseRow):
             base_fields.remove("output_error")
 
         return [f"{prefix}.{f}" for f in base_fields]
+
+
+def _limit_offset_str(limit: int | None, offset: int | None, args: list[Any]) -> str:
+    extra_str: list[str] = []
+    if limit:
+        extra_str.append(f"LIMIT ${len(args) + 1}")
+        args.append(limit)
+    if offset:
+        extra_str.append(f"OFFSET ${len(args) + 1}")
+        args.append(offset)
+    return " ".join(extra_str)

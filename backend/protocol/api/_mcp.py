@@ -177,6 +177,25 @@ async def get_experiment(
     )
 
 
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
+async def get_experiment_outputs(
+    id: str,
+    limit: int | None = None,
+    offset: int | None = None,
+) -> list[Experiment.Completion]:
+    return await (await _mcp_utils.experiment_service()).list_experiment_outputs(id, limit=limit, offset=offset)
+
+
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
+async def get_experiment_versions(id: str, limit: int | None = None, offset: int | None = None) -> list[Version]:
+    return await (await _mcp_utils.experiment_service()).list_experiment_versions(id)
+
+
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
+async def get_experiment_inputs(id: str, limit: int | None = None, offset: int | None = None) -> list[Input]:
+    return await (await _mcp_utils.experiment_service()).list_experiment_inputs(id)
+
+
 # ------------------------------------------------------------
 # Models
 

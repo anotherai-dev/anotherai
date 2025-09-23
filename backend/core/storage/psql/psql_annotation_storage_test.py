@@ -137,9 +137,11 @@ class TestList:
         inserted_annotations: list[Annotation],
     ):
         retrieved = await annotation_storage.list(None, None, None, 10)
+        count = await annotation_storage.count(None, None)
 
         # Should have at least our 3 annotations
         assert len(retrieved) == len(inserted_annotations)
+        assert count == len(retrieved)
 
     async def test_target_experiment(
         self,
@@ -147,37 +149,50 @@ class TestList:
         inserted_annotations: list[Annotation],
         test_experiment: Experiment,
     ):
-        retrieved = await annotation_storage.list(TargetFilter(experiment_id={test_experiment.id}), None, None, 10)
+        target_filter = TargetFilter(experiment_id={test_experiment.id})
+        retrieved = await annotation_storage.list(target_filter, None, None, 10)
+        count = await annotation_storage.count(target_filter, None)
+
         assert len(retrieved) == 1
         assert retrieved[0].id == "3"
+        assert count == len(retrieved)
 
     async def test_target_run_no_experiment(
         self,
         annotation_storage: PsqlAnnotationStorage,
         inserted_annotations: list[Annotation],
     ):
+        target_filter = TargetFilter(completion_id={"00000000-0000-0007-0000-000000000001"})
+        context_filter = ContextFilter(experiment_id=set())
         retrieved = await annotation_storage.list(
-            TargetFilter(completion_id={"00000000-0000-0007-0000-000000000001"}),
-            ContextFilter(experiment_id=set()),
+            target_filter,
+            context_filter,
             None,
             10,
         )
+        count = await annotation_storage.count(target_filter, context_filter)
+
         assert len(retrieved) == 1
         assert retrieved[0].id == "1"
+        assert count == len(retrieved)
 
     async def test_target_run_any_experiment(
         self,
         annotation_storage: PsqlAnnotationStorage,
         inserted_annotations: list[Annotation],
     ):
+        target_filter = TargetFilter(completion_id={"00000000-0000-0007-0000-000000000001"})
         retrieved = await annotation_storage.list(
-            TargetFilter(completion_id={"00000000-0000-0007-0000-000000000001"}),
+            target_filter,
             None,
             None,
             10,
         )
+        count = await annotation_storage.count(target_filter, None)
+
         assert len(retrieved) == 2
         assert {a.id for a in retrieved} == {"1", "2"}
+        assert count == len(retrieved)
 
     async def test_target_run_and_experiment(
         self,
@@ -185,30 +200,39 @@ class TestList:
         inserted_annotations: list[Annotation],
         test_experiment: Experiment,
     ):
+        target_filter = TargetFilter(completion_id={"00000000-0000-0007-0000-000000000001"})
+        context_filter = ContextFilter(experiment_id={test_experiment.id})
         retrieved = await annotation_storage.list(
-            TargetFilter(completion_id={"00000000-0000-0007-0000-000000000001"}),
-            ContextFilter(experiment_id={test_experiment.id}),
+            target_filter,
+            context_filter,
             None,
             10,
         )
+        count = await annotation_storage.count(target_filter, context_filter)
+
         assert len(retrieved) == 1
         assert retrieved[0].id == "2"
+        assert count == len(retrieved)
 
     async def test_target_multiple_runs(
         self,
         annotation_storage: PsqlAnnotationStorage,
         inserted_annotations: list[Annotation],
     ):
+        target_filter = TargetFilter(
+            completion_id={"00000000-0000-0007-0000-000000000001", "00000000-0000-0007-0000-000000000002"},
+        )
         retrieved = await annotation_storage.list(
-            TargetFilter(
-                completion_id={"00000000-0000-0007-0000-000000000001", "00000000-0000-0007-0000-000000000002"},
-            ),
+            target_filter,
             None,
             None,
             10,
         )
+        count = await annotation_storage.count(target_filter, None)
+
         assert len(retrieved) == 3
         assert {a.id for a in retrieved} == {"1", "2", "4"}
+        assert count == len(retrieved)
 
     async def test_context_agent_id_filter(
         self,
@@ -216,14 +240,18 @@ class TestList:
         inserted_annotations: list[Annotation],
         test_agent: Agent,
     ):
+        context_filter = ContextFilter(agent_id={test_agent.id})
         retrieved = await annotation_storage.list(
             None,
-            ContextFilter(agent_id={test_agent.id}),
+            context_filter,
             None,
             10,
         )
+        count = await annotation_storage.count(None, context_filter)
+
         assert len(retrieved) == 1
         assert retrieved[0].id == "2"
+        assert count == len(retrieved)
 
     async def test_target_experiment_and_run(
         self,
@@ -231,18 +259,30 @@ class TestList:
         inserted_annotations: list[Annotation],
         test_experiment: Experiment,
     ):
+        target_filter_combined = TargetFilter(
+            experiment_id={test_experiment.id},
+            completion_id={"00000000-0000-0007-0000-000000000001"},
+        )
         retrieved = await annotation_storage.list(
-            TargetFilter(experiment_id={test_experiment.id}, completion_id={"00000000-0000-0007-0000-000000000001"}),
+            target_filter_combined,
             None,
             None,
             10,
         )
-        assert len(retrieved) == 3
+        count = await annotation_storage.count(target_filter_combined, None)
 
-        retrieved = await annotation_storage.list(
-            TargetFilter(experiment_id={test_experiment.id}),
+        assert len(retrieved) == 3
+        assert count == len(retrieved)
+
+        # Sanity check with experiment target only
+        target_filter_experiment = TargetFilter(experiment_id={test_experiment.id})
+        retrieved_sanity = await annotation_storage.list(
+            target_filter_experiment,
             None,
             None,
             10,
         )
-        assert len(retrieved) == 1, "sanity check"
+        count_sanity = await annotation_storage.count(target_filter_experiment, None)
+
+        assert len(retrieved_sanity) == 1, "sanity check"
+        assert count_sanity == len(retrieved_sanity)

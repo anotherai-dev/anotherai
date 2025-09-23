@@ -495,6 +495,49 @@ class TestListExperimentVersions:
         assert full_filtered[0].id == v1.id
         assert full_filtered[0].model == "gpt-4o"
 
+    @pytest.mark.parametrize(
+        ("limit", "offset", "expected_count"),
+        [
+            pytest.param(3, None, 3, id="limit_without_offset"),
+            pytest.param(None, 2, 3, id="offset_without_limit"),
+            pytest.param(2, 1, 2, id="limit_with_offset"),
+            pytest.param(10, None, 5, id="limit_greater_than_available"),
+            pytest.param(None, 10, 0, id="offset_beyond_available"),
+        ],
+    )
+    async def test_list_experiment_versions_limit_offset(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+        purged_psql_tenant_conn: PoolConnectionProxy,
+        limit: int | None,
+        offset: int | None,
+        expected_count: int,
+    ):
+        # Create multiple versions to test pagination
+        versions = [Version(model="gpt-4o", prompt=[Message.with_text(f"Version {i}")]) for i in range(5)]
+        inserted = await experiment_storage.add_versions(inserted_experiment.id, versions)
+        assert len(inserted) == 5
+
+        experiment_uid = await purged_psql_tenant_conn.fetchval(
+            "SELECT uid FROM experiments WHERE slug = $1",
+            inserted_experiment.id,
+        )
+        assert experiment_uid
+
+        result = await experiment_storage._list_experiment_versions(
+            purged_psql_tenant_conn,
+            experiment_uid,
+            limit=limit,
+            offset=offset,
+        )
+        assert len(result) == expected_count
+
+        # Verify all versions are unique and correct (only for full result)
+        if limit is None and offset is None:
+            version_ids = {v.id for v in result}
+            assert version_ids == inserted
+
 
 class TestListExperimentInputs:
     async def test_list_experiment_inputs(
@@ -534,6 +577,52 @@ class TestListExperimentInputs:
         assert full_filtered[0].id == i2.id
         assert full_filtered[0].variables == {"x": 1}
         assert full_filtered[0].preview == "I2"
+
+    @pytest.mark.parametrize(
+        ("limit", "offset", "expected_count", "description"),
+        [
+            pytest.param(3, None, 3, id="limit_without_offset"),
+            pytest.param(None, 2, 4, id="offset_without_limit"),
+            pytest.param(2, 3, 2, id="limit_with_offset"),
+            pytest.param(20, None, 6, id="limit_greater_than_available"),
+            pytest.param(None, 10, 0, id="offset_beyond_available"),
+            pytest.param(3, 4, 2, id="partial_page_offset_limit"),
+        ],
+    )
+    async def test_list_experiment_inputs_limit_offset(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+        purged_psql_tenant_conn: PoolConnectionProxy,
+        limit: int | None,
+        offset: int | None,
+        expected_count: int,
+    ):
+        # Create multiple inputs to test pagination
+        inputs = [
+            AgentInput(messages=[Message.with_text(f"Input {i}")], variables=None, preview=f"I{i}") for i in range(6)
+        ]
+        inserted = await experiment_storage.add_inputs(inserted_experiment.id, inputs)
+        assert len(inserted) == 6
+
+        experiment_uid = await purged_psql_tenant_conn.fetchval(
+            "SELECT uid FROM experiments WHERE slug = $1",
+            inserted_experiment.id,
+        )
+        assert experiment_uid
+
+        result = await experiment_storage._list_experiment_inputs(
+            purged_psql_tenant_conn,
+            experiment_uid,
+            limit=limit,
+            offset=offset,
+        )
+        assert len(result) == expected_count
+
+        # Verify all inputs are unique and correct (only for full result)
+        if limit is None and offset is None:
+            input_ids = {i.id for i in result}
+            assert input_ids == inserted
 
 
 class TestAddInputs:
@@ -770,17 +859,17 @@ async def inserted_completion(
 
 
 class TestListExperimentCompletions:
-    async def test_list_experiment_completions(
+    async def test_list_experiment_outputs(
         self,
         inserted_experiment: Experiment,
         experiment_storage: PsqlExperimentStorage,
         inserted_completion: uuid.UUID,
     ):
-        completions = await experiment_storage.list_experiment_completions(inserted_experiment.id)
+        completions = await experiment_storage.list_experiment_outputs(inserted_experiment.id)
         assert len(completions) == 1
         assert completions[0].completion_id == inserted_completion
 
-    async def test_list_experiment_completions_include(
+    async def test_list_experiment_outputs_include(
         self,
         inserted_experiment: Experiment,
         experiment_storage: PsqlExperimentStorage,
@@ -814,7 +903,7 @@ class TestListExperimentCompletions:
         )
 
         # Without include, output messages and error should not be loaded, preview remains
-        outputs_no_include = await experiment_storage.list_experiment_completions(inserted_experiment.id)
+        outputs_no_include = await experiment_storage.list_experiment_outputs(inserted_experiment.id)
         assert len(outputs_no_include) == 1
         out = outputs_no_include[0]
         assert out.completion_id == completion_id
@@ -824,7 +913,7 @@ class TestListExperimentCompletions:
         assert out.output.error is None
 
         # With include={"output"}, messages should be present
-        outputs_with_include = await experiment_storage.list_experiment_completions(
+        outputs_with_include = await experiment_storage.list_experiment_outputs(
             inserted_experiment.id,
             include={"output"},
         )
@@ -833,6 +922,180 @@ class TestListExperimentCompletions:
         assert out_inc.output is not None
         assert out_inc.output.messages is not None
         assert out_inc.output.messages[0].content[0].text == "Answer"
+
+    @pytest.mark.parametrize(
+        ("limit", "offset", "expected_count", "description"),
+        [
+            (3, None, 3, "limit_without_offset"),
+            (None, 2, 4, "offset_without_limit"),
+            (2, 1, 2, "limit_with_offset"),
+            (20, None, 6, "limit_greater_than_available"),
+            (None, 10, 0, "offset_beyond_available"),
+            (0, None, 0, "zero_limit"),
+        ],
+        ids=[
+            "limit_without_offset",
+            "offset_without_limit",
+            "limit_with_offset",
+            "limit_greater_than_available",
+            "offset_beyond_available",
+            "zero_limit",
+        ],
+    )
+    async def test_list_experiment_completions_limit_offset(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+        purged_psql_tenant_conn: PoolConnectionProxy,
+        limit: int | None,
+        offset: int | None,
+        expected_count: int,
+        description: str,
+    ):
+        # Create inputs and versions for multiple completions
+        inputs = [
+            AgentInput(messages=[Message.with_text(f"Input {i}")], variables=None, preview=f"I{i}") for i in range(3)
+        ]
+        versions = [Version(model=f"gpt-4o-{i}") for i in range(2)]
+        await experiment_storage.add_inputs(inserted_experiment.id, inputs)
+        await experiment_storage.add_versions(inserted_experiment.id, versions)
+
+        # Create multiple completions (3 inputs x 2 versions = 6 completions)
+        completion_tuples = []
+        for input_obj in inputs:
+            for version in versions:
+                completion_id = uuid7()
+                completion_tuples.append(
+                    CompletionIDTuple(
+                        completion_id=completion_id,
+                        version_id=version.id,
+                        input_id=input_obj.id,
+                    ),
+                )
+        await experiment_storage.add_completions(inserted_experiment.id, completion_tuples)
+
+        # Add some outputs to make the completions more realistic
+        for i, tuple_obj in enumerate(completion_tuples[:4]):  # Only add outputs for first 4
+            await experiment_storage.start_completion(inserted_experiment.id, tuple_obj.completion_id)
+            await experiment_storage.add_completion_output(
+                inserted_experiment.id,
+                tuple_obj.completion_id,
+                CompletionOutputTuple(
+                    output=AgentOutput(messages=[Message.with_text(f"Answer {i}")], preview=f"A{i}"),
+                    cost_usd=float(i),
+                    duration_seconds=float(i + 1),
+                ),
+            )
+
+        experiment_uid = await purged_psql_tenant_conn.fetchval(
+            "SELECT uid FROM experiments WHERE slug = $1",
+            inserted_experiment.id,
+        )
+        assert experiment_uid
+
+        result = await experiment_storage._list_experiment_completions(
+            purged_psql_tenant_conn,
+            experiment_uid,
+            limit=limit,
+            offset=offset,
+        )
+        assert len(result) == expected_count
+
+    async def test_list_experiment_completions_pagination_consistency(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+        purged_psql_tenant_conn: PoolConnectionProxy,
+    ):
+        # Create inputs and versions for multiple completions
+        inputs = [
+            AgentInput(messages=[Message.with_text(f"Input {i}")], variables=None, preview=f"I{i}") for i in range(3)
+        ]
+        versions = [Version(model=f"gpt-4o-{i}") for i in range(2)]
+        await experiment_storage.add_inputs(inserted_experiment.id, inputs)
+        await experiment_storage.add_versions(inserted_experiment.id, versions)
+
+        # Create multiple completions (3 inputs x 2 versions = 6 completions)
+        completion_tuples = []
+        for input_obj in inputs:
+            for version in versions:
+                completion_id = uuid7()
+                completion_tuples.append(
+                    CompletionIDTuple(
+                        completion_id=completion_id,
+                        version_id=version.id,
+                        input_id=input_obj.id,
+                    ),
+                )
+        await experiment_storage.add_completions(inserted_experiment.id, completion_tuples)
+
+        # Add some outputs to make the completions more realistic
+        for i, tuple_obj in enumerate(completion_tuples[:4]):  # Only add outputs for first 4
+            await experiment_storage.start_completion(inserted_experiment.id, tuple_obj.completion_id)
+            await experiment_storage.add_completion_output(
+                inserted_experiment.id,
+                tuple_obj.completion_id,
+                CompletionOutputTuple(
+                    output=AgentOutput(messages=[Message.with_text(f"Answer {i}")], preview=f"A{i}"),
+                    cost_usd=float(i),
+                    duration_seconds=float(i + 1),
+                ),
+            )
+
+        experiment_uid = await purged_psql_tenant_conn.fetchval(
+            "SELECT uid FROM experiments WHERE slug = $1",
+            inserted_experiment.id,
+        )
+        assert experiment_uid
+
+        # Test pagination consistency
+        first_page = await experiment_storage._list_experiment_completions(
+            purged_psql_tenant_conn,
+            experiment_uid,
+            limit=2,
+            offset=0,
+        )
+        second_page = await experiment_storage._list_experiment_completions(
+            purged_psql_tenant_conn,
+            experiment_uid,
+            limit=2,
+            offset=2,
+        )
+        third_page = await experiment_storage._list_experiment_completions(
+            purged_psql_tenant_conn,
+            experiment_uid,
+            limit=2,
+            offset=4,
+        )
+
+        # Should have no overlap between pages
+        all_page_ids = (
+            {c.completion_id for c in first_page}
+            | {c.completion_id for c in second_page}
+            | {c.completion_id for c in third_page}
+        )
+        assert len(all_page_ids) == 6
+
+        # Test with version_ids filter and pagination
+        first_version_completions = await experiment_storage._list_experiment_completions(
+            purged_psql_tenant_conn,
+            experiment_uid,
+            version_ids={versions[0].id},
+            limit=2,
+        )
+        assert len(first_version_completions) == 2
+        assert all(c.version_id == versions[0].id for c in first_version_completions)
+
+        # Test with input_ids filter and pagination
+        first_input_completions = await experiment_storage._list_experiment_completions(
+            purged_psql_tenant_conn,
+            experiment_uid,
+            input_ids={inputs[0].id},
+            limit=1,
+            offset=1,
+        )
+        assert len(first_input_completions) == 1
+        assert first_input_completions[0].input_id == inputs[0].id
 
 
 async def test_output_flow(inserted_experiment: Experiment, experiment_storage: PsqlExperimentStorage):
@@ -892,6 +1155,6 @@ async def test_output_flow(inserted_experiment: Experiment, experiment_storage: 
         tg.create_task(_other_error(completion_id_list[2]))
         # Last one will still be going
 
-    outputs = await experiment_storage.list_experiment_completions(inserted_experiment.id)
+    outputs = await experiment_storage.list_experiment_outputs(inserted_experiment.id)
     assert len(outputs) == 4
     assert {o.completion_id for o in outputs} == inserted_completions

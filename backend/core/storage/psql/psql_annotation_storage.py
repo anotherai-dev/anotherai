@@ -112,6 +112,16 @@ class PsqlAnnotationStorage(PsqlBaseStorage, AnnotationStorage):
         return where, arguments
 
     @override
+    async def count(self, target: TargetFilter | None, context: ContextFilter | None) -> int:
+        async with self._connect() as connection:
+            where, arguments = await self._where_annotations(connection, target, context, None)
+            count = await connection.fetchval(
+                f"""SELECT COUNT(*) FROM annotations WHERE {" AND ".join(where)}""",  # noqa: S608 # OK here since where is defined above
+                *arguments,
+            )
+            return count or 0
+
+    @override
     async def list(
         self,
         target: TargetFilter | None,

@@ -365,7 +365,10 @@ def experiment_from_domain(
 
 def mcp_experiment_from_domain(
     experiment: DomainExperiment,
-    completion_query: str,
+    version_count: int,
+    input_count: int,
+    completion_count: int,
+    annotation_count: int,
 ) -> MCPExperiment:
     return MCPExperiment(
         id=experiment.id,
@@ -376,9 +379,10 @@ def mcp_experiment_from_domain(
         title=experiment.title,
         description=experiment.description,
         result=experiment.result,
-        completion_query=completion_query,
-        versions=[version_from_domain(v) for v in experiment.versions] if experiment.versions else None,
-        inputs=[input_from_domain(i) for i in experiment.inputs] if experiment.inputs else None,
+        version_count=version_count,
+        input_count=input_count,
+        completion_count=completion_count,
+        annotation_count=annotation_count,
         metadata=experiment.metadata or None,
         url=experiments_url(experiment.id),
     )
