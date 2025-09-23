@@ -71,6 +71,19 @@ export function MatrixSection(props: Props) {
     return getSharedKeypathsOfSchemas(orderedVersions);
   }, [orderedVersions]);
 
+  // Prepare sticky header data
+  const stickyHeaderData = useMemo(() => {
+    return orderedVersions.map((version) => {
+      const originalIndex = experiment.versions.findIndex((v) => v.id === version.id);
+      return {
+        versionNumber: originalIndex + 1,
+        modelId: version.model,
+        reasoningEffort: version.reasoning_effort,
+        reasoningBudget: version.reasoning_budget,
+      };
+    });
+  }, [orderedVersions, experiment.versions]);
+
   const tableData = useMemo(() => {
     // Get arrays of average metrics per version for badge coloring
     const allAvgCosts = priceAndLatencyPerVersion.map(({ metrics }) => metrics.avgCost);
@@ -175,6 +188,7 @@ export function MatrixSection(props: Props) {
         data={tableData.data}
         minColumnWidth={400}
         hideScrollbar={false}
+        stickyHeaderData={stickyHeaderData}
       />
     </div>
   );

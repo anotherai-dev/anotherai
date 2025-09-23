@@ -1,6 +1,7 @@
 import { cx } from "class-variance-authority";
-import { ReactNode, useRef } from "react";
+import { ReactNode, useRef, useState } from "react";
 import { useScrollbarPositioning } from "./useScrollbarPositioning";
+import { StickyTableHeaders } from "./StickyTableHeaders";
 
 export interface TableProps {
   // Column headers (first row)
@@ -17,6 +18,13 @@ export interface TableProps {
   minHeaderHeight?: number;
   // Hide scrollbar (default: true)
   hideScrollbar?: boolean;
+  // Sticky header overlay data - simplified version info for each column
+  stickyHeaderData?: Array<{
+    versionNumber: number;
+    modelId: string;
+    reasoningEffort?: "disabled" | "low" | "medium" | "high";
+    reasoningBudget?: number;
+  }>;
 }
 
 export function TableComponent({
@@ -27,6 +35,7 @@ export function TableComponent({
   className = "",
   minHeaderHeight = 150,
   hideScrollbar = true,
+  stickyHeaderData,
 }: TableProps) {
   const headerRowWidth = "240px";
   const {
@@ -64,18 +73,27 @@ export function TableComponent({
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const topScrollRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLTableSectionElement>(null);
+  const tableRef = useRef<HTMLTableElement>(null);
+
+  // State to track scroll position
+  const [scrollLeft, setScrollLeft] = useState(0);
 
   // Sync scroll positions between top and main scroll areas
   const handleMainScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const newScrollLeft = e.currentTarget.scrollLeft;
+    setScrollLeft(newScrollLeft);
     if (topScrollRef.current) {
-      topScrollRef.current.scrollLeft = e.currentTarget.scrollLeft;
+      topScrollRef.current.scrollLeft = newScrollLeft;
     }
     handleScroll(); // Show scrollbar when scrolling occurs
   };
 
   const handleTopScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const newScrollLeft = e.currentTarget.scrollLeft;
+    setScrollLeft(newScrollLeft);
     if (scrollRef.current) {
-      scrollRef.current.scrollLeft = e.currentTarget.scrollLeft;
+      scrollRef.current.scrollLeft = newScrollLeft;
     }
     handleScroll(); // Show scrollbar when scrolling occurs
   };
@@ -92,6 +110,19 @@ export function TableComponent({
         className="absolute top-0 bottom-0 border-r border-gray-200 z-20 pointer-events-none"
         style={{ left: headerRowWidth }}
       />
+
+      {/* Sticky header overlay */}
+      {stickyHeaderData && (
+        <StickyTableHeaders
+          stickyHeaderData={stickyHeaderData}
+          columnWidth={columnWidth}
+          scrollLeft={scrollLeft}
+          containerLeft={containerLeft}
+          containerWidth={containerWidth}
+          headerRef={headerRef}
+          tableRef={tableRef}
+        />
+      )}
 
       {/* Scrollbar - shows at bottom of viewport when table extends beyond screen, otherwise at bottom of table */}
       {!hideScrollbar && (
@@ -136,9 +167,9 @@ export function TableComponent({
       )}
 
       <div ref={scrollRef} className={cx("overflow-x-auto", "scrollbar-hide")} onScroll={handleMainScroll}>
-        <table className="w-full">
+        <table ref={tableRef} className="w-full">
           {/* Header row */}
-          <thead className="bg-gray-50">
+          <thead ref={headerRef} className="bg-gray-50">
             <tr className="border-b border-gray-200">
               {/* Empty corner cell */}
               <th
