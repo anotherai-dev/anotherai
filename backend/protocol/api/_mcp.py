@@ -87,18 +87,18 @@ async def create_experiment(
 
 @mcp.tool(annotations=ToolAnnotations(idempotentHint=True))
 async def add_experiment_result(
-    id: str, 
+    id: str,
     result: Annotated[
         str,
         Field(
-            description="Comprehensive analysis summary including: model quality comparison, cost analysis, performance metrics, and clear recommendations. Use markdown formatting for readability. This becomes the permanent record of experiment conclusions."
+            description="Comprehensive analysis summary including: model quality comparison, cost analysis, performance metrics, and clear recommendations. Use markdown formatting for readability. This becomes the permanent record of experiment conclusions.",
         ),
-    ]
+    ],
 ):
-    """Complete an experiment by adding analysis results and recommendations. 
-    
-    This should be the FINAL step after analyzing all experiment outputs. Use this to 
-    summarize findings, compare model performance, and provide actionable recommendations 
+    """Complete an experiment by adding analysis results and recommendations.
+
+    This should be the FINAL step after analyzing all experiment outputs. Use this to
+    summarize findings, compare model performance, and provide actionable recommendations
     based on the experiment data. The experiment is not considered complete until results are added.
     """
     await (await _mcp_utils.experiment_service()).set_experiment_result(id, result)
@@ -183,8 +183,8 @@ async def get_experiment(
 ) -> MCPExperiment:
     """Waits for the experiment's completions to be ready and returns the experiment,
     including the associated versions and inputs and outputs.
-    
-    Note: If the experiment shows empty 'result' field, you should analyze the completion 
+
+    Note: If the experiment shows empty 'result' field, you should analyze the completion
     data and call add_experiment_result to complete the experiment with your findings."""
     return await (await _mcp_utils.experiment_service()).wait_for_experiment(
         id,
