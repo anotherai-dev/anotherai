@@ -1,7 +1,7 @@
 import { cx } from "class-variance-authority";
 import { ReactNode, useRef, useState } from "react";
-import { useScrollbarPositioning } from "./useScrollbarPositioning";
 import { StickyTableHeaders } from "./StickyTableHeaders";
+import { useScrollbarPositioning } from "./useScrollbarPositioning";
 
 export interface TableProps {
   // Column headers (first row)
