@@ -308,8 +308,8 @@ describe("Version Functions", () => {
 
   describe("getVersionWithDefaults", () => {
     it("applies default values", () => {
-      const version = { id: "1", model: "gpt-4" }; // Version without temperature, top_p, etc.
-      const result = getVersionWithDefaults(version as any);
+      const version: Partial<Version> = { id: "1", model: "gpt-4" }; // Version without temperature, top_p, etc.
+      const result = getVersionWithDefaults(version as Version);
 
       expect(result.temperature).toBe(1.0); // Should be the default value
       expect(result.top_p).toBe(1.0);

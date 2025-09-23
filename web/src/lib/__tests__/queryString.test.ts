@@ -1,4 +1,5 @@
 import { renderHook } from "@testing-library/react";
+import type React from "react";
 import { useParsedSearchParams } from "../queryString";
 
 // Mock Next.js useSearchParams hook
@@ -11,7 +12,7 @@ const mockSearchParams = {
 const mockUseMemo = jest.fn();
 jest.mock("react", () => ({
   ...jest.requireActual("react"),
-  useMemo: (fn: () => any, deps: any[]) => mockUseMemo(fn, deps),
+  useMemo: <T>(fn: () => T, deps: React.DependencyList) => mockUseMemo(fn, deps),
 }));
 
 jest.mock("next/navigation", () => ({
