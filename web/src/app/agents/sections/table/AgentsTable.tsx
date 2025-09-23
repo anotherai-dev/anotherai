@@ -25,7 +25,7 @@ interface Agent {
 }
 
 interface AgentStats {
-  completions_last_7_days: number;
+  total_completions: number;
   completions_last_3_days: number;
   total_cost: number;
   active: boolean;
@@ -62,7 +62,7 @@ export function AgentsTable(props: AgentsTableProps) {
           name: agent.name && agent.name.trim() ? agent.name : agent.id,
           completionsLast3Days: stats?.completions_last_3_days ?? 0,
         },
-        [AGENTS_COLUMNS.COMPLETIONS_LAST_7_DAYS]: stats?.completions_last_7_days ?? null,
+        [AGENTS_COLUMNS.COMPLETIONS_LAST_7_DAYS]: stats?.total_completions ?? null,
         [AGENTS_COLUMNS.TOTAL_COST]: stats?.total_cost ?? null,
         [AGENTS_COLUMNS.CREATED_AT]: agent.created_at,
         _originalAgent: agent,
