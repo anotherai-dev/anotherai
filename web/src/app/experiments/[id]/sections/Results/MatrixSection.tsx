@@ -71,7 +71,6 @@ export function MatrixSection(props: Props) {
     return getSharedKeypathsOfSchemas(orderedVersions);
   }, [orderedVersions]);
 
-  // Prepare sticky header data
   const stickyHeaderData = useMemo(() => {
     return orderedVersions.map((version) => {
       const originalIndex = experiment.versions.findIndex((v) => v.id === version.id);
