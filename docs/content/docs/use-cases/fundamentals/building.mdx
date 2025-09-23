@@ -155,6 +155,18 @@ the right balance between creativity and professionalism
 
 ![Email Rewriter Temperature Experiment](/images/email-rewriter-temperature-experiment.png)
 
+### Managing Large Agents with Claude Code
+If you're testing an agent that has a large system prompt and/or very long inputs, you may encounter token limit issues with the `get_experiment` MCP tool that impacts Claude Code's ability to provide accurate insights on your agent. In this case, you can manually increase Claude Code's output token limit:
+  
+```
+# Set a higher limit for MCP tool outputs
+export MAX_MCP_OUTPUT_TOKENS=150000
+claude
+```
+Note: you will need to run the above commands in your terminal each time you start Claude Code.
+  
+You can learn more about tool output limits for Claude Code in their [documentation](https://docs.claude.com/en/docs/claude-code/mcp#mcp-output-limits-and-warnings).
+
 ## Adding Feedback to your Experiments
 
 When reviewing the results of experiments, you can add feedback (annotations) to help your AI coding agent understand what is working and what is not. Your AI coding agent can then use this feedback to create additional experiments with improved versions of your agent. 

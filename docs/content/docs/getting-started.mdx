@@ -36,7 +36,7 @@ Manual installation:
 5. Select `+ New MCP Server`
 6. Choose your authentication method:
 
-### OAuth Authentication (Recommended)
+**OAuth Authentication (Recommended)**
 
 Add the following configuration to your MCP servers config:
 
@@ -54,7 +54,7 @@ Add the following configuration to your MCP servers config:
 8. Tap "Need login", open the link and select "Allow" in your browser when prompted.
 9. Return to Cursor and the MCP should show as Connected (see screenshot below)
 
-### API Key Authentication
+**API Key Authentication**
 
 7. Get your API key on [anotherai.dev/](https://anotherai.dev/completions?showManageKeysModal=true) and add the following configuration:
 
@@ -82,7 +82,7 @@ Add the following configuration to your MCP servers config:
   1. Complete the set up above
   2. Choose your authentication method:
 
-  ### OAuth Authentication (Recommended)
+**OAuth Authentication (Recommended)**
   
   3. Open Claude Code in your preferred terminal (standalone or within your IDE)
   4. Type the following to install:
@@ -109,7 +109,7 @@ Add the following configuration to your MCP servers config:
 
   Navigate to `anotherai` and press Enter. You should automatically be redirected to a browser to authenticate.
 
-  ### API Key Authentication
+ **API Key Authentication**
   
   3. Get your API key on [anotherai.dev/](https://anotherai.dev/completions?showManageKeysModal=true) 
   4. Open Claude Code in your preferred terminal (standalone or within your IDE)
@@ -135,6 +135,20 @@ Add the following configuration to your MCP servers config:
   ```
 
   You should see the AnotherAI server listed as "connected".
+
+  <Callout type="tip" title="Managing Large Agents with Claude Code">
+  If you're testing an agent that has a large system prompt and/or very long inputs, you may encounter token limit issues with the `get_experiment` MCP tool that impacts Claude Code's ability to provide accurate insights on your agent. In this case, you can manually increase Claude Code's output token limit:
+  
+  ```
+  # Set a higher limit for MCP tool outputs
+  export MAX_MCP_OUTPUT_TOKENS=150000
+  claude
+  ```
+  Note: you will need to run the above commands in your terminal each time you start Claude Code.
+  
+  You can learn more about tool output limits for Claude Code in their [documentation](https://docs.claude.com/en/docs/claude-code/mcp#mcp-output-limits-and-warnings).
+
+  </Callout>
 
 </Tab>
 
