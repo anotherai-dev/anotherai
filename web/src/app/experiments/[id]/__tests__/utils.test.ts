@@ -40,7 +40,11 @@ describe("Experiment Utilities", () => {
     });
 
     it("ignores annotations without metrics", () => {
-      const annotations = [mockAnnotation({ metric: undefined }), mockAnnotation({ metric: undefined }), mockAnnotation({})];
+      const annotations = [
+        mockAnnotation({ metric: undefined }),
+        mockAnnotation({ metric: undefined }),
+        mockAnnotation({}),
+      ];
       const result = findAllMetricKeysAndAverages(annotations);
       expect(result).toEqual([]);
     });
