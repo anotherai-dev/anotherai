@@ -117,7 +117,10 @@ If you're testing an agent that has a large system prompt and/or very long input
 export MAX_MCP_OUTPUT_TOKENS=150000
 claude
 ```
-Note: you will need to run the above commands in your terminal each time you start Claude Code.
+Notes: 
+  - You will need to run the above commands in your terminal each time you start Claude Code.
+  - If you forget or don't realize you need to set a higher limit, you can quit your existing session, run the command to increase the limit, and then use `claude --resume` to continue your previous session with the increased limit applied. 
+
   
 You can learn more about tool output limits for Claude Code in their [documentation](https://docs.claude.com/en/docs/claude-code/mcp#mcp-output-limits-and-warnings).
 
