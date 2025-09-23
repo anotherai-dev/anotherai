@@ -14,8 +14,8 @@ interface StickyTableHeadersProps {
   scrollLeft: number;
   containerLeft: number;
   containerWidth: number;
-  headerRef: React.RefObject<HTMLTableSectionElement>;
-  tableRef: React.RefObject<HTMLTableElement>;
+  headerRef: React.RefObject<HTMLTableSectionElement | null>;
+  tableRef: React.RefObject<HTMLTableElement | null>;
 }
 
 export function StickyTableHeaders({
