@@ -181,16 +181,7 @@ class IntegrationTestClient:
 
         await self.wait_for_background()
 
-        experiment_res = await self.call_tool(
+        return await self.call_tool(
             "get_experiment",
             {"id": experiment_id, "max_wait_time_seconds": 1},
         )
-        completion_query = experiment_res["completion_query"]
-        completions = await self.call_tool(
-            "query_completions",
-            {"query": completion_query},
-        )
-        return {
-            **experiment_res,
-            "completions": completions["rows"],
-        }

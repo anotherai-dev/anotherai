@@ -462,10 +462,6 @@ class Experiment(_BaseExperiment):
     )
 
 
-class MCPExperiment(_BaseExperiment):
-    completion_query: Annotated[str, Field(description="A SQL query to fetch the completions of the experiment.")]
-
-
 class CreateExperimentRequest(BaseModel):
     id: str | None = None
     title: str
