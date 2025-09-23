@@ -97,7 +97,7 @@ class OutputSchema(BaseModel):
 
 
 class Version(BaseModel):
-    model_config = ConfigDict(revalidate_instances="always", extra="forbid", strict=True)
+    model_config = ConfigDict(revalidate_instances="always", extra="forbid")
 
     id: str = Field(description="The id of the version. Auto generated.", default="")
     model: str
