@@ -1,15 +1,16 @@
 import asyncio
 import time
 from collections.abc import Collection
-from typing import Any, final
+from typing import Any, Literal, cast, final
 
 from core.domain.agent import Agent
+from core.domain.annotation import Annotation
 from core.domain.cache_usage import CacheUsage
 from core.domain.exceptions import ObjectNotFoundError
 from core.storage.agent_storage import AgentStorage
 from core.storage.annotation_storage import AnnotationStorage, TargetFilter
 from core.storage.completion_storage import CompletionStorage
-from core.storage.experiment_storage import ExperimentStorage
+from core.storage.experiment_storage import ExperimentFields, ExperimentStorage
 from core.utils.background import add_background_task
 from core.utils.hash import HASH_REGEXP_32
 from protocol.api._api_models import CreateExperimentRequest, Experiment, Page
@@ -39,6 +40,7 @@ class ExperimentService:
         experiment_id: str,
         version_ids: list[str] | None,
         input_ids: list[str] | None,
+        include: set[Literal["versions", "inputs", "outputs", "annotations"]] | None,
         max_wait_time_seconds: float,
     ) -> Experiment:
         # we need a list here because we want to order the returned outputs the same way the versions and inputs
@@ -62,27 +64,32 @@ class ExperimentService:
 
             await asyncio.sleep(5)
 
-        return await self.get_experiment(experiment_id, version_ids, input_ids)
+        return await self.get_experiment(experiment_id, version_ids, input_ids, include)
 
     async def get_experiment(
         self,
         experiment_id: str,
         version_ids: Collection[str] | None,
         input_ids: Collection[str] | None,
+        include: set[Literal["versions", "inputs", "outputs", "annotations"]] | None = None,
     ) -> Experiment:
         exp = await self.experiment_storage.get_experiment(
             experiment_id,
-            include={"versions", "inputs", "outputs"},
+            include={"versions", "inputs", "outputs"}
+            if include is None
+            else cast(Collection[ExperimentFields], include),
             version_ids=version_ids,
             input_ids=input_ids,
         )
 
-        annotations = await self.annotation_storage.list(
-            target=TargetFilter(completion_id=set(exp.run_ids)),
-            context=None,
-            since=None,
-            limit=100,
-        )
+        annotations: list[Annotation] = []
+        if include is None or "annotations" in include:
+            annotations = await self.annotation_storage.list(
+                target=TargetFilter(completion_id=set(exp.run_ids)),
+                context=None,
+                since=None,
+                limit=100,
+            )
 
         # getting annotations as needed
         return experiment_from_domain(exp, annotations)

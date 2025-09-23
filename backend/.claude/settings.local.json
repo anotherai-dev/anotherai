@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(uv run pytest:*)",
-      "mcp__another-ai__get_experiment"
+      "mcp__another-ai__get_experiment",
+      "mcp__another-ai__query_completions"
     ],
     "deny": []
   }

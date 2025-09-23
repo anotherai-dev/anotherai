@@ -1,7 +1,9 @@
 # pyright: reportPrivateUsage=false
 
 
-from protocol.api._api_models import ChunkedResponse
+import json
+from unittest.mock import AsyncMock
+
 from protocol.api._mcp_utils import _add_string_to_property_type, chunk
 
 
@@ -217,9 +219,35 @@ class TestAddStringToPropertyType:
 
 
 class TestChunk:
-    def test_chunk(self):
+    async def test_chunk(self):
         """Test that chunk returns the correct chunk"""
         payload = {"name": "John", "age": 30}
-        chunked = chunk(payload, 0, 10)
-        assert isinstance(chunked, ChunkedResponse)
-        assert chunked.chunk == "{"
+
+        getter = AsyncMock(return_value=payload)
+        cursor: str | None = None
+        all_chunks = []
+        for _ in range(100):
+            chunked = await chunk(getter, cursor, 10)
+            cursor = chunked.next_cursor
+            all_chunks.append(chunked.chunk)
+            if cursor is None:
+                break
+
+        joined = json.loads("".join(all_chunks))
+        assert joined == payload
+        assert len(all_chunks) == 3
+
+        getter.assert_awaited_once()
+
+    async def test_chunk_id_but_no_max_chunk_token_size(self):
+        """Check that we still return a chunk when chunk_id is provided but max_chunk_token_size is not"""
+
+        payload = {"name": "John", "age": 30}
+        getter = AsyncMock(return_value=payload)
+        first_chunk = await chunk(getter, None, 10)
+        assert first_chunk.next_cursor is not None
+
+        next_chunk = await chunk(getter, first_chunk.next_cursor, None)
+        assert next_chunk.next_cursor is not None
+
+        getter.assert_awaited_once()

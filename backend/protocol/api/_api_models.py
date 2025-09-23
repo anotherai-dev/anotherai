@@ -858,4 +858,7 @@ class OpenAIListResult[T: BaseModel](BaseModel):
 
 class ChunkedResponse(BaseModel):
     chunk: str
-    next_chunk_offset: int | None
+    next_cursor: Annotated[
+        str | None,
+        Field(description="The cursor to use to fetch the next chunk.", serialization_alias="nextCursor"),
+    ]

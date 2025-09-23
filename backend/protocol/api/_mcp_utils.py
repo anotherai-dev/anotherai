@@ -1,5 +1,6 @@
 import contextlib
 import json
+from collections.abc import Awaitable, Callable
 from typing import Any, override
 
 import pydantic_core
@@ -15,10 +16,11 @@ from structlog import get_logger
 from structlog.contextvars import bind_contextvars
 from transformers import AutoTokenizer
 
-from core.domain.exceptions import DefaultError, InvalidTokenError
+from core.domain.exceptions import BadRequestError, DefaultError, InvalidTokenError
 from core.domain.tenant_data import TenantData
 from core.providers._base.provider_error import ProviderError
 from core.services.documentation.documentation_search import DocumentationSearch
+from core.utils.uuid import uuid7
 from protocol.api._api_models import ChunkedResponse
 from protocol.api._dependencies._lifecycle import lifecyle_dependencies
 from protocol.api._dependencies._services import completion_runner
@@ -257,24 +259,46 @@ def build_auth_provider() -> AuthProvider:
     return CustomTokenVerifier()
 
 
-def chunk[T](payload: T, chunk_offset: int | None, max_chunk_token_size: int | None) -> T | ChunkedResponse:
-    if max_chunk_token_size is None:
-        return payload
-    if chunk_offset is None:
-        chunk_offset = 0
+# TODO: store in redis instead of in memory
+_stored_chunks: dict[str, tuple[int, list[str]]] = {}
+_tok = AutoTokenizer.from_pretrained("bert-base-uncased", use_fast=True)
 
-    tok = AutoTokenizer.from_pretrained("bert-base-uncased", use_fast=True)
-    # We pretty print the JSON. We could use custom separators as well
-    # TODO: we should store the splits in a redis to make sure
-    # We don't return bogus data
-    serialized = pydantic_core.to_json(payload, indent=2).decode("utf-8")
-    lines = serialized.splitlines()[chunk_offset:]
+
+async def chunk[T](
+    getter: Callable[[], Awaitable[T]],
+    chunk_id: str | None,
+    max_chunk_token_size: int | None,
+) -> T | ChunkedResponse:
+    if chunk_id is not None:
+        try:
+            previous_max_token_size, lines = _stored_chunks.pop(chunk_id)
+        except KeyError:
+            raise BadRequestError(f"Chunk {chunk_id} not found. Please start from the beginning.") from None
+        if max_chunk_token_size is None:
+            max_chunk_token_size = previous_max_token_size
+    elif max_chunk_token_size is None:
+        return await getter()
+    else:
+        payload = await getter()
+        # Pretty dumb right now, we pretty print the JSON.
+        # We could use custom separators as well
+        serialized = pydantic_core.to_json(payload, indent=2).decode("utf-8")
+        lines = serialized.splitlines()
+
     total_token_count = 0
 
     for idx, line in enumerate(lines):
-        line_count = len(tok.encode(line))
+        line_count = len(_tok.encode(line))
+        if line_count > max_chunk_token_size:
+            raise BadRequestError(
+                f"A line ({line_count}) does not fit in the max chunk size ({max_chunk_token_size})",
+                capture=True,
+            ) from None
         total_token_count += line_count
         if total_token_count > max_chunk_token_size:
-            return ChunkedResponse(chunk="\n".join(lines[:idx]), next_chunk_offset=chunk_offset + len(line))
+            # Store the next chunk
+            next_chunk_id = str(uuid7())
+            _stored_chunks[next_chunk_id] = (max_chunk_token_size, lines[idx:])
+            return ChunkedResponse(chunk="\n".join(lines[:idx]), next_cursor=next_chunk_id)
 
-    return ChunkedResponse(chunk="\n".join(lines), next_chunk_offset=None)
+    return ChunkedResponse(chunk="\n".join(lines), next_cursor=None)

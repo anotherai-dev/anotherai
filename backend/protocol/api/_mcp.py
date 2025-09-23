@@ -166,23 +166,37 @@ async def get_experiment(
             "At the end of the time, the experiment is returned even if the completions are not ready.",
         ),
     ] = 30,
-    chunk_offset: int | None = None,
+    # include: Annotated[
+    #     set[Literal["versions", "inputs", "outputs", "annotations"]] | None,
+    #     Field(description="What to include when fetching the experiment. By default, only the result is included."),
+    # ] = None,
+    cursor: Annotated[
+        str | None,
+        Field(description="The cursor to use to fetch the next chunk"),
+    ] = None,
     max_chunk_token_size: int | None = None,
 ) -> Experiment | ChunkedResponse:
     """Waits for the experiment's completions to be ready and returns the experiment,
     including the associated versions and inputs and outputs.
 
-    If max token size is provided, the experiment is provided in chunks. Use when the experiment is too large to
-    fit in the context window of the model.
+    If the experiment is tool large to fit in context, you can:
+    - use the include parameter to include only a portion of the experiment
+    - use the max_chunk_token_size parameter to limit the size of the experiment that is provided in each chunk.
+    When chunking, always fetch all the chunks of the experiment.
     """
-    return _mcp_utils.chunk(
-        await (await _mcp_utils.experiment_service()).wait_for_experiment(
+
+    async def _get():
+        return await (await _mcp_utils.experiment_service()).wait_for_experiment(
             id,
             version_ids=version_ids,
             input_ids=input_ids,
             max_wait_time_seconds=max_wait_time_seconds,
-        ),
-        chunk_offset=chunk_offset,
+            include=None,  # let's include everything
+        )
+
+    return await _mcp_utils.chunk(
+        _get,
+        chunk_id=cursor,
         max_chunk_token_size=max_chunk_token_size,
     )
 
