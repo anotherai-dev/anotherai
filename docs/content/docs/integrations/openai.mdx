@@ -88,7 +88,7 @@ completion = client.chat.completions.create(
     model="gpt-4o-mini",
     messages=[{"role": "user", "content": "Analyze the sentiment of this product review"}],
     metadata={
-        "agent_id": "product-review-sentiment",  # Required for observability
+        "agent_id": "product-review-sentiment", # recommended for observability
     }
 )
 ```
