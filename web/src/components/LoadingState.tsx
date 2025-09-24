@@ -6,10 +6,7 @@ interface LoadingStateProps {
 
 export function LoadingState({ padding = true }: LoadingStateProps) {
   return (
-    <div 
-      className="h-full flex flex-col items-center text-center" 
-      style={padding ? { paddingTop: "25%" } : undefined}
-    >
+    <div className="h-full flex flex-col items-center text-center" style={padding ? { paddingTop: "25%" } : undefined}>
       <LoadingIndicator />
     </div>
   );
