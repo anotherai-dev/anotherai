@@ -40,8 +40,7 @@ function CompletionsPageContent() {
       <PageHeader
         breadcrumbs={[]}
         title="Completions"
-        description="Search through completions using SQL queries, view detailed completion lists, and open individual completion details for analysis"
-        descriptionRightContent={<FilterCompletionsInstructions />}
+        descriptionBottomContent={<FilterCompletionsInstructions />}
         className="pb-2"
       />
 
