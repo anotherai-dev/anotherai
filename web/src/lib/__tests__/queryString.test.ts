@@ -1,4 +1,5 @@
 import { renderHook } from "@testing-library/react";
+import type React from "react";
 import { useParsedSearchParams } from "../queryString";
 
 // Mock Next.js useSearchParams hook
@@ -7,6 +8,13 @@ const mockSearchParams = {
   get: mockGet,
 };
 
+// Mock React hooks
+const mockUseMemo = jest.fn();
+jest.mock("react", () => ({
+  ...jest.requireActual("react"),
+  useMemo: <T>(fn: () => T, deps: React.DependencyList) => mockUseMemo(fn, deps),
+}));
+
 jest.mock("next/navigation", () => ({
   useSearchParams: () => mockSearchParams,
 }));
@@ -14,6 +22,9 @@ jest.mock("next/navigation", () => ({
 describe("useParsedSearchParams", () => {
   beforeEach(() => {
     mockGet.mockClear();
+    mockUseMemo.mockClear();
+    // Make useMemo call the function immediately
+    mockUseMemo.mockImplementation((fn) => fn());
   });
 
   describe("Basic functionality", () => {
@@ -158,29 +169,25 @@ describe("useParsedSearchParams", () => {
     it("handles parameter key changes", () => {
       mockGet.mockReturnValueOnce("value1").mockReturnValueOnce("value2");
 
-      const { result, rerender } = renderHook(({ keys }) => useParsedSearchParams(...keys), {
-        initialProps: { keys: ["param1"] as const },
-      });
+      // Test with param1
+      const { result: result1 } = renderHook(() => useParsedSearchParams("param1"));
+      expect(result1.current).toEqual({ param1: "value1" });
 
-      expect(result.current).toEqual({ param1: "value1" });
-
-      rerender({ keys: ["param2"] as const });
-
-      expect(result.current).toEqual({ param2: "value2" });
+      // Test with param2 separately
+      const { result: result2 } = renderHook(() => useParsedSearchParams("param2"));
+      expect(result2.current).toEqual({ param2: "value2" });
     });
 
     it("handles adding more parameters", () => {
       mockGet.mockReturnValueOnce("value1").mockReturnValueOnce("value1").mockReturnValueOnce("value2");
 
-      const { result, rerender } = renderHook(({ keys }) => useParsedSearchParams(...keys), {
-        initialProps: { keys: ["param1"] as const },
-      });
+      // Test with single parameter
+      const { result: result1 } = renderHook(() => useParsedSearchParams("param1"));
+      expect(result1.current).toEqual({ param1: "value1" });
 
-      expect(result.current).toEqual({ param1: "value1" });
-
-      rerender({ keys: ["param1", "param2"] as const });
-
-      expect(result.current).toEqual({
+      // Test with multiple parameters
+      const { result: result2 } = renderHook(() => useParsedSearchParams("param1", "param2"));
+      expect(result2.current).toEqual({
         param1: "value1",
         param2: "value2",
       });

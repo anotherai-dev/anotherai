@@ -70,6 +70,8 @@ _NAME_OVERRIDE_MAP = {
     Model.GPT_OSS_20B: "accounts/fireworks/models/gpt-oss-20b",
     Model.GPT_OSS_120B: "accounts/fireworks/models/gpt-oss-120b",
     Model.KIMI_K2_INSTRUCT: "accounts/fireworks/models/kimi-k2-instruct",
+    Model.KIMI_K2_INSTRUCT_0905: "accounts/fireworks/models/kimi-k2-instruct-0905",
+    Model.DEEPSEEK_V3_1_TERMINUS: "accounts/fireworks/models/deepseek-v3p1-terminus",
 }
 
 

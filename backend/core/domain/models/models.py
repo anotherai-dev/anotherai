@@ -77,7 +77,7 @@ class Model(StrEnum):
 
     GEMINI_2_5_PRO = "gemini-2.5-pro"
     # GEMINI_2_5_FLASH = "gemini-2.5-flash"
-    GEMINI_2_5_FLASH_LITE_PREVIEW_0617 = "gemini-2.5-flash-lite-preview-06-17"
+    GEMINI_2_5_FLASH_LITE = "gemini-2.5-flash-lite"
 
     GEMINI_2_5_PRO_PREVIEW_0605 = "gemini-2.5-pro-preview-06-05"
     GEMINI_2_5_FLASH_PREVIEW_0520 = "gemini-2.5-flash-preview-05-20"
@@ -87,6 +87,7 @@ class Model(StrEnum):
     GEMINI_2_5_FLASH_THINKING_PREVIEW_0417 = "gemini-2.5-flash-thinking-preview-04-17"
     GEMINI_2_5_PRO_PREVIEW_0325 = "gemini-2.5-pro-preview-03-25"
     GEMINI_2_5_PRO_EXP_0325 = "gemini-2.5-pro-exp-03-25"
+    GEMINI_2_5_FLASH_LITE_PREVIEW_0617 = "gemini-2.5-flash-lite-preview-06-17"
     GEMINI_2_0_FLASH_LATEST = "gemini-2.0-flash-latest"
     GEMINI_2_0_FLASH_001 = "gemini-2.0-flash-001"
     GEMINI_2_0_FLASH_LITE_001 = "gemini-2.0-flash-lite-001"
@@ -190,6 +191,7 @@ class Model(StrEnum):
     # --------------------------------------------------------------------------
     # DeepSeek Models
     # --------------------------------------------------------------------------
+    DEEPSEEK_V3_1_TERMINUS = "deepseek-v3.1-terminus"
     DEEPSEEK_V3_2412 = "deepseek-v3-2412"
     DEEPSEEK_V3_0324 = "deepseek-v3-0324"
     DEEPSEEK_V3_LATEST = "deepseek-v3-latest"
@@ -200,6 +202,8 @@ class Model(StrEnum):
     # --------------------------------------------------------------------------
     # XAI Models
     # --------------------------------------------------------------------------
+    GROK_CODE_FAST_1 = "grok-code-fast-1"
+    GROK_4_FAST = "grok-4-fast"
     GROK_4_0709 = "grok-4-0709"
 
     GROK_3_BETA = "grok-3-beta"
@@ -211,4 +215,5 @@ class Model(StrEnum):
     # --------------------------------------------------------------------------
     # MOONSHOT Models
     # --------------------------------------------------------------------------
+    KIMI_K2_INSTRUCT_0905 = "kimi-k2-instruct-0905"
     KIMI_K2_INSTRUCT = "kimi-k2-instruct"
