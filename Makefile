@@ -24,3 +24,9 @@ local_setup: local_reset migrate
 .PHONY: web
 web:
 	cd web && PYTHONPATH=. uv run dotenv -f ../.env run -- npm run dev
+
+
+# make check_models PROVIDER=mistral
+.PHONY: check_models
+check_models:
+	PYTHONPATH=backend:scripts uv run scripts/check_${PROVIDER}_models.py

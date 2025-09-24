@@ -50,7 +50,7 @@ class ProviderOptions(BaseModel):
         if self.reasoning_effort:
             # If the model does not support the reasoning effort, we return None
             if reasoning_budget[self.reasoning_effort] is None:
-                log.warning(
+                log.info(
                     "Reasoning effort is not supported by the model",
                     options=self,
                 )

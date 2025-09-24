@@ -1,3 +1,4 @@
+import { TextBreak } from "@/components/utils/TextBreak";
 import { CompletionTableBadgeCell } from "./CompletionTableBadgeCell";
 
 interface CompletionTableMetadataCellProps {
@@ -26,7 +27,7 @@ export function CompletionTableMetadataCell({ value }: CompletionTableMetadataCe
         const displayKey = key.startsWith("workflowai.") ? key.slice("workflowai.".length) : key;
         return (
           <div key={key} className="space-y-1">
-            <div className="text-xs text-gray-600 break-words">{displayKey}</div>
+            <TextBreak className="text-xs text-gray-600">{displayKey}</TextBreak>
             <CompletionTableBadgeCell value={String(val)} variant="white" rounded="2px" />
           </div>
         );

@@ -51,3 +51,13 @@ jobs:
       env: ${{ inputs.env }}
       full_app_name: anotherai-worker-${{ inputs.env }}
       # label: latest
+
+  backend-deploy-run:
+    needs: [backend-build]
+    uses: ./.github/workflows/.deploy.yml
+    secrets: inherit
+    with:
+      image_name: ${{ needs.backend-build.outputs.image_name }}
+      env: ${{ inputs.env }}
+      full_app_name: anotherai-run-${{ inputs.env }}
+      label: latest
