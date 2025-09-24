@@ -597,6 +597,14 @@ AZURE_PROVIDER_DATA: ProviderDataByModel = {
             source="https://openai.com/api/pricing/",
         ),
     ),
+    Model.O3_2025_04_16: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=2 * ONE_MILLION_TH,
+            prompt_cached_tokens_discount=0.75,
+            completion_cost_per_token=8 * ONE_MILLION_TH,
+            source="https://openai.com/api/pricing/",
+        ),
+    ),
     Model.GPT_4O_2024_08_06: ModelProviderData(
         text_price=TextPricePerToken(
             prompt_cost_per_token=2.5 * ONE_MILLION_TH,
