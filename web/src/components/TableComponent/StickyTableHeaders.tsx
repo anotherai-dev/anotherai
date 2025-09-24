@@ -40,7 +40,7 @@ export function StickyTableHeaders({
     const updateStickyHeaderVisibility = () => {
       // Show sticky headers only when:
       // 1. Headers are not visible (scrolled out of view)
-      // 2. Table is still visible (not completely scrolled past)
+      // 2. Table bottom is more than 64px from viewport top (tableIntersecting = true with our 64px rootMargin)
       setShowStickyHeaders(!headerIntersecting && tableIntersecting);
     };
 
@@ -61,6 +61,7 @@ export function StickyTableHeaders({
       },
       {
         threshold: 0.01, // Trigger when table is barely visible
+        rootMargin: "-64px 0px 0px 0px", // Shrink intersection root by 64px from bottom
       }
     );
 
@@ -73,13 +74,11 @@ export function StickyTableHeaders({
     };
   }, [headerRef, tableRef]);
 
-  if (!showStickyHeaders) {
-    return null;
-  }
-
   return (
     <div
-      className="fixed top-0 z-30 pointer-events-none overflow-hidden border-l border-r border-gray-200"
+      className={`fixed top-0 z-30 pointer-events-none overflow-hidden border-l border-r border-gray-200 transition-opacity duration-150 ease-in-out ${
+        showStickyHeaders ? "opacity-100" : "opacity-0"
+      }`}
       style={{
         left: containerLeft + 240, // Position after the sticky first column
         width: containerWidth - 240, // Take up remaining width
