@@ -1,6 +1,7 @@
 "use client";
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { TextBreak } from "@/components/utils/TextBreak";
 import { useViews } from "@/store/views";
 
 interface EditableViewTitleProps {
@@ -159,10 +160,10 @@ const EditableViewTitle = forwardRef<EditableViewTitleRef, EditableViewTitleProp
   return (
     <span
       onDoubleClick={handleDoubleClick}
-      className={`cursor-pointer select-none flex-1 break-words ${className}`}
+      className={`cursor-pointer select-none flex-1 ${className}`}
       title="Double-click to rename"
     >
-      {title}
+      <TextBreak>{title}</TextBreak>
     </span>
   );
 });

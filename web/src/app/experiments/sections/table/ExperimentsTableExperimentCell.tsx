@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { TextBreak } from "@/components/utils/TextBreak";
 import { stripMarkdown } from "@/components/utils/utils";
 
 interface ExperimentCellData {
@@ -18,10 +19,10 @@ export function ExperimentsTableExperimentCell({ value }: ExperimentsTableExperi
 
   return (
     <div className="flex flex-col gap-1 min-w-0">
-      <div className="text-xs text-gray-900 font-semibold break-words">{value.title}</div>
+      <TextBreak className="text-xs text-gray-900 font-semibold">{value.title}</TextBreak>
       <div className="flex flex-col gap-0.5">
-        {value.description && <div className="text-xs text-gray-500 break-words line-clamp-2">{value.description}</div>}
-        {strippedResult && <div className="text-xs text-gray-500 break-words line-clamp-1">{strippedResult}</div>}
+        {value.description && <TextBreak className="text-xs text-gray-500 line-clamp-2">{value.description}</TextBreak>}
+        {strippedResult && <TextBreak className="text-xs text-gray-500 line-clamp-1">{strippedResult}</TextBreak>}
       </div>
     </div>
   );
