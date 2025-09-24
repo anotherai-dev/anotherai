@@ -122,7 +122,7 @@ def mistral_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             supports_input_pdf=False,
             supports_input_audio=False,
             max_tokens_data=MaxTokensData(
-                max_tokens=131072,
+                max_tokens=32_768,  # limited on la plateforme
                 source="https://docs.mistral.ai/getting-started/models/",
             ),
             icon_url="https://workflowai.blob.core.windows.net/workflowai-public/mistral.svg",
@@ -132,7 +132,7 @@ def mistral_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
                 index=SpeedIndex.from_experiment(output_tokens=2133, duration_seconds=9),
             ),
             provider_name=DisplayedProvider.MISTRAL_AI.value,
-            supports_tool_calling=True,
+            supports_tool_calling=False,
             fallback=ModelFallback.only_model(Model.GEMINI_2_0_FLASH_LITE_001, "cheapest"),
         ),
         Model.MINISTRAL_8B_2410: ModelData(
@@ -142,7 +142,7 @@ def mistral_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             supports_input_pdf=False,
             supports_input_audio=False,
             max_tokens_data=MaxTokensData(
-                max_tokens=131072,
+                max_tokens=131_072,
                 source="https://docs.mistral.ai/getting-started/models/",
             ),
             icon_url="https://workflowai.blob.core.windows.net/workflowai-public/mistral.svg",
@@ -245,26 +245,8 @@ def mistral_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             supports_tool_calling=True,
             fallback=ModelFallback.default("cheap"),
         ),
-        Model.CODESTRAL_MAMBA_2407: ModelData(
-            display_name="CodeStral Mamba (24-07)",
-            supports_json_mode=True,
-            supports_input_image=False,
-            supports_input_pdf=False,
-            supports_input_audio=False,
-            max_tokens_data=MaxTokensData(
-                max_tokens=262144,
-                # source="https://docs.mistral.ai/getting-started/models/",
-                source="https://api.mistral.ai/v1/models",
-            ),
-            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/mistral.svg",
-            release_date=date(2024, 7, 24),
-            quality_data=QualityData(mmlu=63.47, gpqa=38.35),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2011, duration_seconds=18),
-            ),
-            provider_name=DisplayedProvider.MISTRAL_AI.value,
-            supports_tool_calling=True,
-            fallback=ModelFallback.default("cheapest"),
+        Model.CODESTRAL_MAMBA_2407: DeprecatedModel(
+            replacement_model=Model.CODESTRAL_2501,
         ),
         Model.MISTRAL_MEDIUM_2505: ModelData(
             display_name="Mistral Medium 3 (25-05)",
@@ -298,7 +280,7 @@ def mistral_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             supports_input_pdf=True,
             supports_input_audio=False,
             max_tokens_data=MaxTokensData(
-                max_tokens=40_960,
+                max_tokens=40_000,
                 source="https://docs.mistral.ai/getting-started/models/models_overview/",
             ),
             icon_url="https://workflowai.blob.core.windows.net/workflowai-public/mistral.svg",

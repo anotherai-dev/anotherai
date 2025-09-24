@@ -544,13 +544,6 @@ MISTRAL_PROVIDER_DATA: ProviderDataByModel = {
             source="https://mistral.ai/products/la-plateforme#pricing",
         ),
     ),
-    Model.CODESTRAL_MAMBA_2407: ModelProviderData(
-        text_price=TextPricePerToken(
-            prompt_cost_per_token=0.2 * ONE_MILLION_TH,
-            completion_cost_per_token=0.6 * ONE_MILLION_TH,
-            source="https://mistral.ai/products/la-plateforme#pricing",
-        ),
-    ),
     Model.PIXTRAL_LARGE_2411: ModelProviderData(
         text_price=TextPricePerToken(
             prompt_cost_per_token=2.0 * ONE_MILLION_TH,
