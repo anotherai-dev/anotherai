@@ -358,33 +358,6 @@ AMAZON_BEDROCK_PROVIDER_DATA: ProviderDataByModel = {
 }
 
 GROQ_PROVIDER_DATA: ProviderDataByModel = {
-    # Model.LLAMA3_70B_8192: ModelProviderData(
-    #     text_price=TextPricePerToken(
-    #         prompt_cost_per_token=0.000_000_59,
-    #         completion_cost_per_token=0.000_000_79,
-    #         source="https://console.groq.com/settings/billing",
-    #     ),
-    #     # native tools calls are not implemented on Groq for now as we will decommssion the provider for now.
-    #     # see [WOR-1968: Disable `Groq` ?](https://linear.app/workflowai/issue/WOR-1968/disable-groq)
-    # ),
-    # Model.LLAMA3_8B_8192: ModelProviderData(
-    #     text_price=TextPricePerToken(
-    #         prompt_cost_per_token=0.000_000_05,
-    #         completion_cost_per_token=0.000_000_08,
-    #         source="https://console.groq.com/settings/billing",
-    #     ),
-    #     # native tools calls are not implemented on Groq for now as we will decommssion the provider for now.
-    #     # see [WOR-1968: Disable `Groq` ?](https://linear.app/workflowai/issue/WOR-1968/disable-groq)
-    # ),
-    # Model.MIXTRAL_8X7B_32768: ModelProviderData(
-    #     text_price=TextPricePerToken(
-    #         prompt_cost_per_token=0.000_000_24,
-    #         completion_cost_per_token=0.000_000_24,
-    #         source="https://console.groq.com/settings/billing",
-    #     ),
-    #     # native tools calls are not implemented on Groq for now as we will decommssion the provider for now.
-    #     # see [WOR-1968: Disable `Groq` ?](https://linear.app/workflowai/issue/WOR-1968/disable-groq)
-    # ),
     Model.LLAMA_3_1_8B: ModelProviderData(
         text_price=TextPricePerToken(
             prompt_cost_per_token=0.05 * ONE_MILLION_TH,
@@ -403,53 +376,6 @@ GROQ_PROVIDER_DATA: ProviderDataByModel = {
         # native tools calls are not implemented on Groq for now as we will decommssion the provider for now.
         # see [WOR-1968: Disable `Groq` ?](https://linear.app/workflowai/issue/WOR-1968/disable-groq)
     ),
-    #
-    # Model.LLAMA_3_1_70B: ModelProviderData(
-    #     text_price=TextPricePerToken(
-    #         prompt_cost_per_token=0.000_000_59,
-    #         completion_cost_per_token=0.000_000_79,
-    #         source="https://console.groq.com/settings/billing",
-    #     ),
-    #     lifecycle_data=LifecycleData(
-    #         sunset_date=datetime.date(year=2024, month=12, day=20),
-    #         source="https://console.groq.com/docs/deprecations",
-    #         post_sunset_replacement_model=Model.LLAMA_3_3_70B,
-    #     ),
-    #     # native tools calls are not implemented on Groq for now as we will decommssion the provider for now.
-    #     # see [WOR-1968: Disable `Groq` ?](https://linear.app/workflowai/issue/WOR-1968/disable-groq)
-    # ),
-    # Model.LLAMA_3_2_3B_PREVIEW: ModelProviderData(
-    #     text_price=TextPricePerToken(
-    #         prompt_cost_per_token=0.000_000_06,
-    #         completion_cost_per_token=0.000_000_06,
-    #         source="https://console.groq.com/settings/billing",
-    #     ),
-    #     # native tools calls are not implemented on Groq for now as we will decommssion the provider for now.
-    #     # see [WOR-1968: Disable `Groq` ?](https://linear.app/workflowai/issue/WOR-1968/disable-groq)
-    # ),
-    # Model.LLAMA_3_2_90B_VISION_PREVIEW: ModelProviderData(
-    #     text_price=TextPricePerToken(
-    #         prompt_cost_per_token=0.000_000_90,
-    #         completion_cost_per_token=0.000_000_90,
-    #         source="https://groq.com/pricing",
-    #     ),
-    #     # native tools calls are not implemented on Groq for now as we will decommssion the provider for now.
-    #     # see [WOR-1968: Disable `Groq` ?](https://linear.app/workflowai/issue/WOR-1968/disable-groq)
-    # ),
-    # Model.LLAMA_4_MAVERICK_BASIC: ModelProviderData(
-    #     text_price=TextPricePerToken(
-    #         prompt_cost_per_token=0.20 * ONE_MILLION_TH,
-    #         completion_cost_per_token=0.60 * ONE_MILLION_TH,
-    #         source="https://groq.com/pricing/",
-    #     ),
-    # ),
-    # Model.LLAMA_4_SCOUT_BASIC: ModelProviderData(
-    #     text_price=TextPricePerToken(
-    #         prompt_cost_per_token=0.11 * ONE_MILLION_TH,
-    #         completion_cost_per_token=0.34 * ONE_MILLION_TH,
-    #         source="https://groq.com/pricing/",
-    #     ),
-    # ),
     Model.LLAMA_4_MAVERICK_FAST: ModelProviderData(
         text_price=TextPricePerToken(
             prompt_cost_per_token=0.20 * ONE_MILLION_TH,
@@ -490,6 +416,14 @@ GROQ_PROVIDER_DATA: ProviderDataByModel = {
             prompt_cost_per_token=1 * ONE_MILLION_TH,
             completion_cost_per_token=3 * ONE_MILLION_TH,
             source="https://console.groq.com/docs/model/moonshotai/kimi-k2-instruct",
+        ),
+    ),
+    Model.KIMI_K2_INSTRUCT_0905: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=1 * ONE_MILLION_TH,
+            prompt_cached_tokens_discount=0.5,
+            completion_cost_per_token=3 * ONE_MILLION_TH,
+            source="https://console.groq.com/docs/model/moonshotai/kimi-k2-instruct-0905",
         ),
     ),
 }
