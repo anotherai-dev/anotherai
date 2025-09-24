@@ -26,7 +26,7 @@ from core.providers.google.google_provider_domain import (
     Part,
 )
 from tests.fake_models import fake_llm_completion
-from tests.utils import fixtures_json, mock_aiter
+from tests.utils import approx, fixtures_json, mock_aiter
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -138,12 +138,12 @@ class TestGoogleProviderPerTokenCostCalculation:
         ]
 
         model_per_token_pricing = PerTokenPricing(
-            prompt_cost_per_token=0.0375 / 1_000_000,
-            completion_cost_per_token=0.15 / 1_000_000,
+            prompt_cost_per_token=0.1 / 1_000_000,
+            completion_cost_per_token=0.4 / 1_000_000,
         )
 
         llm_usage = await GoogleGeminiAPIProvider().compute_llm_completion_usage(
-            model=Model.GEMINI_1_5_FLASH_8B,
+            model=Model.GEMINI_2_5_FLASH_LITE,
             completion=_llm_completion(
                 messages=[system_message.model_dump(), *[message.model_dump() for message in user_messages]],
                 response="Hello you !",
@@ -152,10 +152,10 @@ class TestGoogleProviderPerTokenCostCalculation:
         )
 
         assert llm_usage.prompt_token_count == 14  # From the initial LLM usage
-        assert llm_usage.prompt_cost_usd == 14 * model_per_token_pricing.prompt_cost_per_token
+        assert llm_usage.prompt_cost_usd == approx(14 * model_per_token_pricing.prompt_cost_per_token)
 
         assert llm_usage.completion_token_count == 20
-        assert llm_usage.completion_cost_usd == 20 * model_per_token_pricing.completion_cost_per_token
+        assert llm_usage.completion_cost_usd == approx(20 * model_per_token_pricing.completion_cost_per_token)
 
 
 class TestWrapSSE:

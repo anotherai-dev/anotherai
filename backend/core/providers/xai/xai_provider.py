@@ -8,6 +8,7 @@ from core.domain.message import MessageDeprecated
 from core.domain.models import Model, Provider
 from core.domain.models.model_data import ModelData
 from core.domain.models.utils import get_model_data
+from core.domain.reasoning_effort import ReasoningEffort
 from core.domain.tool_call import ToolCallRequest
 from core.providers._base.httpx_provider import HTTPXProvider
 from core.providers._base.llm_usage import LLMUsage
@@ -66,6 +67,18 @@ class XAIProvider(HTTPXProvider[XAIConfig, CompletionResponse]):
             ),
         )
 
+    @classmethod
+    def model_name(cls, options: ProviderOptions, model_data: ModelData) -> tuple[str, str | None]:
+        final_reasoning = options.final_reasoning_effort(model_data.reasoning)
+        model = options.model
+        if model == Model.GROK_4_FAST:
+            if final_reasoning == ReasoningEffort.DISABLED:
+                model = "grok-4-fast-non-reasoning"
+                final_reasoning = None
+            else:
+                model = "grok-4-fast-reasoning"
+        return (model, final_reasoning)
+
     @override
     def _build_request(self, messages: list[MessageDeprecated], options: ProviderOptions, stream: bool) -> BaseModel:
         message: list[XAIMessage | XAIToolMessage] = []
@@ -76,16 +89,17 @@ class XAIProvider(HTTPXProvider[XAIConfig, CompletionResponse]):
                 message.append(XAIMessage.from_domain(m))
 
         model_data = get_model_data(options.model)
+        model, final_reasoning = self.model_name(options, model_data)
 
         completion_request = CompletionRequest(
             messages=message,
-            model=options.model,
+            model=model,
             temperature=options.temperature,
             max_tokens=options.max_tokens,
             stream=stream,
             stream_options=StreamOptions(include_usage=True) if stream else None,
             response_format=self._response_format(options, model_data),
-            reasoning_effort=options.final_reasoning_effort(model_data.reasoning),
+            reasoning_effort=final_reasoning,
             tool_choice=CompletionRequest.tool_choice_from_domain(options.tool_choice),
             top_p=options.top_p,
             presence_penalty=options.presence_penalty,
