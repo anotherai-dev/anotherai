@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { TextBreak } from "@/components/utils/TextBreak";
 
 // Configuration
 const MAX_TEXT_LENGTH = 1500;
@@ -41,20 +42,21 @@ export function MessageTextView(props: MessageTextViewProps) {
 
     return (
       <div>
-        <div
-          ref={contentRef}
-          className={`break-words [overflow-wrap:anywhere] hyphens-auto ${shouldTruncateByHeight && !isExpanded ? "overflow-hidden" : ""}`}
-          style={shouldTruncateByHeight && !isExpanded ? { maxHeight: `${MAX_HEIGHT_PX}px` } : {}}
-        >
-          {(() => {
-            // Bold input variables in the form {{variable}}
-            const parts = displayText.split(/(\{\{[^}]+\}\})/g);
-            return parts.map((part, i) =>
-              /^\{\{[^}]+\}\}$/.test(part) ? <b key={i}>{part}</b> : <React.Fragment key={i}>{part}</React.Fragment>
-            );
-          })()}
-          {shouldTruncateByLength && !isExpanded && <span>...</span>}
-        </div>
+        <TextBreak className={shouldTruncateByHeight && !isExpanded ? "overflow-hidden" : ""}>
+          <div
+            ref={contentRef}
+            style={shouldTruncateByHeight && !isExpanded ? { maxHeight: `${MAX_HEIGHT_PX}px` } : {}}
+          >
+            {(() => {
+              // Bold input variables in the form {{variable}}
+              const parts = displayText.split(/(\{\{[^}]+\}\})/g);
+              return parts.map((part, i) =>
+                /^\{\{[^}]+\}\}$/.test(part) ? <b key={i}>{part}</b> : <React.Fragment key={i}>{part}</React.Fragment>
+              );
+            })()}
+            {shouldTruncateByLength && !isExpanded && <span>...</span>}
+          </div>
+        </TextBreak>
         {shouldTruncate && (
           <div className="flex justify-start mt-1">
             <button
@@ -77,7 +79,7 @@ export function MessageTextView(props: MessageTextViewProps) {
   const sharedWords = decodedSharedText!.trim().split(/\s+/);
 
   return (
-    <div className="break-words [overflow-wrap:anywhere] hyphens-auto">
+    <TextBreak>
       {words.map((word, i) => {
         const cleanWord = word.trim().toLowerCase();
         const isShared = sharedWords.some((sharedWord) => cleanWord && sharedWord.toLowerCase() === cleanWord);
@@ -98,6 +100,6 @@ export function MessageTextView(props: MessageTextViewProps) {
 
         return <React.Fragment key={i}>{word}</React.Fragment>;
       })}
-    </div>
+    </TextBreak>
   );
 }
