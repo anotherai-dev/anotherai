@@ -23,11 +23,6 @@ from .model_data import (
 )
 
 
-def _char_to_token(char_count: int) -> int:
-    # Approx 4 characters per token
-    return round(char_count / 4)
-
-
 def _openai_fallback(pricing: PricingTier, context_exceeded: Model | Literal["no"] | None = None):
     """Alternative fallback for OpenAI models. Can't use the default since it uses mostly OpenAI models"""
     model: Model
@@ -39,7 +34,7 @@ def _openai_fallback(pricing: PricingTier, context_exceeded: Model | Literal["no
             # Medium models usually have a 1M context window
             model = Model.CLAUDE_4_SONNET_LATEST
             if not context_exceeded:
-                context_exceeded = Model.GEMINI_1_5_PRO_LATEST
+                context_exceeded = Model.GEMINI_2_5_PRO
         case "expensive":
             # OpenAI expensive models usually have a 200k context window
             model = Model.CLAUDE_4_OPUS_LATEST
@@ -129,7 +124,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             ),
             provider_name=DisplayedProvider.OPEN_AI.value,
             supports_tool_calling=True,
-            fallback=_openai_fallback("medium"),
+            fallback=_openai_fallback("medium", context_exceeded="no"),
         ),
         Model.GPT_41_MINI_LATEST: LatestModel(
             model=Model.GPT_41_MINI_2025_04_14,
@@ -257,9 +252,9 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             aliases=[],
             fallback=ModelFallback(
                 # Falling back to Gemini 1.5 Pro to support audio
-                content_moderation=Model.GEMINI_1_5_PRO_002,
-                structured_output=Model.GEMINI_1_5_PRO_002,
-                rate_limit=Model.GEMINI_1_5_PRO_002,
+                content_moderation=Model.GEMINI_2_5_PRO,
+                structured_output=Model.GEMINI_2_5_PRO,
+                rate_limit=Model.GEMINI_2_5_PRO,
                 context_exceeded=None,
             ),
             supports_temperature=False,
@@ -291,10 +286,10 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             supports_tool_calling=False,
             aliases=["gpt-4o-audio-preview"],
             fallback=ModelFallback(
-                # Falling back to Gemini 1.5 Pro to support audio
-                content_moderation=Model.GEMINI_1_5_PRO_002,
-                structured_output=Model.GEMINI_1_5_PRO_002,
-                rate_limit=Model.GEMINI_1_5_PRO_002,
+                # Falling back to Gemini 2.5 Pro to support audio
+                content_moderation=Model.GEMINI_2_5_PRO,
+                structured_output=Model.GEMINI_2_5_PRO,
+                rate_limit=Model.GEMINI_2_5_PRO,
                 context_exceeded=None,
             ),
             supports_temperature=False,
@@ -519,7 +514,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             ),
             supports_tool_calling=True,
             supports_parallel_tool_calls=True,
-            fallback=_openai_fallback("cheap"),
+            fallback=ModelFallback.default("cheapest"),
             reasoning=ModelReasoningBudget(),
             supports_temperature=True,
             supports_top_p=True,
@@ -563,7 +558,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
                 equivalent_to=(Model.GPT_41_2025_04_14, 0),
             ),
         ),
-        Model.GEMINI_1_5_PRO_PREVIEW_0514: DeprecatedModel(replacement_model=Model.GEMINI_1_5_PRO_002),
+        Model.GEMINI_1_5_PRO_PREVIEW_0514: DeprecatedModel(replacement_model=Model.GEMINI_2_5_PRO),
         Model.GEMINI_2_0_FLASH_LITE_PREVIEW_2502: DeprecatedModel(replacement_model=Model.GEMINI_2_0_FLASH_LITE_001),
         Model.GEMINI_2_0_FLASH_LITE_001: ModelData(
             display_name="Gemini 2.0 Flash-Lite (001)",
@@ -690,8 +685,8 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             # https://cloud.google.com/vertex-ai/generative-ai/docs/thinking
             reasoning=ModelReasoningBudget(min=128, max=32_768),
         ),
-        Model.GEMINI_2_5_FLASH_LITE_PREVIEW_0617: ModelData(
-            display_name="Gemini 2.5 Flash Lite Preview (06-17)",
+        Model.GEMINI_2_5_FLASH_LITE: ModelData(
+            display_name="Gemini 2.5 Flash Lite",
             supports_json_mode=True,
             supports_input_image=True,
             supports_input_pdf=True,
@@ -703,7 +698,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
                 source="https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-5-flash-lite",
             ),
             icon_url="https://workflowai.blob.core.windows.net/workflowai-public/google.svg",
-            release_date=date(2025, 6, 18),
+            release_date=date(2025, 7, 22),
             quality_data=QualityData(
                 gpqa_diamond=66.7,
                 mmlu=84.5,
@@ -722,78 +717,50 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             # https://cloud.google.com/vertex-ai/generative-ai/docs/thinking
             reasoning=ModelReasoningBudget(disabled=0, min=512, max=24_576),
         ),
+        Model.GEMINI_2_5_FLASH_LITE_PREVIEW_0617: DeprecatedModel(replacement_model=Model.GEMINI_2_5_FLASH_LITE),
         Model.GEMINI_2_5_PRO_PREVIEW_0605: DeprecatedModel(replacement_model=Model.GEMINI_2_5_PRO),
         Model.GEMINI_2_5_PRO_PREVIEW_0506: DeprecatedModel(replacement_model=Model.GEMINI_2_5_PRO),
         Model.GEMINI_2_5_PRO_PREVIEW_0325: DeprecatedModel(replacement_model=Model.GEMINI_2_5_PRO),
         Model.GEMINI_2_5_PRO_EXP_0325: DeprecatedModel(replacement_model=Model.GEMINI_2_5_PRO),
         Model.GEMINI_2_0_PRO_EXP: DeprecatedModel(replacement_model=Model.GEMINI_2_5_PRO),
-        Model.GEMINI_2_0_FLASH_EXP: ModelData(
-            display_name="Gemini 2.0 Flash Exp (Image Generation)",
-            supports_json_mode=False,
-            supports_input_image=True,
-            supports_input_pdf=True,
-            supports_input_audio=True,
-            supports_output_image=True,
-            supports_structured_output=False,
-            supports_system_messages=False,
-            max_tokens_data=MaxTokensData(
-                max_tokens=1_048_576 + 8_192,
-                max_output_tokens=8_192,
-                source="https://ai.google.dev/gemini-api/docs/models/gemini#gemini-2.0-flash",
-            ),
-            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/google.svg",
-            release_date=date(2025, 2, 5),
-            quality_data=QualityData(equivalent_to=(Model.GEMINI_2_0_FLASH_001, 0)),
-            speed_data=SpeedData(index=SpeedIndex.from_experiment(output_tokens=2200, duration_seconds=15)),
-            provider_name=DisplayedProvider.GOOGLE.value,
-            supports_tool_calling=True,
-            is_default=True,
-            fallback=None,  # No fallback for exp models
+        Model.GEMINI_2_0_FLASH_EXP: DeprecatedModel(
+            replacement_model=Model.GEMINI_2_5_FLASH,
+            reasoning_effort=ReasoningEffort.DISABLED,
         ),
         Model.GEMINI_2_0_FLASH_LATEST: LatestModel(
             model=Model.GEMINI_2_0_FLASH_001,
             display_name="Gemini 2.0 Flash (latest)",
         ),
-        Model.GEMINI_1_5_PRO_LATEST: LatestModel(
-            model=Model.GEMINI_1_5_PRO_002,
-            display_name="Gemini 1.5 Pro (latest)",
-            is_default=True,
+        Model.GEMINI_1_5_PRO_LATEST: DeprecatedModel(
+            replacement_model=Model.GEMINI_2_5_PRO,
+            reasoning_effort=ReasoningEffort.LOW,
         ),
         Model.GEMINI_2_0_FLASH_THINKING_EXP_0121: DeprecatedModel(
             replacement_model=Model.GEMINI_2_5_PRO,
         ),
         Model.GEMINI_2_0_FLASH_THINKING_EXP_1219: DeprecatedModel(
             replacement_model=Model.GEMINI_2_5_PRO,
+            reasoning_effort=ReasoningEffort.LOW,
         ),
-        Model.GEMINI_1_5_PRO_002: ModelData(
-            display_name="Gemini 1.5 Pro (002)",
-            supports_json_mode=True,
-            supports_input_image=True,
-            supports_input_pdf=True,
-            supports_input_audio=True,
-            supports_structured_output=False,  # Model supports structured outputs, but we did not activate this feature for Google  yet
-            max_tokens_data=MaxTokensData(
-                max_tokens=2_097_152,
-                max_output_tokens=8_192,
-                source="https://cloud.google.com/vertex-ai/generative-ai/docs/learn/models#gemini-1.5-pro",
-            ),
-            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/google.svg",
-            latest_model=Model.GEMINI_1_5_PRO_LATEST,
-            release_date=date(2024, 9, 24),
-            quality_data=QualityData(mmlu=85.14, gpqa=59.10),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=1905, duration_seconds=35),
-            ),
-            provider_name=DisplayedProvider.GOOGLE.value,
-            supports_tool_calling=True,
-            fallback=ModelFallback.default("medium", content_moderation=Model.GPT_41_LATEST, context_exceeded="no"),
+        Model.GEMINI_1_5_PRO_002: DeprecatedModel(
+            replacement_model=Model.GEMINI_2_5_PRO,
+            reasoning_effort=ReasoningEffort.LOW,
         ),
-        Model.GEMINI_1_5_PRO_001: DeprecatedModel(replacement_model=Model.GEMINI_1_5_PRO_002),
-        Model.GEMINI_1_5_PRO_PREVIEW_0409: DeprecatedModel(replacement_model=Model.GEMINI_1_5_PRO_002),
-        Model.GEMINI_1_5_FLASH_PREVIEW_0514: DeprecatedModel(replacement_model=Model.GEMINI_1_5_FLASH_002),
-        Model.GEMINI_1_5_FLASH_LATEST: LatestModel(
-            model=Model.GEMINI_1_5_FLASH_002,
-            display_name="Gemini 1.5 Flash (latest)",
+        Model.GEMINI_1_5_PRO_001: DeprecatedModel(
+            replacement_model=Model.GEMINI_2_5_PRO,
+            reasoning_effort=ReasoningEffort.LOW,
+        ),
+        Model.GEMINI_1_5_PRO_PREVIEW_0409: DeprecatedModel(
+            replacement_model=Model.GEMINI_2_5_PRO,
+            reasoning_effort=ReasoningEffort.LOW,
+        ),
+        Model.GEMINI_1_5_FLASH_PREVIEW_0514: DeprecatedModel(
+            replacement_model=Model.GEMINI_2_5_FLASH,
+            reasoning_effort=ReasoningEffort.DISABLED,
+        ),
+        Model.GEMINI_1_5_FLASH_LATEST: DeprecatedModel(
+            replacement_model=Model.GEMINI_2_5_FLASH,
+            reasoning_effort=ReasoningEffort.DISABLED,
         ),
         Model.CLAUDE_4_SONNET_LATEST: LatestModel(
             model=Model.CLAUDE_4_SONNET_20250514,
@@ -949,37 +916,26 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             supports_tool_calling=True,
             fallback=ModelFallback.default("medium"),
         ),
-        Model.GEMINI_1_5_FLASH_002: ModelData(
-            display_name="Gemini 1.5 Flash (002)",
-            supports_json_mode=True,
-            supports_input_image=True,
-            supports_input_pdf=True,
-            supports_input_audio=True,
-            supports_structured_output=False,  # Model supports structured outputs, but we did not activate this feature for Google  yet
-            max_tokens_data=MaxTokensData(
-                max_tokens=1048576,
-                max_output_tokens=8192,
-                source="https://cloud.google.com/vertex-ai/generative-ai/docs/learn/models#gemini-1.5-flash",
-            ),
-            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/google.svg",
-            latest_model=Model.GEMINI_1_5_FLASH_LATEST,
-            release_date=date(2024, 9, 24),
-            quality_data=QualityData(mmlu=78.9, gpqa=51),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=1857, duration_seconds=16.7),
-            ),
-            provider_name=DisplayedProvider.GOOGLE.value,
-            supports_tool_calling=True,
-            fallback=ModelFallback.default(
-                "cheapest",
-                content_moderation=Model.GPT_41_NANO_LATEST,
-                context_exceeded="no",
-            ),
+        Model.GEMINI_1_5_FLASH_002: DeprecatedModel(
+            replacement_model=Model.GEMINI_2_5_FLASH,
+            reasoning_effort=ReasoningEffort.DISABLED,
         ),
-        Model.GEMINI_1_5_FLASH_001: DeprecatedModel(replacement_model=Model.GEMINI_1_5_PRO_002),
-        Model.GEMINI_1_0_PRO_VISION_001: DeprecatedModel(replacement_model=Model.GEMINI_1_5_PRO_002),
-        Model.GEMINI_1_0_PRO_001: DeprecatedModel(replacement_model=Model.GEMINI_1_5_PRO_002),
-        Model.GEMINI_1_0_PRO_002: DeprecatedModel(replacement_model=Model.GEMINI_1_5_PRO_002),
+        Model.GEMINI_1_5_FLASH_001: DeprecatedModel(
+            replacement_model=Model.GEMINI_2_5_FLASH,
+            reasoning_effort=ReasoningEffort.DISABLED,
+        ),
+        Model.GEMINI_1_0_PRO_VISION_001: DeprecatedModel(
+            replacement_model=Model.GEMINI_2_5_PRO,
+            reasoning_effort=ReasoningEffort.LOW,
+        ),
+        Model.GEMINI_1_0_PRO_001: DeprecatedModel(
+            replacement_model=Model.GEMINI_2_5_PRO,
+            reasoning_effort=ReasoningEffort.LOW,
+        ),
+        Model.GEMINI_1_0_PRO_002: DeprecatedModel(
+            replacement_model=Model.GEMINI_2_5_PRO,
+            reasoning_effort=ReasoningEffort.LOW,
+        ),
         Model.CLAUDE_3_5_SONNET_LATEST: LatestModel(
             model=Model.CLAUDE_3_5_SONNET_20241022,
             display_name="Claude 3.5 Sonnet (latest)",
@@ -1201,31 +1157,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
         Model.LLAMA_3_2_3B_PREVIEW: DeprecatedModel(replacement_model=Model.LLAMA_4_SCOUT_BASIC),
         Model.LLAMA_3_2_1B_PREVIEW: DeprecatedModel(replacement_model=Model.LLAMA_4_SCOUT_BASIC),
         Model.LLAMA_3_2_90B_VISION_PREVIEW: DeprecatedModel(replacement_model=Model.LLAMA_4_MAVERICK_BASIC),
-        Model.GEMINI_1_5_FLASH_8B: ModelData(
-            display_name="Gemini 1.5 Flash (8B)",
-            supports_json_mode=True,
-            supports_input_image=True,
-            supports_input_pdf=True,
-            supports_input_audio=True,
-            supports_structured_output=False,  # Model supports structured output but we did not activate for Gemini yet
-            max_tokens_data=MaxTokensData(
-                max_tokens=128000,
-                source="https://ai.google.dev/gemini-api/docs/models/gemini",
-            ),
-            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/google.svg",
-            release_date=date(2024, 10, 3),
-            quality_data=QualityData(mmlu=58.7, gpqa=38.4),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2236, duration_seconds=12),
-            ),
-            provider_name=DisplayedProvider.GOOGLE.value,
-            supports_tool_calling=True,
-            fallback=ModelFallback.default(
-                "cheapest",
-                rate_limit=Model.GEMINI_2_0_FLASH_EXP,
-                content_moderation=Model.GPT_41_NANO_LATEST,
-            ),
-        ),
+        Model.GEMINI_1_5_FLASH_8B: DeprecatedModel(replacement_model=Model.GEMINI_2_5_FLASH_LITE),
         Model.GEMINI_EXP_1206: DeprecatedModel(replacement_model=Model.GEMINI_2_5_PRO),
         Model.GEMINI_EXP_1121: DeprecatedModel(replacement_model=Model.GEMINI_2_5_PRO),
         Model.QWEN_QWQ_32B: DeprecatedModel(replacement_model=Model.QWEN3_32B),
@@ -1396,72 +1328,12 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             fallback=ModelFallback.default("cheapest"),
         ),
         # https://fireworks.ai/models/fireworks/deepseek-v3
-        Model.DEEPSEEK_V3_2412: ModelData(
-            display_name="DeepSeek V3 (24-12) (US hosted)",
-            supports_json_mode=True,
-            supports_input_image=False,
-            supports_input_pdf=False,
-            supports_input_audio=False,
-            max_tokens_data=MaxTokensData(
-                max_tokens=128000,
-                source="https://github.com/deepseek-ai/DeepSeek-V3",
-            ),
-            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/deepseek.svg",
-            release_date=date(2024, 12, 30),
-            quality_data=QualityData(mmlu=88.5, gpqa=59.1),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2290, duration_seconds=24),
-            ),
-            provider_name=DisplayedProvider.FIREWORKS.value,
-            supports_tool_calling=True,
-            supports_structured_output=True,
-            latest_model=Model.DEEPSEEK_V3_LATEST,
-            fallback=ModelFallback.default("cheap"),
-        ),
+        Model.DEEPSEEK_V3_2412: DeprecatedModel(replacement_model=Model.DEEPSEEK_V3_0324),
         # https://fireworks.ai/models/fireworks/deepseek-r1
-        Model.DEEPSEEK_R1_2501: ModelData(
-            display_name="DeepSeek R1 (25-01) (US hosted)",
-            supports_json_mode=True,
-            supports_input_image=False,
-            supports_input_pdf=False,
-            supports_input_audio=False,
-            supports_structured_output=False,  # To access the thinking, we have to disable the structured output
-            max_tokens_data=MaxTokensData(
-                max_tokens=128000,
-                source="https://github.com/deepseek-ai/DeepSeek-R1",
-            ),
-            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/deepseek.svg",
-            release_date=date(2025, 1, 20),
-            quality_data=QualityData(mmlu=90.8, gpqa=71.5),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2435, duration_seconds=32.9),
-            ),
-            provider_name=DisplayedProvider.FIREWORKS.value,
-            supports_tool_calling=True,
-            fallback=ModelFallback.default("expensive"),
-        ),
+        Model.DEEPSEEK_R1_2501: DeprecatedModel(replacement_model=Model.DEEPSEEK_R1_0528),
         # https://fireworks.ai/models/fireworks/deepseek-r1-basic
-        Model.DEEPSEEK_R1_2501_BASIC: ModelData(
-            display_name="DeepSeek R1 Basic (25-01) (US hosted)",
-            supports_json_mode=True,
-            supports_input_image=False,
-            supports_input_pdf=False,
-            supports_input_audio=False,
-            supports_structured_output=False,  # To access the thinking, we have to disable the structured output
-            max_tokens_data=MaxTokensData(
-                max_tokens=128000,
-                source="https://github.com/deepseek-ai/DeepSeek-R1",
-            ),
-            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/deepseek.svg",
-            release_date=date(2025, 3, 18),
-            quality_data=QualityData(mmlu=90.8, gpqa=71.5),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2300, duration_seconds=67),
-            ),
-            provider_name=DisplayedProvider.FIREWORKS.value,
-            supports_tool_calling=True,
-            fallback=ModelFallback.default("cheap"),
-        ),
+        # Mapping to maverick fast for cost reasons
+        Model.DEEPSEEK_R1_2501_BASIC: DeprecatedModel(replacement_model=Model.LLAMA_4_MAVERICK_FAST),
         # https://fireworks.ai/models/fireworks/deepseek-r1-0528
         Model.DEEPSEEK_R1_0528: ModelData(
             display_name="DeepSeek R1 (05-28) (US hosted)",
@@ -1476,12 +1348,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             ),
             icon_url="https://workflowai.blob.core.windows.net/workflowai-public/deepseek.svg",
             release_date=date(2025, 5, 28),
-            quality_data=QualityData(
-                equivalent_to=(  # TODO: adjust later, could not find score for MMLU nor GPQA
-                    Model.DEEPSEEK_R1_2501,
-                    5,
-                ),
-            ),
+            quality_data=QualityData(mmlu=90.8, gpqa=71.5),
             speed_data=SpeedData(
                 index=SpeedIndex.from_experiment(output_tokens=2400, duration_seconds=31),
             ),
@@ -1512,6 +1379,27 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             supports_structured_output=True,
             fallback=ModelFallback.default("medium"),
         ),
+        Model.DEEPSEEK_V3_1_TERMINUS: ModelData(
+            display_name="DeepSeek V3.1 (US hosted)",
+            supports_json_mode=True,
+            supports_input_image=False,
+            supports_input_pdf=False,
+            supports_input_audio=False,
+            max_tokens_data=MaxTokensData(
+                max_tokens=160_000,
+                source="https://app.fireworks.ai/models/fireworks/deepseek-v3p1",
+            ),
+            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/deepseek.svg",
+            release_date=date(2025, 9, 23),
+            quality_data=QualityData(mmlu_pro=85.1, gpqa_diamond=77.9),
+            speed_data=SpeedData(
+                index=SpeedIndex.from_experiment(output_tokens=1519, duration_seconds=8),
+            ),
+            provider_name=DisplayedProvider.FIREWORKS.value,
+            supports_tool_calling=True,
+            supports_structured_output=True,
+            fallback=ModelFallback.default("medium"),
+        ),
         Model.DEEPSEEK_V3_LATEST: LatestModel(
             model=Model.DEEPSEEK_V3_0324,
             display_name="DeepSeek V3 (latest)",
@@ -1530,6 +1418,29 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             icon_url="https://workflowai.blob.core.windows.net/workflowai-public/moonshot.svg",
             release_date=date(2025, 8, 7),
             quality_data=QualityData(gpqa=71.5),
+            speed_data=SpeedData(
+                # TODO: fix
+                equivalent_to=(Model.GPT_41_MINI_2025_04_14, 0),
+            ),
+            provider_name=DisplayedProvider.GROQ.value,
+            supports_tool_calling=True,
+            supports_structured_output=True,
+            fallback=ModelFallback.default("cheap"),
+        ),
+        Model.KIMI_K2_INSTRUCT_0905: ModelData(
+            display_name="Kimi K2 Instruct (09-05)",
+            supports_json_mode=True,
+            supports_input_image=False,
+            supports_input_pdf=False,
+            supports_input_audio=False,
+            max_tokens_data=MaxTokensData(
+                max_tokens=131_072,
+                max_output_tokens=16_384,
+                source="https://console.groq.com/docs/model/moonshotai/kimi-k2-instruct-0905",
+            ),
+            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/moonshot.svg",
+            release_date=date(2025, 9, 5),
+            quality_data=QualityData(mmlu_pro=82, gpqa_diamond=76.7),
             speed_data=SpeedData(
                 # TODO: fix
                 equivalent_to=(Model.GPT_41_MINI_2025_04_14, 0),

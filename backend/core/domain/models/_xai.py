@@ -17,6 +17,55 @@ from core.domain.models.models import Model
 
 def xai_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
     return {
+        Model.GROK_CODE_FAST_1: ModelData(
+            display_name="Grok Code Fast (1)",
+            supports_json_mode=True,
+            supports_input_image=False,
+            supports_input_pdf=False,
+            supports_input_audio=False,
+            max_tokens_data=MaxTokensData(
+                max_tokens=256_000,
+                source="https://docs.x.ai/docs/models/grok-code-fast-1",
+            ),
+            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/xai.svg",
+            release_date=date(2025, 9, 24),
+            quality_data=QualityData(
+                mmlu_pro=79.3,
+                gpqa_diamond=72.7,
+                source="https://artificialanalysis.ai/models/grok-code-fast-1",
+            ),
+            provider_name=DisplayedProvider.X_AI.value,
+            supports_tool_calling=True,
+            supports_structured_output=True,
+            fallback=ModelFallback.default("cheap"),
+            speed_data=SpeedData(index=SpeedIndex.from_tpm(tpm=2_000_000)),
+            reasoning=ModelReasoningBudget(disabled=None, medium=None),
+        ),
+        Model.GROK_4_FAST: ModelData(
+            display_name="Grok 4 Fast",
+            supports_json_mode=True,
+            supports_input_image=True,
+            supports_input_pdf=True,
+            supports_input_audio=False,
+            max_tokens_data=MaxTokensData(
+                max_tokens=2_000_000,
+                source="https://docs.x.ai/docs/models/grok-4-fast-reasoning",
+            ),
+            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/xai.svg",
+            release_date=date(2025, 9, 24),
+            quality_data=QualityData(
+                mmlu_pro=72.8,
+                gpqa_diamond=85.7,
+                gpqa=85.1,
+                source="https://www.vals.ai/models/grok_grok-4-fast-reasoning",
+            ),
+            provider_name=DisplayedProvider.X_AI.value,
+            supports_tool_calling=True,
+            supports_structured_output=True,
+            fallback=ModelFallback.default("cheap", context_exceeded="no"),
+            speed_data=SpeedData(index=SpeedIndex.from_tpm(tpm=4_000_000)),
+            reasoning=ModelReasoningBudget(disabled=0, medium=None),
+        ),
         Model.GROK_4_0709: ModelData(
             display_name="Grok 4 (0709)",
             supports_json_mode=True,

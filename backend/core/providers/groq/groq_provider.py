@@ -57,6 +57,7 @@ _NAME_OVERRIDE_MAP = {
     Model.GPT_OSS_20B: "openai/gpt-oss-20b",
     Model.GPT_OSS_120B: "openai/gpt-oss-120b",
     Model.KIMI_K2_INSTRUCT: "moonshotai/kimi-k2-instruct",
+    Model.KIMI_K2_INSTRUCT_0905: "moonshotai/kimi-k2-instruct-0905",
 }
 _GROQ_BOILERPLATE_TOKENS = 3
 _GROQ_MESSAGE_BOILERPLATE_TOKENS = 4
