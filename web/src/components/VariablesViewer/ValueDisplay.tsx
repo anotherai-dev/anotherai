@@ -1,6 +1,7 @@
 import { cx } from "class-variance-authority";
 import { Copy } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { TextBreak } from "@/components/utils/TextBreak";
 import { useToast } from "../ToastProvider";
 import { ImageViewer } from "../messages/ImageViewer";
 
@@ -100,7 +101,7 @@ export function ValueDisplay({ value, textSize, showSeeMore }: ValueDisplayProps
       <span
         ref={contentRef}
         className={cx(
-          "inline-block px-3 py-1.5 font-medium bg-white border border-gray-200 text-gray-800 rounded-[2px] relative break-words [overflow-wrap:anywhere] hyphens-auto",
+          "inline-block px-3 py-1.5 font-medium bg-white border border-gray-200 text-gray-800 rounded-[2px] relative break-all hyphens-auto",
           textSizeClass
         )}
         style={textSizeStyle}
@@ -108,10 +109,7 @@ export function ValueDisplay({ value, textSize, showSeeMore }: ValueDisplayProps
         onMouseLeave={() => setIsHovered(false)}
       >
         <div
-          className={cx(
-            "py-1 break-words [overflow-wrap:anywhere] hyphens-auto",
-            shouldTruncateByHeight && !isExpanded ? "overflow-hidden" : ""
-          )}
+          className={cx("py-1 break-all hyphens-auto", shouldTruncateByHeight && !isExpanded ? "overflow-hidden" : "")}
           style={shouldTruncateByHeight && !isExpanded ? { maxHeight: `${MAX_HEIGHT_PX - 30}px` } : {}}
         >
           {'"'}
@@ -161,14 +159,14 @@ export function ValueDisplay({ value, textSize, showSeeMore }: ValueDisplayProps
   return (
     <span
       className={cx(
-        "inline-block px-3 py-1.5 font-medium bg-white border border-gray-200 text-gray-800 rounded-[2px] relative break-words [overflow-wrap:anywhere] hyphens-auto",
+        "inline-block px-3 py-1.5 font-medium bg-white border border-gray-200 text-gray-800 rounded-[2px] relative",
         textSizeClass
       )}
       style={textSizeStyle}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {displayValue}
+      <TextBreak>{displayValue}</TextBreak>
       {isHovered && (
         <button
           onClick={(e) => {
