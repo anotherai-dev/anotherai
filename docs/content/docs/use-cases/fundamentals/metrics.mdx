@@ -1,7 +1,7 @@
 ---
 title: Metrics and Views
 summary: Ask questions in natural language, build custom views, and access your AI agent data to monitor performance, costs, and usage patterns
-description: Query data with natural language, create persistent dashboards, and integrate with your tools via API for advanced use cases
+description: Query your AI agents' data with natural language, create persistent dashboards, and integrate with your tools via API for advanced use cases
 ---
 
 import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
@@ -11,7 +11,7 @@ import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
 
 One of the core features we wanted to unlock with AnotherAI was to allow users to access all their agent data in a way that would allow them to see the information that was important to *them*. 
 
-You can start by asking questions directly in natural language through the MCP, build persistent views in the web app for metrics you want to monitor regularly, and for more advanced use cases, access the data directly via REST API to integrate with your existing tools or build your own customizable dashboards.
+You can start by asking questions directly in natural language through your AI assistant, build persistent views in the web app for metrics you want to monitor regularly, and for more advanced use cases, access the data directly via REST API to integrate with your existing tools or build your own customizable dashboards.
 
 ## Types of Data You Can Query
 
@@ -29,9 +29,35 @@ You can start by asking questions directly in natural language through the MCP, 
 
 ![Agent Level Daily Spending Graph](/images/agent-level-daily-spending-graph.png)
 
+## Type of Views You Can Create
+
+There are two main types of views in AnotherAI:
+
+**1. Table Views**
+- Display tabular data with rows and columns
+- Best for individual completions, detailed records, or spreadsheet-style data
+- Example uses: Recent completions, error logs, cost breakdowns
+
+Example of a table view:
+![Table view example showing completions with annotations](/images/table-view-example.png)
+
+**2. Chart/Graph Views**
+- Multiple visualization types for aggregated data:
+  - **Line graphs**: Time-series data and trends
+  - **Bar charts**: Compare values across categories (can be stacked)
+  - **Pie charts**: Show proportional data as segments  
+  - **Scatter plots**: Plot relationships between two numeric variables
+- Best for aggregated metrics, trends, and visual analysis
+-Example uses: Cost trends over time, agent performance comparisons, model usage distribution
+
+Example of a chart view:
+![Organization Daily Spending Graph](/images/organization-daily-spending-graph.png)
+
+**Key difference**: Tables show individual records while charts show aggregated data with visual representations.
+
 ## Query methods
 
-### Using Natural Language with MCP
+### Using Natural Language via AI Assistant
 
 The AnotherAI MCP allows you to ask questions about your completions data in plain English. Your AI assistant will automatically translate your request into the appropriate SQL query and retrieve the results. This means you don't need to know SQL to analyze your data.
 
@@ -171,7 +197,7 @@ the completion inputs as well
 </Steps>
 
 
-## Can I access this data outside of the web app?
+## Can I access metrics via an API?
 
 Yes! If you want to integrate AnotherAI data into your existing business intelligence tools, you can also access the data via the `/v1/completions/query` endpoint. This provides the same functionality as the `query_completions` MCP tool but through HTTP requests, enabling you to further customize how you utilize the data available to you.
 

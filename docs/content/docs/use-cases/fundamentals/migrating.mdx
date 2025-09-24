@@ -1,13 +1,13 @@
 ---
 title: Migrating an Existing Agent
-summary: Guide for migrating agents from other platforms or updating existing AnotherAI agents
-description: Learn how to migrate agents from other platforms or upgrade existing agents with new features and configurations
+summary: Guide for migrating agents using OpenAI SDK, WorkflowAI, or other LLM SDKs to AnotherAI
+description: Learn how to migrate agents currently using the OpenAI SDK, WorkflowAI, or other LLM SDKs to AnotherAI, and add features like input variables and structured outputs
 ---
 import { Step, Steps } from 'fumadocs-ui/components/steps';
 import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
 import { BarChart3, UploadCloud, Eye, PlugZap, ListChecks, Globe, ShieldCheck } from 'lucide-react';
 
-## Migrating From OpenAI to AnotherAI
+## Migrating From the OpenAI SDK to AnotherAI
 
 The easiest way to migrate your agent is to ask your preferred AI assistant to handle it for you.
 
@@ -23,7 +23,17 @@ I want to keep my agent as is in code, but just add access to
 AnotherAI's features
 ```
 
-If your agent isn't currently using [input variables](/integrations/openai#1-input-variables) or [structured output](/integrations/openai#2-structured-outputs), you can ask your AI assistant to update your agent's code to use them during the migration:
+If your agent isn't currently using [input variables](/integrations/openai#1-input-variables) or [structured output](/integrations/openai#2-structured-outputs), it's highly recommended to add them during migration.
+
+<Callout type="info" title="Why input variables matter">
+- **Enable experiments**: Without input variables, AnotherAI can't distinguish between the static data of your prompt template and the dynamic data that changes between completions, making it impossible to run experiments with different inputs
+- **Better observability**: Separates your prompt logic from your data, making it easier to debug issues and understand what data caused specific outputs
+</Callout>
+
+<Callout type="info" title="Why structured outputs matter">
+- **Reliability**: Guarantees valid JSON output every time, eliminating parsing errors and retry loops
+- **Consistency**: Ensures all responses follow the exact same schema, making downstream processing predictable
+</Callout>
 
 ```
 Migrate my agent at @[your-agent-file-path] to use AnotherAI. 
@@ -91,6 +101,6 @@ If you have any questions or encounter any issues with switching away from Anoth
 
 ## Next Steps
 
-- [Evaluating Agents](/agents/evaluating) - Test and compare agent performance
-- [Improving Agents](/agents/improving) - Optimize prompts and model selection
-- [Deployments](/deployments/index) - Update prompts and models without changing code
+- [Evaluating Agents](/use-cases/fundamentals/evaluating) - Test and compare agent performance
+- [Improving Agents](/use-cases/fundamentals/annotations) - Optimize prompts and model selection
+- [Deployments](/use-cases/fundamentals/deployments) - Update prompts and models without changing code

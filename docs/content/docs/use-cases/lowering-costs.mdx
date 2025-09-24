@@ -12,12 +12,7 @@ Suppose you have an agent that is working well, but is used in your product very
 
 ## Identifying Cost Issues
 
-Before optimizing costs, you need to understand your current spending. Ask your AI assistant to analyze your agent's usage:
-
-```
-Show me the cost breakdown for anotherai/agent/calendar-event-extractor over the last week. 
-How much am I spending per day and what's the average cost per completion?
-```
+Before optimizing costs, you need to understand your current spending. To get an overview of your current spending, you can view your [organization's metrics](https://anotherai.dev/metrics) 
 
 Your AI assistant can also help identify cost trends and anomalies:
 
@@ -90,13 +85,20 @@ Compare the cheaper models with my current model to assess the cost difference a
 quality drop. Use the inputs from the last 50 production completions.
 ```
 
-Alternatively, if you have a dataset of standard test inputs you like to use to validate changes, you can modify your prompt to include that instruction:
+Alternatively, if you have a [dataset](/use-cases/fundamentals/evaluating#using-datasets-to-evaluate-your-agents) of standard test inputs you like to use to validate changes, you can modify your prompt to include that instruction:
 
 ```
 Help me find the most cost effective model to use on anotherai/agent/calendar-event-extractor. 
 Compare the cheaper models with my current model to assess the cost difference and 
 quality drop. Use the inputs from @email_test_cases.txt
 ```
+
+Your AI assistant will create the experiment and give you an initial analysis of the results and well as a URL to view the results in the AnotherAI web app.
+
+![Claude Code cost optimization analysis](/images/claude-cost-optimization-analysis.png)
+
+You can use the provided URL to view the results in the AnotherAI web app to perform manual analysis of the results.
+
 ![Cost optimization experiment results](/images/cost-optimization-experiment.png)
 </Step>
 </Steps>

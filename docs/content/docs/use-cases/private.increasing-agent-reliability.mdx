@@ -87,40 +87,6 @@ curl -X POST {{API_URL}}/v1/chat/completions \
 </Tab>
 </Tabs>
 
-##### AnotherAI SDK
-
-<Tabs items={["Python", "TypeScript", "cURL"]}>
-  <Tab>
-  ```python
-  @anotherai.agent(id="user-extraction", version="production", use_fallback=["gemini-2.0-flash-001", "o3-mini-latest-medium"])
-  def user_extraction(_: UserExtractionInput) -> UserExtractionOutput:
-      ...
-  ```
-  </Tab>
-  <Tab>
-  ```typescript
-  const extractUser= anotherAI.agent<UserExtractionInput, UserExtractionOutput>({
-    id: 'user-extraction',
-    schemaId: 1,
-    version: 'production',
-    useFallback: ['gemini-2.0-flash-001', 'o3-mini-latest-medium'],
-  });
-  ```
-  </Tab>
-  <Tab>
-  ```sh
-  curl -X POST {{API_URL}}/v1/agents/user-extraction/schemas/1/run \
-  -H "Authorization: Bearer $ANOTHERAI_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-      "version": "production",
-      "use_fallback": ["gemini-2.0-flash-001", "o3-mini-latest-medium"],
-      "task_input": ...
-  }'
-  ```
-  </Tab>
-</Tabs>
-
 ## Infrastructure resilience
 
 Our infrastructure is designed with multiple layers of redundancy to ensure continuous operation even during various failure scenarios.

@@ -11,7 +11,7 @@ import { FlaskRound, MessageSquarePlus } from 'lucide-react';
 
 ## Annotations
 
-When building and running AI agents in production, we wanted to build a way for you to leave clear feedback for your AI coding agent to use to improve your agent. This is where annotations come in.
+When building and running AI agents in production, we wanted to build a way for you to leave clear feedback for your AI assistant to use to improve your agent. This is where annotations come in.
 
 ## When to Use Annotations: Manually Reviewing Production Completions
 
@@ -22,6 +22,23 @@ When building and running AI agents in production, we wanted to build a way for 
 While not always the case, generally the review of production completions are triggered by:
 - a feedback system set up to flag completions that need review (learn more about utilizing end-user feedback to improve your agents with [user feedback](/use-cases/user-feedback))
 - a user or team member reporting an issue with a completion
+
+You have a few options on how to locate the specific completion that is being referred to:
+- **Describe the completion you're looking for to your AI assistant**: You can ask your AI assistant to locate the specific completion that match the description of the feedback you received. 
+  - For example: `Find the completions with outputs that contain HTML opening an closing tags <> and </>`
+- **Search using metadata**: If you have structured [metadata](/observability#metadata) like `customer_id` or `user_email`, you can ask your AI assistant to locate the specific completion that match the metadata.
+  - For example: `List all completions with customer_email = john@example.com`
+- **Manually search on the web app**: If all else fails, all completions are visible on the web app, so you can manually search for the specific completion you're looking for. You can review all completions at https://anotherai.dev/completions.
+  - Note: the completions page shows all completions from all agents, so to narrow down the completions to search through, you can adjust the query at the top of the page to be: 
+  ```
+  SELECT id, agent_id, input_messages, input_variables, output_messages, output_error, version, duration_ds, cost_usd, created_at
+  FROM completions
+  WHERE agent_id = '[your-agent-id]'
+  ORDER BY created_at DESC
+  LIMIT {limit} OFFSET {offset}
+  ```
+
+  ![Filtering Completions by Agent ID](/images/completions-filter-query.png)
 
 </Step>
 <Step>
@@ -58,7 +75,7 @@ You can also leverage annotations to provide you with insights about your agent'
 **Create Performance Reports**
 
 ```
-Provide a report on the accuracy scores for all completions of calendar-event-extraction 
+Provide a report summarizing main themes in annotations left on completions of calendar-event-extraction 
 that used GPT-5. 
 ```
 ![Accuracy Report for Calendar Event Extraction with GPT-5](/images/calendar-event-accuracy-report.png)
@@ -84,6 +101,8 @@ Using text-based annotations allow you to provide thorough, nuanced feedback in 
 2. You can add specific thoughts and context to a completion so your coding agent will have an in-depth understanding of the completion's quality.
 
 However if you would like to incorporate more quantitative ratings, you can do that by using scores, which are described below!
+
+Here is what it looks like when annotations are present on a completion:
 
 ![Text-based Annotations in AnotherAI](/images/completion-text-annotations.png)
 

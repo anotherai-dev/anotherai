@@ -13,11 +13,11 @@ import { MessageSquare, MessageSquarePlus } from 'lucide-react';
 # Experiments 
 
 Throughout the process of creating a new agent, in order to make the best agent possible, you may need to:
-- Compare performance across different models (GPT-4, Claude, Gemini, etc.)
-- Test multiple prompt variations to find the most effective approach
+- Compare quality, cost and speed across different models (GPT-5, Claude 4 Sonnet, Gemini 2.0 Flash, etc.)
+- Test multiple prompt variations to find which produces the most accurate, useful, or appropriately-toned outputs
 - Optimize for specific metrics like cost, speed, and accuracy. 
 
-Experiments allow you to systematically compare each of these different parameters of your agent to find the optimal setup for your use case across one or more inputs.
+Experiments allow you to systematically compare each of these different parameters of your agent to find the optimal setup for your use case across one or more test inputs (inputs being: the starting data you give your agent to process).
 
 ### Creating Experiments
 
@@ -26,7 +26,7 @@ To create an experiment:
 <Steps>
 <Step>
 #### Configure MCP
-Make sure you have the AnotherAI MCP configured and enabled. You can view the set up steps [here](/docs).
+Make sure you have the AnotherAI MCP configured and enabled. You can view the set up steps [here](/getting-started#mcp).
 </Step>
 
 <Step>
@@ -48,6 +48,12 @@ Look at the prompt of anotherai/agent/email-rewriter and create an experiment in
 that compares the current prompt with a new prompt that better emphasizes adopting 
 the tone lists in the input 
 ```
+
+Your AI assistant will create the experiment and give you an initial analysis of the results and well as a URL to view the results in the AnotherAI web app.
+
+![Terminal output showing experiment creation](/images/experiment-prompt-enhancement-terminal.png)
+
+You can use the provided URL to view the results in the AnotherAI web app to perform manual analysis of the results.
 
 ![Experiment view showing two prompts side by side](/images/experiment-prompts-comparison.png)
 
@@ -109,39 +115,48 @@ the right balance between creativity and professionalism
 
 ![Email Rewriter Temperature Experiment](/images/email-rewriter-temperature-experiment.png)
 
-### Managing Large Agents with Claude Code
-If you're testing an agent that has a large system prompt and/or very long inputs, you may encounter token limit issues with the `get_experiment` MCP tool that impacts Claude Code's ability to provide accurate insights on your agent. In this case, you can manually increase Claude Code's output token limit:
-  
-```
-# Set a higher limit for MCP tool outputs
-export MAX_MCP_OUTPUT_TOKENS=150000
-claude
-```
-Notes: 
-  - You will need to run the above commands in your terminal each time you start Claude Code.
-  - If you forget or don't realize you need to set a higher limit, you can quit your existing session, run the command to increase the limit, and then use `claude --resume` to continue your previous session with the increased limit applied. 
+### Managing Large Experiments with Claude Code
+If you're testing an agent that has a large system prompt and/or very long inputs, you may encounter token limit issues with the `get_experiment` MCP tool that impacts Claude Code's ability to provide accurate insights on your agent. 
 
-  
+![Claude Code Token Limit Error](/images/claude-code-token-limit-error.png)
+
+In this case, you can manually increase Claude Code's output token limit.
+
+**To set up permanently for all terminal sessions:**
+
+For zsh (default on macOS):
+```bash
+echo 'export MAX_MCP_OUTPUT_TOKENS=150000' >> ~/.zshrc && source ~/.zshrc
+```
+
+For bash:
+```bash
+echo 'export MAX_MCP_OUTPUT_TOKENS=150000' >> ~/.bashrc && source ~/.bashrc
+```
+
+**For temporary use in current session only:**
+```bash
+export MAX_MCP_OUTPUT_TOKENS=150000
+```
+
+Notes: 
+- If you forget or don't realize you need to set a higher limit, you can quit your existing session, run the command to increase the limit, and then use `claude --resume` to continue your previous session with the increased limit applied. 
+
 You can learn more about tool output limits for Claude Code in their [documentation](https://docs.claude.com/en/docs/claude-code/mcp#mcp-output-limits-and-warnings).
 
 ### Tips:
-- Always reference the specific files of your agent when requesting experiments to avoid any ambiguity about what should be tested
+- When creating experiments from your codebase, always reference the specific files of your agent when requesting experiments to avoid any ambiguity about what should be tested
+- When not in your codebase (for example, when using ChatGPT), you can reference the agent by the agent_id found in AnotherAI (ex. anotherai/agent/email-rewriter) to avoid any ambiguity about what should be tested
 - Pick one variable to test with at a time (ex. models, prompts) to make sure that you can easily attribute a given variable on the agent's changes in performance.
 
 ### Analyzing Experiment Results
 
 Once your experiment has been created, you can:
 
-1. **Review side-by-side comparisons** in the AnotherAI experiments view
-2. **Use annotations** to mark which outputs are better and why (keep reading to learn more about annotations!)
-3. **Ask your AI assistant** to analyze the results:
-
-```
-Analyze the results of experiment/019885bb-24ea-70f8-c41b-0cbb22cc3c00 
-and recommend which configuration performs best specifically for both accuracy and cost
-```
-
+1. **Review your AI assistant's analysis** of the results (and ask follow up questions if needed)
 ![Email Rewriter Experiment Analysis](/images/email-rewriter-experiment-analysis.png)
+2. **Review side-by-side comparisons** in the AnotherAI experiments view
+3. **Use annotations** to mark which outputs are better and why (keep reading to learn more about annotations!)
 
 ## Other Ways to Improve your Agents
 

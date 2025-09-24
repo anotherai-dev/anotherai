@@ -1,7 +1,7 @@
 ---
 title: Debugging Agent Issues
 summary: Learn how to systematically debug problems with agent completions using your AI assistant's investigation capabilities
-description: Step-by-step guide to identifying, analyzing, and resolving issues with your AI agents by leveraging completion IDs and your AI assistant's debugging features
+description: Step-by-step guide to identifying, analyzing, and resolving issues with your AI agents by utilizing your AI assistant's debugging capabilities
 ---
 
 # Debugging Agent Issues
@@ -34,6 +34,7 @@ john@example.com reported that their email was not rewritten in the correct tone
 @email_reimaginer. Find why the agent did not work well for customer john@example.com 
 and help me understand how to fix the issue.
 ```
+If you don't yet utilize metadata, and want to add it, you can learn more [here](/use-cases/fundamentals/building#adding-metadata).
 
 </Step>
 
@@ -41,7 +42,7 @@ and help me understand how to fix the issue.
 
 ### Your AI assistant Does the Rest!
 
-Your AI assistant will debug for you by examining the completion and agent details and input variables. After the issue is identified, you can use your AI assistant to help you rewrite your agent's code to fix the issue.
+Your AI assistant will debug for you by examining the completion and agent details and input variables. After the issue is identified, you can use your AI assistant to help you create an experiment to test potential fixes before updating your agent's code or agent's deployment.
 
 </Step>
 </Steps>
@@ -50,12 +51,11 @@ Your AI assistant will debug for you by examining the completion and agent detai
 ## Common Issues your AI assistant Can Help Debug
 
 - **Prompt engineering problems** - Suboptimal prompts leading to poor outputs
-- **Input validation issues** - Malformed or unexpected input data
+- **Input validation issues** - A required input variable is empty
 - **Model selection problems** - Wrong model chosen for the task
-- **Cost optimization** - Identifying expensive patterns or inefficient configurations
-- **Performance bottlenecks** - Slow completions or timeout issues
+- **Performance bottlenecks** - Slow response times, requests timing out before completion, or high latency
 
 ## Tips
-- Try to always provide a link to at least one completion with the issue present in AnotherAI's web app to make it easier for your AI assistant to understand the issue.
-- Always test your updates with a few different inputs to avoid missing surprise regressions with your updates. 
+- Try to provide either a completion link or specific metadata key and value (like user ID or session ID) to help your AI assistant locate and analyze the problematic requests.
+- Ask your AI assistant to create an experiment to test your updates with a few different inputs to avoid missing surprise regressions with your updates. 
 

@@ -12,9 +12,36 @@ Evaluating your AI agents in a repeatable way is important for ensuring they mee
 
 ## Using Datasets to Evaluate Your Agents
 
-A dataset gives you a consistent benchmark to use when evaluating different versions of your agent. Datasets allow you to both create a collection of important cases that you want to make sure always work, as well as provide an apples-to-apples comparison for different versions of your agent. 
+A dataset is a collection of test inputs (and optionally expected outputs) that you use to evaluate your agent. Think of it like a standardized test - the same set of questions you run against different versions of your agent to see how they perform.
 
-### Build Your Evaluation Dataset
+Datasets give you a consistent benchmark to compare different versions of your agent and ensure important use cases always work correctly. 
+
+### Selecting a Dataset Type
+
+When creating datasets for agent evaluation, you can choose between two main approaches depending on your use case:
+
+**Input and Expected Output Datasets**
+
+These datasets include both the input and the expected output for each test case. In cases where there is only one correct output (ex: math problems, classification tasks), 
+your evaluation process simply consists of comparing a completion's output to the correct output to determine the quality of a given version. This can be done by utilizing a script to check if they're identical (recommended) or you can manually review each completion created when the dataset is run by looking at your agent's completions on the AnotherAI web app. 
+
+When there is more than one correct output (ex: creative writing, analysis tasks), but you still want to include the expected output in your dataset, it can be useful to use [LLM-as-a-judge](#handling-complex-evaluations-with-llms-as-a-judge) to evaluate the quality of the output. In those cases, the LLM judge compares the actual output against the expected output to evaluate how well they match, considering factors 
+like semantic similarity, completeness, and accuracy.
+
+Examples of good use cases:
+- Solving math problems
+- Data extraction tasks
+- Classification tasks
+
+**Input-Only Datasets**
+
+These datasets contain only inputs without predefined expected outputs. Evaluation relies on [LLM-as-a-judge](#handling-complex-evaluations-with-llms-as-a-judge) (recommended) or human reviewers to assess quality as there is no single correct output. This approach is much better for agents that can have multiple valid outputs for a given input.
+Examples of good use cases:
+- Creative writing
+- Content summarization
+- Analysis tasks
+
+### Populating Your Evaluation Dataset
 
 While there is no one-size-fits-all way to build a dataset, there are a few common ways to collect content for your dataset:
 
@@ -39,33 +66,6 @@ You can browse past completions from your in the AnotherAI web app:
 2. Locate the agent whose completions you want to review
 3. Select the agent and scroll down it's page
    - You'll be able to see some of the recent completions immediately, but for a full list, select "View all completions"
-
-
-### Dataset Types
-
-When creating datasets for agent evaluation, you can choose between two main approaches depending on your use case:
-
-**Input and Expected Output Datasets**
-
-These datasets include both the input and the expected output for each test case. In cases where there is only one correct output (ex: math problems, classification tasks), 
-your evaluation process simply consists of comparing a completion's output to the correct output to determine the quality of a given version. This can be done manually or by utilizing a script to check if they're identical. 
-
-When there is more than one correct output (ex: creative writing, analysis tasks), but you still want to include the expected output in your dataset, it can be useful to use [LLM-as-a-judge](#handling-complex-evaluations-with-llms-as-a-judge) to evaluate the quality of the output. In those cases, the LLM judge compares the actual output against the expected output to evaluate how well they match, considering factors 
-like semantic similarity, completeness, and accuracy.
-
-Examples of good use cases:
-- Solving math problems
-- Data extraction tasks
-- Classification tasks
-
-**Input-Only Datasets**
-
-These datasets contain only inputs without predefined expected outputs. Evaluation relies on [LLM-as-a-judge](#handling-complex-evaluations-with-llms-as-a-judge) (recommended) or human reviewers to assess quality as there is no single correct output. This approach is much better for agents that can have multiple valid outputs for a given input.
-
-Examples of good use cases:
-- Creative writing
-- Content summarization
-- Analysis tasks
 
 ## Evaluating the Results of Running Your Dataset
 
@@ -115,7 +115,19 @@ Let's walk through evaluating an email summarization agent. In this example, our
 <Step>
 **Decide on Your Dataset**
 
-Before evaluating, you need to make sure you have a robust dataset. See [Build Your Evaluation Dataset](#build-your-evaluation-dataset) to learn more about this process
+Before evaluating, you need to make sure you have a robust dataset (we generally recommend at least 20 test inputs, but the number can be much higher depending on your use case). See [Build Your Evaluation Dataset](#build-your-evaluation-dataset) to learn more about this process
+
+**Example Dataset Structure:**
+For this example, we'll use an **Input-Only Dataset** since there are multiple valid ways to summarize each email. Each test input would be structured as such:
+
+```json
+// Input-only dataset
+{
+  "id": [test input id here],
+  "email_title": [email title here],
+  "email_body": [email body here]
+}
+```
 
 </Step>
 
@@ -392,7 +404,7 @@ What were the most common issues the judge found in the email summaries?
 
 **Track Performance Over Time**
 
-If you want to run your evaluation regularly and monitor the results over time, you can set up continuous monitoring by asking your AI coding agent to create custom views that show the evaluation results:
+You can set up feedback monitoring by asking your AI coding agent to create custom views that show the evaluation results:
 
 ```
 Create a view that shows all completions of anotherai/agent/[your-agent-name] with annotations. 

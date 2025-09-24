@@ -1,5 +1,6 @@
 ---
 title: Update Models and Prompts Without Code Changes
+description: This guide walks you through the process of setting up and using deployments. Deploying a version of an agent allows you to make subsequent updates to that agent without changing code for most common changes.
 summary: A practical guide to deploying versions from experiments in AnotherAI
 ---
 
@@ -8,12 +9,10 @@ import { Callout } from "fumadocs-ui/components/callout";
 import { Step, Steps } from "fumadocs-ui/components/steps";
 import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 
-This guide walks you through the process of setting up and using deployments. Deploying a version of an agent allows you to make subsequent updates to that agent without changing code for most common changes.
-
 ## Why Use Deployments?
 
 At heart, deployments are simply a way to manage some completion parameters that would traditionally be committed and deployed with the codebase. With the speed at which LLMs are evolving, re-deploying code any time a prompt needs to be adjusted or a model needs to be changed prevents non-engineers from making updates and slows down iteration cycles.
-
+At heart, deployments are simply a way to manage some completion parameters (usually prompt and model) that would traditionally be committed and deployed with the codebase. With the speed at which LLMs are evolving, re-deploying code any time a prompt needs to be adjusted or a model needs to be changed prevents non-engineers from making updates and slows down iteration cycles.
 **There are three parts to the deployment process:**
 
 1. **Initial Deployment Creation** (requires engineering): Set up your code to use deployments instead of hardcoded parameters and deploy a first version of your agent.
@@ -24,31 +23,11 @@ At heart, deployments are simply a way to manage some completion parameters that
 
 This initial setup requires an AI coding agent with access to your codebase to modify your agent code.
 
-<Tabs items={["From An Experiment", "From Your Code", "From a Completion"]}>
-<Tab>
-If there is a version of the agent in an experimentyou want to deploy, you can get the version of your agent from the experiments web view.
-
-1. Locate the experiment that has the version of the agent you want to deploy.
-2. Hover over the version number to copy the version ID
-
-![Deploy Version](/images/deploy-version-popup.png)
-
-3. Open your preferred AI assistant
-4. Request deployment to your preferred environment:
-
-```
-Deploy anotherai/version/acf2635be31cbd89f9363bfd3b2c6abc to production. 
-Create a deployment for this version and update to my code to match this version 
-and reference the deployment_id.
-```
-
-![Deployment Individual View](/images/deployment-individual-view.png)
-</Tab>
-
+<Tabs items={["From Your Code", "From a Completion", "From An Experiment"]}>
 <Tab>
 If the version of your agent you want to deploy is already in your IDE, you can also just request to have a deployment created directly, without opening the web app.
 
-1. Ensure your code is already using the AnotherAI SDK with an `agent_id`
+1. Ensure your code is already using AnotherAI's base_url and API key.
 2. Tell your AI assistant to deploy your agent:
 
 ```
@@ -57,7 +36,7 @@ Create a deployment for this version and update to my code to match this version
 and reference the deployment_id.
 ```
 
-Your AI assistantwill create a version ID for you and deploy it.
+Your AI assistant will create a version ID for you and deploy it.
 
 </Tab>
 
@@ -78,14 +57,32 @@ and reference the deployment_id.
 ```
 
 </Tab>
+
+<Tab>
+If there is a version of the agent in an experimentyou want to deploy, you can get the version of your agent from the experiments web view.
+
+1. Locate the experiment that has the version of the agent you want to deploy.
+2. Hover over the version number to copy the version ID
+
+![Deploy Version](/images/deploy-version-popup.png)
+
+3. Open your preferred AI assistant
+4. Request deployment to your preferred environment:
+
+```
+Deploy anotherai/version/acf2635be31cbd89f9363bfd3b2c6abc to production. 
+Create a deployment for this version and update to my code to match this version 
+and reference the deployment_id.
+```
+
+![Deployment Individual View](/images/deployment-individual-view.png)
+</Tab>
 </Tabs>
 
-Optionally, you can request a specific name be used for the deployment. Otherwise, your AI coding agent will pick one for you automatically
-
+When a new deployment is created, it is given a unique deployment_id that can be used to reference the deployment in your code. Optionally, you can request a specific deployment_id be set when creating the deployment. Otherwise, your AI coding agent will pick one for you automatically.
 ## Non-breaking Deployment Updates (Ongoing)
 
-Once your code is set up to use deployments, in many casesyou can update your agent's behavior without any engineering involvement or changes to your code.
-
+Once your code is set up to use deployments, in many cases you can update your agent's behavior without any engineering involvement or changes to your code.
 ### Benefits of Deployment Updates
 
 Updating an existing deployment does not require any code changes. Because no code changes are required, updating an existing deployment is generally much faster than creating and releasing a new deployment.
@@ -93,6 +90,8 @@ Updating an existing deployment does not require any code changes. Because no co
 <Callout type="info">
   To prevent unwanted deployments that could negatively impact your production environment, your coding agent will
   require you to confirm all deployment updates using the web app.
+
+  ![Deployment Update Terminal Output](/images/deployment-update-terminal.png)
 
   ![Deployment Update Confirmation](/images/deployment-update-confirmation.png)
 </Callout>
@@ -133,10 +132,9 @@ Confirm the update in the AnotherAI web app when prompted.
 </Step>
 
 <Step>
-That's it! **No code changes needed** - your application automatically uses the updated version.
+That's it! **No code changes needed** - your agent automatically uses the updated version.
 </Step>
 </Steps>
-
 ## Breaking Deployment Updates (Possible, periodic)
 
 In some cases, the difference between two versions of your agent will require a new deployment to be created instead of simply updating the version connected to an existing deployment_id. In these cases, engineering involvement is required to update the code to point to the new deployment.

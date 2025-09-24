@@ -136,20 +136,35 @@ Add the following configuration to your MCP servers config:
 
   You should see the AnotherAI server listed as "connected".
 
-  <Callout type="tip" title="Managing Large Agents with Claude Code">
-  If you're testing an agent that has a large system prompt and/or very long inputs, you may encounter token limit issues with the `get_experiment` MCP tool that impacts Claude Code's ability to provide accurate insights on your agent. In this case, you can manually increase Claude Code's output token limit:
-  
-  ```
-  # Set a higher limit for MCP tool outputs
-  export MAX_MCP_OUTPUT_TOKENS=150000
-  claude
-  ```
-  Notes: 
-  - You will need to run the above commands in your terminal each time you start Claude Code.
-  - If you forget or don't realize you need to set a higher limit, you can quit your existing session, run the command to increase the limit, and then use `claude --resume` to continue your previous session with the increased limit applied. 
+  <Callout type="tip" title="Managing Large Experiments with Claude Code">
+  If you're testing an agent that has a large system prompt and/or very long inputs, you may encounter token limit issues with the `get_experiment` MCP tool that impacts Claude Code's ability to provide accurate insights on your agent. 
 
-  You can learn more about tool output limits for Claude Code in their [documentation](https://docs.claude.com/en/docs/claude-code/mcp#mcp-output-limits-and-warnings).
-  </Callout>
+![Claude Code Token Limit Error](/images/claude-code-token-limit-error.png)
+
+In this case, you can manually increase Claude Code's output token limit.
+
+**To set up permanently for all terminal sessions:**
+
+For zsh (default on macOS):
+```bash
+echo 'export MAX_MCP_OUTPUT_TOKENS=150000' >> ~/.zshrc && source ~/.zshrc
+```
+
+For bash:
+```bash
+echo 'export MAX_MCP_OUTPUT_TOKENS=150000' >> ~/.bashrc && source ~/.bashrc
+```
+
+**For temporary use in current session only:**
+```bash
+export MAX_MCP_OUTPUT_TOKENS=150000
+```
+
+Notes: 
+- If you forget or don't realize you need to set a higher limit, you can quit your existing session, run the command to increase the limit, and then use `claude --resume` to continue your previous session with the increased limit applied. 
+
+You can learn more about tool output limits for Claude Code in their [documentation](https://docs.claude.com/en/docs/claude-code/mcp#mcp-output-limits-and-warnings).
+</Callout>
 
 </Tab>
 
