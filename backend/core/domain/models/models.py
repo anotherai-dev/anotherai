@@ -191,6 +191,7 @@ class Model(StrEnum):
     # --------------------------------------------------------------------------
     # DeepSeek Models
     # --------------------------------------------------------------------------
+    DEEPSEEK_V3_1_TERMINUS = "deepseek-v3.1-terminus"
     DEEPSEEK_V3_2412 = "deepseek-v3-2412"
     DEEPSEEK_V3_0324 = "deepseek-v3-0324"
     DEEPSEEK_V3_LATEST = "deepseek-v3-latest"
@@ -214,4 +215,5 @@ class Model(StrEnum):
     # --------------------------------------------------------------------------
     # MOONSHOT Models
     # --------------------------------------------------------------------------
+    KIMI_K2_INSTRUCT_0905 = "kimi-k2-instruct-0905"
     KIMI_K2_INSTRUCT = "kimi-k2-instruct"

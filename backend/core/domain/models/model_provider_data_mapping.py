@@ -843,59 +843,10 @@ FIREWORKS_PROVIDER_DATA: ProviderDataByModel = {
         ),
         # see: https://docs.fireworks.ai/guides/function-calling#supported-models
     ),
-    # Model.LLAMA_3_2_3B: ModelProviderData(
-    #     text_price=TextPricePerToken(
-    #         prompt_cost_per_token=0.10 * ONE_MILLION_TH,
-    #         completion_cost_per_token=0.10 * ONE_MILLION_TH,
-    #         source="https://fireworks.ai/pricing",
-    #     ),
-    #     # see: https://docs.fireworks.ai/guides/function-calling#supported-models
-    # ),
-    # Model.LLAMA_3_2_3B_PREVIEW: ModelProviderData(
-    #     text_price=TextPricePerToken(
-    #         prompt_cost_per_token=0.10 * ONE_MILLION_TH,
-    #         completion_cost_per_token=0.10 * ONE_MILLION_TH,
-    #         source="https://fireworks.ai/pricing",
-    #     ),
-    #     # see: https://docs.fireworks.ai/guides/function-calling#supported-models
-    # ),
-    # Model.LLAMA_3_2_11B_VISION: ModelProviderData(
-    #     text_price=TextPricePerToken(
-    #         prompt_cost_per_token=0.20 * ONE_MILLION_TH,
-    #         completion_cost_per_token=0.20 * ONE_MILLION_TH,
-    #         source="https://fireworks.ai/pricing",
-    #     ),
-    #     # see: https://docs.fireworks.ai/guides/function-calling#supported-models
-    # ),
-    # Model.LLAMA_3_2_90B_VISION_PREVIEW: ModelProviderData(
-    #     text_price=TextPricePerToken(
-    #         prompt_cost_per_token=0.90 * ONE_MILLION_TH,
-    #         completion_cost_per_token=0.90 * ONE_MILLION_TH,
-    #         source="https://fireworks.ai/pricing",
-    #         # LLAMA_3_2_90B_VISION_PREVIEW is not a MoE model, so in 16.1B+ category
-    #     ),
-    #     # see: https://docs.fireworks.ai/guides/function-calling#supported-models
-    # ),
-    Model.DEEPSEEK_V3_2412: ModelProviderData(
+    Model.DEEPSEEK_V3_1_TERMINUS: ModelProviderData(
         text_price=TextPricePerToken(
-            prompt_cost_per_token=0.90 * ONE_MILLION_TH,
-            completion_cost_per_token=0.90 * ONE_MILLION_TH,
-            source="https://fireworks.ai/pricing",
-        ),
-        # see: https://docs.fireworks.ai/guides/function-calling#supported-models
-    ),
-    Model.DEEPSEEK_R1_2501: ModelProviderData(
-        text_price=TextPricePerToken(
-            prompt_cost_per_token=8.0 * ONE_MILLION_TH,
-            completion_cost_per_token=8.0 * ONE_MILLION_TH,
-            source="https://fireworks.ai/pricing",
-        ),
-        # see: https://docs.fireworks.ai/guides/function-calling#supported-models
-    ),
-    Model.DEEPSEEK_R1_2501_BASIC: ModelProviderData(
-        text_price=TextPricePerToken(
-            prompt_cost_per_token=0.55 * ONE_MILLION_TH,
-            completion_cost_per_token=2.19 * ONE_MILLION_TH,
+            prompt_cost_per_token=1.2 * ONE_MILLION_TH,
+            completion_cost_per_token=1.2 * ONE_MILLION_TH,
             source="https://fireworks.ai/pricing",
         ),
     ),
@@ -975,6 +926,13 @@ FIREWORKS_PROVIDER_DATA: ProviderDataByModel = {
             prompt_cost_per_token=0.6 * ONE_MILLION_TH,
             completion_cost_per_token=2.5 * ONE_MILLION_TH,
             source="https://app.fireworks.ai/models/fireworks/kimi-k2-instruct",
+        ),
+    ),
+    Model.KIMI_K2_INSTRUCT_0905: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=0.6 * ONE_MILLION_TH,
+            completion_cost_per_token=2.5 * ONE_MILLION_TH,
+            source="https://app.fireworks.ai/models/fireworks/kimi-k2-instruct-0905",
         ),
     ),
 }

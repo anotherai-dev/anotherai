@@ -1328,72 +1328,12 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             fallback=ModelFallback.default("cheapest"),
         ),
         # https://fireworks.ai/models/fireworks/deepseek-v3
-        Model.DEEPSEEK_V3_2412: ModelData(
-            display_name="DeepSeek V3 (24-12) (US hosted)",
-            supports_json_mode=True,
-            supports_input_image=False,
-            supports_input_pdf=False,
-            supports_input_audio=False,
-            max_tokens_data=MaxTokensData(
-                max_tokens=128000,
-                source="https://github.com/deepseek-ai/DeepSeek-V3",
-            ),
-            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/deepseek.svg",
-            release_date=date(2024, 12, 30),
-            quality_data=QualityData(mmlu=88.5, gpqa=59.1),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2290, duration_seconds=24),
-            ),
-            provider_name=DisplayedProvider.FIREWORKS.value,
-            supports_tool_calling=True,
-            supports_structured_output=True,
-            latest_model=Model.DEEPSEEK_V3_LATEST,
-            fallback=ModelFallback.default("cheap"),
-        ),
+        Model.DEEPSEEK_V3_2412: DeprecatedModel(replacement_model=Model.DEEPSEEK_V3_0324),
         # https://fireworks.ai/models/fireworks/deepseek-r1
-        Model.DEEPSEEK_R1_2501: ModelData(
-            display_name="DeepSeek R1 (25-01) (US hosted)",
-            supports_json_mode=True,
-            supports_input_image=False,
-            supports_input_pdf=False,
-            supports_input_audio=False,
-            supports_structured_output=False,  # To access the thinking, we have to disable the structured output
-            max_tokens_data=MaxTokensData(
-                max_tokens=128000,
-                source="https://github.com/deepseek-ai/DeepSeek-R1",
-            ),
-            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/deepseek.svg",
-            release_date=date(2025, 1, 20),
-            quality_data=QualityData(mmlu=90.8, gpqa=71.5),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2435, duration_seconds=32.9),
-            ),
-            provider_name=DisplayedProvider.FIREWORKS.value,
-            supports_tool_calling=True,
-            fallback=ModelFallback.default("expensive"),
-        ),
+        Model.DEEPSEEK_R1_2501: DeprecatedModel(replacement_model=Model.DEEPSEEK_R1_0528),
         # https://fireworks.ai/models/fireworks/deepseek-r1-basic
-        Model.DEEPSEEK_R1_2501_BASIC: ModelData(
-            display_name="DeepSeek R1 Basic (25-01) (US hosted)",
-            supports_json_mode=True,
-            supports_input_image=False,
-            supports_input_pdf=False,
-            supports_input_audio=False,
-            supports_structured_output=False,  # To access the thinking, we have to disable the structured output
-            max_tokens_data=MaxTokensData(
-                max_tokens=128000,
-                source="https://github.com/deepseek-ai/DeepSeek-R1",
-            ),
-            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/deepseek.svg",
-            release_date=date(2025, 3, 18),
-            quality_data=QualityData(mmlu=90.8, gpqa=71.5),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2300, duration_seconds=67),
-            ),
-            provider_name=DisplayedProvider.FIREWORKS.value,
-            supports_tool_calling=True,
-            fallback=ModelFallback.default("cheap"),
-        ),
+        # Mapping to maverick fast for cost reasons
+        Model.DEEPSEEK_R1_2501_BASIC: DeprecatedModel(replacement_model=Model.LLAMA_4_MAVERICK_FAST),
         # https://fireworks.ai/models/fireworks/deepseek-r1-0528
         Model.DEEPSEEK_R1_0528: ModelData(
             display_name="DeepSeek R1 (05-28) (US hosted)",
@@ -1408,12 +1348,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             ),
             icon_url="https://workflowai.blob.core.windows.net/workflowai-public/deepseek.svg",
             release_date=date(2025, 5, 28),
-            quality_data=QualityData(
-                equivalent_to=(  # TODO: adjust later, could not find score for MMLU nor GPQA
-                    Model.DEEPSEEK_R1_2501,
-                    5,
-                ),
-            ),
+            quality_data=QualityData(mmlu=90.8, gpqa=71.5),
             speed_data=SpeedData(
                 index=SpeedIndex.from_experiment(output_tokens=2400, duration_seconds=31),
             ),
@@ -1444,6 +1379,27 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             supports_structured_output=True,
             fallback=ModelFallback.default("medium"),
         ),
+        Model.DEEPSEEK_V3_1_TERMINUS: ModelData(
+            display_name="DeepSeek V3.1 (US hosted)",
+            supports_json_mode=True,
+            supports_input_image=False,
+            supports_input_pdf=False,
+            supports_input_audio=False,
+            max_tokens_data=MaxTokensData(
+                max_tokens=160_000,
+                source="https://app.fireworks.ai/models/fireworks/deepseek-v3p1",
+            ),
+            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/deepseek.svg",
+            release_date=date(2025, 9, 23),
+            quality_data=QualityData(mmlu_pro=85.1, gpqa_diamond=77.9),
+            speed_data=SpeedData(
+                index=SpeedIndex.from_experiment(output_tokens=1519, duration_seconds=8),
+            ),
+            provider_name=DisplayedProvider.FIREWORKS.value,
+            supports_tool_calling=True,
+            supports_structured_output=True,
+            fallback=ModelFallback.default("medium"),
+        ),
         Model.DEEPSEEK_V3_LATEST: LatestModel(
             model=Model.DEEPSEEK_V3_0324,
             display_name="DeepSeek V3 (latest)",
@@ -1462,6 +1418,29 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             icon_url="https://workflowai.blob.core.windows.net/workflowai-public/moonshot.svg",
             release_date=date(2025, 8, 7),
             quality_data=QualityData(gpqa=71.5),
+            speed_data=SpeedData(
+                # TODO: fix
+                equivalent_to=(Model.GPT_41_MINI_2025_04_14, 0),
+            ),
+            provider_name=DisplayedProvider.GROQ.value,
+            supports_tool_calling=True,
+            supports_structured_output=True,
+            fallback=ModelFallback.default("cheap"),
+        ),
+        Model.KIMI_K2_INSTRUCT_0905: ModelData(
+            display_name="Kimi K2 Instruct (09-05)",
+            supports_json_mode=True,
+            supports_input_image=False,
+            supports_input_pdf=False,
+            supports_input_audio=False,
+            max_tokens_data=MaxTokensData(
+                max_tokens=131_072,
+                max_output_tokens=16_384,
+                source="https://console.groq.com/docs/model/moonshotai/kimi-k2-instruct-0905",
+            ),
+            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/moonshot.svg",
+            release_date=date(2025, 9, 5),
+            quality_data=QualityData(mmlu_pro=82, gpqa_diamond=76.7),
             speed_data=SpeedData(
                 # TODO: fix
                 equivalent_to=(Model.GPT_41_MINI_2025_04_14, 0),
