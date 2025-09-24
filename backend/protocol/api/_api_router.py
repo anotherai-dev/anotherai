@@ -88,7 +88,7 @@ async def get_experiment(
     experiment_service: ExperimentServiceDep,
     experiment_id: str,
 ) -> Experiment:
-    return await experiment_service.get_experiment(experiment_id)
+    return await experiment_service.get_experiment(experiment_id, version_ids=None, input_ids=None)
 
 
 # ------------------------------------------------------------

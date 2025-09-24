@@ -2,14 +2,20 @@
 
 import json
 
+import pytest
+
 from core.domain.agent_output import AgentOutput
 from core.domain.error import Error
 from core.domain.message import Message, MessageContent
-from core.domain.tenant_data import PublicOrganizationData
 from core.domain.tool_call import ToolCallRequest
+from core.runners.runner_output import RunnerOutputChunk, ToolCallRequestDelta
 from tests.fake_models import fake_completion
 
-from ._run_conversions import _extract_completion_from_output, completion_response_from_domain
+from ._run_conversions import (
+    _extract_completion_from_output,
+    completion_chunk_choice_final_from_completion,
+    completion_response_from_domain,
+)
 
 
 class TestExtractCompletionFromOutput:
@@ -278,16 +284,8 @@ class TestCompletionResponseFromDomain:
         # Create a fake completion using fake_models
         completion = fake_completion()
 
-        # Create a fake organization
-        org = PublicOrganizationData(
-            uid=123,
-            slug="test-org",
-            org_id="org_123",
-            owner_id="owner_123",
-        )
-
         # Call the function
-        response = completion_response_from_domain(completion, deprecated_function=False, org=org)
+        response = completion_response_from_domain(completion, deprecated_function=False)
 
         # Verify the response structure
         assert response.id == completion.id
@@ -313,3 +311,247 @@ class TestCompletionResponseFromDomain:
         assert response.usage.prompt_tokens == 0  # fake_completion has no prompt text_token_count
         assert response.usage.completion_tokens == 100
         assert response.usage.total_tokens == 100
+
+
+class TestCompletionChunkChoiceFinalFromCompletion:
+    def test_basic_completion_without_final_chunk(self):
+        """Test completion_chunk_choice_final_from_completion with basic completion and no final_chunk"""
+        completion = fake_completion()
+
+        result = completion_chunk_choice_final_from_completion(
+            run=completion,
+            final_chunk=None,
+            deprecated_function=False,
+        )
+
+        # Verify the structure
+        assert result.index == 0
+        assert result.finish_reason == "stop"
+        assert result.cost_usd == completion.cost_usd
+        assert result.duration_seconds == completion.duration_seconds
+        assert result.url.endswith(completion.id)
+
+        # Verify delta content
+        assert result.delta.role == "assistant"
+        assert result.delta.content == "Hello my name is John"
+        assert result.delta.function_call is None
+        assert result.delta.tool_calls is None
+
+        # Verify usage
+        assert result.usage is not None
+        assert result.usage.prompt_tokens == 0
+        assert result.usage.completion_tokens == 100
+        assert result.usage.total_tokens == 100
+
+    def test_completion_with_final_chunk(self):
+        """Test completion_chunk_choice_final_from_completion with final_chunk provided"""
+        completion = fake_completion()
+        final_chunk = RunnerOutputChunk(
+            delta="Final chunk content",
+            tool_call_requests=None,
+            reasoning=None,
+        )
+
+        result = completion_chunk_choice_final_from_completion(
+            run=completion,
+            final_chunk=final_chunk,
+            deprecated_function=False,
+        )
+
+        # Verify the structure
+        assert result.index == 0
+        assert result.finish_reason == "stop"
+        assert result.cost_usd == completion.cost_usd
+        assert result.duration_seconds == completion.duration_seconds
+
+        # Verify delta content comes from final_chunk
+        assert result.delta.role == "assistant"
+        assert result.delta.content == "Final chunk content"
+        assert result.delta.function_call is None
+        assert result.delta.tool_calls is None
+
+    def test_completion_with_tool_calls(self):
+        """Test completion_chunk_choice_final_from_completion with tool calls"""
+        # Create completion with tool calls
+        tool_call = ToolCallRequest(
+            id="call_123",
+            tool_name="get_weather",
+            tool_input_dict={"location": "New York"},
+        )
+        output = AgentOutput(
+            messages=[
+                Message(
+                    role="assistant",
+                    content=[
+                        MessageContent(text="I'll check the weather for you."),
+                        MessageContent(tool_call_request=tool_call),
+                    ],
+                ),
+            ],
+        )
+        completion = fake_completion(agent_output=output)
+
+        result = completion_chunk_choice_final_from_completion(
+            run=completion,
+            final_chunk=None,
+            deprecated_function=False,
+        )
+
+        # Verify finish reason for tool calls
+        assert result.finish_reason == "tool_calls"
+
+        # Verify delta content
+        assert result.delta.role == "assistant"
+        assert result.delta.content == "I'll check the weather for you."
+        assert result.delta.tool_calls is not None
+        assert len(result.delta.tool_calls) == 1
+        assert result.delta.tool_calls[0].id == "call_123"
+        assert result.delta.tool_calls[0].function.name == "get_weather"
+
+    def test_completion_with_tool_calls_deprecated_function(self):
+        """Test completion_chunk_choice_final_from_completion with deprecated function calls"""
+        # Create completion with tool calls
+        tool_call = ToolCallRequest(
+            id="call_123",
+            tool_name="get_weather",
+            tool_input_dict={"location": "New York"},
+        )
+        output = AgentOutput(
+            messages=[
+                Message(
+                    role="assistant",
+                    content=[
+                        MessageContent(text="I'll check the weather for you."),
+                        MessageContent(tool_call_request=tool_call),
+                    ],
+                ),
+            ],
+        )
+        completion = fake_completion(agent_output=output)
+
+        result = completion_chunk_choice_final_from_completion(
+            run=completion,
+            final_chunk=None,
+            deprecated_function=True,
+        )
+
+        # Verify finish reason for function calls
+        assert result.finish_reason == "function_call"
+
+        # Verify delta content uses function_call instead of tool_calls
+        assert result.delta.role == "assistant"
+        assert result.delta.content == "I'll check the weather for you."
+        assert result.delta.function_call is not None
+        assert result.delta.function_call.name == "get_weather"
+        assert result.delta.tool_calls is None
+
+    def test_completion_with_no_traces(self):
+        """Test completion_chunk_choice_final_from_completion with no traces (null usage)"""
+        completion = fake_completion(traces=[])
+
+        result = completion_chunk_choice_final_from_completion(
+            run=completion,
+            final_chunk=None,
+            deprecated_function=False,
+        )
+
+        # Verify usage is None when no traces
+        assert result.usage is None
+        assert result.finish_reason == "stop"
+
+    def test_final_chunk_with_tool_call_deltas(self):
+        """Test completion_chunk_choice_final_from_completion with tool call deltas in final_chunk"""
+        completion = fake_completion()
+        tool_call_delta = ToolCallRequestDelta(
+            id="call_456",
+            idx=0,
+            tool_name="send_email",
+            arguments='{"to": "user@example.com"}',
+        )
+        final_chunk = RunnerOutputChunk(
+            delta="Sending email...",
+            tool_call_requests=[tool_call_delta],
+            reasoning=None,
+        )
+
+        result = completion_chunk_choice_final_from_completion(
+            run=completion,
+            final_chunk=final_chunk,
+            deprecated_function=False,
+        )
+
+        # Verify delta content from final_chunk
+        assert result.delta.content == "Sending email..."
+        assert result.delta.tool_calls is not None
+        assert len(result.delta.tool_calls) == 1
+        assert result.delta.tool_calls[0].id == "call_456"
+        assert result.delta.tool_calls[0].index == 0
+        assert result.delta.tool_calls[0].function.name == "send_email"
+
+    def test_final_chunk_with_deprecated_function_call(self):
+        """Test completion_chunk_choice_final_from_completion with deprecated function call in final_chunk"""
+        completion = fake_completion()
+        tool_call_delta = ToolCallRequestDelta(
+            id="call_789",
+            idx=0,
+            tool_name="calculate",
+            arguments='{"expression": "2+2"}',
+        )
+        final_chunk = RunnerOutputChunk(
+            delta="Calculating...",
+            tool_call_requests=[tool_call_delta],
+            reasoning=None,
+        )
+
+        result = completion_chunk_choice_final_from_completion(
+            run=completion,
+            final_chunk=final_chunk,
+            deprecated_function=True,
+        )
+
+        # Verify delta content uses function_call
+        assert result.delta.content == "Calculating..."
+        assert result.delta.function_call is not None
+        assert result.delta.function_call.name == "calculate"
+        assert result.delta.function_call.arguments == '{"expression": "2+2"}'
+        assert result.delta.tool_calls is None
+
+    @pytest.mark.parametrize(
+        ("has_tool_calls", "deprecated_function", "expected_finish_reason"),
+        [
+            (False, False, "stop"),
+            (False, True, "stop"),
+            (True, False, "tool_calls"),
+            (True, True, "function_call"),
+        ],
+    )
+    def test_finish_reason_logic(self, has_tool_calls, deprecated_function, expected_finish_reason):
+        """Test that finish_reason is correctly determined based on tool calls and deprecated_function flag"""
+        if has_tool_calls:
+            tool_call = ToolCallRequest(
+                id="call_test",
+                tool_name="test_tool",
+                tool_input_dict={"param": "value"},
+            )
+            output = AgentOutput(
+                messages=[
+                    Message(
+                        role="assistant",
+                        content=[MessageContent(tool_call_request=tool_call)],
+                    ),
+                ],
+            )
+        else:
+            output = AgentOutput(
+                messages=[Message.with_text("Just a text response", role="assistant")],
+            )
+
+        completion = fake_completion(agent_output=output)
+
+        result = completion_chunk_choice_final_from_completion(
+            run=completion,
+            final_chunk=None,
+            deprecated_function=deprecated_function,
+        )
+
+        assert result.finish_reason == expected_finish_reason

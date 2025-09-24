@@ -1,4 +1,5 @@
 import asyncio
+from contextlib import contextmanager
 from typing import Any
 
 import structlog
@@ -12,12 +13,12 @@ from core.domain.fallback_option import FallbackOption
 from core.domain.tenant_data import TenantData
 from core.domain.version import Version
 from core.providers.factory.abstract_provider_factory import AbstractProviderFactory
+from core.runners.agent_completion_builder import AgentCompletionBuilder
 from core.runners.runner import Runner
 from core.storage.completion_storage import CompletionStorage
 from core.utils.coroutines import capture_errors
-from core.utils.uuid import uuid7
 
-log = structlog.get_logger(__name__)
+_log = structlog.get_logger(__name__)
 
 
 class CompletionRunner:
@@ -39,22 +40,66 @@ class CompletionRunner:
         agent: Agent,
         version: Version,
         input: AgentInput,
+        metadata: dict[str, Any],
+        timeout_seconds: float,
     ) -> AgentCompletion | None:
-        async with asyncio.timeout(0.150):  # 150 ms, cached output clickhouse query should exit after 100ms
-            agent_output = await self._completion_storage.cached_output(version_id=version.id, input_id=input.id)
-            if not agent_output:
+        async with asyncio.timeout(
+            timeout_seconds + 0.050,  # Just a safety, the underlying client should timeout on its own
+        ):
+            from_cache = await self._completion_storage.cached_completion(
+                version_id=version.id,
+                input_id=input.id,
+                timeout_seconds=timeout_seconds,
+            )
+            if not from_cache:
                 return None
-            return AgentCompletion(
+            completion = AgentCompletion(
                 id=completion_id,
                 agent=agent,
                 version=version,
                 agent_input=input,
-                agent_output=agent_output,
+                agent_output=from_cache.agent_output,
                 messages=[],
                 traces=[],
+                metadata={
+                    **metadata,
+                    "anotherai/cached_from": from_cache.id,
+                    "anotherai/original_cost_usd": from_cache.cost_usd,
+                    "anotherai/original_duration_seconds": from_cache.duration_seconds,
+                },
+                cost_usd=0,
+                duration_seconds=0,
             )
+            self._event_router(StoreCompletionEvent(completion=completion))
+            return completion
 
-    async def run(
+    async def check_cache(
+        self,
+        completion_id: str,
+        agent: Agent,
+        version: Version,
+        input: AgentInput,
+        use_cache: CacheUsage | None,
+        metadata: dict[str, Any],
+        timeout_seconds: float = 0.150,
+    ) -> AgentCompletion | None:
+        use_cache = use_cache or CacheUsage.AUTO
+        # Attempt to retrieve from cache if possible
+        if use_cache == CacheUsage.ALWAYS or (use_cache == CacheUsage.AUTO and version.should_use_auto_cache()):
+            with capture_errors(_log, "Error fetching cached output"):
+                completion = await self._from_cache(
+                    completion_id,
+                    agent,
+                    version,
+                    input,
+                    metadata,
+                    timeout_seconds=timeout_seconds,
+                )
+                if completion:
+                    return completion
+        return None
+
+    async def prepare(
         self,
         agent: Agent,
         version: Version,
@@ -62,21 +107,10 @@ class CompletionRunner:
         input: AgentInput,
         metadata: dict[str, Any],
         timeout: float | None,  # noqa: ASYNC109
-        use_cache: CacheUsage,
         use_fallback: FallbackOption,
-        completion_id: str | None,
+        completion_id: str,
         conversation_id: str | None,
     ):
-        completion_id = completion_id or str(uuid7())
-
-        # Attempt to retrieve from cache if possible
-        if use_cache == "always" or (use_cache == "auto" and version.should_use_auto_cache()):
-            with capture_errors(log, "Error fetching cached output"):
-                completion = await self._from_cache(completion_id, agent, version, input)
-                if completion:
-                    return completion
-
-        # TODO: cache
         runner = Runner(
             tenant_slug=self._tenant.slug,
             custom_configs=self._tenant.providers,
@@ -85,7 +119,6 @@ class CompletionRunner:
             metadata=metadata,
             metric_tags={},
             provider_factory=self._provider_factory,
-            stream_deltas=False,
             timeout=timeout or 240,
             use_fallback=use_fallback,
         )
@@ -96,11 +129,32 @@ class CompletionRunner:
             metadata=metadata,
             conversation_id=conversation_id,
         )
+        return runner, builder
+
+    @contextmanager
+    def _store_async(self, builder: AgentCompletionBuilder):
         try:
-            return await runner.run(builder)
+            yield
         finally:
             # Store the run
             if builder.completion:
                 self._event_router(StoreCompletionEvent(completion=builder.completion))
             else:
-                log.error("No completion to store", completion_id=completion_id)
+                _log.error("No completion to store", completion_id=builder.id)
+
+    async def run(
+        self,
+        runner: Runner,
+        builder: AgentCompletionBuilder,
+    ) -> AgentCompletion:
+        with self._store_async(builder):
+            return await runner.run(builder)
+
+    async def stream(
+        self,
+        runner: Runner,
+        builder: AgentCompletionBuilder,
+    ):
+        with self._store_async(builder):
+            async for o in runner.stream(builder):
+                yield o

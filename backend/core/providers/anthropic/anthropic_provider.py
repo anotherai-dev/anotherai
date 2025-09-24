@@ -1,5 +1,3 @@
-import contextlib
-import json
 import logging
 from collections.abc import AsyncIterator
 from typing import Any, Literal, override
@@ -16,16 +14,14 @@ from core.domain.models.utils import get_model_data
 from core.domain.tool_call import ToolCallRequest
 from core.providers._base.httpx_provider import HTTPXProvider
 from core.providers._base.llm_usage import LLMUsage
-from core.providers._base.models import RawCompletion
 from core.providers._base.provider_error import (
-    FailedGenerationError,
     MaxTokensExceededError,
     ProviderError,
     ProviderInternalError,
     UnknownProviderError,
 )
 from core.providers._base.provider_options import ProviderOptions
-from core.providers._base.streaming_context import ParsedResponse, ToolCallRequestBuffer
+from core.providers._base.streaming_context import ParsedResponse
 from core.providers._base.utils import get_provider_config_env
 from core.providers.anthropic.anthropic_domain import (
     AnthropicErrorResponse,
@@ -35,11 +31,9 @@ from core.providers.anthropic.anthropic_domain import (
     CompletionRequest,
     CompletionResponse,
     ContentBlock,
-    StopReasonDelta,
     TextContent,
     ThinkingContent,
     ToolUseContent,
-    Usage,
 )
 from core.providers.google.google_provider_domain import (
     native_tool_name_to_internal,
@@ -194,13 +188,6 @@ class AnthropicProvider(HTTPXProvider[AnthropicConfig, CompletionResponse]):
             url=get_provider_config_env("ANTHROPIC_API_URL", index, "https://api.anthropic.com/v1/messages"),
         )
 
-    @override
-    def _raw_prompt(self, request_json: dict[str, Any]) -> list[dict[str, Any]]:
-        messages = request_json.get("messages", [])
-        if "system" in request_json:
-            return [{"role": "system", "content": request_json["system"]}, *messages]
-        return messages
-
     async def wrap_sse(self, raw: AsyncIterator[bytes], termination_chars: bytes = b""):
         """Custom SSE wrapper for Anthropic's event stream format"""
         acc = b""
@@ -224,125 +211,11 @@ class AnthropicProvider(HTTPXProvider[AnthropicConfig, CompletionResponse]):
                 else:
                     self.logger.error("Unexpected line in SSE stream", extra={"line": line, "acc": acc})
 
-    def _handle_message_delta(self, chunk: CompletionChunk, raw_completion: RawCompletion):
-        if chunk.usage:
-            if raw_completion.usage:
-                # Update only completion tokens as input tokens were set in message_start
-                if chunk.usage.output_tokens is not None:
-                    raw_completion.usage.completion_token_count = chunk.usage.output_tokens
-            else:
-                raw_completion.usage = chunk.usage.to_domain()
-
-        if chunk.delta and isinstance(chunk.delta, StopReasonDelta) and chunk.delta.stop_reason:
-            raw_completion.finish_reason = chunk.delta.stop_reason
-            if chunk.delta.stop_reason == "max_tokens":
-                raise MaxTokensExceededError(
-                    msg="Model returned MAX_TOKENS stop reason, the max tokens limit was exceeded.",
-                    raw_completion=raw_completion.response,
-                )
-
-        return ""
-
     @override
-    def _extract_stream_delta(
-        self,
-        sse_event: bytes,
-        raw_completion: RawCompletion,
-        tool_call_request_buffer: dict[int, ToolCallRequestBuffer],
-    ) -> ParsedResponse:
-        try:
-            chunk = CompletionChunk.model_validate_json(sse_event)
+    def _extract_stream_delta(self, sse_event: bytes) -> ParsedResponse:
+        chunk = CompletionChunk.model_validate_json(sse_event)
 
-            match chunk.type:
-                case "message_start":
-                    return self._handle_message_start(chunk, raw_completion)
-                case "message_delta":
-                    return ParsedResponse(self._handle_message_delta(chunk, raw_completion))
-                case "content_block_start":
-                    return self._handle_content_block_start(chunk, tool_call_request_buffer)
-                case "content_block_delta":
-                    return self._handle_content_block_delta(chunk, tool_call_request_buffer)
-                case "ping" | "message_stop" | "content_block_stop":
-                    return ParsedResponse("")
-                case "error":
-                    if chunk.error:
-                        raise chunk.error.to_domain(response=None)
-                    raise UnknownProviderError("Anthropic error response with no error details")
-
-        except ProviderError as e:
-            raise e
-        except Exception:
-            self.logger.exception(
-                "Failed to parse SSE event",
-                extra={"event": str(sse_event)},
-            )
-            return ParsedResponse("")
-
-    def _handle_message_start(self, chunk: CompletionChunk, raw_completion: RawCompletion) -> ParsedResponse:
-        """Handle message_start event type."""
-        if chunk.message and "usage" in chunk.message:
-            usage = Usage.model_validate(chunk.message["usage"])
-            raw_completion.usage = usage.to_domain()
-        return ParsedResponse("")
-
-    def _handle_content_block_start(
-        self,
-        chunk: CompletionChunk,
-        tool_call_request_buffer: dict[int, ToolCallRequestBuffer],
-    ) -> ParsedResponse:
-        """Handle content_block_start event type."""
-        tool_calls: list[ToolCallRequest] = []
-        if chunk.content_block and chunk.content_block.type == "tool_use":
-            if chunk.index is None:
-                raise FailedGenerationError(
-                    f"Missing required fields in content block start, index, id or name: {chunk}",
-                )
-
-            tool_call_request_buffer[chunk.index] = ToolCallRequestBuffer(
-                id=chunk.content_block.id,
-                tool_name=native_tool_name_to_internal(chunk.content_block.name),
-                tool_input="",
-            )
-
-        # For thinking content blocks, we don't need to buffer anything at start
-        # The thinking content will be streamed via content_block_delta events
-        return ParsedResponse("", tool_calls=tool_calls)
-
-    def _handle_content_block_delta(
-        self,
-        chunk: CompletionChunk,
-        tool_call_request_buffer: dict[int, ToolCallRequestBuffer],
-    ) -> ParsedResponse:
-        """Handle content_block_delta event type."""
-        tool_calls: list[ToolCallRequest] = []
-        reasoning_steps: str | None = None
-
-        if chunk.delta and chunk.delta.type == "input_json_delta":
-            if chunk.index not in tool_call_request_buffer:
-                raise FailedGenerationError(
-                    f"Received content block delta for unknown tool call, index: {chunk.index}  ",
-                )
-
-            tool_call_request_buffer[chunk.index].tool_input += chunk.delta.partial_json
-
-            candidate_tool_call = tool_call_request_buffer[chunk.index]
-
-            if candidate_tool_call.id is not None and candidate_tool_call.tool_name is not None:
-                # Failures mean the tool call is not fully streamed yet
-                with contextlib.suppress(json.JSONDecodeError):
-                    tool_calls.append(
-                        ToolCallRequest(
-                            id=candidate_tool_call.id,
-                            tool_name=native_tool_name_to_internal(candidate_tool_call.tool_name),
-                            tool_input_dict=json.loads(candidate_tool_call.tool_input),
-                        ),
-                    )
-
-        # Handle thinking deltas for reasoning steps
-        elif chunk.delta and chunk.delta.type == "thinking_delta":
-            reasoning_steps = chunk.delta.thinking
-
-        return ParsedResponse(chunk.extract_delta(), reasoning=reasoning_steps, tool_calls=tool_calls)
+        return chunk.to_parsed_response()
 
     def _compute_prompt_token_count(
         self,

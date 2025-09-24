@@ -8,6 +8,7 @@ import { ToastProvider } from "@/components/ToastProvider";
 import { ApiKeysModal } from "@/components/api-keys-modal/ApiKeysModal";
 import { CompletionModal } from "@/components/completion-modal/CompletionModal";
 import { DeploymentModal } from "@/components/deployment-modal/DeploymentModal";
+import { getServerSideCookie } from "@/lib/server-cookies";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -23,17 +24,20 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "AnotherAI",
   description:
-    "Discover the newest and most powerful AI models from AnotherAI. View quality scores, pricing, capabilities, and release dates.",
+    "AnotherAI enables your AI assistant (ChatGPT, Claude Code, Cursor, ...) to become a powerful AI engineer.",
   keywords: ["AI", "AnotherAI", "models", "artificial intelligence", "API", "machine learning"],
   authors: [{ name: "AnotherAI Model Explorer" }],
   openGraph: {
     title: "AnotherAI",
-    description: "Discover the newest and most powerful AI models from AnotherAI",
+    description:
+      "AnotherAI enables your AI assistant (ChatGPT, Claude Code, Cursor, ...) to become a powerful AI engineer.",
     type: "website",
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Read sidebar state from cookies server-side
+  const initialSidebarExpanded = await getServerSideCookie("sidebar-expanded", true);
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
@@ -79,7 +83,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </div>
             </SignedOut>
             <SignedIn>
-              <LayoutContent>{children}</LayoutContent>
+              <LayoutContent initialSidebarExpanded={initialSidebarExpanded}>{children}</LayoutContent>
               <Suspense fallback={null}>
                 <CompletionModal />
                 <DeploymentModal />

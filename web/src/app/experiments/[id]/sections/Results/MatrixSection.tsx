@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { TableComponent } from "@/components/TableComponent";
 import {
   findCompletionForInputAndVersion,
@@ -22,6 +22,27 @@ type Props = {
 export function MatrixSection(props: Props) {
   const { experiment, annotations } = props;
 
+  // State for column order - initially ordered by version index
+  const [columnOrder, setColumnOrder] = useState<string[]>(() => experiment.versions.map((version) => version.id));
+
+  // Function to reorder columns
+  const reorderColumns = useCallback(
+    (fromIndex: number, toIndex: number) => {
+      const newOrder = [...columnOrder];
+      const [movedItem] = newOrder.splice(fromIndex, 1);
+      newOrder.splice(toIndex, 0, movedItem);
+      setColumnOrder(newOrder);
+    },
+    [columnOrder]
+  );
+
+  // Get versions in the current column order
+  const orderedVersions = useMemo(() => {
+    return columnOrder
+      .map((versionId) => experiment.versions.find((v) => v.id === versionId))
+      .filter(Boolean) as typeof experiment.versions;
+  }, [columnOrder, experiment]);
+
   const completionsPerVersion = useMemo(() => {
     return getCompletionsPerVersion(experiment);
   }, [experiment]);
@@ -39,16 +60,28 @@ export function MatrixSection(props: Props) {
   }, [metricsPerVersion]);
 
   const optionalKeysToShow = useMemo(() => {
-    return getDifferingVersionKeys(experiment.versions);
-  }, [experiment.versions]);
+    return getDifferingVersionKeys(orderedVersions);
+  }, [orderedVersions]);
 
   const sharedPartsOfPrompts = useMemo(() => {
-    return getSharedPartsOfPrompts(experiment.versions);
-  }, [experiment.versions]);
+    return getSharedPartsOfPrompts(orderedVersions);
+  }, [orderedVersions]);
 
   const sharedKeypathsOfSchemas = useMemo(() => {
-    return getSharedKeypathsOfSchemas(experiment.versions);
-  }, [experiment.versions]);
+    return getSharedKeypathsOfSchemas(orderedVersions);
+  }, [orderedVersions]);
+
+  const stickyHeaderData = useMemo(() => {
+    return orderedVersions.map((version) => {
+      const originalIndex = experiment.versions.findIndex((v) => v.id === version.id);
+      return {
+        versionNumber: originalIndex + 1,
+        modelId: version.model,
+        reasoningEffort: version.reasoning_effort,
+        reasoningBudget: version.reasoning_budget,
+      };
+    });
+  }, [orderedVersions, experiment.versions]);
 
   const tableData = useMemo(() => {
     // Get arrays of average metrics per version for badge coloring
@@ -56,15 +89,17 @@ export function MatrixSection(props: Props) {
     const allAvgDurations = priceAndLatencyPerVersion.map(({ metrics }) => metrics.avgDuration);
 
     // Column headers with version info
-    const columnHeaders = experiment.versions.map((version, index) => {
+    const columnHeaders = orderedVersions.map((version, dragIndex) => {
       const priceAndLatency = priceAndLatencyPerVersion.find(({ versionId }) => versionId === version.id);
       const metrics = metricsPerVersion?.[version.id];
+      // Find the original index of this version in the original experiment.versions array
+      const originalIndex = experiment.versions.findIndex((v) => v.id === version.id);
       return (
         <VersionHeader
           key={version.id}
           version={version}
           optionalKeysToShow={optionalKeysToShow}
-          index={index}
+          index={originalIndex}
           priceAndLatency={
             priceAndLatency?.metrics
               ? {
@@ -77,7 +112,7 @@ export function MatrixSection(props: Props) {
                 }
               : undefined
           }
-          versions={experiment.versions}
+          versions={orderedVersions}
           sharedPartsOfPrompts={sharedPartsOfPrompts}
           sharedKeypathsOfSchemas={sharedKeypathsOfSchemas}
           annotations={annotations}
@@ -86,6 +121,8 @@ export function MatrixSection(props: Props) {
           allMetricsPerKey={allMetricsPerKey}
           agentId={experiment.agent_id}
           experiment={experiment}
+          onReorderColumns={reorderColumns}
+          dragIndex={dragIndex}
         />
       );
     });
@@ -98,7 +135,7 @@ export function MatrixSection(props: Props) {
     const data =
       experiment.inputs?.map((input) => {
         // Get all completions for this input (row) to calculate comparison arrays
-        const completionsForInput = experiment.versions
+        const completionsForInput = orderedVersions
           .map((version) => findCompletionForInputAndVersion(experiment.completions || [], input.id, version.id))
           .filter(Boolean); // Remove undefined completions
 
@@ -109,7 +146,7 @@ export function MatrixSection(props: Props) {
         // Calculate metrics per key for this row (for row-based comparison coloring)
         const allMetricsPerKeyForRow = getAllMetricsPerKeyForRow(experiment, annotations, input.id);
 
-        return experiment.versions.map((version) => {
+        return orderedVersions.map((version) => {
           const completion = findCompletionForInputAndVersion(experiment.completions || [], input.id, version.id);
 
           return (
@@ -131,12 +168,14 @@ export function MatrixSection(props: Props) {
   }, [
     priceAndLatencyPerVersion,
     experiment,
+    orderedVersions,
     optionalKeysToShow,
     sharedPartsOfPrompts,
     sharedKeypathsOfSchemas,
     annotations,
     metricsPerVersion,
     allMetricsPerKey,
+    reorderColumns,
   ]);
 
   return (
@@ -148,6 +187,7 @@ export function MatrixSection(props: Props) {
         data={tableData.data}
         minColumnWidth={400}
         hideScrollbar={false}
+        stickyHeaderData={stickyHeaderData}
       />
     </div>
   );

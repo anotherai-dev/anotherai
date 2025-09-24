@@ -4,10 +4,12 @@ or in the conversion layer."""
 
 from datetime import date, datetime
 from typing import Annotated, Any, Literal
+from uuid import UUID
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pydantic.json_schema import SkipJsonSchema
 
+from core.domain.cache_usage import CacheUsage
 from core.domain.reasoning_effort import ReasoningEffort
 from core.domain.tool_choice import ToolChoice
 from core.utils.fields import datetime_factory
@@ -95,6 +97,8 @@ class OutputSchema(BaseModel):
 
 
 class Version(BaseModel):
+    model_config = ConfigDict(revalidate_instances="always", extra="forbid")
+
     id: str = Field(description="The id of the version. Auto generated.", default="")
     model: str
     temperature: float | None = None
@@ -416,22 +420,32 @@ class ExperimentItem(BaseModel):
     user_id: str
     title: str
     description: str
-    result: str | None
+    result: str | None = None
 
 
 class Experiment(BaseModel):
     id: str
     created_at: datetime
+    updated_at: datetime | None = Field(default=None, description="When the experiment was last updated.")
     author_name: str
     url: str
 
     title: str = Field(description="The title of the experiment.")
     description: str = Field(description="The description of the experiment.")
-    result: str | None = Field(description="A user defined result of the experiment.")
+    result: str | None = Field(default=None, description="A user defined result of the experiment.")
     agent_id: str = Field(description="The agent that created the experiment.")
 
+    versions: list[Version] | None = None
+
+    inputs: list[Input] | None = None
+
+    metadata: dict[str, Any] | None = Field(
+        default=None,
+        description="Metadata associated with the experiment. Can be used to store additional information about the experiment.",
+    )
+
     class Completion(BaseModel):
-        id: str
+        id: UUID
         # Only IDs are provided here but they have the same format as in the full object (completion.input.id)
         input: ModelWithID
         version: ModelWithID
@@ -439,19 +453,11 @@ class Experiment(BaseModel):
         cost_usd: float
         duration_seconds: float
 
-    completions: list[Completion] = Field(description="The completions of the experiment.")
-
-    versions: list[Version]
-
-    inputs: list[Input]
+    completions: list[Completion] | None = Field(default=None, description="The completions of the experiment.")
 
     annotations: list[Annotation] | None = Field(
-        description="Annotations associated with the experiment, either tied to the experiment only or to a completion within the experiment.",
-    )
-
-    metadata: dict[str, Any] | None = Field(
         default=None,
-        description="Metadata associated with the experiment. Can be used to store additional information about the experiment.",
+        description="Annotations associated with the experiment, either tied to the experiment only or to a completion within the experiment.",
     )
 
 
@@ -462,18 +468,7 @@ class CreateExperimentRequest(BaseModel):
     agent_id: str
     metadata: dict[str, Any] | None = None
     author_name: str
-
-
-class PlaygroundOutput(BaseModel):
-    class Completion(BaseModel):
-        id: str
-        output: Output
-        cost_usd: float | None
-        duration_seconds: float | None
-
-    experiment_id: str
-    experiment_url: str
-    completions: list[Completion]
+    use_cache: CacheUsage | None = None
 
 
 # ----------------------------------------
@@ -717,7 +712,14 @@ class View(BaseModel):
 
     id: str = Field(default="", description="Unique identifier for the view")
     title: str = Field(description="View title")
-    query: str = Field(description="SQL query to filter/aggregate completions")
+    query: str = Field(
+        description="SQL query to filter/aggregate completions. If using pagination, "
+        "add a `LIMIT {limit}` and `OFFSET {offset}` clauses as needed. The template arguments will "
+        "be replaced client side with actual values.",
+        examples=[
+            "SELECT * FROM completions LIMIT {limit} OFFSET {offset}",
+        ],
+    )
 
     graph: Graph | None = None
 
@@ -762,7 +764,7 @@ class APIKey(BaseModel):
     name: str
     partial_key: str
     created_at: datetime
-    last_used_at: datetime | None
+    last_used_at: datetime | None = None
     created_by: str
 
 

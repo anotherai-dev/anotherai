@@ -1,6 +1,7 @@
 import json
 from typing import Any
 
+import httpx
 import pytest
 from pydantic import BaseModel
 
@@ -113,3 +114,65 @@ async def test_structured_output(test_case: ProviderTestCase, test_api_client: I
     query_result: list[dict[str, Any]] = await test_api_client.get(f"/v1/completions/query?query={query}")  # pyright: ignore [reportAssignmentType]
     assert len(query_result) == 1
     assert query_result[0]["id"] == response.id
+
+
+@pytest.mark.parametrize("test_case", _test_cases)
+async def test_parameters(test_case: ProviderTestCase, test_api_client: IntegrationTestClient):
+    """Check that parameters are correctly set in the request"""
+    test_api_client.mock_provider_call(
+        test_case.provider(),
+        test_case.model(),
+        f"{test_case.provider()}/completion.json",
+        is_reusable=True,
+    )
+
+    client = test_api_client.openai_client()
+
+    response = await client.chat.completions.create(
+        model=test_case.model(),
+        messages=[{"role": "user", "content": "Hello, world!"}],
+        temperature=0.5,
+        max_tokens=100,
+        top_p=0.9,
+        presence_penalty=0.1,
+        frequency_penalty=0.2,
+        parallel_tool_calls=False,
+    )
+
+    assert response.choices[0].message.content == "The meaning of life is 42"
+    assert response.choices[0].cost_usd > 0  # pyright: ignore [reportUnknownMemberType,reportAttributeAccessIssue]
+
+    await test_api_client.wait_for_background()
+
+    def _check(req: httpx.Request):
+        body = json.loads(req.content)
+        test_case.check_temperature(0.5, body, req)
+        test_case.check_max_tokens(100, body, req)
+        test_case.check_top_p(0.9, body, req)
+        test_case.check_presence_penalty(0.1, body, req)
+        test_case.check_frequency_penalty(0.2, body, req)
+        test_case.check_parallel_tool_calls(False, body, req)
+
+    reqs = test_api_client.get_provider_requests(test_case.provider(), test_case.model())
+    assert len(reqs) == 1
+    _check(reqs[0])
+
+    # Do the same with the playground tool
+    await test_api_client.playground(
+        version={
+            "model": test_case.model(),
+            "prompt": [],
+            "temperature": 0.5,
+            "max_output_tokens": 100,
+            "top_p": 0.9,
+            "presence_penalty": 0.1,
+            "frequency_penalty": 0.2,
+            "parallel_tool_calls": False,
+        },
+        inputs=[{"messages": [{"role": "user", "content": "Hello, world!"}]}],
+        experiment_kwargs={"use_cache": "never"},  # force to repeat the run
+    )
+
+    reqs = test_api_client.get_provider_requests(test_case.provider(), test_case.model())
+    assert len(reqs) == 2
+    _check(reqs[1])

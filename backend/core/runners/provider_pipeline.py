@@ -4,6 +4,8 @@ from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from typing import Any, NoReturn, Protocol, final
 
+from structlog.contextvars import bind_contextvars
+
 from core.domain.exceptions import InternalError, NoProviderSupportingModelError
 from core.domain.fallback_option import FallbackOption
 from core.domain.metrics import send_counter
@@ -230,6 +232,7 @@ class ProviderPipeline:
         model_data: FinalModelData,
     ) -> Iterator[PipelineProviderData]:
         self._found_a_provider = True
+        bind_contextvars(provider=provider, model=model_data.model)
         yield self._build(provider, model_data)
 
         if self._should_retry_without_structured_generation():

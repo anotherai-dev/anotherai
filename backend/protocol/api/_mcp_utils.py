@@ -2,14 +2,15 @@ import contextlib
 import json
 from typing import Any, override
 
+import pydantic_core
 from fastmcp.exceptions import ToolError
 from fastmcp.server import FastMCP
 from fastmcp.server.auth import AccessToken, AuthProvider, TokenVerifier
 from fastmcp.server.dependencies import get_access_token
 from fastmcp.server.middleware import CallNext, Middleware, MiddlewareContext
-from fastmcp.tools.tool import Tool, ToolResult, default_serializer
+from fastmcp.tools.tool import Tool, ToolResult
 from mcp.types import CallToolRequestParams, ListToolsRequest
-from pydantic import BaseModel, ValidationError
+from pydantic import ValidationError
 from structlog import get_logger
 from structlog.contextvars import bind_contextvars
 
@@ -17,6 +18,7 @@ from core.domain.exceptions import DefaultError, InvalidTokenError
 from core.domain.tenant_data import TenantData
 from core.providers._base.provider_error import ProviderError
 from core.services.documentation.documentation_search import DocumentationSearch
+from core.utils.dicts import remove_nulls
 from protocol.api._dependencies._lifecycle import lifecyle_dependencies
 from protocol.api._dependencies._services import completion_runner
 from protocol.api._services.agent_service import AgentService
@@ -48,7 +50,12 @@ class BaseMiddleware(Middleware):
                     with contextlib.suppress(json.JSONDecodeError):
                         context.message.arguments[k] = json.loads(arg)
         try:
-            return await call_next(context)
+            res = await call_next(context)
+            if res.structured_content:
+                # TODO: remove if https://github.com/jlowin/fastmcp/issues/1904 passes
+                # And we can remove nulls at conversion to json object
+                res.structured_content = remove_nulls(res.structured_content)
+            return res
         except ValidationError as e:
             _log.error("Validation error", exc_info=e)
             raise e
@@ -133,9 +140,7 @@ def _add_string_as_acceptable_type(parameters: dict[str, Any]) -> dict[str, Any]
 
 
 def tool_serializer(value: Any) -> str:
-    if isinstance(value, BaseModel):
-        return value.model_dump_json(indent=2, exclude_none=True)
-    return default_serializer(value)
+    return pydantic_core.to_json(value, exclude_none=True).decode()
 
 
 class CustomFastMCP(FastMCP[Any]):
@@ -171,6 +176,8 @@ async def playground_service() -> PlaygroundService:
         deps.storage_builder.agents(tenant.uid),
         deps.storage_builder.experiments(tenant.uid),
         deps.storage_builder.completions(tenant.uid),
+        deps.storage_builder.deployments(tenant.uid),
+        deps.tenant_event_router(tenant.uid),
     )
 
 

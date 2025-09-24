@@ -951,9 +951,14 @@ class TestCachedOutput:
         await client.store_completion(completion, _insert_settings)
 
         # Retrieve the cached output
-        output = await client.cached_output(version_id=completion.version.id, input_id=completion.agent_input.id)
+        output = await client.cached_completion(version_id=completion.version.id, input_id=completion.agent_input.id)
         assert output
-        assert output.model_dump(exclude={"preview"}) == completion.agent_output.model_dump(exclude={"preview"})
+        assert output.id == completion.id
+        assert output.agent_output.model_dump(exclude={"preview"}) == completion.agent_output.model_dump(
+            exclude={"preview"},
+        )
+        assert output.duration_seconds == completion.duration_seconds
+        assert output.cost_usd == completion.cost_usd
 
     async def test_cached_output_none(self, client: ClickhouseClient):
         """Test that None is returned when there is no cached output"""
@@ -962,7 +967,7 @@ class TestCachedOutput:
         await client.store_completion(completion, _insert_settings)
 
         # Retrieve the cached output
-        output = await client.cached_output(version_id="invalid-version-id", input_id=completion.agent_input.id)
+        output = await client.cached_completion(version_id="invalid-version-id", input_id=completion.agent_input.id)
         assert output is None
 
     async def test_error_output_is_not_returned(self, client: ClickhouseClient):
@@ -974,7 +979,7 @@ class TestCachedOutput:
         await client.store_completion(completion, _insert_settings)
 
         # Retrieve the cached output
-        output = await client.cached_output(version_id=completion.version.id, input_id=completion.agent_input.id)
+        output = await client.cached_completion(version_id=completion.version.id, input_id=completion.agent_input.id)
         assert output is None
 
     async def test_skipping_indices(self, client: ClickhouseClient):

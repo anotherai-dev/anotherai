@@ -26,6 +26,30 @@ class ProviderTestCase(ABC):
     def validate_structured_output_request(self, payload: dict[str, Any], request: httpx.Request):
         pass
 
+    @abstractmethod
+    def check_temperature(self, value: float, payload: dict[str, Any], request: httpx.Request):
+        pass
+
+    @abstractmethod
+    def check_max_tokens(self, value: int, payload: dict[str, Any], request: httpx.Request):
+        pass
+
+    @abstractmethod
+    def check_top_p(self, value: float, payload: dict[str, Any], request: httpx.Request):
+        pass
+
+    @abstractmethod
+    def check_presence_penalty(self, value: float, payload: dict[str, Any], request: httpx.Request):
+        pass
+
+    @abstractmethod
+    def check_frequency_penalty(self, value: float, payload: dict[str, Any], request: httpx.Request):
+        pass
+
+    @abstractmethod
+    def check_parallel_tool_calls(self, value: bool, payload: dict[str, Any], request: httpx.Request):
+        pass
+
 
 class OpenAITestCase(ProviderTestCase):
     def provider(self) -> Provider:
@@ -47,6 +71,25 @@ class OpenAITestCase(ProviderTestCase):
             "type": "object",
             "additionalProperties": False,
         }
+
+    def check_temperature(self, value: float, payload: dict[str, Any], request: httpx.Request):
+        assert payload.get("temperature") == value
+
+    def check_max_tokens(self, value: int, payload: dict[str, Any], request: httpx.Request):
+        # max_tokens is deprecated
+        assert payload.get("max_completion_tokens") == value
+
+    def check_top_p(self, value: float, payload: dict[str, Any], request: httpx.Request):
+        assert payload.get("top_p") == value
+
+    def check_presence_penalty(self, value: float, payload: dict[str, Any], request: httpx.Request):
+        assert payload.get("presence_penalty") == value
+
+    def check_frequency_penalty(self, value: float, payload: dict[str, Any], request: httpx.Request):
+        assert payload.get("frequency_penalty") == value
+
+    def check_parallel_tool_calls(self, value: bool, payload: dict[str, Any], request: httpx.Request):
+        assert payload.get("parallel_tool_calls") == value
 
 
 class GroqTestCase(ProviderTestCase):
@@ -76,3 +119,21 @@ class GroqTestCase(ProviderTestCase):
         assert json_schema_str.startswith("json")
         json_schema = json.loads(json_schema_str.removeprefix("json"))
         assert json_schema
+
+    def check_temperature(self, value: float, payload: dict[str, Any], request: httpx.Request):
+        assert payload.get("temperature") == value
+
+    def check_max_tokens(self, value: int, payload: dict[str, Any], request: httpx.Request):
+        assert payload.get("max_tokens") == value
+
+    def check_top_p(self, value: float, payload: dict[str, Any], request: httpx.Request):
+        assert payload.get("top_p") == value
+
+    def check_presence_penalty(self, value: float, payload: dict[str, Any], request: httpx.Request):
+        assert payload.get("presence_penalty") == value
+
+    def check_frequency_penalty(self, value: float, payload: dict[str, Any], request: httpx.Request):
+        assert payload.get("frequency_penalty") == value
+
+    def check_parallel_tool_calls(self, value: bool, payload: dict[str, Any], request: httpx.Request):
+        assert payload.get("parallel_tool_calls") == value

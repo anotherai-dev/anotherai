@@ -1,191 +1,220 @@
 # pyright: reportPrivateUsage=false
 
-from protocol.api._api_models import Message
-from protocol.api._services.playground_service import _extract_input_from_prompts
+from typing import Any
+from unittest.mock import Mock, patch
+
+import pytest
+
+from core.domain.agent_input import AgentInput
+from core.domain.exceptions import BadRequestError
+from core.storage.experiment_storage import CompletionIDTuple
+from protocol.api._api_models import Input, Message, Version
+from protocol.api._services.playground_service import PlaygroundService, _validate_version, _version_with_override
+from tests.fake_models import fake_experiment, fake_input, fake_version
 
 
-class TestExtractInputFromPrompts:
-    def test_common_system_message_extracted_as_prompt(self):
-        """Test that when all prompts start with the same system message, it's extracted as version.prompt."""
-        system_message = Message(role="system", content="You are a helpful assistant.")
-        user_message_1 = Message(role="user", content="What is 2+2?")
-        user_message_2 = Message(role="user", content="What is 3+3?")
+@pytest.fixture
+def mock_completion_runner():
+    from core.services.completion_runner import CompletionRunner
 
-        prompts = [
-            [system_message, user_message_1],
-            [system_message, user_message_2],
+    return Mock(spec=CompletionRunner)
+
+
+@pytest.fixture
+def playground_service(
+    mock_completion_runner: Mock,
+    mock_agent_storage: Mock,
+    mock_experiment_storage: Mock,
+    mock_completion_storage: Mock,
+    mock_deployment_storage: Mock,
+    mock_event_router: Mock,
+):
+    def _add_inputs(experiment_id: str, inputs: list[AgentInput]):
+        return {i.id for i in inputs}
+
+    mock_experiment_storage.add_inputs.side_effect = _add_inputs
+
+    def _add_completions(experiment_id: str, completions: list[CompletionIDTuple]):
+        return {c.completion_id for c in completions}
+
+    mock_experiment_storage.add_completions.side_effect = _add_completions
+
+    return PlaygroundService(
+        completion_runner=mock_completion_runner,
+        agent_storage=mock_agent_storage,
+        experiment_storage=mock_experiment_storage,
+        completion_storage=mock_completion_storage,
+        deployment_storage=mock_deployment_storage,
+        event_router=mock_event_router,
+    )
+
+
+@pytest.fixture
+def patched_start_completions(playground_service: PlaygroundService):
+    with patch.object(playground_service, "_start_experiment_completions") as mock:
+        yield mock
+
+
+class TestValidateVersion:
+    @pytest.mark.parametrize(
+        "model_id",
+        [
+            # Use a few known-good ids and aliases (see core/domain/models/models.py)
+            "gpt-4o-2024-05-13",
+            "gpt-4o-mini-latest",
+            "gpt-4.1-mini-latest",
+        ],
+    )
+    def test_accepts_valid_models(self, model_id: str):
+        v = Version(model=model_id, prompt=[Message(content="You are a helpful assistant", role="system")])
+        out = _validate_version(v)
+        assert out.model  # normalized to canonical id or kept as is
+
+    @pytest.mark.parametrize(
+        "model_id",
+        [
+            "non-existent-model",
+            "",
+        ],
+    )
+    def test_rejects_invalid_models(self, model_id: str):
+        v = Version(model=model_id)
+        with pytest.raises(BadRequestError, match="Invalid model"):
+            _validate_version(v)
+
+    def test_rejects_versions_with_no_prompt(self):
+        v = Version(model="gpt-4o-mini-latest")
+        with pytest.raises(BadRequestError, match="Versions must have an explicit prompt parameter"):
+            _validate_version(v)
+
+
+class TestVersionWithOverride:
+    def test_valid_override_updates_fields(self):
+        base = Version(model="gpt-4o-mini-latest", temperature=0.1, top_p=None)
+        override = {"temperature": 0.5, "top_p": 0.9}
+        out = _version_with_override(base, override)
+        assert out.temperature == 0.5
+        assert out.top_p == 0.9
+        # model is preserved
+        assert out.model
+
+    @pytest.mark.parametrize(
+        "override",
+        [
+            pytest.param({"tools": {"not": "a list"}}, id="wrong type for tools"),  # wrong type for tools
+            pytest.param({"max_output_tokens": "abc"}, id="wrong type for int"),  # wrong type for int
+            pytest.param({"temperature": "hot"}, id="wrong type for float"),  # wrong type for float
+            pytest.param({"not_a_field": "value"}, id="wrong field"),  # wrong field
+        ],
+    )
+    def test_invalid_override_raises(self, override: dict[str, Any]):
+        base = Version(model="gpt-4o-mini-latest")
+        with pytest.raises(BadRequestError, match="Invalid version with override"):
+            _version_with_override(base, override)
+
+
+class TestAddInputsToExperiment:
+    async def test_compute_preview(self, playground_service: PlaygroundService, mock_experiment_storage: Mock):
+        mock_experiment_storage.get_experiment.return_value = fake_experiment()
+
+        inputs = [
+            Input(
+                variables={
+                    # A very long transcript
+                    "transcript": "Good morning everyone. I'm calling from our headquarters in London to discuss the quarterly results. We had excellent performance in our Tokyo office this quarter, with sales up 15%. Our team in Berlin also exceeded expectations. Next month, I'll be traveling to Sydney to meet with our Australian partners, and then heading to Toronto for the North American summit.",
+                },
+            ),
         ]
 
-        extracted_prompts, inputs = _extract_input_from_prompts(prompts)
+        added = await playground_service.add_inputs_to_experiment(
+            "test-experiment",
+            inputs,
+            None,
+        )
+        assert added == ["anotherai/input/3d79eb2916c751bdc814311f6e473f2b"]
+        added_inputs: list[AgentInput] = mock_experiment_storage.add_inputs.call_args[0][1]
+        assert len(added_inputs) == 1
+        assert added_inputs[0].variables == inputs[0].variables
+        assert added_inputs[0].id == "3d79eb2916c751bdc814311f6e473f2b"
+        assert added_inputs[0].preview
+        assert len(added_inputs[0].preview) <= 255
 
-        # The common system message should be extracted as the prompt
-        assert len(extracted_prompts) == 1
-        assert len(extracted_prompts[0]) == 1
-        assert extracted_prompts[0][0] == system_message
+    async def test_start_experiment_completions(
+        self,
+        playground_service: PlaygroundService,
+        mock_experiment_storage: Mock,
+        patched_start_completions: Mock,
+    ):
+        version = fake_version()
+        mock_experiment_storage.get_experiment.return_value = fake_experiment(
+            versions=[version],
+        )
+        await playground_service.add_inputs_to_experiment(
+            "test-experiment",
+            [Input(variables={"name": "John"})],
+            None,
+        )
+        assert patched_start_completions.call_count == 1
+        version_ids = set(patched_start_completions.call_args.kwargs["version_ids"])
+        input_ids = set(patched_start_completions.call_args.kwargs["input_ids"])
+        assert version_ids == {version.id}
+        assert input_ids == {"88aebe2d32e9c7a0e8e3790db4ceddc1"}
 
-        # The remaining messages should be in inputs
-        assert len(inputs) == 2
-        assert inputs[0].messages == [user_message_1]
-        assert inputs[1].messages == [user_message_2]
+    async def test_only_starting_completions_for_inserted_ids(
+        self,
+        playground_service: PlaygroundService,
+        mock_experiment_storage: Mock,
+        patched_start_completions: Mock,
+    ):
+        mock_experiment_storage.get_experiment.return_value = fake_experiment(
+            versions=[fake_version()],
+        )
+        mock_experiment_storage.add_inputs.reset_mock()
 
-    def test_common_developer_message_extracted_as_prompt(self):
-        """Test that when all prompts start with the same developer message, it's extracted as version.prompt."""
-        developer_message = Message(role="developer", content="System configuration: debug mode enabled")
-        user_message_1 = Message(role="user", content="Debug this code")
-        user_message_2 = Message(role="user", content="Debug this other code")
+        def _add_inputs(experiment_id: str, inputs: list[AgentInput]):
+            assert len(inputs) == 2, "sanity"
+            return {inputs[0].id}
 
-        prompts = [
-            [developer_message, user_message_1],
-            [developer_message, user_message_2],
+        mock_experiment_storage.add_inputs.side_effect = _add_inputs
+
+        res = await playground_service.add_inputs_to_experiment(
+            "test-experiment",
+            # Second input ID is 43396217dcb18701763a4d45e4de11b2
+            [Input(variables={"name": "John"}), Input(variables={"name": "Jane"})],
+            None,
+        )
+        assert patched_start_completions.call_count == 1
+        # Only first input ID is included
+        assert set(patched_start_completions.call_args.kwargs["input_ids"]) == {"88aebe2d32e9c7a0e8e3790db4ceddc1"}
+
+        # Order is maintained and all ids are returned
+        assert res == [
+            "anotherai/input/88aebe2d32e9c7a0e8e3790db4ceddc1",
+            "anotherai/input/43396217dcb18701763a4d45e4de11b2",
         ]
 
-        extracted_prompts, inputs = _extract_input_from_prompts(prompts)
 
-        # The common developer message should be extracted as the prompt
-        assert len(extracted_prompts) == 1
-        assert len(extracted_prompts[0]) == 1
-        assert extracted_prompts[0][0] == developer_message
+class TestStartExperimentCompletion:
+    async def test_insert_count(
+        self,
+        playground_service: PlaygroundService,
+        mock_experiment_storage: Mock,
+        mock_event_router: Mock,
+    ):
+        versions = [fake_version(model="gpt-4o-mini-latest"), fake_version(model="gpt-4.1-mini-latest")]
+        inputs = [fake_input(variables={"name": "John"}), fake_input(variables={"name": "Jane"})]
 
-        # The remaining messages should be in inputs
-        assert len(inputs) == 2
-        assert inputs[0].messages == [user_message_1]
-        assert inputs[1].messages == [user_message_2]
+        assert len({v.id for v in versions}) == 2, "sanity"
+        assert len({i.id for i in inputs}) == 2, "sanity"
 
-    def test_different_first_messages_no_extraction(self):
-        """Test that when prompts have different first messages, no common prompt is extracted."""
-        system_message_1 = Message(role="system", content="You are a math tutor.")
-        system_message_2 = Message(role="system", content="You are a science tutor.")
-        user_message_1 = Message(role="user", content="What is 2+2?")
-        user_message_2 = Message(role="user", content="What is gravity?")
+        await playground_service._start_experiment_completions(
+            "test-experiment",
+            version_ids=(v.id for v in versions),
+            input_ids=(i.id for i in inputs),
+        )
+        assert mock_experiment_storage.add_completions.call_count == 1
+        completions = mock_experiment_storage.add_completions.call_args[0][1]
+        assert len(completions) == 4
 
-        prompts = [
-            [system_message_1, user_message_1],
-            [system_message_2, user_message_2],
-        ]
-
-        extracted_prompts, inputs = _extract_input_from_prompts(prompts)
-
-        # No common prompt should be extracted
-        assert len(extracted_prompts) == 0
-
-        # All messages should be in inputs
-        assert len(inputs) == 2
-        assert inputs[0].messages == [system_message_1, user_message_1]
-        assert inputs[1].messages == [system_message_2, user_message_2]
-
-    def test_user_first_message_no_extraction(self):
-        """Test that when first message is user role, no common prompt is extracted."""
-        user_message_1 = Message(role="user", content="What is 2+2?")
-        user_message_2 = Message(role="user", content="What is 3+3?")
-
-        prompts = [
-            [user_message_1],
-            [user_message_2],
-        ]
-
-        extracted_prompts, inputs = _extract_input_from_prompts(prompts)
-
-        # No common prompt should be extracted (first message is user, not system/developer)
-        assert len(extracted_prompts) == 0
-
-        # All messages should be in inputs
-        assert len(inputs) == 2
-        assert inputs[0].messages == [user_message_1]
-        assert inputs[1].messages == [user_message_2]
-
-    def test_assistant_first_message_no_extraction(self):
-        """Test that when first message is assistant role, no common prompt is extracted."""
-        assistant_message_1 = Message(role="assistant", content="Hello, how can I help?")
-        user_message_1 = Message(role="user", content="What is 2+2?")
-
-        prompts = [
-            [assistant_message_1, user_message_1],
-        ]
-
-        extracted_prompts, inputs = _extract_input_from_prompts(prompts)
-
-        # No common prompt should be extracted (first message is assistant, not system/developer)
-        assert len(extracted_prompts) == 0
-
-        # All messages should be in inputs
-        assert len(inputs) == 1
-        assert inputs[0].messages == [assistant_message_1, user_message_1]
-
-    def test_single_prompt_with_system_message(self):
-        """Test that a single prompt with system message is handled correctly."""
-        system_message = Message(role="system", content="You are a helpful assistant.")
-        user_message = Message(role="user", content="What is 2+2?")
-
-        prompts = [
-            [system_message, user_message],
-        ]
-
-        extracted_prompts, inputs = _extract_input_from_prompts(prompts)
-
-        # The system message should be extracted as the prompt
-        assert len(extracted_prompts) == 1
-        assert len(extracted_prompts[0]) == 1
-        assert extracted_prompts[0][0] == system_message
-
-        # The remaining messages should be in inputs
-        assert len(inputs) == 1
-        assert inputs[0].messages == [user_message]
-
-    def test_single_prompt_without_system_message(self):
-        """Test that a single prompt without system message is handled correctly."""
-        user_message = Message(role="user", content="What is 2+2?")
-
-        prompts = [
-            [user_message],
-        ]
-
-        extracted_prompts, inputs = _extract_input_from_prompts(prompts)
-
-        # No common prompt should be extracted
-        assert len(extracted_prompts) == 0
-
-        # All messages should be in inputs
-        assert len(inputs) == 1
-        assert inputs[0].messages == [user_message]
-
-    def test_partial_match_different_second_messages(self):
-        """Test that only the first message needs to match for extraction."""
-        system_message = Message(role="system", content="You are a helpful assistant.")
-        user_message_1 = Message(role="user", content="What is 2+2?")
-        user_message_2 = Message(role="user", content="What is 3+3?")
-        assistant_message = Message(role="assistant", content="I can help with that.")
-
-        prompts = [
-            [system_message, user_message_1, assistant_message],
-            [system_message, user_message_2],  # Different length, but same first message
-        ]
-
-        extracted_prompts, inputs = _extract_input_from_prompts(prompts)
-
-        # The common system message should be extracted as the prompt
-        assert len(extracted_prompts) == 1
-        assert len(extracted_prompts[0]) == 1
-        assert extracted_prompts[0][0] == system_message
-
-        # The remaining messages should be in inputs
-        assert len(inputs) == 2
-        assert inputs[0].messages == [user_message_1, assistant_message]
-        assert inputs[1].messages == [user_message_2]
-
-    def test_tool_role_first_message_no_extraction(self):
-        """Test that when first message is tool role, no common prompt is extracted."""
-        tool_message = Message(role="tool", content="Tool result: success")
-        user_message = Message(role="user", content="What happened?")
-
-        prompts = [
-            [tool_message, user_message],
-        ]
-
-        extracted_prompts, inputs = _extract_input_from_prompts(prompts)
-
-        # No common prompt should be extracted (first message is tool, not system/developer)
-        assert len(extracted_prompts) == 0
-
-        # All messages should be in inputs
-        assert len(inputs) == 1
-        assert inputs[0].messages == [tool_message, user_message]
+        # Check that the event router is called 4 times as well
+        assert mock_event_router.call_count == 4

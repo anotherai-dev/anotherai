@@ -1,14 +1,36 @@
+from collections.abc import Collection
 from datetime import datetime
 from typing import Any, override
+from uuid import UUID
 
 import structlog
+from asyncpg.pool import PoolConnectionProxy
 
-from core.domain.exceptions import ObjectNotFoundError
-from core.domain.experiment import Experiment
-from core.storage.experiment_storage import ExperimentStorage
-from core.storage.psql._psql_base_storage import AgentLinkedRow, JSONDict, PsqlBaseStorage
+from core.domain.agent_input import AgentInput
+from core.domain.agent_output import AgentOutput
+from core.domain.cache_usage import CacheUsage
+from core.domain.exceptions import DuplicateValueError, ObjectNotFoundError
+from core.domain.experiment import Experiment, ExperimentOutput
+from core.domain.version import Version
+from core.storage.experiment_storage import (
+    CompletionIDTuple,
+    CompletionOutputTuple,
+    ExperimentFields,
+    ExperimentOutputFields,
+    ExperimentStorage,
+)
+from core.storage.psql._psql_base_storage import (
+    AgentLinkedRow,
+    JSONDict,
+    JSONList,
+    PsqlBaseRow,
+    PsqlBaseStorage,
+    WithUpdatedAtRow,
+    insert_iterator,
+    psql_serialize_json,
+)
 from core.storage.psql._psql_utils import map_value
-from core.utils.fields import datetime_zero
+from core.utils.fields import datetime_zero, uuid_zero
 from core.utils.iter_utils import safe_map
 
 log = structlog.get_logger(__name__)
@@ -136,8 +158,69 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
             count = await connection.fetchval(query, *arguments)
             return count or 0
 
+    async def _list_experiment_versions(
+        self,
+        connection: PoolConnectionProxy,
+        experiment_uid: int,
+        version_ids: Collection[str] | None = None,
+        full=False,
+    ) -> list[Version]:
+        select = "*" if full else "version_id"
+        where = ["experiment_uid = $1"]
+        args: list[Any] = [experiment_uid]
+        if version_ids:
+            where.append("version_id = ANY($2)")
+            args.append(version_ids)
+        rows = await connection.fetch(
+            f"SELECT {select} FROM experiment_versions WHERE {' AND '.join(where)}",  # noqa: S608
+            *args,
+        )
+        return [self._validate(_ExperimentVersionRow, row).to_domain() for row in rows]
+
+    async def _list_experiment_inputs(
+        self,
+        connection: PoolConnectionProxy,
+        experiment_uid: int,
+        input_ids: Collection[str] | None = None,
+        full=False,
+    ) -> list[AgentInput]:
+        select = "*" if full else "input_id"
+        where: list[str] = ["experiment_uid = $1"]
+        args: list[Any] = [experiment_uid]
+        if input_ids:
+            where.append("input_id = ANY($2)")
+            args.append(input_ids)
+        rows = await connection.fetch(
+            f"SELECT {select} FROM experiment_inputs WHERE {' AND '.join(where)}",  # noqa: S608
+            *args,
+        )
+        return [self._validate(_ExperimentInputRow, row).to_domain() for row in rows]
+
+    @classmethod
+    def _include_versions(cls, include: Collection[ExperimentFields]) -> bool | None:
+        if "versions" in include:
+            return True
+        if "versions.id" in include:
+            return False
+        return None
+
+    @classmethod
+    def _include_inputs(cls, include: Collection[ExperimentFields]) -> bool | None:
+        if "inputs" in include:
+            return True
+        if "inputs.id" in include:
+            return False
+        return None
+
     @override
-    async def get_experiment(self, experiment_id: str) -> Experiment:
+    async def get_experiment(
+        self,
+        experiment_id: str,
+        include: Collection[ExperimentFields] | None = None,
+        version_ids: Collection[str] | None = None,
+        input_ids: Collection[str] | None = None,
+    ) -> Experiment:
+        # TODO:
         async with self._connect() as connection:
             row = await connection.fetchrow(
                 """
@@ -153,10 +236,246 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
             if row is None:
                 raise ObjectNotFoundError(f"Experiment not found: {experiment_id}")
 
-            return self._validate(_ExperimentRow, row).to_domain()
+            experiment_uid = row["uid"]
+            versions: list[Version] | None = None
+            inputs: list[AgentInput] | None = None
+            outputs: list[ExperimentOutput] | None = None
+            if include:
+                version_included = self._include_versions(include)
+                if version_included is not None:
+                    versions = await self._list_experiment_versions(
+                        connection,
+                        experiment_uid,
+                        version_ids=version_ids,
+                        full=version_included,
+                    )
+                input_included = self._include_inputs(include)
+                if input_included is not None:
+                    inputs = await self._list_experiment_inputs(
+                        connection,
+                        experiment_uid,
+                        input_ids=input_ids,
+                        full=input_included,
+                    )
+                if "outputs" in include:
+                    outputs = await self._list_experiment_completions(
+                        connection,
+                        experiment_uid=experiment_uid,
+                        version_ids=version_ids,
+                        input_ids=input_ids,
+                        include={"output"},
+                    )
+
+            return self._validate(_ExperimentRow, row).to_domain(versions=versions, inputs=inputs, outputs=outputs)
+
+    async def _experiment_uid(self, connection: PoolConnectionProxy, experiment_id: str) -> int:
+        row = await connection.fetchrow(
+            "SELECT uid FROM experiments WHERE slug = $1",
+            experiment_id,
+        )
+        if row is None:
+            raise ObjectNotFoundError(f"Experiment not found: {experiment_id}")
+        return row["uid"]
+
+    async def _version_uids(
+        self,
+        connection: PoolConnectionProxy,
+        experiment_uid: int,
+        version_ids: set[str],
+    ) -> dict[str, int]:
+        rows = await connection.fetch(
+            "SELECT uid, version_id FROM experiment_versions WHERE experiment_uid = $1 AND version_id = ANY($2)",
+            experiment_uid,
+            version_ids,
+        )
+        if len(rows) != len(version_ids):
+            raise ObjectNotFoundError(f"Version not found: {version_ids - {row['version_id'] for row in rows}}")
+        return {row["version_id"]: row["uid"] for row in rows}
+
+    async def _input_uids(
+        self,
+        connection: PoolConnectionProxy,
+        experiment_uid: int,
+        input_ids: set[str],
+    ) -> dict[str, int]:
+        rows = await connection.fetch(
+            "SELECT uid, input_id FROM experiment_inputs WHERE experiment_uid = $1 AND input_id = ANY($2)",
+            experiment_uid,
+            input_ids,
+        )
+        if len(rows) != len(input_ids):
+            raise ObjectNotFoundError(f"Input not found: {input_ids - {row['input_id'] for row in rows}}")
+        return {row["input_id"]: row["uid"] for row in rows}
+
+    @override
+    async def add_inputs(self, experiment_id: str, inputs: list[AgentInput]) -> set[str]:
+        async with self._connect() as connection:
+            experiment_uid = await self._experiment_uid(connection, experiment_id)
+            to_insert = (_ExperimentInputRow.from_domain(experiment_uid, input) for input in inputs)
+            values = await connection.fetchmany(
+                f"""INSERT INTO experiment_inputs ({", ".join(_INPUT_INSERT_FIELDS)})
+                VALUES ({", ".join(f"${i + 1}" for i in range(len(_INPUT_INSERT_FIELDS)))})
+                ON CONFLICT (experiment_uid, input_id) DO NOTHING
+                RETURNING input_id""",  # noqa: S608 # OK here since fields is defined above
+                list(insert_iterator(_INPUT_INSERT_FIELDS, to_insert)),
+            )
+            return {input[0] for input in values}
+
+    @override
+    async def add_versions(self, experiment_id: str, versions: list[Version]) -> set[str]:
+        async with self._connect() as connection:
+            experiment_uid = await self._experiment_uid(connection, experiment_id)
+            to_insert = (_ExperimentVersionRow.from_domain(experiment_uid, version) for version in versions)
+            values = await connection.fetchmany(
+                f"""INSERT INTO experiment_versions ({", ".join(_VERSION_INSERT_FIELDS)})
+                VALUES ({", ".join(f"${i + 1}" for i in range(len(_VERSION_INSERT_FIELDS)))})
+                ON CONFLICT (experiment_uid, version_id) DO NOTHING
+                RETURNING version_id""",  # noqa: S608 # OK here since fields is defined above
+                list(insert_iterator(_VERSION_INSERT_FIELDS, to_insert)),
+            )
+            return {version[0] for version in values}
+
+    @override
+    async def add_completions(self, experiment_id: str, completions: list[CompletionIDTuple]) -> set[UUID]:
+        async with self._connect() as connection:
+            experiment_uid = await self._experiment_uid(connection, experiment_id)
+            version_uids = await self._version_uids(
+                connection,
+                experiment_uid,
+                {completion.version_id for completion in completions},
+            )
+            input_uids = await self._input_uids(
+                connection,
+                experiment_uid,
+                {completion.input_id for completion in completions},
+            )
+
+            to_insert = (
+                _ExperimentOutputRow.from_domain(experiment_uid, input_uids, version_uids, completion)
+                for completion in completions
+            )
+            values = await connection.fetchmany(
+                f"""INSERT INTO experiment_outputs ({", ".join(_OUTPUT_INSERT_FIELDS)})
+                VALUES ({", ".join(f"${i + 1}" for i in range(len(_OUTPUT_INSERT_FIELDS)))})
+                ON CONFLICT (experiment_uid, completion_id) DO NOTHING
+                RETURNING completion_id""",  # noqa: S608 # OK here since fields is defined above
+                list(insert_iterator(_OUTPUT_INSERT_FIELDS, to_insert)),
+            )
+            return {completion[0] for completion in values}
+
+    async def _raise_for_completion_not_found(
+        self,
+        connection: PoolConnectionProxy,
+        experiment_uid: int,
+        completion_id: UUID,
+    ) -> None:
+        # Making sure the completion exists
+        found = await connection.fetchval(
+            "SELECT uid FROM experiment_outputs WHERE experiment_uid = $1 AND completion_id = $2",
+            experiment_uid,
+            completion_id,
+        )
+        if not found:
+            raise ObjectNotFoundError(f"Completion not found: {completion_id}")
+
+        raise DuplicateValueError(f"Completion already started: {completion_id}")
+
+    @override
+    async def start_completion(self, experiment_id: str, completion_id: UUID) -> None:
+        async with self._connect() as connection:
+            experiment_uid = await self._experiment_uid(connection, experiment_id)
+            returned = await connection.fetchval(
+                """UPDATE experiment_outputs SET started_at = CURRENT_TIMESTAMP
+                WHERE experiment_uid = $1 AND completion_id = $2 AND started_at IS NULL
+                RETURNING uid""",
+                experiment_uid,
+                completion_id,
+            )
+            if not returned:
+                await self._raise_for_completion_not_found(connection, experiment_uid, completion_id)
+
+    @override
+    async def fail_completion(self, experiment_id: str, completion_id: UUID) -> None:
+        async with self._connect() as connection:
+            experiment_uid = await self._experiment_uid(connection, experiment_id)
+            returned = await connection.fetchval(
+                """UPDATE experiment_outputs SET started_at = NULL
+                WHERE experiment_uid = $1 AND completion_id = $2 AND started_at IS NOT NULL AND completed_at IS NULL
+                RETURNING uid""",
+                experiment_uid,
+                completion_id,
+            )
+            if not returned:
+                await self._raise_for_completion_not_found(connection, experiment_uid, completion_id)
+
+    @override
+    async def add_completion_output(
+        self,
+        experiment_id: str,
+        completion_id: UUID,
+        output: CompletionOutputTuple,
+    ) -> None:
+        async with self._connect() as connection:
+            experiment_uid = await self._experiment_uid(connection, experiment_id)
+            _ = await connection.execute(
+                "UPDATE experiment_outputs SET completed_at = CURRENT_TIMESTAMP, output_messages = $1, output_error = $2, output_preview = $3, cost_usd = $4, duration_seconds = $5 WHERE experiment_uid = $6 AND completion_id = $7",
+                psql_serialize_json(output.output.messages),
+                psql_serialize_json(output.output.error),
+                output.output.preview,
+                output.cost_usd,
+                output.duration_seconds,
+                experiment_uid,
+                completion_id,
+            )
+
+    async def _list_experiment_completions(
+        self,
+        connection: PoolConnectionProxy,
+        experiment_uid: int,
+        version_ids: Collection[str] | None = None,
+        input_ids: Collection[str] | None = None,
+        include: set[ExperimentOutputFields] | None = None,
+    ) -> list[ExperimentOutput]:
+        selects = _ExperimentOutputRow.select_fields(include)
+        args: list[Any] = [experiment_uid]
+        where: list[str] = ["experiment_outputs.experiment_uid = $1"]
+        if version_ids:
+            where.append(f"ev.version_id = ANY(${len(args) + 1})")
+            args.append(version_ids)
+        if input_ids:
+            where.append(f"ei.input_id = ANY(${len(args) + 1})")
+            args.append(input_ids)
+
+        rows = await connection.fetch(
+            f"""SELECT {", ".join(selects)}, ei.input_id as input_id, ev.version_id as version_id
+            FROM experiment_outputs
+            LEFT JOIN experiment_inputs ei ON ei.uid = experiment_outputs.input_uid
+            LEFT JOIN experiment_versions ev ON ev.uid = experiment_outputs.version_uid
+            WHERE {" AND ".join(where)}""",  # noqa: S608
+            *args,
+        )
+        return safe_map(rows, lambda x: self._validate(_ExperimentOutputRow, x).to_domain(), log)
+
+    @override
+    async def list_experiment_completions(
+        self,
+        experiment_id: str,
+        version_ids: Collection[str] | None = None,
+        input_ids: Collection[str] | None = None,
+        include: set[ExperimentOutputFields] | None = None,
+    ) -> list[ExperimentOutput]:
+        async with self._connect() as connection:
+            experiment_uid = await self._experiment_uid(connection, experiment_id)
+            return await self._list_experiment_completions(
+                connection,
+                experiment_uid,
+                version_ids=version_ids,
+                input_ids=input_ids,
+                include=include,
+            )
 
 
-class _ExperimentRow(AgentLinkedRow):
+class _ExperimentRow(AgentLinkedRow, WithUpdatedAtRow):
     """A representation of an experiment row"""
 
     slug: str = ""
@@ -166,8 +485,22 @@ class _ExperimentRow(AgentLinkedRow):
     result: str | None = None
     run_ids: list[str] | None = None
     metadata: JSONDict | None = None
+    use_cache: str | None = None
 
-    def to_domain(self) -> Experiment:
+    def _use_cache_to_domain(self) -> CacheUsage | None:
+        if self.use_cache is None:
+            return None
+        try:
+            return CacheUsage(self.use_cache)
+        except ValueError:
+            return None
+
+    def to_domain(
+        self,
+        versions: list[Version] | None = None,
+        inputs: list[AgentInput] | None = None,
+        outputs: list[ExperimentOutput] | None = None,
+    ) -> Experiment:
         return Experiment(
             id=self.slug,
             created_at=self.created_at or datetime_zero(),
@@ -179,4 +512,142 @@ class _ExperimentRow(AgentLinkedRow):
             agent_id=self.agent_slug or "",
             run_ids=self.run_ids or [],
             metadata=self.metadata or None,
+            use_cache=self._use_cache_to_domain(),
+            versions=versions,
+            inputs=inputs,
+            outputs=outputs,
         )
+
+
+_INPUT_INSERT_FIELDS = ["experiment_uid", "input_id", "input_messages", "input_variables", "input_preview"]
+
+
+class _ExperimentInputRow(PsqlBaseRow):
+    experiment_uid: int | None = None
+    input_id: str | None = None
+    input_messages: JSONList | None = None
+    input_variables: JSONDict | None = None
+    input_preview: str | None = None
+
+    @classmethod
+    def from_domain(cls, experiment_uid: int, input: AgentInput):
+        # TODO: use a separate type for validation
+        dumped = input.model_dump(include={"messages", "variables"})
+        return cls(
+            experiment_uid=experiment_uid,
+            input_id=input.id,
+            input_preview=input.preview,
+            input_messages=dumped["messages"],
+            input_variables=dumped["variables"],
+        )
+
+    def to_domain(self) -> AgentInput:
+        return AgentInput.model_validate(
+            {
+                "id": self.input_id or "",
+                "preview": self.input_preview or "",
+                "messages": self.input_messages,
+                "variables": self.input_variables,
+            },
+        )
+
+
+_VERSION_INSERT_FIELDS = ["experiment_uid", "version_id", "model", "payload"]
+
+
+class _ExperimentVersionRow(PsqlBaseRow):
+    experiment_uid: int | None = None
+    version_id: str | None = None
+    model: str | None = None
+    payload: JSONDict | None = None
+
+    @classmethod
+    def from_domain(cls, experiment_uid: int, version: Version):
+        return cls(
+            experiment_uid=experiment_uid,
+            version_id=version.id,
+            model=version.model,
+            payload=version.model_dump(exclude_none=True),
+        )
+
+    def to_domain(self) -> Version:
+        payload = self.payload or {}
+        if self.version_id is not None:
+            payload["id"] = self.version_id
+        if self.model is not None:
+            payload["model"] = self.model
+        return Version.model_validate(payload)
+
+
+_OUTPUT_INSERT_FIELDS = [
+    "experiment_uid",
+    "completion_id",
+    "version_uid",
+    "input_uid",
+    "started_at",
+    "completed_at",
+    "output_messages",
+    "output_error",
+    "output_preview",
+]
+
+
+class _ExperimentOutputRow(PsqlBaseRow):
+    experiment_uid: int = 0
+    version_uid: int = 0
+    version_id: str | None = None  # from JOIN queries
+    input_uid: int = 0
+    input_id: str | None = None  # from JOIN queries
+    completion_id: UUID | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    output_messages: JSONList | None = None
+    output_error: JSONDict | None = None
+    output_preview: str | None = None
+    cost_usd: float | None = None
+    duration_seconds: float | None = None
+
+    @classmethod
+    def from_domain(
+        cls,
+        experiment_uid: int,
+        input_uids: dict[str, int],
+        version_uids: dict[str, int],
+        completion: CompletionIDTuple,
+    ):
+        return cls(
+            experiment_uid=experiment_uid,
+            version_uid=version_uids[completion.version_id],
+            input_uid=input_uids[completion.input_id],
+            completion_id=completion.completion_id,
+        )
+
+    def to_domain(self) -> ExperimentOutput:
+        return ExperimentOutput(
+            completion_id=self.completion_id or uuid_zero(),
+            version_id=self.version_id or "",
+            input_id=self.input_id or "",
+            created_at=self.created_at or datetime_zero(),
+            started_at=self.started_at,
+            completed_at=self.completed_at,
+            cost_usd=self.cost_usd,
+            duration_seconds=self.duration_seconds,
+            output=AgentOutput.model_validate(
+                {
+                    "messages": self.output_messages,
+                    "error": self.output_error,
+                    "preview": self.output_preview or "",
+                },
+            ),
+        )
+
+    @classmethod
+    def select_fields(cls, include: set[ExperimentOutputFields] | None = None, prefix: str = "experiment_outputs"):
+        base_fields = set(cls.model_fields.keys())
+        base_fields.remove("input_id")
+        base_fields.remove("version_id")
+        if not include or "output" not in include:
+            base_fields.remove("output_messages")
+            base_fields.remove("output_error")
+
+        return [f"{prefix}.{f}" for f in base_fields]
