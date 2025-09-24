@@ -1,5 +1,25 @@
 import { getCompletionsPerVersion } from "@/components/utils/utils";
-import { Annotation, ExperimentCompletion, ExperimentWithLookups } from "@/types/models";
+import { Annotation, ExperimentCompletion, ExperimentWithLookups, Version } from "@/types/models";
+
+/**
+ * Sorts versions to prioritize those with prompt or output schema first.
+ *
+ * @param versions - Array of versions to sort
+ * @returns Array of versions with prompt/schema versions first, maintaining original order within each group
+ */
+export function sortVersionsByPromptAndSchema(versions: Version[]): Version[] {
+  return [...versions].sort((a, b) => {
+    const aHasPromptOrSchema = Boolean(a.prompt || a.output_schema);
+    const bHasPromptOrSchema = Boolean(b.prompt || b.output_schema);
+    
+    // If one has prompt/schema and the other doesn't, prioritize the one that has it
+    if (aHasPromptOrSchema && !bHasPromptOrSchema) return -1;
+    if (!aHasPromptOrSchema && bHasPromptOrSchema) return 1;
+    
+    // If both have or both don't have, maintain original order
+    return 0;
+  });
+}
 
 /**
  * Finds all unique metric keys and their average values from a collection of annotations.
