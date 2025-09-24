@@ -1,5 +1,6 @@
 from datetime import UTC, datetime
 from typing import Literal
+from uuid import UUID
 
 from pydantic import TypeAdapter
 from pydantic_core import ValidationError
@@ -39,7 +40,7 @@ from core.domain.version import Version as DomainVersion
 from core.domain.view import Graph as DomainGraph
 from core.domain.view import View as DomainView
 from core.domain.view import ViewFolder as DomainViewFolder
-from core.utils.uuid import uuid7
+from core.utils.uuid import uuid7, uuid7_generation_time
 from protocol.api._api_models import (
     Agent,
     Annotation,
@@ -310,10 +311,13 @@ def output_to_domain(output: Output) -> DomainOutput:
 
 
 def completion_from_domain(completion: DomainCompletion) -> Completion:
+    # Always derive created_at from the UUID7 ID for consistency
+    created_at = _sanitize_datetime(uuid7_generation_time(UUID(completion.id)))
+
     return Completion(
         id=completion.id,
         agent_id=completion.agent.id,
-        created_at=_sanitize_datetime(completion.created_at) if completion.created_at else None,
+        created_at=created_at,
         version=version_from_domain(completion.version),
         input=input_from_domain(completion.agent_input),
         output=output_from_domain(completion.agent_output),
@@ -327,22 +331,22 @@ def completion_from_domain(completion: DomainCompletion) -> Completion:
 
 
 def completion_to_domain(completion: Completion) -> DomainCompletion:
-    kwargs = {
-        "id": completion.id,
-        "agent": DomainAgent(id=completion.agent_id, uid=0),
-        "version": version_to_domain(completion.version),
-        "agent_input": input_to_domain(completion.input),
-        "agent_output": output_to_domain(completion.output),
-        "messages": [message_to_domain(m) for m in completion.messages] if completion.messages else [],
-        "metadata": completion.metadata or None,
-        "cost_usd": completion.cost_usd or 0.0,
-        "duration_seconds": completion.duration_seconds or 0.0,
-        "traces": [trace_to_domain(t) for t in completion.traces] if completion.traces else [],
-    }
-    # Only include created_at if it's provided
-    if completion.created_at:
-        kwargs["created_at"] = completion.created_at
-    return DomainCompletion(**kwargs)
+    # Always derive created_at from the UUID7 ID for consistency
+    created_at = uuid7_generation_time(UUID(completion.id))
+
+    return DomainCompletion(
+        id=completion.id,
+        agent=DomainAgent(id=completion.agent_id, uid=0),
+        created_at=created_at,
+        version=version_to_domain(completion.version),
+        agent_input=input_to_domain(completion.input),
+        agent_output=output_to_domain(completion.output),
+        messages=[message_to_domain(m) for m in completion.messages] if completion.messages else [],
+        metadata=completion.metadata or None,
+        cost_usd=completion.cost_usd or 0.0,
+        duration_seconds=completion.duration_seconds or 0.0,
+        traces=[trace_to_domain(t) for t in completion.traces] if completion.traces else [],
+    )
 
 
 def experiment_from_domain(
