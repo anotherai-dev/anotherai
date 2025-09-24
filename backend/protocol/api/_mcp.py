@@ -1,13 +1,14 @@
 # ruff: noqa: B008
 # pyright: reportCallInDefaultInitializer=false
 
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from mcp.types import ToolAnnotations
 from pydantic import Field
 
 from core.domain.cache_usage import CacheUsage
 from core.services.documentation.documentation_search import DocumentationSearch
+from core.storage.experiment_storage import ExperimentFields
 from protocol.api import _mcp_utils
 from protocol.api._api_models import (
     Agent,
@@ -18,7 +19,6 @@ from protocol.api._api_models import (
     Deployment,
     Experiment,
     Input,
-    MCPExperiment,
     Model,
     Page,
     QueryCompletionResponse,
@@ -86,7 +86,21 @@ async def create_experiment(
 
 
 @mcp.tool(annotations=ToolAnnotations(idempotentHint=True))
-async def add_experiment_result(id: str, result: str):
+async def add_experiment_result(
+    id: str,
+    result: Annotated[
+        str,
+        Field(
+            description="Comprehensive analysis summary including: model quality comparison, cost analysis, performance metrics, and clear recommendations. Use markdown formatting for readability. This becomes the permanent record of experiment conclusions.",
+        ),
+    ],
+):
+    """Complete an experiment by adding analysis results and recommendations.
+
+    This should be the FINAL step after analyzing all experiment outputs. Use this to
+    summarize findings, compare model performance, and provide actionable recommendations
+    based on the experiment data. The experiment is not considered complete until results are added.
+    """
     await (await _mcp_utils.experiment_service()).set_experiment_result(id, result)
     return "success"
 
@@ -159,6 +173,10 @@ async def get_experiment(
     id: Annotated[str, Field(description="the id of the experiment")],
     version_ids: Annotated[list[str] | None, Field(description="version ids to filter the experiment outputs")] = None,
     input_ids: Annotated[list[str] | None, Field(description="input ids to filter the experiment outputs")] = None,
+    include: Annotated[
+        set[ExperimentFields | Literal["annotations"]] | None,
+        Field(description="fields to include in the experiment"),
+    ] = None,
     max_wait_time_seconds: Annotated[
         float,
         Field(
@@ -166,14 +184,18 @@ async def get_experiment(
             "At the end of the time, the experiment is returned even if the completions are not ready.",
         ),
     ] = 30,
-) -> MCPExperiment:
+) -> Experiment:
     """Waits for the experiment's completions to be ready and returns the experiment,
-    including the associated versions and inputs and outputs."""
+    including the associated versions and inputs and outputs.
+
+    Note: If the experiment shows empty 'result' field, you should analyze the completion
+    data and call add_experiment_result to complete the experiment with your findings."""
     return await (await _mcp_utils.experiment_service()).wait_for_experiment(
         id,
         version_ids=version_ids,
         input_ids=input_ids,
         max_wait_time_seconds=max_wait_time_seconds,
+        include=include,
     )
 
 

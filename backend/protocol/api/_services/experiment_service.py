@@ -1,22 +1,22 @@
 import asyncio
 import time
 from collections.abc import Collection
-from typing import Any, final
+from typing import Any, Literal, cast, final
 
 from core.domain.agent import Agent
+from core.domain.annotation import Annotation
 from core.domain.cache_usage import CacheUsage
 from core.domain.exceptions import ObjectNotFoundError
 from core.storage.agent_storage import AgentStorage
 from core.storage.annotation_storage import AnnotationStorage, TargetFilter
 from core.storage.completion_storage import CompletionStorage
-from core.storage.experiment_storage import ExperimentStorage
+from core.storage.experiment_storage import ExperimentFields, ExperimentStorage
 from core.utils.background import add_background_task
 from core.utils.hash import HASH_REGEXP_32
-from protocol.api._api_models import CreateExperimentRequest, Experiment, MCPExperiment, Page
+from protocol.api._api_models import CreateExperimentRequest, Experiment, Page
 from protocol.api._services.conversions import (
     create_experiment_to_domain,
     experiment_from_domain,
-    mcp_experiment_from_domain,
 )
 from protocol.api._services.utils_service import IDType, sanitize_ids
 
@@ -41,7 +41,8 @@ class ExperimentService:
         version_ids: list[str] | None,
         input_ids: list[str] | None,
         max_wait_time_seconds: float,
-    ) -> MCPExperiment:
+        include: set[ExperimentFields | Literal["annotations"]] | None,
+    ) -> Experiment:
         # we need a list here because we want to order the returned outputs the same way the versions and inputs
         # are ordered
         sanitized_versions = list(sanitize_ids(version_ids, IDType.VERSION, HASH_REGEXP_32)) if version_ids else None
@@ -63,19 +64,11 @@ class ExperimentService:
 
             await asyncio.sleep(5)
 
-        exp = await self.experiment_storage.get_experiment(
+        return await self.get_experiment(
             experiment_id,
-            include={"versions", "inputs"},
-            version_ids=version_ids,
-            input_ids=input_ids,
-        )
-
-        return mcp_experiment_from_domain(
-            exp,
-            f"""
-            -- the cost_usd and duration_seconds are coalesced to handle cases where the completion was cached
-            SELECT id, input_id, version_id, output_id, output_messages, output_error, COALESCE(cost_usd, toFloat64OrNull(metadata['anotherai/original_cost_usd'])), COALESCE(duration_seconds, toFloat64OrNull(metadata['anotherai/original_duration_seconds']))
-            FROM completions WHERE metadata['anotherai/experiment_id'] = '{exp.id}'""",  # noqa: S608 # exp.id is sanitized
+            version_ids=sanitized_versions,
+            input_ids=sanitized_inputs,
+            include=include or {"outputs", "versions", "inputs", "annotations"},
         )
 
     async def get_experiment(
@@ -83,20 +76,23 @@ class ExperimentService:
         experiment_id: str,
         version_ids: Collection[str] | None,
         input_ids: Collection[str] | None,
+        include: set[ExperimentFields | Literal["annotations"]] | None = None,
     ) -> Experiment:
         exp = await self.experiment_storage.get_experiment(
             experiment_id,
-            include={"versions", "inputs", "outputs"},
+            include=cast(Collection[ExperimentFields], include) if include else {"outputs", "versions", "inputs"},
             version_ids=version_ids,
             input_ids=input_ids,
         )
 
-        annotations = await self.annotation_storage.list(
-            target=TargetFilter(completion_id=set(exp.run_ids)),
-            context=None,
-            since=None,
-            limit=100,
-        )
+        annotations: list[Annotation] = []
+        if include is None or "annotations" in include:
+            annotations = await self.annotation_storage.list(
+                target=TargetFilter(completion_id=set(exp.run_ids)),
+                context=None,
+                since=None,
+                limit=100,
+            )
 
         # getting annotations as needed
         return experiment_from_domain(exp, annotations)
