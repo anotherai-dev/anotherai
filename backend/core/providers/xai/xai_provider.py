@@ -71,11 +71,12 @@ class XAIProvider(HTTPXProvider[XAIConfig, CompletionResponse]):
     def model_name(cls, options: ProviderOptions, model_data: ModelData) -> tuple[str, str | None]:
         final_reasoning = options.final_reasoning_effort(model_data.reasoning)
         model = options.model
-        if model == Model.GROK_4_FAST and final_reasoning == ReasoningEffort.DISABLED:
-            model = "grok-4-fast-non-reasoning"
-            final_reasoning = None
-        else:
-            model = "grok-4-fast-reasoning"
+        if model == Model.GROK_4_FAST:
+            if final_reasoning == ReasoningEffort.DISABLED:
+                model = "grok-4-fast-non-reasoning"
+                final_reasoning = None
+            else:
+                model = "grok-4-fast-reasoning"
         return (model, final_reasoning)
 
     @override

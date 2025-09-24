@@ -62,7 +62,7 @@ def _mock_provider(name: Provider, complete_side_effect: Any | None = None) -> M
 
 def _final_model_data(
     providers: list[Provider],
-    model: Model = Model.DEEPSEEK_R1_2501,
+    model: Model = Model.DEEPSEEK_R1_0528,
     fallback: ModelFallback | None = None,
 ):
     model_data = test_models.fake_model_data()
@@ -237,7 +237,7 @@ class TestProviderIterator:
             pipeline = ProviderPipeline(
                 agent_id="",
                 version=Version(
-                    model=Model.DEEPSEEK_R1_2501,
+                    model=Model.DEEPSEEK_R1_0528,
                     provider=None,
                     use_structured_generation=None,
                 ),
@@ -364,9 +364,9 @@ class TestProviderIterator:
             pytest.param(None, [(Provider.ANTHROPIC, Model.CLAUDE_4_OPUS_20250514)], id="None"),
             pytest.param(
                 # Deepseek will raise
-                [Model.DEEPSEEK_R1_2501, Model.GEMINI_2_0_FLASH_001],
+                [Model.DEEPSEEK_R1_0528, Model.GEMINI_2_0_FLASH_001],
                 [
-                    (Provider.FIREWORKS, Model.DEEPSEEK_R1_2501),
+                    (Provider.FIREWORKS, Model.DEEPSEEK_R1_0528),
                     (Provider.GOOGLE, Model.GEMINI_2_0_FLASH_001),
                 ],
                 id="list with first model raising",

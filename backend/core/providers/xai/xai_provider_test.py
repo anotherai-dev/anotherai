@@ -50,7 +50,7 @@ class TestBuildRequest:
                 MessageDeprecated(role=MessageDeprecated.Role.SYSTEM, content="Hello 1"),
                 MessageDeprecated(role=MessageDeprecated.Role.USER, content="Hello"),
             ],
-            options=ProviderOptions(model=Model.GPT_4O_2024_11_20, max_tokens=10, temperature=0),
+            options=ProviderOptions(model=Model.GROK_4_0709, max_tokens=10, temperature=0),
             stream=False,
         )
         assert isinstance(request, CompletionRequest)
@@ -74,7 +74,7 @@ class TestBuildRequest:
                 MessageDeprecated(role=MessageDeprecated.Role.SYSTEM, content="Hello 1"),
                 MessageDeprecated(role=MessageDeprecated.Role.USER, content="Hello"),
             ],
-            options=ProviderOptions(model=Model.GPT_4O_2024_11_20, temperature=0),
+            options=ProviderOptions(model=Model.GROK_4_0709, temperature=0),
             stream=False,
         )
         assert isinstance(request, CompletionRequest)
@@ -91,7 +91,7 @@ class TestBuildRequest:
         ]
         assert request.temperature == 0
         assert request.max_tokens is None
-        # model_data = get_model_data(Model.GPT_4O_2024_11_20)
+        # model_data = get_model_data(Model.GROK_4_0709)
         # if model_data.max_tokens_data.max_output_tokens:
         #     assert request.max_tokens == model_data.max_tokens_data.max_output_tokens
         # else:
@@ -154,7 +154,7 @@ class TestBuildRequest:
             xai_provider._build_request(  # pyright: ignore [reportPrivateUsage]
                 messages=[MessageDeprecated(role=MessageDeprecated.Role.USER, content="Hello")],
                 options=ProviderOptions(
-                    model=Model.GPT_4O_2024_11_20,
+                    model=Model.GROK_4_0709,
                     tool_choice="auto",
                 ),
                 stream=False,
@@ -162,7 +162,7 @@ class TestBuildRequest:
         )
         # We can exclude None values because the HTTPxProvider does the same
         assert request.model_dump(include={"messages", "tool_choice", "model"}, exclude_none=True) == {
-            "model": "gpt-4o-2024-11-20",
+            "model": "grok-4-0709",
             "messages": [
                 {
                     "role": "user",
@@ -210,9 +210,9 @@ def mock_xai_stream(httpx_mock: HTTPXMock):
         url="https://api.x.ai/v1/chat/completions",
         stream=IteratorStream(
             [
-                b'data: {"id":"1","object":"chat.completion.chunk","created":1720404416,"model":"gpt-3.5-turbo-1106","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,',
-                b'"finish_reason":null}]}\n\ndata: {"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"gpt-3.5-turbo-1106","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"content":"{\\n"},"logprobs":null,"finish_reason":null}]}\n\n',
-                b'data: {"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"gpt-3.5-turbo-1106","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"content":"\\"greeting\\": \\"Hello James!\\"\\n}"},"logprobs":null,"finish_reason":null}]}\n\n',
+                b'data: {"id":"1","object":"chat.completion.chunk","created":1720404416,"model":"grok-4-fast-reasoning","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,',
+                b'"finish_reason":null}]}\n\ndata: {"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"grok-4-fast-reasoning","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"content":"{\\n"},"logprobs":null,"finish_reason":null}]}\n\n',
+                b'data: {"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"grok-4-fast-reasoning","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"content":"\\"greeting\\": \\"Hello James!\\"\\n}"},"logprobs":null,"finish_reason":null}]}\n\n',
                 b"data: [DONE]\n\n",
             ],
         ),
@@ -225,9 +225,9 @@ class TestSingleStream:
             url="https://api.x.ai/v1/chat/completions",
             stream=IteratorStream(
                 [
-                    b'data: {"id":"1","object":"chat.completion.chunk","created":1720404416,"model":"gpt-3.5-turbo-1106","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,',
-                    b'"finish_reason":null}]}\n\ndata: {"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"gpt-3.5-turbo-1106","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"content":"{\\n"},"logprobs":null,"finish_reason":null}]}\n\n',
-                    b'data: {"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"gpt-3.5-turbo-1106","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"content":"\\"greeting\\": \\"Hello James!\\"\\n}"},"logprobs":null,"finish_reason":null}]}\n\n',
+                    b'data: {"id":"1","object":"chat.completion.chunk","created":1720404416,"model":"grok-4-fast-reasoning","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,',
+                    b'"finish_reason":null}]}\n\ndata: {"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"grok-4-fast-reasoning","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"content":"{\\n"},"logprobs":null,"finish_reason":null}]}\n\n',
+                    b'data: {"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"grok-4-fast-reasoning","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"content":"\\"greeting\\": \\"Hello James!\\"\\n}"},"logprobs":null,"finish_reason":null}]}\n\n',
                     b"data: [DONE]\n\n",
                 ],
             ),
@@ -327,9 +327,9 @@ class TestStream:
             url="https://api.x.ai/v1/chat/completions",
             stream=IteratorStream(
                 [
-                    b'data: {"id":"1","object":"chat.completion.chunk","created":1720404416,"model":"gpt-3.5-turbo-1106","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,',
-                    b'"finish_reason":null}]}\n\ndata: {"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"gpt-3.5-turbo-1106","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"content":"{\\n"},"logprobs":null,"finish_reason":null}]}\n\n',
-                    b'data: {"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"gpt-3.5-turbo-1106","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"content":"\\"greeting\\": \\"Hello James!\\"\\n}"},"logprobs":null,"finish_reason":null}]}\n\n',
+                    b'data: {"id":"1","object":"chat.completion.chunk","created":1720404416,"model":"grok-4-fast-reasoning","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,',
+                    b'"finish_reason":null}]}\n\ndata: {"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"grok-4-fast-reasoning","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"content":"{\\n"},"logprobs":null,"finish_reason":null}]}\n\n',
+                    b'data: {"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"grok-4-fast-reasoning","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"content":"\\"greeting\\": \\"Hello James!\\"\\n}"},"logprobs":null,"finish_reason":null}]}\n\n',
                     b"data: [DONE]\n\n",
                 ],
             ),
@@ -340,7 +340,7 @@ class TestStream:
         streamer = provider.stream(
             [Message.with_text("Hello")],
             options=ProviderOptions(
-                model=Model.GPT_3_5_TURBO_1106,
+                model=Model.GROK_4_FAST,
                 max_tokens=10,
                 temperature=0,
                 output_schema={"type": "object"},
@@ -356,7 +356,7 @@ class TestStream:
         body = json.loads(request.read().decode())
         assert body == {
             "max_tokens": 10,
-            "model": "gpt-3.5-turbo-1106",
+            "model": "grok-4-fast-reasoning",
             "messages": [
                 {
                     "content": "Hello",
@@ -417,7 +417,7 @@ class TestComplete:
                 ),
             ],
             options=ProviderOptions(
-                model=Model.GPT_3_5_TURBO_1106,
+                model=Model.GROK_4_FAST,
                 max_tokens=10,
                 temperature=0,
                 output_schema={"type": "object"},
@@ -432,7 +432,7 @@ class TestComplete:
         body = json.loads(request.read().decode())
         assert body == {
             "max_tokens": 10,
-            "model": "gpt-3.5-turbo-1106",
+            "model": "grok-4-fast-reasoning",
             "messages": [
                 {
                     "content": [
@@ -530,7 +530,7 @@ class TestComplete:
                 ),
             ],
             options=ProviderOptions(
-                model=Model.GPT_4O_MINI_2024_07_18,
+                model=Model.GROK_CODE_FAST_1,
                 max_tokens=10,
                 temperature=0,
                 task_name="hello",
@@ -548,7 +548,7 @@ class TestComplete:
         body = json.loads(request.read().decode())
         assert body == {
             "max_tokens": 10,
-            "model": "gpt-4o-mini-2024-07-18",
+            "model": "grok-code-fast-1",
             "messages": [
                 {
                     "content": [
@@ -684,7 +684,7 @@ class TestCheckValid:
 class TestExtractStreamDelta:
     def test_extract_stream_delta(self, xai_provider: XAIProvider):
         delta = xai_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
-            b'{"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"gpt-3.5-turbo-1106","system_fingerprint":"fp_44132a4de3","usage": {"prompt_tokens": 35, "completion_tokens": 109, "total_tokens": 144},"choices":[{"index":0,"delta":{"content":"\\"greeting\\": \\"Hello James!\\"\\n}"},"logprobs":null,"finish_reason":null}]}',
+            b'{"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"grok-4-fast-reasoning","system_fingerprint":"fp_44132a4de3","usage": {"prompt_tokens": 35, "completion_tokens": 109, "total_tokens": 144},"choices":[{"index":0,"delta":{"content":"\\"greeting\\": \\"Hello James!\\"\\n}"},"logprobs":null,"finish_reason":null}]}',
         )
         assert delta.delta == '"greeting": "Hello James!"\n}'
         assert delta.usage == LLMUsage(prompt_token_count=35, completion_token_count=109)
