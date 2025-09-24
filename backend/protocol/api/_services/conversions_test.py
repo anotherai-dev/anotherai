@@ -17,6 +17,8 @@ from protocol.api._api_models import (
     ToolCallResult,
 )
 from protocol.api._services.conversions import (
+    completion_from_domain,
+    completion_to_domain,
     experiments_url,
     graph_from_domain,
     graph_to_domain,
@@ -32,7 +34,7 @@ from protocol.api._services.conversions import (
     view_to_domain,
     view_url,
 )
-from tests.fake_models import fake_graph, fake_version, fake_view
+from tests.fake_models import fake_completion, fake_graph, fake_version, fake_view
 
 
 @pytest.fixture(autouse=True)
@@ -397,3 +399,78 @@ class TestUsageConversion:
         assert converted_domain.prompt.cost_usd == original_domain.prompt.cost_usd
         assert converted_domain.completion.text_token_count == original_domain.completion.text_token_count
         assert converted_domain.completion.cost_usd == original_domain.completion.cost_usd
+
+
+class TestCompletionConversion:
+    def test_completion_from_domain_includes_created_at(self):
+        """Test that completion_from_domain derives created_at from UUID7 ID."""
+        from datetime import datetime, UTC
+        from uuid import UUID
+        from core.utils.uuid import uuid7_generation_time
+
+        # Create a fake completion with a UUID7 ID
+        domain_completion = fake_completion(id_rand=12345)
+
+        # Convert to API model
+        api_completion = completion_from_domain(domain_completion)
+
+        # Verify created_at is set and matches the UUID7 timestamp
+        assert api_completion.created_at is not None
+        expected_created_at = uuid7_generation_time(UUID(domain_completion.id))
+        # Compare timestamps (allowing for microsecond sanitization)
+        assert api_completion.created_at.replace(microsecond=0, tzinfo=UTC) == expected_created_at.replace(microsecond=0, tzinfo=UTC)
+
+    def test_completion_to_domain_derives_created_at_from_uuid(self):
+        """Test that completion_to_domain always derives created_at from UUID7 ID."""
+        from datetime import datetime, UTC
+        from uuid import UUID
+        from core.utils.uuid import uuid7, uuid7_generation_time
+
+        # Create a UUID7 with a specific timestamp
+        test_id = str(uuid7(ms=lambda: 1000000, rand=lambda: 42))
+
+        # Create an API completion with the UUID7 ID
+        from protocol.api._api_models import Completion, Version, Input, Output
+        api_completion = Completion(
+            id=test_id,
+            agent_id="test-agent",
+            created_at=datetime(2020, 1, 1, tzinfo=UTC),  # This should be ignored
+            version=Version(id="v1", model="gpt-4"),
+            input=Input(id="input1", messages=[], variables={}),
+            output=Output(id="output1", messages=[]),
+            messages=[],
+            metadata={},
+            cost_usd=0.01,
+            duration_seconds=1.0,
+        )
+
+        # Convert to domain model
+        domain_completion = completion_to_domain(api_completion)
+
+        # Verify created_at is derived from UUID, not from the provided value
+        expected_created_at = uuid7_generation_time(UUID(test_id))
+        assert domain_completion.created_at == expected_created_at
+        assert domain_completion.created_at != datetime(2020, 1, 1, tzinfo=UTC)
+
+    def test_completion_round_trip_preserves_created_at(self):
+        """Test that converting back and forth preserves the created_at derived from UUID."""
+        from datetime import UTC
+        from uuid import UUID
+        from core.utils.uuid import uuid7_generation_time
+
+        # Create a fake completion
+        original_domain = fake_completion(id_rand=99999)
+
+        # Round trip: domain -> API -> domain
+        api_completion = completion_from_domain(original_domain)
+        converted_domain = completion_to_domain(api_completion)
+
+        # The created_at should be the same (derived from UUID)
+        expected_created_at = uuid7_generation_time(UUID(original_domain.id))
+        assert converted_domain.created_at == expected_created_at
+
+        # Round trip again: domain -> API
+        api_completion2 = completion_from_domain(converted_domain)
+
+        # Should have the same created_at
+        assert api_completion2.created_at.replace(microsecond=0, tzinfo=UTC) == api_completion.created_at.replace(microsecond=0, tzinfo=UTC)
