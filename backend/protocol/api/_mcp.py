@@ -1,13 +1,14 @@
 # ruff: noqa: B008
 # pyright: reportCallInDefaultInitializer=false
 
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from mcp.types import ToolAnnotations
 from pydantic import Field
 
 from core.domain.cache_usage import CacheUsage
 from core.services.documentation.documentation_search import DocumentationSearch
+from core.storage.experiment_storage import ExperimentFields
 from protocol.api import _mcp_utils
 from protocol.api._api_models import (
     Agent,
@@ -18,7 +19,6 @@ from protocol.api._api_models import (
     Deployment,
     Experiment,
     Input,
-    MCPExperiment,
     Model,
     Page,
     QueryCompletionResponse,
@@ -173,6 +173,10 @@ async def get_experiment(
     id: Annotated[str, Field(description="the id of the experiment")],
     version_ids: Annotated[list[str] | None, Field(description="version ids to filter the experiment outputs")] = None,
     input_ids: Annotated[list[str] | None, Field(description="input ids to filter the experiment outputs")] = None,
+    include: Annotated[
+        set[ExperimentFields | Literal["annotations"]] | None,
+        Field(description="fields to include in the experiment"),
+    ] = None,
     max_wait_time_seconds: Annotated[
         float,
         Field(
@@ -180,7 +184,7 @@ async def get_experiment(
             "At the end of the time, the experiment is returned even if the completions are not ready.",
         ),
     ] = 30,
-) -> MCPExperiment:
+) -> Experiment:
     """Waits for the experiment's completions to be ready and returns the experiment,
     including the associated versions and inputs and outputs.
 
@@ -191,6 +195,7 @@ async def get_experiment(
         version_ids=version_ids,
         input_ids=input_ids,
         max_wait_time_seconds=max_wait_time_seconds,
+        include=include,
     )
 
 

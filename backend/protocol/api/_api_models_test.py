@@ -1,6 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
+from core.domain.reasoning_effort import ReasoningEffort
 from protocol.api._api_models import ToolCallResult, Version
 
 
@@ -12,6 +13,15 @@ class TestVersion:
             },
         )
         assert only_model.model == "gpt-4o"
+
+    def test_reasoning_effort(self):
+        version = Version.model_validate(
+            {
+                "model": "gpt-4o",
+                "reasoning_effort": "disabled",
+            },
+        )
+        assert version.reasoning_effort == ReasoningEffort.DISABLED
 
 
 class TestToolCallResult:

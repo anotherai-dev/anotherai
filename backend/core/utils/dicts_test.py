@@ -11,6 +11,7 @@ from .dicts import (
     deep_merge,
     delete_at_keypath,
     get_at_keypath_str,
+    remove_nulls,
     set_at_keypath_str,
 )
 
@@ -184,3 +185,16 @@ class TestDeleteAtKeypath:
     )
     def test_delete_keypath(self, d: Any, key_path: str, expected: Any):
         assert delete_at_keypath(d, key_path.split(".")) == expected
+
+
+class TestRemoveNulls:
+    @pytest.mark.parametrize(
+        ("d", "expected"),
+        [
+            pytest.param({"a": 1, "b": None}, {"a": 1}, id="dict with None is removed"),
+            pytest.param({"a": {"b": 1, "c": None}}, {"a": {"b": 1}}, id="nested dict with None is removed"),
+            pytest.param({"a": [1, None]}, {"a": [1, None]}, id="list with None is preserved"),
+        ],
+    )
+    def test_remove_nulls(self, d: Any, expected: Any):
+        assert remove_nulls(d) == expected

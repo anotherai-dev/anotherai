@@ -97,7 +97,7 @@ class OutputSchema(BaseModel):
 
 
 class Version(BaseModel):
-    model_config = ConfigDict(revalidate_instances="always", extra="forbid", strict=True)
+    model_config = ConfigDict(revalidate_instances="always", extra="forbid")
 
     id: str = Field(description="The id of the version. Auto generated.", default="")
     model: str
@@ -420,32 +420,30 @@ class ExperimentItem(BaseModel):
     user_id: str
     title: str
     description: str
-    result: str | None
+    result: str | None = None
 
 
-class _BaseExperiment(BaseModel):
+class Experiment(BaseModel):
     id: str
     created_at: datetime
-    updated_at: datetime | None = Field(description="When the experiment was last updated.")
+    updated_at: datetime | None = Field(default=None, description="When the experiment was last updated.")
     author_name: str
     url: str
 
     title: str = Field(description="The title of the experiment.")
     description: str = Field(description="The description of the experiment.")
-    result: str | None = Field(description="A user defined result of the experiment.")
+    result: str | None = Field(default=None, description="A user defined result of the experiment.")
     agent_id: str = Field(description="The agent that created the experiment.")
 
-    versions: list[Version] | None
+    versions: list[Version] | None = None
 
-    inputs: list[Input] | None
+    inputs: list[Input] | None = None
 
     metadata: dict[str, Any] | None = Field(
         default=None,
         description="Metadata associated with the experiment. Can be used to store additional information about the experiment.",
     )
 
-
-class Experiment(_BaseExperiment):
     class Completion(BaseModel):
         id: UUID
         # Only IDs are provided here but they have the same format as in the full object (completion.input.id)
@@ -455,15 +453,12 @@ class Experiment(_BaseExperiment):
         cost_usd: float
         duration_seconds: float
 
-    completions: list[Completion] | None = Field(description="The completions of the experiment.")
+    completions: list[Completion] | None = Field(default=None, description="The completions of the experiment.")
 
     annotations: list[Annotation] | None = Field(
+        default=None,
         description="Annotations associated with the experiment, either tied to the experiment only or to a completion within the experiment.",
     )
-
-
-class MCPExperiment(_BaseExperiment):
-    completion_query: Annotated[str, Field(description="A SQL query to fetch the completions of the experiment.")]
 
 
 class CreateExperimentRequest(BaseModel):
@@ -769,7 +764,7 @@ class APIKey(BaseModel):
     name: str
     partial_key: str
     created_at: datetime
-    last_used_at: datetime | None
+    last_used_at: datetime | None = None
     created_by: str
 
 

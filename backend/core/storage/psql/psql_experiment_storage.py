@@ -197,7 +197,7 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
         return [self._validate(_ExperimentInputRow, row).to_domain() for row in rows]
 
     @classmethod
-    def _include_versions(cls, include: set[ExperimentFields]) -> bool | None:
+    def _include_versions(cls, include: Collection[ExperimentFields]) -> bool | None:
         if "versions" in include:
             return True
         if "versions.id" in include:
@@ -205,7 +205,7 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
         return None
 
     @classmethod
-    def _include_inputs(cls, include: set[ExperimentFields]) -> bool | None:
+    def _include_inputs(cls, include: Collection[ExperimentFields]) -> bool | None:
         if "inputs" in include:
             return True
         if "inputs.id" in include:
@@ -216,7 +216,7 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
     async def get_experiment(
         self,
         experiment_id: str,
-        include: set[ExperimentFields] | None = None,
+        include: Collection[ExperimentFields] | None = None,
         version_ids: Collection[str] | None = None,
         input_ids: Collection[str] | None = None,
     ) -> Experiment:

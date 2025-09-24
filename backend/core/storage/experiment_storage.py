@@ -57,7 +57,7 @@ class ExperimentStorage(Protocol):
     async def get_experiment(
         self,
         experiment_id: str,
-        include: set[ExperimentFields] | None = None,
+        include: Collection[ExperimentFields] | None = None,
         version_ids: Collection[str] | None = None,
         input_ids: Collection[str] | None = None,
     ) -> Experiment: ...
