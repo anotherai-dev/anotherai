@@ -1,4 +1,5 @@
 import { cx } from "class-variance-authority";
+import { JSONDisplay } from "@/components/JSONDisplay";
 import { SchemaViewer } from "@/components/SchemaViewer";
 import { OutputSchema } from "@/types/models";
 
@@ -36,8 +37,8 @@ export function CompletionOutputSchemaCell({
 
   // Fallback for unexpected format
   return (
-    <div className={cx("text-xs text-gray-600 overflow-hidden", maxWidth)}>
-      <pre className="whitespace-pre-wrap">{JSON.stringify(value, null, 2).substring(0, 200)}...</pre>
+    <div className={cx("overflow-hidden", maxWidth)}>
+      <JSONDisplay value={value} variant="minimal" maxLength={200} />
     </div>
   );
 }

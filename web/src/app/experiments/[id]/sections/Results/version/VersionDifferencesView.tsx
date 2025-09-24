@@ -4,18 +4,19 @@ import { useMemo, useState } from "react";
 import { HoverPopover } from "@/components/HoverPopover";
 import { AnnotationsView } from "@/components/annotations/AnnotationsView";
 import { Annotation, Version } from "@/types/models";
+import { VersionDifferenceItem } from "./VersionDifferenceItem";
 
-type VersionOptionalKeysViewProps = {
+type VersionDifferencesViewProps = {
   version: Version;
-  optionalKeysToShow: string[];
+  differingKeys: string[];
   annotations?: Annotation[];
   experimentId?: string;
   completionId?: string;
   index?: number;
 };
 
-export function VersionOptionalKeysView(props: VersionOptionalKeysViewProps) {
-  const { version, optionalKeysToShow, annotations, experimentId, completionId, index } = props;
+export function VersionDifferencesView(props: VersionDifferencesViewProps) {
+  const { version, differingKeys, annotations, experimentId, completionId, index } = props;
   const [showAddForm, setShowAddForm] = useState<string | null>(null);
 
   const handleAddAnnotation = (key: string) => (e?: React.MouseEvent) => {
@@ -25,7 +26,7 @@ export function VersionOptionalKeysView(props: VersionOptionalKeysViewProps) {
   };
 
   const keysAndValuesToShow = useMemo(() => {
-    return optionalKeysToShow
+    return differingKeys
       .map((key) => {
         const value = version[key as keyof Version];
         return {
@@ -41,7 +42,7 @@ export function VersionOptionalKeysView(props: VersionOptionalKeysViewProps) {
         if (typeof value === "object" && Object.keys(value).length === 0) return false;
         return true;
       });
-  }, [version, optionalKeysToShow]);
+  }, [version, differingKeys]);
 
   if (keysAndValuesToShow.length === 0) {
     return null;
@@ -71,22 +72,10 @@ export function VersionOptionalKeysView(props: VersionOptionalKeysViewProps) {
                 popoverClassName="bg-white border border-gray-200"
                 className="w-full block"
               >
-                <div
-                  className="flex items-center justify-between px-2 py-1 text-xs rounded font-medium bg-gray-100 border border-gray-200 text-gray-700 w-full hover:bg-gray-200 cursor-pointer transition-colors"
-                  onClick={handleAddAnnotation(key)}
-                >
-                  <span className="text-gray-500 capitalize">{key}</span>
-                  <span className="font-semibold">{String(value)}</span>
-                </div>
+                <VersionDifferenceItem keyName={key} value={value} onClick={handleAddAnnotation(key)} />
               </HoverPopover>
             ) : (
-              <div
-                className="flex items-center justify-between px-2 py-1 text-xs rounded font-medium bg-gray-100 border border-gray-200 text-gray-700 w-full hover:bg-gray-200 cursor-pointer transition-colors"
-                onClick={handleAddAnnotation(key)}
-              >
-                <span className="text-gray-500 capitalize">{key}</span>
-                <span className="font-semibold">{String(value)}</span>
-              </div>
+              <VersionDifferenceItem keyName={key} value={value} onClick={handleAddAnnotation(key)} />
             )}
             <AnnotationsView
               annotations={annotations}

@@ -10,12 +10,12 @@ import {
   useUser,
 } from "@clerk/nextjs";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { cx } from "class-variance-authority";
 import { ArrowLeftRight, Building, LogOut, Settings, X } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import PopoverMenu from "@/components/DropdownMenu";
 import { Modal } from "@/components/Modal";
-import { cn } from "@/lib/cn";
 
 export { SignedIn, SignedOut } from "@clerk/nextjs";
 
@@ -166,7 +166,7 @@ export function UserButton({ className, avatarOnly = false }: { className?: stri
   );
 
   return (
-    <div className={cn("w-full", className)}>
+    <div className={cx("w-full", className)}>
       <PopoverMenu
         trigger={triggerButton}
         align="center"

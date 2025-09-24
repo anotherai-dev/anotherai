@@ -32,7 +32,11 @@ export default function ExperimentDetailPage() {
   }
 
   if (!experiment || isLoadingExperiment) {
-    return <LoadingState />;
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <LoadingState padding={false} />
+      </div>
+    );
   }
 
   return (
