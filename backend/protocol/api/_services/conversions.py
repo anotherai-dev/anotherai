@@ -313,6 +313,7 @@ def completion_from_domain(completion: DomainCompletion) -> Completion:
     return Completion(
         id=completion.id,
         agent_id=completion.agent.id,
+        created_at=_sanitize_datetime(completion.created_at) if completion.created_at else None,
         version=version_from_domain(completion.version),
         input=input_from_domain(completion.agent_input),
         output=output_from_domain(completion.agent_output),
@@ -329,6 +330,7 @@ def completion_to_domain(completion: Completion) -> DomainCompletion:
     return DomainCompletion(
         id=completion.id,
         agent=DomainAgent(id=completion.agent_id, uid=0),
+        created_at=completion.created_at if completion.created_at else datetime.now(UTC),
         version=version_to_domain(completion.version),
         agent_input=input_to_domain(completion.input),
         agent_output=output_to_domain(completion.output),

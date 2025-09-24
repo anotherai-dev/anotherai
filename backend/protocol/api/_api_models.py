@@ -356,6 +356,11 @@ class Completion(BaseModel):
     )
     agent_id: str
 
+    created_at: datetime | None = Field(
+        default=None,
+        description="The timestamp when the completion was created.",
+    )
+
     version: Version = Field(
         description="The version of the model used for the inference.",
     )

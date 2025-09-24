@@ -40,6 +40,12 @@ export function CompletionDetailsView(props: Props) {
 
         <div className="space-y-2 px-4">
           <InfoRow title="Agent ID" value={completion.agent_id} />
+          {completion.created_at && (
+            <InfoRow
+              title="Created"
+              value={new Date(completion.created_at).toLocaleString()}
+            />
+          )}
           <InfoRow
             title="Version ID"
             value={completion.version.id}
