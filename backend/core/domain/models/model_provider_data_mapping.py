@@ -980,6 +980,29 @@ FIREWORKS_PROVIDER_DATA: ProviderDataByModel = {
 }
 
 XAI_PROVIDER_DATA: ProviderDataByModel = {
+    Model.GROK_CODE_FAST_1: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=0.2 * ONE_MILLION_TH,
+            completion_cost_per_token=1.5 * ONE_MILLION_TH,
+            prompt_cached_tokens_discount=0.9,
+            source="https://docs.x.ai/docs/models/grok-code-fast-1",
+        ),
+    ),
+    Model.GROK_4_FAST: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=0.2 * ONE_MILLION_TH,
+            completion_cost_per_token=0.5 * ONE_MILLION_TH,
+            source="https://docs.x.ai/docs/models/grok-4-fast",
+            prompt_cached_tokens_discount=0.75,
+            thresholded_prices=[
+                ThresholdedTextPricePerToken(
+                    threshold=128_000,
+                    prompt_cost_per_token_over_threshold=0.4 * ONE_MILLION_TH,
+                    completion_cost_per_token_over_threshold=1 * ONE_MILLION_TH,
+                ),
+            ],
+        ),
+    ),
     Model.GROK_4_0709: ModelProviderData(
         text_price=TextPricePerToken(
             prompt_cost_per_token=3 * ONE_MILLION_TH,

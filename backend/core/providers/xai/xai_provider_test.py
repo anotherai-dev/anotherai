@@ -172,6 +172,38 @@ class TestBuildRequest:
             "tool_choice": "auto",
         }
 
+    @pytest.mark.parametrize(
+        ("reasoning", "expected_model", "expected_reasoning_effort"),
+        [
+            (ReasoningEffort.DISABLED, "grok-4-fast-non-reasoning", None),
+            (0, "grok-4-fast-non-reasoning", None),
+            (ReasoningEffort.LOW, "grok-4-fast-reasoning", "low"),
+            (ReasoningEffort.MEDIUM, "grok-4-fast-reasoning", None),
+        ],
+    )
+    def test_build_request_grok_4_fast_non_reasoning(
+        self,
+        xai_provider: XAIProvider,
+        reasoning: ReasoningEffort | int | None,
+        expected_model: str,
+        expected_reasoning_effort: str | None,
+    ):
+        options = ProviderOptions(model=Model.GROK_4_FAST)
+        if isinstance(reasoning, int):
+            options.reasoning_budget = reasoning
+        elif isinstance(reasoning, ReasoningEffort):
+            options.reasoning_effort = reasoning
+        request = cast(
+            CompletionRequest,
+            xai_provider._build_request(  # pyright: ignore [reportPrivateUsage]
+                messages=[MessageDeprecated(role=MessageDeprecated.Role.USER, content="Hello")],
+                options=options,
+                stream=False,
+            ),
+        )
+        assert request.model == expected_model
+        assert request.reasoning_effort == expected_reasoning_effort
+
 
 def mock_xai_stream(httpx_mock: HTTPXMock):
     httpx_mock.add_response(
