@@ -354,7 +354,7 @@ class TestProviderIterator:
         providers = list(pipeline.provider_iterator())
         assert len(providers) == 3
         names = [p[0].name() for p in providers]
-        assert names == [Provider.OPEN_AI, Provider.OPEN_AI, Provider.AZURE_OPEN_AI]
+        assert names == [Provider.OPEN_AI, Provider.AZURE_OPEN_AI, Provider.OPEN_AI]
 
     @pytest.mark.parametrize(
         ("use_fallback", "extra_yield"),

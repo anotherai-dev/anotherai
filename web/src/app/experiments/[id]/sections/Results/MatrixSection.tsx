@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { TableComponent } from "@/components/TableComponent";
 import {
   findCompletionForInputAndVersion,
@@ -9,7 +9,12 @@ import {
   getSharedPartsOfPrompts,
 } from "@/components/utils/utils";
 import { Annotation, ExperimentWithLookups } from "@/types/models";
-import { getAllMetricsPerKey, getAllMetricsPerKeyForRow, getMetricsPerVersion } from "../../utils";
+import {
+  getAllMetricsPerKey,
+  getAllMetricsPerKeyForRow,
+  getMetricsPerVersion,
+  sortVersionsByPromptAndSchema,
+} from "../../utils";
 import { InputHeaderCell } from "./InputHeaderCell";
 import { CompletionCell } from "./completion/CompletionCell";
 import { VersionHeader } from "./version/VersionHeader";
@@ -22,8 +27,18 @@ type Props = {
 export function MatrixSection(props: Props) {
   const { experiment, annotations } = props;
 
-  // State for column order - initially ordered by version index
-  const [columnOrder, setColumnOrder] = useState<string[]>(() => experiment.versions.map((version) => version.id));
+  // Sort versions to show ones with prompt or output schema first
+  const sortedVersions = useMemo(() => {
+    return sortVersionsByPromptAndSchema(experiment.versions);
+  }, [experiment.versions]);
+
+  // State for column order - initially ordered by sorted version index
+  const [columnOrder, setColumnOrder] = useState<string[]>([]);
+
+  // Update column order when sorted versions change
+  useEffect(() => {
+    setColumnOrder(sortedVersions.map((version) => version.id));
+  }, [sortedVersions]);
 
   // Function to reorder columns
   const reorderColumns = useCallback(
@@ -39,9 +54,9 @@ export function MatrixSection(props: Props) {
   // Get versions in the current column order
   const orderedVersions = useMemo(() => {
     return columnOrder
-      .map((versionId) => experiment.versions.find((v) => v.id === versionId))
-      .filter(Boolean) as typeof experiment.versions;
-  }, [columnOrder, experiment]);
+      .map((versionId) => sortedVersions.find((v) => v.id === versionId))
+      .filter(Boolean) as typeof sortedVersions;
+  }, [columnOrder, sortedVersions]);
 
   const completionsPerVersion = useMemo(() => {
     return getCompletionsPerVersion(experiment);
@@ -73,7 +88,7 @@ export function MatrixSection(props: Props) {
 
   const stickyHeaderData = useMemo(() => {
     return orderedVersions.map((version) => {
-      const originalIndex = experiment.versions.findIndex((v) => v.id === version.id);
+      const originalIndex = sortedVersions.findIndex((v) => v.id === version.id);
       return {
         versionNumber: originalIndex + 1,
         modelId: version.model,
@@ -81,7 +96,7 @@ export function MatrixSection(props: Props) {
         reasoningBudget: version.reasoning_budget,
       };
     });
-  }, [orderedVersions, experiment.versions]);
+  }, [orderedVersions, sortedVersions]);
 
   const tableData = useMemo(() => {
     // Get arrays of average metrics per version for badge coloring
@@ -92,8 +107,8 @@ export function MatrixSection(props: Props) {
     const columnHeaders = orderedVersions.map((version, dragIndex) => {
       const priceAndLatency = priceAndLatencyPerVersion.find(({ versionId }) => versionId === version.id);
       const metrics = metricsPerVersion?.[version.id];
-      // Find the original index of this version in the original experiment.versions array
-      const originalIndex = experiment.versions.findIndex((v) => v.id === version.id);
+      // Find the original index of this version in the sorted versions array
+      const originalIndex = sortedVersions.findIndex((v) => v.id === version.id);
       return (
         <VersionHeader
           key={version.id}
@@ -176,6 +191,7 @@ export function MatrixSection(props: Props) {
     metricsPerVersion,
     allMetricsPerKey,
     reorderColumns,
+    sortedVersions,
   ]);
 
   return (
