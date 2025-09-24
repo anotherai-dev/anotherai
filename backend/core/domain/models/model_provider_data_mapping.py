@@ -597,6 +597,14 @@ AZURE_PROVIDER_DATA: ProviderDataByModel = {
             source="https://openai.com/api/pricing/",
         ),
     ),
+    Model.O3_2025_04_16: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=2 * ONE_MILLION_TH,
+            prompt_cached_tokens_discount=0.75,
+            completion_cost_per_token=8 * ONE_MILLION_TH,
+            source="https://openai.com/api/pricing/",
+        ),
+    ),
     Model.GPT_4O_2024_08_06: ModelProviderData(
         text_price=TextPricePerToken(
             prompt_cost_per_token=2.5 * ONE_MILLION_TH,
@@ -658,6 +666,30 @@ AZURE_PROVIDER_DATA: ProviderDataByModel = {
             prompt_cost_per_token=1.1 * ONE_MILLION_TH,
             prompt_cached_tokens_discount=0.75,
             completion_cost_per_token=4.4 * ONE_MILLION_TH,
+            source="https://openai.com/api/pricing/",
+        ),
+    ),
+    Model.GPT_5_2025_08_07: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=1.25 * ONE_MILLION_TH,
+            prompt_cached_tokens_discount=0.9,
+            completion_cost_per_token=10 * ONE_MILLION_TH,
+            source="https://openai.com/api/pricing/",
+        ),
+    ),
+    Model.GPT_5_MINI_2025_08_07: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=0.25 * ONE_MILLION_TH,
+            prompt_cached_tokens_discount=0.9,
+            completion_cost_per_token=2 * ONE_MILLION_TH,
+            source="https://openai.com/api/pricing/",
+        ),
+    ),
+    Model.GPT_5_NANO_2025_08_07: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=0.05 * ONE_MILLION_TH,
+            prompt_cached_tokens_discount=0.9,
+            completion_cost_per_token=0.4 * ONE_MILLION_TH,
             source="https://openai.com/api/pricing/",
         ),
     ),

@@ -25,8 +25,14 @@ def groq_endpoint():
     return "https://api.groq.com/openai/v1/chat/completions"
 
 
+def azure_openai_endpoint(model: str):
+    return f"https://anotherai.openai.azure.com/openai/deployments/{model}/chat/completions"
+
+
 def provider_matchers(provider: str, model: str) -> dict[str, Any]:
     match provider:
+        case Provider.AZURE_OPEN_AI:
+            return {"url": azure_openai_endpoint(model)}
         case Provider.OPEN_AI:
             return {"url": openai_endpoint()}
         case Provider.ANTHROPIC:
