@@ -11,11 +11,11 @@ export function sortVersionsByPromptAndSchema(versions: Version[]): Version[] {
   return [...versions].sort((a, b) => {
     const aHasPromptOrSchema = Boolean(a.prompt || a.output_schema);
     const bHasPromptOrSchema = Boolean(b.prompt || b.output_schema);
-    
+
     // If one has prompt/schema and the other doesn't, prioritize the one that has it
     if (aHasPromptOrSchema && !bHasPromptOrSchema) return -1;
     if (!aHasPromptOrSchema && bHasPromptOrSchema) return 1;
-    
+
     // If both have or both don't have, maintain original order
     return 0;
   });

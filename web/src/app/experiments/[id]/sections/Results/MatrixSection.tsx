@@ -9,7 +9,12 @@ import {
   getSharedPartsOfPrompts,
 } from "@/components/utils/utils";
 import { Annotation, ExperimentWithLookups } from "@/types/models";
-import { getAllMetricsPerKey, getAllMetricsPerKeyForRow, getMetricsPerVersion, sortVersionsByPromptAndSchema } from "../../utils";
+import {
+  getAllMetricsPerKey,
+  getAllMetricsPerKeyForRow,
+  getMetricsPerVersion,
+  sortVersionsByPromptAndSchema,
+} from "../../utils";
 import { InputHeaderCell } from "./InputHeaderCell";
 import { CompletionCell } from "./completion/CompletionCell";
 import { VersionHeader } from "./version/VersionHeader";
