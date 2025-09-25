@@ -866,3 +866,9 @@ class OpenAIListResult[T: BaseModel](BaseModel):
 
     object: Literal["list"] = "list"
     data: list[T]
+
+
+class UploadFileResponse(BaseModel):
+    url: str
+    # TODO:
+    # expires_at: datetime

@@ -11,6 +11,7 @@ from protocol.api._services.annotation_service import AnnotationService
 from protocol.api._services.completion_service import CompletionService
 from protocol.api._services.deployment_service import DeploymentService
 from protocol.api._services.experiment_service import ExperimentService
+from protocol.api._services.files_service import FilesService
 from protocol.api._services.organization_service import OrganizationService
 from protocol.api._services.view_service import ViewService
 
@@ -103,3 +104,10 @@ def completion_storer(tenant: TenantDep, dependencies: LifecycleDependenciesDep)
 
 
 CompletionStorerDep = Annotated[CompletionStorer, Depends(completion_storer)]
+
+
+def files_service(tenant: TenantDep, dependencies: LifecycleDependenciesDep) -> FilesService:
+    return FilesService(dependencies.storage_builder.files(tenant.uid))
+
+
+FilesServiceDep = Annotated[FilesService, Depends(files_service)]
