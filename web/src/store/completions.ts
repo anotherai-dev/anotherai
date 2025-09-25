@@ -1,6 +1,7 @@
 import { enableMapSet, produce } from "immer";
 import { useEffect } from "react";
 import { create } from "zustand";
+import { createErrorFromResponse } from "@/lib/apiError";
 import { apiFetch } from "@/lib/apiFetch";
 
 enableMapSet();
@@ -51,10 +52,15 @@ export const useCompletions = create<CompletionsState>((set, get) => ({
       });
 
       if (!response.ok) {
-        console.error(`Failed to query completions: ${response.status} ${response.statusText}`);
+        const error = await createErrorFromResponse(response);
+        // Skip console logging for API errors to reduce noise
+        const errorObj = error as Error & { isApiError?: boolean };
+        if (!errorObj.isApiError) {
+          console.error("Failed to query completions:", error);
+        }
         set(
           produce((state: CompletionsState) => {
-            state.queryErrors.set(queryKey, new Error(`HTTP ${response.status}: ${response.statusText}`));
+            state.queryErrors.set(queryKey, error);
             state.isLoadingQuery.set(queryKey, false);
           })
         );
@@ -107,12 +113,17 @@ export const useCompletions = create<CompletionsState>((set, get) => ({
       });
 
       if (!response.ok) {
-        console.error(`Failed to fetch newest completion ID: ${response.status} ${response.statusText}`);
+        const error = await createErrorFromResponse(response);
+        // Skip console logging for API errors to reduce noise
+        const errorObj = error as Error & { isApiError?: boolean };
+        if (!errorObj.isApiError) {
+          console.error("Failed to fetch newest completion ID:", error);
+        }
         set(
           produce((state: CompletionsState) => {
             state.newestCompletionId = null;
             state.isLoadingNewest = false;
-            state.newestError = new Error(`HTTP ${response.status}: ${response.statusText}`);
+            state.newestError = error;
           })
         );
         return;

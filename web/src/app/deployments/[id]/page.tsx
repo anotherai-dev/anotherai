@@ -69,7 +69,7 @@ export default function DeploymentDetailPage() {
   if (error) {
     return (
       <div className="flex flex-col w-full h-full mx-auto px-4 py-8 bg-gray-50 overflow-y-auto">
-        <PageError error={error.message} />
+        <PageError error={error} />
       </div>
     );
   }
