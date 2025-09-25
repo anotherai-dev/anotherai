@@ -1,6 +1,7 @@
 import { enableMapSet, produce } from "immer";
 import { useCallback, useEffect, useRef } from "react";
 import { create } from "zustand";
+import { createErrorFromResponse } from "@/lib/apiError";
 import { apiFetch } from "@/lib/apiFetch";
 import { ExperimentListItem, ExperimentListResponse } from "@/types/models";
 
@@ -54,7 +55,7 @@ export const useExperiments = create<ExperimentsState>((set, get) => ({
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch experiments: ${response.status} ${response.statusText}`);
+        throw await createErrorFromResponse(response);
       }
 
       const data: ExperimentListResponse = await response.json();
@@ -77,7 +78,11 @@ export const useExperiments = create<ExperimentsState>((set, get) => ({
         })
       );
     } catch (error) {
-      console.error("Failed to fetch experiments:", error);
+      // Skip console logging for API errors to reduce noise
+      const errorObj = error as Error & { isApiError?: boolean };
+      if (!errorObj.isApiError) {
+        console.error("Failed to fetch experiments:", error);
+      }
 
       set(
         produce((state: ExperimentsState) => {
