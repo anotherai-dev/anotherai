@@ -18,7 +18,7 @@ WorkflowAI and AnotherAI share the same authorization servers. So users of Workf
 
 ## Migration Steps
 
-Very important: Most WorkflowAI agents use deployments on WorkflowAI, meaning that the code does not contain the prompt. The prompt is stored and managed by the WorkflowAI backend. It is possible to setup a bridge that forwards data from WorkflowAI to AnotherAI which makes the prompt and/or deployment available in AnotherAI.
+Very important: [FEEDBACK: "ALL?"": because using version by number also means no prompt]... Most WorkflowAI agents use deployments on WorkflowAI, meaning that the code does not contain the prompt. The prompt is stored and managed by the WorkflowAI backend. It is possible to setup a bridge that forwards data from WorkflowAI to AnotherAI which makes the prompt and/or deployment available in AnotherAI.
 
 ### Step 1: Identify the agent id and deployment environment
 
@@ -61,8 +61,10 @@ const analyzeBookCharacters: Agent<
 > = workflowAI.agent({
   id: "analyze-book-characters", // agent id, will be the same in AnotherAI
   schemaId: 1, // schema id, can be ignored, will no longer be used in AnotherAI
-  version: "production", // deployment envoronment, in WorkflowAI deployments are unique per agent schema
+  version: "10.1", // deployment envoronment, in WorkflowAI deployments are unique per agent schema
 });
+
+[SUGGESTION: CAN WE ADD METADATA LIKE `workflowai.version` TO IMPORTED COMPLETIONS, so that the AI assistant can fetch the completion that match this version? and then update the code]
 ```
 
 </Tab>
