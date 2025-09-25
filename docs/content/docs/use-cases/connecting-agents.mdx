@@ -5,6 +5,7 @@ summary: Create and monitor multi-agent workflows with AnotherAI.
 
 import { Steps, Step } from 'fumadocs-ui/components/steps';
 import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
 
 ## Why is Connecting Agents in Workflows Useful?
 
@@ -24,7 +25,8 @@ You can use agent metadata to add the key value pairs you'd like to connect agen
 You can ask your AI assistant to create a workflow for you, like this:
 
 ```
-  I need to add workflow tracking to the following AnotherAI agents so I can connect them together as a workflow and monitor them as a group.
+  I need to add workflow tracking to the following AnotherAI agents so I can connect 
+  them together as a workflow and monitor them as a group.
 
   I have these agents that work together:
   - anotherai/agent/your-agent-name-1
@@ -36,14 +38,191 @@ You can ask your AI assistant to create a workflow for you, like this:
   2. A "workflow_name" that is [your-workflow-name]
 
   Here's what I need:
-  - Generate the trace_id once at the beginning when I start the workflow and pass the same trace_id to all three agents during that workflow execution
+  - Generate the trace_id once at the beginning when I start the workflow and pass the same trace_id 
+  to all three agents during that workflow execution
   - Set the workflow_name to "[your-workflow-name]" for all agents in this workflow type
   - Add both of these to the metadata section of all my agent calls alongside the existing agent_id
 
-  The goal is so that when I run these agents together as part of the same workflow, they all share the same trace_id and workflow_name, which will let me see them grouped
+  The goal is so that when I run these agents together as part of the same workflow, they all share 
+  the same trace_id and workflow_name, which will let me see them grouped
   together in AnotherAI's monitoring views.
 
 ```
+<Accordions>
+<Accordion title="Setting up Workflows in Code" id="setting-up-workflows">
+
+Here's the process of changing code to set metadata for workflow tracking:
+
+<Tabs items={['Python', 'TypeScript', 'curl']}>
+<Tab value="Python">
+```python
+import uuid
+
+# 1. Set workflow identifiers
+trace_id = str(uuid.uuid7())  # Unique identifier for this workflow instance (time-ordered)
+workflow_name = "meeting-analysis"  # Type of workflow being executed
+
+# 2. Add the metadata when making agent calls
+response = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "system", "content": "Summarize this meeting transcript"}],
+    metadata={
+        "trace_id": trace_id,
+        "workflow_name": workflow_name,
+        "agent_id": "meeting-summarizer"
+    }
+)
+```
+</Tab>
+<Tab value="TypeScript">
+```typescript
+import { v7 as uuidv7 } from 'uuid';
+
+// 1. Set workflow identifiers
+const traceId = uuidv7();  // Unique identifier for this workflow instance (time-ordered)
+const workflowName = 'meeting-analysis';  // Type of workflow being executed
+
+// 2. Add the metadata when making agent calls
+const response = await client.chat.completions.create({
+  model: 'gpt-4o-mini',
+  messages: [{role: 'system', content: 'Summarize this meeting transcript'}],
+  metadata: {
+    trace_id: traceId,
+    workflow_name: workflowName,
+    agent_id: 'meeting-summarizer'
+  }
+});
+```
+</Tab>
+<Tab value="curl">
+```bash
+# Set workflow identifiers
+TRACE_ID=$(python3 -c "import uuid; print(uuid.uuid7())")  # Unique identifier for this workflow instance
+WORKFLOW_NAME="meeting-analysis"  # Type of workflow being executed
+
+# Agent call with workflow metadata
+curl -X POST {{API_URL}}/v1/chat/completions \
+  -H "Authorization: Bearer aai-***" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o-mini",
+    "messages": [{"role": "system", "content": "Summarize this meeting transcript"}],
+    "metadata": {
+      "trace_id": "'$TRACE_ID'",
+      "workflow_name": "'$WORKFLOW_NAME'",
+      "agent_id": "meeting-summarizer"
+    }
+  }'
+```
+</Tab>
+</Tabs>
+
+Then set the same `trace_id` value across all agents in your workflow:
+
+<Tabs items={['Python', 'TypeScript', 'curl']}>
+<Tab value="Python">
+```python
+import uuid
+
+# Example workflow script showing consistent trace_id and workflow_name usage
+trace_id = str(uuid.uuid7())  # Generate once per workflow instance
+workflow_name = "meeting-analysis"  # Same for all agents in this workflow type
+
+# Agent 1: Document processor
+response1 = client.chat.completions.create(
+    model="gpt-4o-mini", 
+    messages=[{"role": "system", "content": "Summarize this meeting transcript"}],
+    metadata={
+        "trace_id": trace_id, 
+        "workflow_name": workflow_name,
+        "agent_id": "meeting-summarizer"
+    }
+)
+
+# Agent 2: Content analyzer (same trace_id and workflow_name)
+response2 = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "system", "content": "Extract todos from this meeting transcript"}], 
+    metadata={
+        "trace_id": trace_id, 
+        "workflow_name": workflow_name,
+        "agent_id": "meeting-todo-extractor"
+    }
+)
+```
+</Tab>
+
+<Tab value="TypeScript">
+```typescript
+import { v7 as uuidv7 } from 'uuid';
+
+// Example workflow script showing consistent trace_id and workflow_name usage
+const traceId = uuidv7();  // Generate once per workflow instance
+const workflowName = 'meeting-analysis';  // Same for all agents in this workflow type
+
+// Agent 1: Document processor
+const response1 = await client.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [{role: 'system', content: 'Summarize this meeting transcript'}],
+    metadata: {
+        trace_id: traceId,
+        workflow_name: workflowName,
+        agent_id: 'meeting-summarizer'
+    }
+});
+
+// Agent 2: Content analyzer (same trace_id and workflow_name)
+const response2 = await client.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [{role: 'system', content: 'Extract todos from this meeting transcript'}],
+    metadata: {
+        trace_id: traceId,
+        workflow_name: workflowName,
+        agent_id: 'meeting-todo-extractor'
+    }
+});
+```
+</Tab>
+
+<Tab value="curl">
+```bash
+# Example workflow script showing consistent trace_id and workflow_name usage
+TRACE_ID=$(python3 -c "import uuid; print(uuid.uuid7())")  # Generate once per workflow instance
+WORKFLOW_NAME="meeting-analysis"  # Same for all agents in this workflow type
+
+# Agent 1: Document processor
+curl -X POST {{API_URL}}/v1/chat/completions \
+  -H "Authorization: Bearer aai-***" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o-mini",
+    "messages": [{"role": "system", "content": "Summarize this meeting transcript"}],
+    "metadata": {
+      "trace_id": "'$TRACE_ID'",
+      "workflow_name": "'$WORKFLOW_NAME'",
+      "agent_id": "meeting-summarizer"
+    }
+  }'
+
+# Agent 2: Content analyzer (same trace_id and workflow_name)
+curl -X POST {{API_URL}}/v1/chat/completions \
+  -H "Authorization: Bearer aai-***" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o-mini",
+    "messages": [{"role": "system", "content": "Extract todos from this meeting transcript"}],
+    "metadata": {
+      "trace_id": "'$TRACE_ID'",
+      "workflow_name": "'$WORKFLOW_NAME'",
+      "agent_id": "meeting-todo-extractor"
+    }
+  }'
+```
+</Tab>
+</Tabs>
+
+</Accordion>
+</Accordions>
 
 ## Monitoring Workflows
 

@@ -8,6 +8,7 @@ import { Steps, Step } from 'fumadocs-ui/components/steps';
 import { Card, Cards } from 'fumadocs-ui/components/card';
 import { Callout } from 'fumadocs-ui/components/callout';
 import { FlaskRound, MessageSquare } from 'lucide-react';
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
 
 # End-User Feedback
 
@@ -42,6 +43,65 @@ The function should accept:
 Use the AnotherAI annotations endpoint to store this feedback so it appears 
 alongside the completion in the AnotherAI dashboard.
 ```
+<Accordions>
+<Accordion title="Example script to send feedback to AnotherAI" id="sending-user-feedback-to-anotherai-via-the-annotations-endpoint">
+
+```python
+# Example: Send user feedback as annotations via API
+import requests
+from datetime import datetime
+
+# Configure your AnotherAI API endpoint and key
+API_BASE_URL = "{{API_URL}}"
+API_KEY = "your-api-key"
+
+def submit_user_feedback(completion_id: str, rating: int, comment: str, user_id: str = "end_user"):
+    """Submit user feedback as an annotation to AnotherAI"""
+    
+    annotation = {
+        "id": f"feedback_{completion_id}_{datetime.now().timestamp()}",
+        "target": {
+            "completion_id": completion_id,
+            # key_path can be used to annotate specific fields
+            "key_path": None  # Annotating the entire completion
+        },
+        "author_name": user_id,
+        "text": comment,
+        "metric": {
+            "name": "accuracy",
+            "value": rating  # e.g., 1-5 star rating
+        },
+        "metadata": {
+            "source": "feedback_widget",
+            "additionalProp1": {}
+        }
+    }
+    
+    response = requests.post(
+        f"{API_BASE_URL}/v1/annotations",
+        json=[annotation],
+        headers={
+            "Authorization": f"Bearer {API_KEY}",
+            "Content-Type": "application/json"
+        }
+    )
+    
+    if response.status_code == 200:
+        print(f"Feedback submitted successfully for completion {completion_id}")
+    else:
+        print(f"Error submitting feedback: {response.text}")
+    
+    return response
+
+# Example usage after getting a completion
+completion_id = "anotherai/completion/0198cd7c-2b1a-73b1-ce14-53da0b268569"
+accuracy = 4
+user_comment = "The response was helpful but could be more concise"
+submit_user_feedback(completion_id, accuracy, user_comment)
+```
+</Accordion>
+</Accordions>
+
 </Step>
 
 <Step>
