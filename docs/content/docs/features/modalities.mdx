@@ -52,12 +52,9 @@ const response = await openai.chat.completions.create({
 
 As described in the [Input Variables](/observability/input-variables) section, it is possible to separate static instructions from dynamic data by using Jinja2 variables in the text content of messages.
 
-However it is **not currently possible to use input variables to represent image or audio data or URLs**. Image and audio payloads should always be passed in the content of messages, in their respective fields.
-
 <Tabs items={["OpenAI SDK (js)"]}>
 <Tab>
 ```js
-// ✅ Do: Pass the image URL as a image URL content
 const response = await openai.chat.completions.create({
   model: "gpt-4o-mini",
   messages: [
@@ -67,33 +64,18 @@ const response = await openai.chat.completions.create({
         {
           type: "image_url",
           image_url: {
-            url: "https://example.com/audio.mp3",
+            url: "{{image_url}}",
           },
         },
       ],
     },
   ],
-});
-
-// ❌ Don't: Pass the image URL in an input variable
-const response = await openai.chat.completions.create({
-  model: "gpt-4o-mini",
-  messages: [
-    {
-      role: "user",
-      // Here the image URL will be treated as a string by the LLM
-      content: "{{ image_url}}"
-    },
-  ],
   extra_body: {
     input: {
-      variables: {
-        image_url: "https://example.com/image.png",
-      },
+      image_url: "https://example.com/image.png",
     },
   },
 });
-
 ```
 </Tab>
 </Tabs>

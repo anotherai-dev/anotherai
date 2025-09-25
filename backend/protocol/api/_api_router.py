@@ -1,6 +1,6 @@
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Body, Query
+from fastapi import APIRouter, Body, Query, UploadFile
 
 from protocol._common.documentation import INCLUDE_PRIVATE_ROUTES
 from protocol.api._api_models import (
@@ -22,6 +22,7 @@ from protocol.api._api_models import (
     Page,
     PatchViewFolderRequest,
     PatchViewRequest,
+    UploadFileResponse,
     View,
     ViewFolder,
 )
@@ -32,6 +33,7 @@ from protocol.api._dependencies._services import (
     CompletionStorerDep,
     DeploymentServiceDep,
     ExperimentServiceDep,
+    FilesServiceDep,
     OrganizationServiceDep,
     ViewServiceDep,
 )
@@ -323,3 +325,16 @@ def extract_variables_from_messages(
     request: ExtractVariablesRequest,
 ) -> ExtractVariablesResponse:
     return extract_variables_from_messages(request)
+
+
+@router.post("/v1/files")
+async def upload_file(
+    files_service: FilesServiceDep,
+    file: UploadFile,
+    # TODO:
+    # expires_after_seconds: Annotated[
+    #     int,
+    #     Form(description="The number of seconds after which the file will expire. 24 hours by default"),
+    # ] = 24 * 60 * 60,
+) -> UploadFileResponse:
+    return await files_service.upload_file(file)

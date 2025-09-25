@@ -3,12 +3,11 @@ import mimetypes
 import re
 from base64 import b64decode
 from enum import StrEnum
-from typing import Any, Self
 from urllib.parse import parse_qs, urlparse
 
 import httpx
 import structlog
-from pydantic import BaseModel, Field, ModelWrapValidatorHandler, model_validator
+from pydantic import BaseModel, Field
 from pydantic.json_schema import SkipJsonSchema
 
 from core.domain.exceptions import InternalError, InvalidFileError
@@ -86,11 +85,8 @@ class File(BaseModel):
             return b64decode(self.data)
         return None
 
-    def template_key(self) -> str | None:
-        """Returns the key path for a value if the url of the file is templated"""
-        if self.url and (match := _template_var_regexp.match(self.url)):
-            return match.group(1).strip()
-        return None
+    def templatable_content(self) -> str:
+        return " ".join(k for k in (self.url, self.data, self.content_type) if k)
 
     def to_url(self, default_content_type: str | None = None) -> str:
         if self.data and (self.content_type or default_content_type):
@@ -168,22 +164,15 @@ class File(BaseModel):
         if mime_type := mimetypes.guess_type(url, strict=False)[0]:
             self.content_type = mime_type
 
-    @model_validator(mode="wrap")
-    @classmethod
-    def wrap_validator(cls, data: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        if isinstance(data, str):
-            data = {"url": data}
-
-        validated = handler(data)
-
-        if validated.data:
-            decoded_data = _validate_base64(validated.data)
-            if not validated.content_type:
-                validated.content_type = guess_content_type(decoded_data)
-            return validated
-        if validated.url:
-            validated._validate_url_and_set_content_type(validated.url)  # noqa: SLF001
-            return validated
+    def sanitize(self):
+        if self.data:
+            decoded_data = _validate_base64(self.data)
+            if not self.content_type:
+                self.content_type = guess_content_type(decoded_data)
+            return self
+        if self.url:
+            self._validate_url_and_set_content_type(self.url)
+            return self
 
         raise ValueError("No data or URL provided for image")
 

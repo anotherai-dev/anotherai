@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { create } from "zustand";
+import { createErrorFromResponse } from "@/lib/apiError";
 import { apiFetch } from "@/lib/apiFetch";
 import { Model } from "@/types/models";
 
@@ -40,6 +41,11 @@ export const useModelsStore = create<ModelsState>((set, get) => ({
 
       try {
         const response = await apiFetch("/v1/models");
+
+        if (!response.ok) {
+          throw await createErrorFromResponse(response);
+        }
+
         const result: { data: Model[] } = await response.json();
         const models = result.data;
         const modelsById = new Map(models.map((model) => [model.id, model]));
@@ -51,7 +57,11 @@ export const useModelsStore = create<ModelsState>((set, get) => ({
           error: null,
         });
       } catch (error) {
-        console.error("Failed to fetch models:", error);
+        // Skip console logging for API errors to reduce noise
+        const errorObj = error as Error & { isApiError?: boolean };
+        if (!errorObj.isApiError) {
+          console.error("Failed to fetch models:", error);
+        }
         set({
           isLoading: false,
           error: error instanceof Error ? error.message : "Failed to fetch models",

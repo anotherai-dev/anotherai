@@ -47,20 +47,6 @@ class MessageTemplateError(InvalidTemplateError):
         }
 
 
-def _add_file_to_schema(schema: dict[str, Any], template_key: str, file_kind: FileKind | str | None):
-    splits = template_key.split(".")
-    # We don't deal with complex stuff here. We just assume that at worst
-    # The key is in a nested object. No array
-
-    # We add the properties up to the last one
-    for k in splits:
-        properties = schema.setdefault("properties", {})
-        schema = properties.setdefault(k, {})
-
-    ref_name = _ref_name(file_kind)
-    schema["$ref"] = f"#/$defs/{ref_name}"
-
-
 def json_schema_for_template(
     messages: Iterable[Message],
     base_schema: dict[str, Any] | None,
@@ -73,15 +59,16 @@ def json_schema_for_template(
 
     for i, m in enumerate(messages):
         for j, c in enumerate(m.content):
-            if c.file and (template_key := c.file.template_key()):
-                # We have a template key so we should add the file to the schema
-                _add_file_to_schema(schema, template_key, c.file.format)
-                last_templated_index = i
-            if not c.text:
+            if c.file:
+                templatable = c.file.templatable_content()
+            elif c.text:
+                templatable = c.text
+            else:
                 continue
+
             try:
                 extracted, is_templated = extract_variable_schema(
-                    c.text,
+                    templatable,
                     start_schema=schema,
                     use_types_from=base_schema,
                 )

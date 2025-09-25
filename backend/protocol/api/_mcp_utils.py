@@ -19,7 +19,7 @@ from core.domain.tenant_data import TenantData
 from core.providers._base.provider_error import ProviderError
 from core.services.documentation.documentation_search import DocumentationSearch
 from core.utils.dicts import remove_nulls
-from protocol.api._dependencies._lifecycle import lifecyle_dependencies
+from protocol.api._dependencies._lifecycle import lifecycle_dependencies
 from protocol.api._dependencies._services import completion_runner
 from protocol.api._services.agent_service import AgentService
 from protocol.api._services.annotation_service import AnnotationService
@@ -169,7 +169,7 @@ async def _authenticated_tenant() -> TenantData:
 
 
 async def playground_service() -> PlaygroundService:
-    deps = lifecyle_dependencies()
+    deps = lifecycle_dependencies()
     tenant = await _authenticated_tenant()
     return PlaygroundService(
         completion_runner(tenant, deps),
@@ -182,7 +182,7 @@ async def playground_service() -> PlaygroundService:
 
 
 async def experiment_service() -> ExperimentService:
-    deps = lifecyle_dependencies()
+    deps = lifecycle_dependencies()
     tenant = await _authenticated_tenant()
     return ExperimentService(
         deps.storage_builder.experiments(tenant.uid),
@@ -193,7 +193,7 @@ async def experiment_service() -> ExperimentService:
 
 
 async def annotation_service() -> AnnotationService:
-    deps = lifecyle_dependencies()
+    deps = lifecycle_dependencies()
     tenant = await _authenticated_tenant()
     return AnnotationService(
         deps.storage_builder.annotations(tenant.uid),
@@ -207,38 +207,38 @@ def documentation_service() -> DocumentationService:
 
 
 async def agent_service() -> AgentService:
-    deps = lifecyle_dependencies()
+    deps = lifecycle_dependencies()
     tenant = await _authenticated_tenant()
     return AgentService(deps.storage_builder.agents(tenant.uid))
 
 
 async def completion_service() -> CompletionService:
-    deps = lifecyle_dependencies()
+    deps = lifecycle_dependencies()
     tenant = await _authenticated_tenant()
     return CompletionService(deps.storage_builder.completions(tenant.uid), deps.storage_builder.agents(tenant.uid))
 
 
 async def view_service() -> ViewService:
-    deps = lifecyle_dependencies()
+    deps = lifecycle_dependencies()
     tenant = await _authenticated_tenant()
     return ViewService(deps.storage_builder.views(tenant.uid), deps.storage_builder.completions(tenant.uid))
 
 
 async def organization_service() -> OrganizationService:
-    deps = lifecyle_dependencies()
+    deps = lifecycle_dependencies()
     tenant = await _authenticated_tenant()
     return OrganizationService(deps.storage_builder.tenants(tenant.uid))
 
 
 async def deployment_service() -> DeploymentService:
-    deps = lifecyle_dependencies()
+    deps = lifecycle_dependencies()
     tenant = await _authenticated_tenant()
     return DeploymentService(deps.storage_builder.deployments(tenant.uid), deps.storage_builder.completions(tenant.uid))
 
 
 class CustomTokenVerifier(TokenVerifier):
     async def verify_token(self, token: str) -> AccessToken | None:
-        deps = lifecyle_dependencies()
+        deps = lifecycle_dependencies()
         tenant = await deps.security_service.find_tenant(token)
         bind_contextvars(
             tenant_org_id=tenant.org_id,
