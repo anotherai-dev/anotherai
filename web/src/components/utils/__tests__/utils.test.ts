@@ -100,7 +100,7 @@ describe("Metric Badge Functions", () => {
     it("calculates relative text for best value when lower is better", () => {
       const result = getMetricBadgeWithRelative(1, [1, 2, 4]);
       expect(result.isBest).toBe(true);
-      expect(result.relativeText).toBe("4.0x better");
+      expect(result.relativeText).toBe("4.0x");
     });
 
     it("calculates relative text for non-best values when lower is better", () => {
@@ -112,7 +112,7 @@ describe("Metric Badge Functions", () => {
     it("calculates relative text for best value when higher is better", () => {
       const result = getMetricBadgeWithRelative(4, [1, 2, 4], true);
       expect(result.isBest).toBe(true);
-      expect(result.relativeText).toBe("4.0x better");
+      expect(result.relativeText).toBe("4.0x");
     });
   });
 });
