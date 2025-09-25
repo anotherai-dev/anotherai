@@ -112,7 +112,7 @@ export function DeploymentsTable(props: DeploymentsTableProps) {
 
   // Error state
   if (error) {
-    return <PageError error={error.message} />;
+    return <PageError error={error} />;
   }
 
   // Empty state

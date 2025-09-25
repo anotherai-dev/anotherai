@@ -105,7 +105,7 @@ function CompletionTableVersionCell({ value }: CompletionTableVersionCellProps) 
           {nonDefaultEntries.map(({ key, value }, index) => (
             <div
               key={index}
-              className="flex items-center justify-between px-2 py-1 text-xs rounded-[2px] font-medium bg-gray-100 border border-gray-200 text-gray-700 w-full"
+              className="flex items-center justify-between gap-2 px-2 py-1 text-xs rounded-[2px] font-medium bg-gray-100 border border-gray-200 text-gray-700 w-full"
             >
               <span className="text-gray-700 capitalize">{key}</span>
               <span className="font-semibold">{value}</span>

@@ -1,5 +1,6 @@
 import { useRouter } from "next/navigation";
 import { memo, useCallback } from "react";
+import { buildQuery } from "../../utils/queries";
 
 type InfoRowProps = {
   title: string;
@@ -31,7 +32,8 @@ function MetadataView({ metadata }: Props) {
   const handleMetadataClick = useCallback(
     (key: string, value: unknown) => {
       const stringValue = typeof value === "string" ? value : JSON.stringify(value);
-      const query = `SELECT * FROM completions WHERE metadata['${key}'] = '${stringValue}'`;
+      const whereClause = `metadata['${key}'] = '${stringValue}'`;
+      const query = buildQuery(whereClause);
       const encodedQuery = encodeURIComponent(query);
       router.push(`/completions?newQuery=${encodedQuery}`);
     },

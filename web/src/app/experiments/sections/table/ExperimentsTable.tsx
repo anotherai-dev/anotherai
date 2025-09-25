@@ -75,7 +75,7 @@ export function ExperimentsTable(props: ExperimentsTableProps) {
   };
 
   if (error) {
-    return <PageError error={error.message} />;
+    return <PageError error={error} />;
   }
 
   if (isLoading) {
