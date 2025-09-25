@@ -14,6 +14,11 @@ import { FlaskRound, MessageSquarePlus } from 'lucide-react';
 When building and running AI agents in production, we wanted to build a way for you to leave clear feedback for your AI assistant to use to improve your agent. This is where annotations come in.
 
 ## When to Use Annotations: Manually Reviewing Production Completions
+All completions from your agents are saved in the AnotherAI. You can access them at any time:
+1. Open https://anotherai.dev/
+2. Select `Agents` from the left sidebar
+3. Select the name of the agent you want to review completions for
+4. Scroll down the page and select `View all Completions`
 
 <Steps>
 <Step>
@@ -28,17 +33,11 @@ You have a few options on how to locate the specific completion that is being re
   - For example: `Find the completions with outputs that contain HTML opening an closing tags <> and </>`
 - **Search using metadata**: If you have structured [metadata](/observability#metadata) like `customer_id` or `user_email`, you can ask your AI assistant to locate the specific completion that match the metadata.
   - For example: `List all completions with customer_email = john@example.com`
-- **Manually search on the web app**: If all else fails, all completions are visible on the web app, so you can manually search for the specific completion you're looking for. You can review all completions at https://anotherai.dev/completions.
-  - Note: the completions page shows all completions from all agents, so to narrow down the completions to search through, you can adjust the query at the top of the page to be: 
-  ```
-  SELECT id, agent_id, input_messages, input_variables, output_messages, output_error, version, duration_ds, cost_usd, created_at
-  FROM completions
-  WHERE agent_id = '[your-agent-id]'
-  ORDER BY created_at DESC
-  LIMIT {limit} OFFSET {offset}
-  ```
-
-  ![Filtering Completions by Agent ID](/images/completions-filter-query.png)
+- **Manually search on the web app**: If all else fails, all completions are visible on the web app, so you can manually search for the specific completion you're looking for. To review all completions for a given agent:
+  - Open https://anotherai.dev/
+  - Select `Agents` from the left sidebar
+  - Select the name of the agent you want to review completions for
+  - Scroll down the page and select `View all Completions`
 
 </Step>
 <Step>
