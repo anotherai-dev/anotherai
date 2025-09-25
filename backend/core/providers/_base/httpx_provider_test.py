@@ -454,7 +454,7 @@ class TestPrepareCompletion:
     async def test_prepare_completion_with_audio(self, mocked_provider: MockedProvider):
         messages = [
             Message(
-                content=[MessageContent(file=File(url="https://example.com/audio.mp3"))],
+                content=[MessageContent(file=File(url="https://example.com/audio.mp3").sanitize())],
                 role="user",
             ),
         ]
