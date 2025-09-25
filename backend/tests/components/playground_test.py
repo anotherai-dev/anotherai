@@ -414,3 +414,70 @@ async def test_playground_empty_messages(test_api_client: IntegrationTestClient)
         )
 
     assert not test_api_client.httpx_mock.get_requests()
+
+
+async def test_image_url_as_url_object(test_api_client: IntegrationTestClient):
+    res = await test_api_client.call_tool(
+        "create_experiment",
+        {
+            "id": "test-experiment",
+            "title": "Capital Extractor Test Experiment",
+            "description": "This is a test experiment",
+            "author_name": "user",
+            "agent_id": "test-agent",
+        },
+    )
+    experiment_id = res["id"]
+
+    versions = await test_api_client.call_tool(
+        "add_versions_to_experiment",
+        {
+            "experiment_id": experiment_id,
+            "version": {
+                "model": "gpt-5-nano-2025-08-07",
+                "prompt": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": "{{image_url}}",
+                                },
+                            },
+                        ],
+                    },
+                ],
+            },
+            "overrides": [
+                {"model": "gpt-4.1-nano-2025-04-14"},
+            ],
+        },
+    )
+    assert len(versions["result"]) == 2
+
+    versions2 = await test_api_client.call_tool(
+        "add_versions_to_experiment",
+        {
+            "experiment_id": experiment_id,
+            "version": '{\n  "model": "gpt-4o-mini-latest",\n  "prompt": [\n    {\n      "role": "system",\n      "content": "You are an expert in animals. Find the animal in the image"\n    },\n    {\n      "role": "user", \n      "content": [\n        {\n          "type": "image_url",\n          "image_url": {\n            "url": "{{image_url}}"\n          }\n        }\n      ]\n    }\n  ],\n  "response_format": {\n    "json_schema": {\n      "name": "AnimalClassificationOutput",\n      "schema": {\n        "type": "object",\n        "properties": {\n          "animals": {\n            "type": "array",\n            "items": {\n              "type": "object",\n              "properties": {\n                "location": {\n                  "type": "string",\n                  "enum": ["top", "bottom", "left", "right", "center"]\n                },\n                "name": {\n                  "type": "string"\n                },\n                "subspecies": {\n                  "type": "string"\n                },\n                "latin_name": {\n                  "type": "string"\n                },\n                "endangered_level": {\n                  "type": "string",\n                  "enum": ["least concern", "near threatened", "vulnerable", "endangered", "critically endangered", "extinct in the wild", "extinct"]\n                }\n              },\n              "required": ["location", "name", "endangered_level"]\n            }\n          }\n        },\n        "required": ["animals"]\n      }\n    }\n  }\n}',
+            "overrides": [
+                {
+                    "model": "gpt-5-nano-2025-08-07",
+                },
+                {
+                    "model": "gemini-2.0-flash-lite-001",
+                },
+                {
+                    "model": "gpt-4.1-nano-latest",
+                },
+                {
+                    "model": "llama4-scout-instruct-fast",
+                },
+                {
+                    "model": "gemini-2.5-flash-lite",
+                },
+            ],
+        },
+    )
+    assert len(versions2["result"]) == 6

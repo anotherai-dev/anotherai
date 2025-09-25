@@ -1,5 +1,5 @@
 from datetime import UTC, datetime
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import TypeAdapter
 from pydantic_core import ValidationError
@@ -14,7 +14,7 @@ from core.domain.api_key import APIKey as DomainAPIKey
 from core.domain.api_key import CompleteAPIKey as DomainCompleteAPIKey
 from core.domain.deployment import Deployment as DomainDeployment
 from core.domain.error import Error as DomainError
-from core.domain.exceptions import BadRequestError
+from core.domain.exceptions import BadRequestError, JSONSchemaValidationError
 from core.domain.experiment import Experiment as DomainExperiment
 from core.domain.experiment import ExperimentOutput
 from core.domain.file import File
@@ -39,8 +39,11 @@ from core.domain.version import Version as DomainVersion
 from core.domain.view import Graph as DomainGraph
 from core.domain.view import View as DomainView
 from core.domain.view import ViewFolder as DomainViewFolder
+from core.services.messages.messages_utils import json_schema_for_template
+from core.utils.schema_sanitation import validate_schema
 from core.utils.uuid import uuid7
 from protocol.api._api_models import (
+    URL,
     Agent,
     Annotation,
     APIKey,
@@ -72,9 +75,11 @@ from protocol.api._api_models import (
     ToolCallResult,
     Trace,
     Version,
+    VersionRequest,
     View,
     ViewFolder,
 )
+from protocol.api._run_models import OpenAIProxyResponseFormat
 from protocol.api._services._urls import deployment_url, experiments_url, view_url
 
 _log = get_logger(__name__)
@@ -157,13 +162,19 @@ def message_role_to_domain(
             return "assistant"
 
 
+def _extract_url(url: str | URL) -> str:
+    if isinstance(url, URL):
+        return url.url
+    return url
+
+
 def message_content_to_domain(message_content: Message.Content) -> DomainMessageContent:
     if len(message_content.model_fields_set) > 1:
         raise BadRequestError("Contents can only contain one field at a time")
     if message_content.image_url:
-        return DomainMessageContent(file=File(url=message_content.image_url, format="image"))
+        return DomainMessageContent(file=File(url=_extract_url(message_content.image_url), format="image"))
     if message_content.audio_url:
-        return DomainMessageContent(file=File(url=message_content.audio_url, format="audio"))
+        return DomainMessageContent(file=File(url=_extract_url(message_content.audio_url), format="audio"))
     if message_content.tool_call_request:
         return DomainMessageContent(
             tool_call_request=tool_call_request_to_domain(message_content.tool_call_request),
@@ -268,6 +279,116 @@ def version_from_domain(version: DomainVersion) -> Version:
         prompt=[message_from_domain(m) for m in version.prompt] if version.prompt else None,
         output_schema=output_schema_from_domain(version.output_schema) if version.output_schema else None,
         input_variables_schema=version.input_variables_schema,
+        max_output_tokens=version.max_output_tokens,
+        tool_choice=version.tool_choice,
+        parallel_tool_calls=version.parallel_tool_calls,
+        reasoning_effort=version.reasoning_effort,
+        reasoning_budget=version.reasoning_budget,
+        presence_penalty=version.presence_penalty,
+        frequency_penalty=version.frequency_penalty,
+        use_structured_generation=version.use_structured_generation,
+        provider=version.provider,
+    )
+
+
+def _sanitize_json_schema(json_schema: dict[str, Any]) -> DomainVersion.OutputSchema:
+    # We have a straight JSON Schema
+    try:
+        validate_schema(json_schema)
+    except JSONSchemaValidationError as e:
+        raise BadRequestError(
+            f"Invalid output json schema: {e}. Please provide a valid JSON schema or an OpenAI response format",
+        ) from e
+    return DomainVersion.OutputSchema(json_schema=json_schema)
+
+
+def _extract_json_schema(output_json_schema: dict[str, Any]) -> dict[str, Any] | None:  # noqa: C901
+    if not output_json_schema:
+        return None
+    _type = output_json_schema.get("type")
+    match _type:
+        case None:
+            # Weird case, maybe the model decided to send us back an OutputSchema it found in a version
+            # Let's validate the model
+            possible_keys = ["json_schema", "schema"]
+            for key in possible_keys:
+                if schema := output_json_schema.get(key):
+                    # We are re-performing an extract here
+                    # We have seen models return a `json_schema` type object from OAI
+                    # But not sending the `json_schema` type
+                    return _extract_json_schema(schema)
+            # Fallthrough to BadRequestError below
+        case "array":
+            raise BadRequestError("Array as root types are not supported. Please wrap in the array within an object")
+        case "string" | "integer" | "number" | "boolean":
+            raise BadRequestError(
+                "String, integer, number, and boolean as root types are not supported. Please wrap in the string, integer, number, or boolean within an object",
+            )
+        case "object":
+            return output_json_schema
+        # Assuming we are getting a response format
+        # https://platform.openai.com/docs/api-reference/chat/create#chat-create-response_format
+        case "json_object":
+            return {}
+        case "text":
+            return None
+        case "json_schema":
+            try:
+                validated = OpenAIProxyResponseFormat.model_validate(output_json_schema)
+            except ValidationError as e:
+                raise BadRequestError(f"Invalid JSON Schema response format: {e}") from e
+            if not validated.json_schema:
+                raise BadRequestError("JSON Schema response format must have a json_schema")
+            return validated.json_schema.schema_
+        case _:
+            pass  # Fallthrough to BadRequestError below
+
+    raise BadRequestError("Invalid output json schema. Please provide a valid JSON schema or an OpenAI response format")
+
+
+def _sanitize_output_json_schema(output_json_schema: dict[str, Any] | None) -> DomainVersion.OutputSchema | None:
+    if not output_json_schema:
+        return None
+    schema = _extract_json_schema(output_json_schema)
+    if schema is None:
+        return None
+    return _sanitize_json_schema(schema)
+
+
+def version_request_to_domain(version: VersionRequest) -> DomainVersion:
+    if version.prompt is not None:
+        input_variables_schema, _ = json_schema_for_template([message_to_domain(m) for m in version.prompt], {})
+    else:
+        input_variables_schema = None
+
+    return DomainVersion(
+        model=version.model,
+        temperature=version.temperature,
+        top_p=version.top_p,
+        enabled_tools=[tool_to_domain(t) for t in version.tools] if version.tools else None,
+        prompt=[message_to_domain(m) for m in version.prompt] if version.prompt else None,
+        output_schema=_sanitize_output_json_schema(version.output_json_schema),
+        max_output_tokens=version.max_output_tokens,
+        tool_choice=version.tool_choice,
+        parallel_tool_calls=version.parallel_tool_calls,
+        reasoning_effort=version.reasoning_effort,
+        reasoning_budget=version.reasoning_budget,
+        presence_penalty=version.presence_penalty,
+        frequency_penalty=version.frequency_penalty,
+        use_structured_generation=version.use_structured_generation,
+        provider=version.provider,
+        input_variables_schema=input_variables_schema,
+    )
+
+
+def version_request_from_domain(version: DomainVersion) -> VersionRequest:
+    return VersionRequest(
+        model=version.model or "",
+        temperature=version.temperature,
+        top_p=version.top_p,
+        tools=[tool_from_domain(t) for t in version.enabled_tools] if version.enabled_tools else None,
+        prompt=[message_from_domain(m) for m in version.prompt] if version.prompt else None,
+        output_json_schema=version.output_schema.json_schema if version.output_schema else None,
         max_output_tokens=version.max_output_tokens,
         tool_choice=version.tool_choice,
         parallel_tool_calls=version.parallel_tool_calls,

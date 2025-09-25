@@ -26,11 +26,11 @@ def _event_dep(context: Annotated[Context, TaskiqDepends()]) -> Event:
 EventDep = Annotated[Event, TaskiqDepends(_event_dep)]
 
 
-def _lifecyle_dependencies(context: Annotated[Context, TaskiqDepends()]) -> LifecycleDependencies:
+def _lifecycle_dependencies(context: Annotated[Context, TaskiqDepends()]) -> LifecycleDependencies:
     return context.state.dependencies
 
 
-LifecycleDependenciesDep = Annotated[LifecycleDependencies, TaskiqDepends(_lifecyle_dependencies)]
+LifecycleDependenciesDep = Annotated[LifecycleDependencies, TaskiqDepends(_lifecycle_dependencies)]
 
 
 def _event_router(event: EventDep, dependencies: LifecycleDependenciesDep) -> EventRouter:

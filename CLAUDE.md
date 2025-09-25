@@ -32,6 +32,15 @@ uv run ruff check --fix backend
 
 ## Testing
 
+### Backend Tests (pytest)
+
+Run pytest tests locally:
+```bash
+uv run pytest backend ...
+```
+
+
+
 ### Frontend Tests (Jest)
 
 Run Jest tests locally:
