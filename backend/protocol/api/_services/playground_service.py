@@ -22,7 +22,6 @@ from core.domain.exceptions import (
 from core.domain.models.model_data_mapping import get_model_id
 from core.domain.version import Version as DomainVersion
 from core.services.completion_runner import CompletionRunner
-from core.services.messages.messages_utils import json_schema_for_template
 from core.services.store_completion._run_previews import assign_input_preview, assign_output_preview
 from core.storage.agent_storage import AgentStorage
 from core.storage.completion_storage import CompletionStorage
@@ -30,12 +29,11 @@ from core.storage.deployment_storage import DeploymentStorage
 from core.storage.experiment_storage import CompletionIDTuple, CompletionOutputTuple, ExperimentStorage
 from core.utils.hash import hash_model, is_hash_32
 from core.utils.uuid import uuid7
-from protocol.api._api_models import Input, Version
+from protocol.api._api_models import Input, VersionRequest
 from protocol.api._services.conversions import (
     input_to_domain,
-    message_to_domain,
-    version_from_domain,
-    version_to_domain,
+    version_request_from_domain,
+    version_request_to_domain,
 )
 from protocol.api._services.utils_service import IDType, sanitize_id
 
@@ -79,7 +77,7 @@ class PlaygroundService:
     async def add_versions_to_experiment(
         self,
         experiment_id: str,
-        version: str | Version,
+        version: str | VersionRequest,
         overrides: list[dict[str, Any]] | None,
     ) -> list[str]:
         # First fetch the experiment and the associated inputs
@@ -88,7 +86,8 @@ class PlaygroundService:
         if isinstance(version, str):
             # The double conversion to and from domain sucks here but is necessary
             # Since the overrides will apply to the exposed version type
-            base_version: Version = version_from_domain(await self._get_version_by_id(experiment.agent_id, version))
+            from_storage = await self._get_version_by_id(experiment.agent_id, version)
+            base_version: VersionRequest = version_request_from_domain(from_storage)
         else:
             base_version = version
 
@@ -99,10 +98,10 @@ class PlaygroundService:
             if not overrides:
                 return
             for override in overrides:
-                yield _validate_version(_version_with_override(base_version, override))
+                yield _validate_version(_version_request_with_override(base_version, override))
 
         # Creating domain versions
-        versions = [version_to_domain(v) async for v in _version_iterator()]
+        versions = [version_request_to_domain(v) async for v in _version_iterator()]
         inserted_ids = await self._experiment_storage.add_versions(experiment_id, versions)
 
         self._check_compatibility(versions, experiment.inputs)
@@ -348,7 +347,7 @@ class PlaygroundService:
             raise e
 
 
-def _validate_version(version: Version) -> Version:
+def _validate_version(version: VersionRequest) -> VersionRequest:
     try:
         version.model = get_model_id(version.model)
     except ValueError as e:
@@ -363,16 +362,12 @@ def _validate_version(version: Version) -> Version:
             "as the prompt.",
         )
 
-    if version.prompt and not version.input_variables_schema:
-        variables, _ = json_schema_for_template([message_to_domain(m) for m in version.prompt], {})
-        version.input_variables_schema = variables
-
     return version
 
 
-def _version_with_override(base: Version, override: dict[str, Any]) -> Version:
+def _version_request_with_override(base: VersionRequest, override: dict[str, Any]) -> VersionRequest:
     try:
-        return Version.model_validate(
+        return VersionRequest.model_validate(
             {
                 **base.model_dump(exclude_unset=True, exclude_none=True),
                 **override,

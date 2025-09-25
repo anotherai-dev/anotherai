@@ -6,7 +6,7 @@ from datetime import date, datetime
 from typing import Annotated, Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
 from pydantic.json_schema import SkipJsonSchema
 
 from core.domain.cache_usage import CacheUsage
@@ -73,6 +73,10 @@ class ToolCallResult(BaseModel):
         return self
 
 
+class URL(BaseModel):
+    url: str
+
+
 class Message(BaseModel):
     role: Literal["system", "user", "assistant", "developer", "tool"]
 
@@ -81,8 +85,8 @@ class Message(BaseModel):
 
         text: str | None = None
         object: dict[str, Any] | list[Any] | None = None
-        image_url: str | None = None
-        audio_url: str | None = None
+        image_url: str | URL | None = None
+        audio_url: str | URL | None = None
         tool_call_request: ToolCallRequest | None = None  # function_call in response API
         tool_call_result: ToolCallResult | None = None  # function_call_output in response API
         reasoning: str | None = None
@@ -92,14 +96,11 @@ class Message(BaseModel):
 
 
 class OutputSchema(BaseModel):
-    id: str = Field(description="The id of the output schema. Auto generated from the json schema")
+    id: str = Field(default="", description="The id of the output schema. Auto generated from the json schema")
     json_schema: dict[str, Any] = Field(description="The JSON schema of the output")
 
 
-class Version(BaseModel):
-    model_config = ConfigDict(revalidate_instances="always", extra="forbid")
-
-    id: str = Field(description="The id of the version. Auto generated.", default="")
+class _BaseVersion(BaseModel):
     model: str
     temperature: float | None = None
     top_p: float | None = None
@@ -107,7 +108,6 @@ class Version(BaseModel):
         default=None,
         description="A list of tools that the model can use. If empty, no tools are used.",
     )
-
     prompt: list[Message] | None = Field(
         default=None,
         description="A list of messages that will begin the message list sent to the model"
@@ -115,19 +115,9 @@ class Version(BaseModel):
         "to describe the variables used and the prompt will be rendered with the input variables before"
         "being sent to the model",
     )
-
-    input_variables_schema: dict[str, Any] | None = Field(
-        default=None,
-        description="A JSON schema for the variables used to template the instructions during the inference."
-        "Auto generated from the prompt if the prompt is a Jinja2 template",
-    )
-    output_schema: OutputSchema | None = Field(
-        default=None,
-        description="A JSON schema for the output of the model, aka the schema in the response format",
-    )
-
     max_output_tokens: int | None = Field(
         default=None,
+        validation_alias=AliasChoices("max_output_tokens", "max_tokens", "max_completion_tokens"),
         description="The maximum number of tokens to generate in the prompt",
     )
 
@@ -146,6 +136,33 @@ class Version(BaseModel):
     use_structured_generation: SkipJsonSchema[bool | None] = None
 
     provider: SkipJsonSchema[str | None] = None
+
+
+class VersionRequest(_BaseVersion):
+    model_config = ConfigDict(revalidate_instances="always", extra="forbid")
+
+    # Here we are trying to be as flexible as possible
+    # Models will likely send a response_format field
+    output_json_schema: dict[str, Any] | None = Field(
+        default=None,
+        description="A JSON schema for the output of the model, aka the schema in the response format",
+        validation_alias=AliasChoices("output_json_schema", "output_schema", "response_format"),
+    )
+
+
+class Version(_BaseVersion):
+    id: str = Field(description="The id of the version. Auto generated.", default="")
+
+    output_schema: OutputSchema | None = Field(
+        default=None,
+        description="A JSON schema for the output of the model, aka the schema in the response format",
+    )
+
+    input_variables_schema: dict[str, Any] | None = Field(
+        default=None,
+        description="A JSON schema for the variables used to template the instructions during the inference."
+        "Auto generated from the prompt if the prompt is a Jinja2 template",
+    )
 
 
 class Error(BaseModel):

@@ -8,8 +8,12 @@ import pytest
 from core.domain.agent_input import AgentInput
 from core.domain.exceptions import BadRequestError
 from core.storage.experiment_storage import CompletionIDTuple
-from protocol.api._api_models import Input, Message, Version
-from protocol.api._services.playground_service import PlaygroundService, _validate_version, _version_with_override
+from protocol.api._api_models import Input, Message, VersionRequest
+from protocol.api._services.playground_service import (
+    PlaygroundService,
+    _validate_version,
+    _version_request_with_override,
+)
 from tests.fake_models import fake_experiment, fake_input, fake_version
 
 
@@ -66,7 +70,7 @@ class TestValidateVersion:
         ],
     )
     def test_accepts_valid_models(self, model_id: str):
-        v = Version(model=model_id, prompt=[Message(content="You are a helpful assistant", role="system")])
+        v = VersionRequest(model=model_id, prompt=[Message(content="You are a helpful assistant", role="system")])
         out = _validate_version(v)
         assert out.model  # normalized to canonical id or kept as is
 
@@ -78,21 +82,21 @@ class TestValidateVersion:
         ],
     )
     def test_rejects_invalid_models(self, model_id: str):
-        v = Version(model=model_id)
+        v = VersionRequest(model=model_id)
         with pytest.raises(BadRequestError, match="Invalid model"):
             _validate_version(v)
 
     def test_rejects_versions_with_no_prompt(self):
-        v = Version(model="gpt-4o-mini-latest")
+        v = VersionRequest(model="gpt-4o-mini-latest")
         with pytest.raises(BadRequestError, match="Versions must have an explicit prompt parameter"):
             _validate_version(v)
 
 
 class TestVersionWithOverride:
     def test_valid_override_updates_fields(self):
-        base = Version(model="gpt-4o-mini-latest", temperature=0.1, top_p=None)
+        base = VersionRequest(model="gpt-4o-mini-latest", temperature=0.1, top_p=None)
         override = {"temperature": 0.5, "top_p": 0.9}
-        out = _version_with_override(base, override)
+        out = _version_request_with_override(base, override)
         assert out.temperature == 0.5
         assert out.top_p == 0.9
         # model is preserved
@@ -108,9 +112,9 @@ class TestVersionWithOverride:
         ],
     )
     def test_invalid_override_raises(self, override: dict[str, Any]):
-        base = Version(model="gpt-4o-mini-latest")
+        base = VersionRequest(model="gpt-4o-mini-latest")
         with pytest.raises(BadRequestError, match="Invalid version with override"):
-            _version_with_override(base, override)
+            _version_request_with_override(base, override)
 
 
 class TestAddInputsToExperiment:

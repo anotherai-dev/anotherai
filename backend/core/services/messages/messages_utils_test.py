@@ -1,9 +1,7 @@
-from unittest import mock
-
 import pytest
 
 from core.domain.exceptions import BadRequestError
-from core.domain.file import File, FileKind
+from core.domain.file import File
 from core.domain.message import Message, MessageContent
 from core.services.messages.messages_utils import json_schema_for_template, json_schema_for_template_and_variables
 
@@ -120,38 +118,33 @@ class TestJsonSchemaForTemplate:
         }
         assert last_index == 0
 
-    @pytest.mark.skip("file inlining is not yet supported")
     def test_file_only(self):
         messages = Message(role="user", content=[MessageContent(file=File(url="{{a_file_url}}"))])
 
         schema, last_index = json_schema_for_template([messages], base_schema=None)
         assert schema == {
-            "$defs": {"File": mock.ANY},
             "type": "object",
-            "properties": {"a_file_url": {"$ref": "#/$defs/File"}},
+            "properties": {"a_file_url": {}},
         }
         assert last_index == 0
 
-    @pytest.mark.skip("file inlining is not yet supported")
     def test_file_with_nested_key(self):
         messages = Message(role="user", content=[MessageContent(file=File(url="{{a_file_url.key}}"))])
 
         schema, last_index = json_schema_for_template([messages], base_schema=None)
         assert schema == {
-            "$defs": {"File": mock.ANY},
             "type": "object",
             "properties": {
                 "a_file_url": {
                     "type": "object",
                     "properties": {
-                        "key": {"$ref": "#/$defs/File"},
+                        "key": {},
                     },
                 },
             },
         }
         assert last_index == 0
 
-    @pytest.mark.skip("file inlining is not yet supported")
     def test_file_and_text(self):
         messages = [
             Message(
@@ -164,24 +157,24 @@ class TestJsonSchemaForTemplate:
         ]
         schema, _ = json_schema_for_template(messages, base_schema=None)
         assert schema == {
-            "$defs": {"File": mock.ANY},
             "type": "object",
             "properties": {
                 "name": {},
-                "a_file_url": {"$ref": "#/$defs/File"},
+                "a_file_url": {},
             },
         }
 
-    @pytest.mark.skip("file inlining is not yet supported")
-    def test_image_url(self):
+    def test_content_type(self):
         messages = [
-            Message(role="user", content=[MessageContent(file=File(url="{{a_file_url}}", format=FileKind.IMAGE))]),
+            Message(role="user", content=[MessageContent(file=File(url="data:image/{{ext}},base64,{{data}}"))]),
         ]
         schema, _ = json_schema_for_template(messages, base_schema=None)
         assert schema == {
-            "$defs": {"Image": mock.ANY},
             "type": "object",
-            "properties": {"a_file_url": {"$ref": "#/$defs/Image"}},
+            "properties": {
+                "ext": {},
+                "data": {},
+            },
         }
 
 
