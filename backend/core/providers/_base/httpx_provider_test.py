@@ -440,7 +440,7 @@ class TestPrepareCompletion:
     async def test_prepare_completion_with_image(self, mocked_provider: MockedProvider):
         messages = [
             Message.with_text("Hello"),
-            Message(content=[MessageContent(file=File(url="https://example.com/image.png"))], role="user"),
+            Message(content=[MessageContent(file=File(url="https://example.com/image.png").sanitize())], role="user"),
         ]
         _, completion = await mocked_provider._prepare_completion(  # pyright: ignore[reportPrivateUsage]
             messages,
