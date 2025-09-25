@@ -1,0 +1,15 @@
+{
+  "title": "Features",
+  "icon": "Zap",
+  "pages": [
+    "index",
+    "models",
+    "input-variables",
+    "structured-outputs",
+    "reasoning",
+    "caching",
+    "cost",
+    "modalities",
+    "api-keys"
+  ]
+}

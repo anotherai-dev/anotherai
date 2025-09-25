@@ -1,0 +1,262 @@
+---
+title: Building a New Agent
+summary: Learn how to build AI agents with AnotherAI's unified API and observability features
+description: Step-by-step guide to creating, configuring, and deploying AI agents using AnotherAI
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+
+**Our goal with building with AnotherAI is to turn your AI coding assistant into your AI engineer.** Instead of manually testing different models and prompts, AnotherAI gives your AI coding agent the tools to automatically find the optimal configuration for your specific use case. Here is how to get started building a new agent with AnotherAI.
+
+<Callout type="warning">
+Before you begin, make sure you have the AnotherAI MCP server configured with your AI assistant. Your AI assistant needs this connection to create agents, run experiments, and manage deployments. See the [Getting Started guide](/getting-started) for setup instructions.
+</Callout>
+
+<Callout type="info">
+Need an extra hand with building agents? We're happy to help. Reach us at [team@workflowai.support](mailto:team@workflowai.support) or on [Slack](https://join.slack.com/t/anotherai-dev/shared_invite/zt-3av2prezr-Lz10~8o~rSRQE72m_PyIJA).
+</Callout>
+
+
+## Specifying Agent Behavior and Requirements
+
+The easiest way to create a new agent is to ask your preferred AI assistant to build it for you.
+
+#### Basic Agent Creation
+
+Start by describing what your agent should do:
+
+```
+Create a new AnotherAI agent that can summarize emails
+```
+
+#### Adding Performance Requirements
+
+If you have other criteria or constraints for your agent, you can include them in your prompt and your AI assistant will use AnotherAI to help you optimize for them.
+
+**For customer-facing agents that need fast responses:**
+
+```
+Create a new AnotherAI agent that summarizes emails where at least half of the responses complete in under 1 second 
+```
+
+**For high-volume agents that need to be cost-effective:**
+
+```
+Create a new AnotherAI agent that summarizes emails that costs less than $5 for 1000 requests
+```
+
+Your AI assistant will be able to construct the agent's code, and will be able to use AnotherAI to access 100+ different models to find the best configuration to help you achieve your goals.
+
+
+#### Adding Metadata
+
+You can also add custom metadata to your agents to help organize and track them. Common use cases include:
+
+- **Workflow tracking**: include a trace_id and workflow_name key. (Learn more about workflows [here](/use-cases/connecting-agents))
+- **User identication**: include a user_id customer_email key. 
+
+```
+Create a new AnotherAI agent that summarizes emails and include a customer_id metadata key.
+```
+
+**Agent IDs in Metadata**
+
+When your AI assistant creates an agent, it automatically assigns an `agent_id` in the metadata. In code it would look something like `"agent_id": "email-summarizer"`, and in the AnotherAI web app it would look like `anotherai/agent/email-summarizer`. The agent ID helps AnotherAI organize completions by agent and enables you to reference specific agents when chatting with your AI assistant.
+
+You might ask your AI assistant a question about a specific agent, like:
+```
+How much is anotherai/agent/email-summarizer costing me this month?
+```
+(if you're curious about costs of agents, see our [metrics](/use-cases/fundamentals/metrics) page!)
+
+If you prefer to build manually or want to understand the configuration details, see our [OpenAI SDK Integration](/integrations/openai) guide.
+
+## Testing your Agent
+
+As part of the process of creating your agent with AnotherAI, your AI assistant will automatically create an initial experiment to test your agent's performance. Experiments allow you to systematically compare each of these different parameters of your agent to find the optimal setup for your use case across one or more inputs. You can use experiments to:
+- Compare performance across different models (GPT-4, Claude, Gemini, etc.)
+- Test multiple prompt variations to find the most effective approach
+- Optimize for specific metrics like cost, speed, and accuracy. 
+
+In the cases above where certain constraints were specified, your AI assistant will automatically create several versions of your agent to assess which one matches your requirements best.
+
+For the prompt requesting a fast agent:
+
+![Fast models experiment](/images/checking-new-models-experiment.png)
+
+For the prompt requesting a cost-effective agent:
+
+![Cost-effective models experiment](/images/cost-optimization-experiment.png)
+
+If you find there is additional criteria you want to test, you can always ask your AI assistant to create additional experiments. The most common parameters to experiment with are prompts and models, however you can also experiment with changes to other parameters like temperature. 
+
+### Prompts
+
+Comparing different prompts is one of the most effective ways to improve your agent's performance. Small changes in wording, structure, or examples can lead to significant improvements. If you notice an issue with an existing prompt, you can even ask your AI assistant to generate prompt variations to use in the experiment. 
+
+Example:
+
+```
+Look at the prompt of anotherai/agent/email-rewriter and create an experiment in AnotherAI 
+that compares the current prompt with a new prompt that better emphasizes adopting 
+the tone lists in the input 
+```
+
+Your AI assistant will create the experiment and give you an initial analysis of the results and well as a URL to view the results in the AnotherAI web app.
+
+![Terminal output showing experiment creation](/images/experiment-prompt-enhancement-terminal.png)
+
+You can use the provided URL to view the results in the AnotherAI web app to perform manual analysis of the results.
+
+![Experiment prompts comparison](/images/experiment-prompts-comparison.png)
+
+### Models
+
+Different models excel at different tasks. AnotherAI supports over 100 different models, and experiments can help you choose the right model for your agent, depending on its needs.
+
+Example:
+
+```
+Create an AnotherAI experiment to help me find a faster model for anotherai/agent/email-rewriter,
+but still maintains the same tone and verbosity considerations as my current model.
+```
+
+If you have a specific model in mind that you want to try - **for example, a newly released model** - you can ask your AI assistant to help you test that model against your existing agent version. You can always request that your AI assistant uses inputs from existing completions, to ensure that you're testing with real, production data. 
+
+Example:
+
+```
+Can you retry the last 5 completions of anotherai/agent/email-rewriter and compare the outputs with 
+GPT 5 mini?
+```
+
+![Model comparison experiment](/images/model-comparison-experiment.png)
+
+### Other Parameters
+
+Beyond prompts and models, fine-tuning other parameters can impact your agent's behavior and output quality. Temperature in particular can have a significant impact on the quality of the output.
+
+<Accordions>
+<Accordion title="What is Temperature?">
+Temperature is the most important parameter to experiment with after prompts and models. It controls the randomness of the model's output:
+
+- **Low temperature (0.0 - 0.3)**: More deterministic, consistent outputs. Best for:
+  - Data extraction tasks
+  - Classification
+  - Structured output generation
+  - Tasks requiring high accuracy and repeatability
+
+- **Medium temperature (0.4 - 0.7)**: Balanced creativity and consistency. Best for:
+  - General purpose assistants
+  - Question answering
+  - Summary generation
+
+- **High temperature (0.8 - 1.0)**: More creative, varied outputs. Best for:
+  - Creative writing
+  - Brainstorming
+  - Generating diverse options
+
+</Accordion>
+</Accordions>
+
+Example:
+
+```
+Test my email-rewriter agent with temperatures 0.2, 0.5, and 0.8 to find 
+the right balance between creativity and professionalism
+```
+
+![Email Rewriter Temperature Experiment](/images/email-rewriter-temperature-experiment.png)
+
+### Managing Large Experiments with Claude Code
+If you're testing an agent that has a large system prompt and/or very long inputs, you may encounter token limit issues with the `get_experiment` MCP tool that impacts Claude Code's ability to provide accurate insights on your agent. 
+
+![Claude Code Token Limit Error](/images/claude-code-token-limit-error.png)
+
+In this case, you can manually increase Claude Code's output token limit.
+
+**To set up permanently for all terminal sessions:**
+
+For zsh (default on macOS):
+```bash
+echo 'export MAX_MCP_OUTPUT_TOKENS=150000' >> ~/.zshrc && source ~/.zshrc
+```
+
+For bash:
+```bash
+echo 'export MAX_MCP_OUTPUT_TOKENS=150000' >> ~/.bashrc && source ~/.bashrc
+```
+
+**For temporary use in current session only:**
+```bash
+export MAX_MCP_OUTPUT_TOKENS=150000
+```
+
+Notes: 
+- If you forget or don't realize you need to set a higher limit, you can quit your existing session, run the command to increase the limit, and then use `claude --resume` to continue your previous session with the increased limit applied. 
+
+You can learn more about tool output limits for Claude Code in their [documentation](https://docs.claude.com/en/docs/claude-code/mcp#mcp-output-limits-and-warnings).
+
+## Adding Feedback to your Experiments
+
+When reviewing the results of experiments, you can add feedback (annotations) to help your AI coding agent understand what is working and what is not. Your AI coding agent can then use this feedback to create additional experiments with improved versions of your agent. 
+
+You can add annotations to completions from experiments directly in AnotherAI web app. Annotations can be added for both entire completions and individual fields within the output (when the output is structured).
+
+To add annotations:
+
+<Steps>
+<Step>
+When your coding agent creates an experiment for you, it will automatically send you a URL to the experiment. Use that URL to open the page for the experiments. 
+
+Or if adding annotations to an experiment later:
+- Go to [anotherai.dev/experiments](https://anotherai.dev/experiments)
+- Select the experiment you want to add annotations to
+</Step>
+
+<Step>
+Locate the "Add Annotation" button under each completion's output. Select the button to open a text box where you can add your feedback about the content of that specific completion.
+
+![Add Annotation Button on Completion Output](/images/add-annotation-completion-output.png)
+</Step>
+
+<Step>
+To annotate individual fields within the output, hover over the field you want to annotate and select the "Add Annotation" button.
+
+![Add Annotation on Individual Field](/images/add-annotation-individual-field.png)
+</Step>
+
+<Step>
+You can also add annotations to the model, prompt, output schema (if structured output is enabled for the agent), and other parameters like temperature, top_p, etc.
+
+![Add Annotation on Parameters](/images/add-annotation-parameters.png)
+</Step>
+
+<Step>
+Add specific feedback about what's working and what isn't. For example:
+- "Perfect tone match - captured the enthusiastic style requested. All responses should be this high quality."
+- "Too formal - should be more conversational for this email type"  
+- "The rewrite is too long - original was concise and this adds unnecessary words"
+</Step>
+
+<Step>
+Once you've added annotations, ask your AI assistant to review them and improve your agent:
+
+```
+Review the annotations I added in anotherai/experiment/01997ccb-643a-72e2-8dbd-accfb903f42b 
+and update the prompt to address the issues I identified.
+```
+
+Your AI assistant will analyze your feedback and create an improved version of your agent based on your specific guidance.
+</Step>
+</Steps>
+
+To learn more about how annotations can be used to improve your agent, see our [Improving an Agent with Annotations](/use-cases/fundamentals/annotations) page.
+
+## Next Steps
+
+- [Learn more about different types of experiments](/use-cases/fundamentals/experiments)
+- [Improve your agent with annotations](/use-cases/fundamentals/annotations)
+- [Evaluate agent performance](/use-cases/fundamentals/evaluating)

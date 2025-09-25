@@ -1,0 +1,144 @@
+---
+title: Using Annotations to Improve Agents
+summary: Use annotations to provide feedback and improve your AI agents
+description: Learn how to use annotations to provide specific feedback on completions and experiments, enabling your AI coding agent to improve your agents based on real-world performance
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Card, Cards } from 'fumadocs-ui/components/card';
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+import { FlaskRound, MessageSquarePlus } from 'lucide-react';
+
+## Annotations
+
+When building and running AI agents in production, we wanted to build a way for you to leave clear feedback for your AI assistant to use to improve your agent. This is where annotations come in.
+
+## When to Use Annotations: Manually Reviewing Production Completions
+All completions from your agents are saved in the AnotherAI. You can access them at any time:
+1. Open https://anotherai.dev/
+2. Select `Agents` from the left sidebar
+3. Select the name of the agent you want to review completions for
+4. Scroll down the page and select `View all Completions`
+
+<Steps>
+<Step>
+**Identifying completions that need improvements**
+
+While not always the case, generally the review of production completions are triggered by:
+- a feedback system set up to flag completions that need review (learn more about utilizing end-user feedback to improve your agents with [user feedback](/use-cases/user-feedback))
+- a user or team member reporting an issue with a completion
+
+You have a few options on how to locate the specific completion that is being referred to:
+- **Describe the completion you're looking for to your AI assistant**: You can ask your AI assistant to locate the specific completion that match the description of the feedback you received. 
+  - For example: `Find the completions with outputs that contain HTML opening an closing tags <> and </>`
+- **Search using metadata**: If you have structured [metadata](/observability#metadata) like `customer_id` or `user_email`, you can ask your AI assistant to locate the specific completion that match the metadata.
+  - For example: `List all completions with customer_email = john@example.com`
+- **Manually search on the web app**: If all else fails, all completions are visible on the web app, so you can manually search for the specific completion you're looking for. To review all completions for a given agent:
+  - Open https://anotherai.dev/
+  - Select `Agents` from the left sidebar
+  - Select the name of the agent you want to review completions for
+  - Scroll down the page and select `View all Completions`
+
+</Step>
+<Step>
+**Annotate individual completions with your feedback**
+
+- To annotate entire completions: there is a text box on the top right of the screen where you can add your feedback about the content of the completion.
+- To annotate individual fields within the output, hover over the field you want to annotate and select the "Add Annotation" button. 
+
+<iframe src="https://customer-turax1sz4f7wbpuv.cloudflarestream.com/72270b5b80230702252f69c9c3f4a20a/iframe" width="100%"
+height="400" style={{border: 0}} allowFullScreen></iframe>
+
+You can learn more about the type of content you may want to add in annotations [here](#what-sort-of-content-can-be-added-in-annotations)
+
+</Step>
+<Step> 
+**Using your AI coding agent to improve your agent based on annotations**
+
+After you've added annotations to agent completions or an experiment, all you tell your AI coding agent that you've added annotations and ask it to use your feedback to improve your agent. Just specify the agent - and optionally the specific completions - that you added the annotations to, and your agent will take care of the rest. For example:
+
+```
+Adjust anotherai/agent/calendar-event-extractor based on the annotations 
+that have been added in anotherai/completion/01994ea5-59d3-7396-8b8f-5531355cf151, 
+anotherai/completion/01994e86-5861-715c-7078-1b1d4e6440b1, and 
+anotherai/completion/01994e86-2bef-7227-cea5-5b82f56f7bc7.
+```
+
+Your AI coding assistant will use the annotations to improve the agent.
+</Step>
+<Step>
+**Gain insights about your agent's performance with annotations (optional)**
+
+You can also leverage annotations to provide you with insights about your agent's performance. For example you can ask your AI coding agent to do the following based on the annotations you've added:
+
+**Create Performance Reports**
+
+```
+Provide a report summarizing main themes in annotations left on completions of calendar-event-extraction 
+that used GPT-5. 
+```
+![Accuracy Report for Calendar Event Extraction with GPT-5](/images/calendar-event-accuracy-report.png)
+
+**Compare Model Performance**
+
+```
+Which model has the best tone overall, based on annotations?
+```
+![Model Tone Comparison](/images/model-tone-comparison.png)
+
+</Step>
+</Steps>
+
+## What sort of content can be added in annotations?
+
+Annotations can contain feedback about:
+- What is working (e.g. "The event descriptions are clear and the ideal length")
+- What is not working (e.g. "The description of the events are too verbose, and this model missed out on extracting the updated time of the team sync")
+
+Using text-based annotations allow you to provide thorough, nuanced feedback in cases where a completion's quality isn't straightforward. For example:
+1. If you don't consider a completion as all good or all bad, you can highlight parts of a completion that are working well and parts that are not.
+2. You can add specific thoughts and context to a completion so your coding agent will have an in-depth understanding of the completion's quality.
+
+However if you would like to incorporate more quantitative ratings, you can do that by using scores, which are described below!
+
+Here is what it looks like when annotations are present on a completion:
+
+![Text-based Annotations in AnotherAI](/images/completion-text-annotations.png)
+
+
+## Other Methods for Improving Agents with Annotations
+
+While using annotations when manually reviewing production completions is the most common use case, we would be remiss if we didn't mention some other methods for improving your agents with annotations:
+
+### Manually Annotating Experiment Results
+
+- To annotate entire completions: locate the "Add Annotation" button under each completion's output. Select the button to open a text box where you can add your feedback about the content of that specific completion. 
+- To annotate individual fields within the output, hover over the field you want to annotate and select the "Add Annotation" button.
+- You can also add annotations to the model, prompt, output schema (if structured output is enabled for the agent), and other parameters like temperature, top_p, etc.
+
+  <iframe src="https://customer-turax1sz4f7wbpuv.cloudflarestream.com/e123814e5c765505fa03443864bb2397/iframe" width="100%"
+  height="400" frameBorder="0" allowFullScreen></iframe>
+
+### Using AI Agents to Add Annotations
+
+You can also ask your preferred AI coding agent to review completions and add text-based, scores, or both types of annotations on your behalf. To ensure that your agent is evaluating the completions in the way you want, it's best to provide some guidance. For example:
+
+```
+Review the completions in anotherai/experiment/019885bb-24ea-70f8-c41b-0cbb22cc3c00 
+and leave scores about the completion's accuracy and tone. Evaluate accuracy based on 
+whether the agent correctly extracted all todos from the transcript and evaluate tone 
+based on whether the agent used an appropriately professional tone.
+```
+
+Your agent will analyze the completions and add appropriate annotations. In the example above, your agent will add an annotation with the scores "accuracy" and "tone" and assigned appropriate values for each, based on the content of the completion. 
+
+## Other Ways to Improve your Agents
+
+<Cards>
+  <Card title="Using Experiments" href="/use-cases/fundamentals/experiments" icon={<FlaskRound />}>
+    Systematically compare prompts, models, and parameters to find the optimal agent configuration
+  </Card>
+  <Card title="End-User Feedback" href="/use-cases/user-feedback" icon={<MessageSquarePlus />}>
+    Collect and integrate feedback from your end users to continuously improve your agents
+  </Card>
+</Cards>

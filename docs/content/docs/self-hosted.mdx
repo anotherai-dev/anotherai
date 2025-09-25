@@ -125,23 +125,6 @@ Setup steps:
 
 </Tabs>
 
-### Try it out
-
-After you have the above set up completed, AnotherAI is ready to use!
-
-- If you have agents already created, check out how to [migrate them to AnotherAI](/agents/migrating).
-
-- If you don't have any agents built yet, check out [building a new agent](/agents/building) to learn about building a new AnotherAI-compatible agent.
-
-Once you have an agent built or migrated, here are some examples of prompts you can send to Claude Code to test how AnotherAI works:
-
-```bash
-Create an experiment in AnotherAI that compares how GPT-5 mini and GPT-4 mini perform on @[your-agent-name-here].
-```
-```bash
-Use AnotherAI to help me find a faster model for @[your-agent-name-here] while still maintaining accuracy.
-```
-
 ### Configuring Authentication
 
 The default configuration disables authentication all together using `NO_AUTHORIZATION_ALLOWED=true` in the `.env` file.
@@ -153,6 +136,31 @@ If that variable is not present, the backend expects means to validate a JWT tok
 > You can check [signature_verifier](/backend//core/utils/signature_verifier.py) for the implementation of the signature verification and the [lifecycle.py](/backend/protocol/_common/lifecycle.py) for how the verifier is selected.
 
 The Web Client currently only supports Clerk based authentication, which is also disabled by default. It can be activated by providing the `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` environment variables (note that the `NEXT_PUBLIC_...` key must be available at build time).
+
+### Setting up Provider Keys
+
+Provider keys determine which AI provider credentials AnotherAI uses to make requests to models.
+
+**For self-hosted users**: Provider keys are required and must be configured via environment variables:
+
+```bash
+# .env file
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+GOOGLE_API_KEY=...
+```
+
+**For cloud users**: AnotherAI provides provider access automatically.
+
+### Try it out
+
+After you have the above set up completed, AnotherAI is ready to use!
+
+- If you have agents already created, check out how to [migrate them to AnotherAI](/use-cases/fundamentals/migrating).
+
+- If you don't have any agents built yet, check out [building a new agent](/use-cases/fundamentals/building) to learn about building a new AnotherAI-compatible agent.
+
+Once you have an agent built or migrated, here are some examples of prompts you can send to your AI assistant to test how AnotherAI works:
 
 ## Join the community
 
