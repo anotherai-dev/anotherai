@@ -52,7 +52,7 @@ class MessageRenderer:
         update: dict[str, Any] = {}
 
         if (text := await self._render_str(content.text)) is not None:
-            update["text"] = text[0]
+            update["text"] = text
         if content.file:
             update["file"] = await self._render_file(content.file)
 
