@@ -1,0 +1,201 @@
+---
+title: Migrating an Existing Agent
+summary: Guide for migrating agents using OpenAI SDK, WorkflowAI, or other LLM SDKs to AnotherAI
+description: Learn how to migrate agents currently using the OpenAI SDK, WorkflowAI, or other LLM SDKs to AnotherAI, and add features like input variables and structured outputs
+---
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { BarChart3, UploadCloud, Eye, PlugZap, ListChecks, Globe, ShieldCheck } from 'lucide-react';
+
+## Migrating From the OpenAI SDK to AnotherAI
+
+The easiest way to migrate your agent is to ask your preferred AI assistant to handle it for you.
+
+<Callout type="info">
+Looking for help with migrating your agent? We're happy to help. Reach us at [team@workflowai.support](mailto:team@workflowai.support) or on [Slack](https://join.slack.com/t/anotherai-dev/shared_invite/zt-3av2prezr-Lz10~8o~rSRQE72m_PyIJA).
+</Callout>
+
+If you want to keep your agent as is in code with minimal changes, you can ask your AI assistant to do the following:
+
+```
+Migrate my agent at @[your-agent-file-path] to use AnotherAI. 
+I want to keep my agent as is in code, but just add access to 
+AnotherAI's features
+```
+
+If your agent isn't currently using [input variables](/integrations/openai#1-input-variables) or [structured output](/integrations/openai#2-structured-outputs), it's highly recommended to add them during migration.
+
+<Callout type="info" title="Why input variables matter">
+- **Enable experiments**: Without input variables, AnotherAI can't distinguish between the static data of your prompt template and the dynamic data that changes between completions, making it impossible to run experiments with different inputs
+- **Better observability**: Separates your prompt logic from your data, making it easier to debug issues and understand what data caused specific outputs
+</Callout>
+
+<Callout type="info" title="Why structured outputs matter">
+- **Reliability**: Guarantees valid JSON output every time, eliminating parsing errors and retry loops
+- **Consistency**: Ensures all responses follow the exact same schema, making downstream processing predictable
+</Callout>
+
+```
+Migrate my agent at @[your-agent-file-path] to use AnotherAI.
+I want to keep the same prompt, but update the code to use input variables and structured output.
+```
+
+<Accordions>
+<Accordion title="Manual Migration Steps">
+
+If you prefer to migrate manually or want to understand what changes are needed, follow the steps below.
+
+<Steps>
+<Step>
+
+1. Update your configuration
+
+There are three main steps to migrating your agent to AnotherAI:
+
+1. Update your OpenAI client configuration to point to AnotherAI's base URL. (Required)
+2. Add an `agent_id` in the agent's metadata. This ensures that each agent can be distinguished in AnotherAI's webview. (Recommended)
+3. (For cloud-hosted AnotherAI only) Replace your provider API keys with an AnotherAI API key to gain easy access to 100+ different models. (Recommended)
+
+
+<Tabs items={['Python / OpenAI SDK', 'Node (OpenAI SDK)']}>
+<Tab value="Python / OpenAI SDK">
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="{{API_URL}}/v1",  # Or http://localhost:8000/v1 for self-hosted
+    api_key="aai-***",
+)
+
+# Your existing code works as-is
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "user", "content": "Hello, world!"}
+    ],
+    metadata={
+        "agent_id": "your-agent-name",  # Recommended for observability
+    }
+)
+```
+
+</Tab>
+<Tab value="Node (OpenAI SDK)">
+
+```javascript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  baseURL: '{{API_URL}}/v1',  // Or http://localhost:8000/v1 for self-hosted
+  apiKey: 'aai-***',
+});
+
+// Your existing code works as-is
+const response = await client.chat.completions.create({
+  model: 'gpt-4o',
+  messages: [
+    { role: 'user', content: 'Hello, world!' }
+  ],
+  metadata: {
+    agent_id: 'your-agent-name',  // Recommended for observability
+  }
+});
+```
+
+</Tab>
+</Tabs>
+
+</Step>
+
+<Step>
+
+2. Verify your agent is working
+
+Test your agent by running it once. If everything is set up correctly, you should see the completion appear at https://anotherai.dev/completions.
+
+</Step>
+
+<Step>
+
+3. You're done!
+
+Your agent is now integrated with AnotherAI, giving you access to:
+
+- **100+ AI Models**: Access models from OpenAI, Anthropic, Google, and more
+- **Observability**: Track completions, costs, and performance metrics
+- **Experiments**: Test different models and prompts
+- **Deployments**: Update prompts and models without changing code
+
+</Step>
+</Steps>
+
+</Accordion>
+</Accordions>
+
+## Migrating from WorkflowAI to AnotherAI
+
+If you're a previous WorkflowAI user, any completions created after [insert date] on WorkflowAI will be automatically available in the AnotherAI web app. The completions can be used by your AI coding agent to recreate an identical agent in your codebase to use in AnotherAI. 
+
+<Steps>
+<Step>
+
+Go to https://anotherai.dev/agents
+
+</Step>
+<Step>
+
+Select the agent that you want to migrate
+
+</Step>
+<Step>
+
+Scroll down the agent's page to view the recent completions and select a completion that uses the version of your agent that you want to migrate
+
+</Step>
+<Step>
+
+Copy the completion ID
+
+![Completion detail view with completion ID highlighted](/images/completion-detail-view-id.png)
+
+</Step>
+<Step>
+
+Send the following prompt to your preferred AI assistant:
+```
+Migrate this version of my agent to AnotherAI: 
+[paste the completion ID here]
+```
+
+</Step>
+</Steps>
+
+
+Your AI assistant will take care of the steps to migrate the agent to AnotherAI including: 
+- Fetching prompts from WorkflowAI deployments
+- Converting WorkflowAI SDK calls to OpenAI completion calls
+- Setting up API keys and client configuration
+- Handling structured outputs and metadata
+
+The migration process ensures your existing WorkflowAI agents work seamlessly with AnotherAI while gaining access to additional features.
+
+## Migrating Away from AnotherAI
+
+We have a zero lock-in promise, so you can try AnotherAI risk-free. If it doesn't provide value, switching back takes minutes, not months.
+
+
+To switch away from AnotherAI:
+- Remove `base_url="{{API_URL}}/v1"`
+- If you're not using deployments: your code stays identical
+- If you are using deployments: simply ask your AI assistant to fetch your deployment configuration to recreate the equivalent configuration in your code.
+
+If you have any questions or encounter any issues with switching away from AnotherAI, please reach out to [us](mailto:team@workflowai.support).
+
+## Next Steps
+
+- [Evaluating Agents](/use-cases/fundamentals/evaluating) - Test and compare agent performance
+- [Improving Agents](/use-cases/fundamentals/annotations) - Optimize prompts and model selection
+- [Deployments](/use-cases/fundamentals/deployments) - Update prompts and models without changing code

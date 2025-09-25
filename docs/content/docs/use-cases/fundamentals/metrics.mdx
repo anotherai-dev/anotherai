@@ -1,0 +1,318 @@
+---
+title: Metrics and Views
+summary: Ask questions in natural language, build custom views, and access your AI agent data to monitor performance, costs, and usage patterns
+description: Query your AI agents' data with natural language, create persistent dashboards, and integrate with your tools via API for advanced use cases
+---
+
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+
+One of the core features we wanted to unlock with AnotherAI was to allow users to access all their agent data in a way that would allow them to see the information that was important to *them*. 
+
+You can start by asking questions directly in natural language through your AI assistant, build persistent views in the web app for metrics you want to monitor regularly, and for more advanced use cases, access the data directly via REST API to integrate with your existing tools or build your own customizable dashboards.
+
+## Types of Data You Can Query
+
+**Organization-wide data, including:**
+  - Total spending across all agents
+  - Most used agents and models
+  - Agents with the highest failure rates
+
+![Organization Daily Spending Graph](/images/organization-daily-spending-graph.png)
+
+**Agent-level data, including:**
+  - Individual agent costs and usage
+  - Latency and performance metrics
+  - User feedback and annotations left my team members
+
+![Agent Level Daily Spending Graph](/images/agent-level-daily-spending-graph.png)
+
+## Type of Views You Can Create
+
+There are two main types of views in AnotherAI:
+
+**1. Table Views**
+- Display tabular data with rows and columns
+- Best for individual completions, detailed records, or spreadsheet-style data
+- Example uses: Recent completions, error logs, cost breakdowns
+
+Example of a table view:
+![Table view example showing completions with annotations](/images/table-view-example.png)
+
+**2. Chart/Graph Views**
+- Multiple visualization types for aggregated data:
+  - **Line graphs**: Time-series data and trends
+  - **Bar charts**: Compare values across categories (can be stacked)
+  - **Pie charts**: Show proportional data as segments  
+  - **Scatter plots**: Plot relationships between two numeric variables
+- Best for aggregated metrics, trends, and visual analysis
+-Example uses: Cost trends over time, agent performance comparisons, model usage distribution
+
+Example of a chart view:
+![Organization Daily Spending Graph](/images/organization-daily-spending-graph.png)
+
+**Key difference**: Tables show individual records while charts show aggregated data with visual representations.
+
+## Query methods
+
+### Using Natural Language via AI Assistant
+
+The AnotherAI MCP allows you to ask questions about your completions data in plain English. Your AI assistant will automatically translate your request into the appropriate SQL query and retrieve the results. This means you don't need to know SQL to analyze your data.
+
+For example, you can ask questions like:
+- "What's my total spend this week?"
+
+<Accordions>
+<Accordion title="Example response">
+This Week's Total Spend: $1,123.18
+
+Daily Breakdown:
+- Monday 9/8: $164.87
+- Tuesday 9/9: $232.25
+- Wednesday 9/10: $249.97
+- Thursday 9/11: $240.29
+- Friday 9/12: $235.78 (today, partial day)
+
+You've run 1.45 million completions this week at an average cost of $0.00078 per run.
+</Accordion>
+</Accordions>
+
+- "Which agents are failing most often?"
+
+<Accordions>
+<Accordion title="Example response">
+**Agents with Highest Failure Rates (Last 7 Days):**
+
+1. extract-company-info-from-domain - 58.82% failure rate (10 failures / 17 total runs)
+2. extract-meeting-notes - 33.33% failure rate (10 failures / 30 total runs)
+3. task-input-migration - 5.26% failure rate (2 failures / 38 total runs)
+4. generate-task-preview - 3.55% failure rate (41 failures / 1,155 total runs)
+5. task-input-example - 0.75% failure rate (2 failures / 265 total runs)
+</Accordion>
+</Accordions>
+
+- "Show me the average latency for each model"
+
+<Accordions>
+<Accordion title="Example response">
+**Average Model Latencies (Last 24 Hours):**
+
+| Model | Avg Latency | P50 | P95 | P99 | Total Requests |
+|-------|-------------|-----|-----|-----|----------------|
+| gemini-1.5-pro-002 | 1,662ms | 1,500ms | 2,580ms | 4,124ms | 245 |
+| gemini-2.0-flash-001 | 1,877ms | 1,150ms | 11,575ms | 15,860ms | 106 |
+| gemini-2.0-flash-latest | 2,638ms | 1,700ms | 9,075ms | 13,470ms | 166 |
+| gpt-4o-mini-latest | 4,683ms | 4,300ms | 6,300ms | 6,540ms | 6 |
+| gemini-2.5-flash | 4,756ms | 3,800ms | 10,160ms | 13,516ms | 27 |
+| claude-3-7-sonnet-20250219 | 7,061ms | 6,000ms | 12,100ms | 22,680ms | 161 |
+</Accordion>
+</Accordions>
+
+- "How many completions did we process yesterday?"
+
+<Accordions>
+<Accordion title="Example response">
+**Yesterday's Completions (September 14):**
+
+Total: 376 completions
+Total Cost: $4.92
+Average Cost per Completion: $0.0131
+Success Rate: 99.2% (3 failures)
+Unique Agents Used: 29
+
+**Completions by Hour:**
+- 12 AM: 1
+- 1 AM: 5
+- 2 AM: 13
+- 3 AM: 1
+- 4 AM: 87
+- 5 AM: 69
+- 6 AM: 13
+- 7 AM: 1
+- 8 AM: 2
+- 9 AM: 18
+- 10 AM: 12
+- 11 AM: 9
+- 12 PM: 18
+- 1 PM: 3
+- 2 PM: 37
+- 3 PM: 17
+- 4 PM: 11
+- 5 PM: 1
+- 6 PM: 1
+- 7 PM: 18
+- 8 PM: 1
+- 9 PM: 25
+- 10 PM: 13
+</Accordion>
+</Accordions>
+
+Your AI assistant will handle the query and present the results in a clear format.
+
+### Creating Views in AnotherAI
+
+You can also create persistent views in the web app to monitor important metrics over time. Simply describe what you want to see visualized.
+
+For example: suppose you have an agent is becoming increasingly popular in your product. You want to keep an eye on the overall spend on that agent to ensure you don't go over budget. You also want to keep an eye on the speed of the models you're using, so that your customers aren't left with long wait times. You may ask your AI assistant to create the following views as such:
+
+<Steps>
+<Step>
+Describe the view or goal you want to your preferred AI assistant
+
+```
+Create a view in AnotherAI that shows me the daily cost of 
+anotherai/agent/calendar-event-extraction
+```
+
+![Calendar Event Extraction Daily Cost](/images/calendar-event-extraction-daily-cost.png)
+or 
+
+```
+Create a view in AnotherAI that shows me the total number of completions per day
+across all agents for the last week
+```
+
+![Daily Completions Count Bar Chart](/images/daily-completions-count-bar-chart.png)
+or 
+
+```
+Create a view in AnotherAI that shows all the completion outputs and annotations
+for anotherai/agent/calendar-event-extraction
+```
+
+![Calendar Event Completions and Annotations](/images/calendar-event-completions-annotations.png)
+</Step>
+<Step>
+After creating a view, you can always make adjustments to it
+
+```
+Update anotherai/views/calendar-event-extraction-completions-annotations to include 
+the completion inputs as well
+```
+
+![Calendar Event Completions and Annotations with Inputs](/images/calendar-event-completions-annotations-with-inputs.png)
+</Step>
+</Steps>
+
+
+## Can I access metrics via an API?
+
+Yes! If you want to integrate AnotherAI data into your existing business intelligence tools, you can also access the data via the `/v1/completions/query` endpoint. This provides the same functionality as the `query_completions` MCP tool but through HTTP requests, enabling you to further customize how you utilize the data available to you.
+
+<Callout type="info">
+**Recommended approach:** For building integrations with the AnotherAI API, we recommend using an AI coding assistant with the AnotherAI MCP connected. The MCP gives your AI assistant direct access to:
+- Complete API documentation
+- The ability to explore the SQL schema using `query_completions` with DESCRIBE statements
+- Real-time testing of queries before implementing them in code
+
+This approach significantly speeds up development and ensures your integration uses the API correctly. See the [Getting Started guide](/getting-started) for MCP setup instructions.
+</Callout>
+
+### Endpoint
+
+```http
+GET {{API_URL}}/v1/completions/query
+```
+
+### Authentication
+
+Include your AnotherAI API key in the Authorization header:
+
+```http
+Authorization: Bearer aai-your-api-key
+```
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `query` | string | Yes | SQL query to execute on the `completions` table |
+
+### Response
+
+Returns an array of objects representing the query results:
+
+```json
+[
+  {
+    "completion_id": "comp_123",
+    "agent_id": "email-classifier",
+    "model": "gpt-4o",
+    "created_at": "2024-01-15T10:30:00Z",
+    "total_tokens": 150,
+    "cost_usd": 0.002
+  }
+]
+```
+
+### Example usage
+
+<Tabs items={["cURL", "Python", "JavaScript"]}>
+<Tab value="cURL">
+```bash
+curl -X GET "{{API_URL}}/v1/completions/query?query=SELECT%20*%20FROM%20completions%20WHERE%20agent_id%20%3D%20%27email-classifier%27%20LIMIT%2010" \
+  -H "Authorization: Bearer aai-your-api-key" \
+  -H "Content-Type: application/json"
+```
+</Tab>
+<Tab value="Python">
+```python
+import requests
+
+url = "{{API_URL}}/v1/completions/query"
+headers = {
+    "Authorization": "Bearer aai-your-api-key",
+    "Content-Type": "application/json"
+}
+params = {
+    "query": "SELECT * FROM completions WHERE agent_id = 'email-classifier' LIMIT 10"
+}
+
+response = requests.get(url, headers=headers, params=params)
+data = response.json()
+```
+</Tab>
+<Tab value="JavaScript">
+```javascript
+const url = new URL("{{API_URL}}/v1/completions/query");
+url.searchParams.append("query", "SELECT * FROM completions WHERE agent_id = 'email-classifier' LIMIT 10");
+
+const response = await fetch(url, {
+    headers: {
+        "Authorization": "Bearer aai-your-api-key",
+        "Content-Type": "application/json"
+    }
+});
+
+const data = await response.json();
+```
+</Tab>
+</Tabs>
+
+### Common queries
+
+Here are some useful SQL queries for analyzing your completion data:
+
+```sql
+-- Get completions for a specific agent in the last 24 hours
+SELECT * FROM completions 
+WHERE agent_id = 'my-agent' 
+AND created_at >= NOW() - INTERVAL 1 DAY
+ORDER BY created_at DESC;
+
+-- Analyze cost and token usage by model
+SELECT model, COUNT(*) as completion_count, 
+       SUM(total_tokens) as total_tokens, 
+       SUM(cost_usd) as total_cost
+FROM completions 
+GROUP BY model
+ORDER BY total_cost DESC;
+
+-- Find slow completions (over 5 seconds)
+SELECT completion_id, agent_id, model, duration_ms
+FROM completions 
+WHERE duration_ms > 5000
+ORDER BY duration_ms DESC;
+```
