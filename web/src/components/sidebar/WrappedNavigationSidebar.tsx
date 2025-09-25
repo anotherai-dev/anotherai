@@ -197,7 +197,7 @@ export default function WrappedNavigationSidebar({
         popoverClassName="bg-gray-800 rounded-[2px] px-2 py-1"
       >
         <a
-          href="https://docs.anotherai.dev/inference/models#list"
+          href="https://docs.anotherai.dev/features/models"
           target="_blank"
           rel="noopener noreferrer"
           className="p-3 rounded-md transition-colors text-gray-700 hover:bg-gray-100 cursor-pointer"

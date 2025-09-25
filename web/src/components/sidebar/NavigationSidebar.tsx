@@ -136,7 +136,7 @@ export default function NavigationSidebar({ onOpenCommandPalette, initialExpande
           </Link>
           <ApiKeysButton onClick={handleOpenApiKeysModal} />
           <a
-            href="https://docs.anotherai.dev"
+            href="https://docs.anotherai.dev/getting-started"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-1 text-gray-700 hover:bg-gray-100 cursor-pointer"
@@ -154,7 +154,7 @@ export default function NavigationSidebar({ onOpenCommandPalette, initialExpande
             Documentation
           </a>
           <a
-            href="https://docs.anotherai.dev/inference/models#list"
+            href="https://docs.anotherai.dev/features/models"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-1 text-gray-700 hover:bg-gray-100 cursor-pointer"

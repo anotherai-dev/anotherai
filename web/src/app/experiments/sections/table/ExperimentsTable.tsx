@@ -87,7 +87,7 @@ export function ExperimentsTable(props: ExperimentsTableProps) {
       <EmptyState
         title="No experiments found."
         subtitle="Create your first experiment to get started"
-        documentationUrl="https://docs.anotherai.dev/agents/improving#experiments"
+        documentationUrl="https://docs.anotherai.dev/use-cases/fundamentals/experiments"
       />
     );
   }
