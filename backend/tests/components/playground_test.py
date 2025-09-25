@@ -459,7 +459,7 @@ async def test_image_url_as_url_object(test_api_client: IntegrationTestClient):
     versions2 = await test_api_client.call_tool(
         "add_versions_to_experiment",
         {
-            "experiment_id": "01997d25-b859-7066-681c-c11fe1250b89",
+            "experiment_id": experiment_id,
             "version": '{\n  "model": "gpt-4o-mini-latest",\n  "prompt": [\n    {\n      "role": "system",\n      "content": "You are an expert in animals. Find the animal in the image"\n    },\n    {\n      "role": "user", \n      "content": [\n        {\n          "type": "image_url",\n          "image_url": {\n            "url": "{{image_url}}"\n          }\n        }\n      ]\n    }\n  ],\n  "response_format": {\n    "json_schema": {\n      "name": "AnimalClassificationOutput",\n      "schema": {\n        "type": "object",\n        "properties": {\n          "animals": {\n            "type": "array",\n            "items": {\n              "type": "object",\n              "properties": {\n                "location": {\n                  "type": "string",\n                  "enum": ["top", "bottom", "left", "right", "center"]\n                },\n                "name": {\n                  "type": "string"\n                },\n                "subspecies": {\n                  "type": "string"\n                },\n                "latin_name": {\n                  "type": "string"\n                },\n                "endangered_level": {\n                  "type": "string",\n                  "enum": ["least concern", "near threatened", "vulnerable", "endangered", "critically endangered", "extinct in the wild", "extinct"]\n                }\n              },\n              "required": ["location", "name", "endangered_level"]\n            }\n          }\n        },\n        "required": ["animals"]\n      }\n    }\n  }\n}',
             "overrides": [
                 {
@@ -480,4 +480,4 @@ async def test_image_url_as_url_object(test_api_client: IntegrationTestClient):
             ],
         },
     )
-    assert len(versions2["result"]) == 1
+    assert len(versions2["result"]) == 6
