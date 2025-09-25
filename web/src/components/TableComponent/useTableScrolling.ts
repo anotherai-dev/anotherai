@@ -11,17 +11,17 @@ export function useTableScrolling(props?: UseTableScrollingProps) {
   const [containerBottom, setContainerBottom] = useState(0);
   const [isHovering, setIsHovering] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
-  
+
   // Scroll position state
   const [scrollLeft, setScrollLeft] = useState(0);
-  
+
   // Refs
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const topScrollRef = useRef<HTMLDivElement>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
-  const lastScrollUpdateRef = useRef<{ source: 'main' | 'top'; timestamp: number } | null>(null);
+  const lastScrollUpdateRef = useRef<{ source: "main" | "top"; timestamp: number } | null>(null);
 
   // Check if table bottom is visible in viewport
   const isTableBottomVisible =
@@ -133,59 +133,58 @@ export function useTableScrolling(props?: UseTableScrollingProps) {
     }
   };
 
-
   // Sync scroll positions between top and main scroll areas
   const handleMainScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const now = Date.now();
     const lastUpdate = lastScrollUpdateRef.current;
-    
+
     // If this scroll event was triggered by a programmatic update from the top scroll, ignore it
-    if (lastUpdate && lastUpdate.source === 'top' && now - lastUpdate.timestamp < 50) {
+    if (lastUpdate && lastUpdate.source === "top" && now - lastUpdate.timestamp < 50) {
       return;
     }
-    
+
     const newScrollLeft = e.currentTarget.scrollLeft;
-    
+
     // Always call the callback immediately for synchronous CSS updates
     props?.onScrollChange?.(newScrollLeft);
-    
+
     // Update React state (can be slower, used as fallback)
     setScrollLeft(newScrollLeft);
-    
+
     // Mark that we're updating from the main scroll
-    lastScrollUpdateRef.current = { source: 'main', timestamp: now };
-    
+    lastScrollUpdateRef.current = { source: "main", timestamp: now };
+
     if (topScrollRef.current && topScrollRef.current.scrollLeft !== newScrollLeft) {
       topScrollRef.current.scrollLeft = newScrollLeft;
     }
-    
+
     handleScroll(); // Show scrollbar when scrolling occurs
   };
 
   const handleTopScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const now = Date.now();
     const lastUpdate = lastScrollUpdateRef.current;
-    
+
     // If this scroll event was triggered by a programmatic update from the main scroll, ignore it
-    if (lastUpdate && lastUpdate.source === 'main' && now - lastUpdate.timestamp < 50) {
+    if (lastUpdate && lastUpdate.source === "main" && now - lastUpdate.timestamp < 50) {
       return;
     }
-    
+
     const newScrollLeft = e.currentTarget.scrollLeft;
-    
+
     // Always call the callback immediately for synchronous CSS updates
     props?.onScrollChange?.(newScrollLeft);
-    
+
     // Update React state (can be slower, used as fallback)
     setScrollLeft(newScrollLeft);
-    
+
     // Mark that we're updating from the top scroll
-    lastScrollUpdateRef.current = { source: 'top', timestamp: now };
-    
+    lastScrollUpdateRef.current = { source: "top", timestamp: now };
+
     if (scrollRef.current && scrollRef.current.scrollLeft !== newScrollLeft) {
       scrollRef.current.scrollLeft = newScrollLeft;
     }
-    
+
     handleScroll(); // Show scrollbar when scrolling occurs
   };
 
@@ -198,19 +197,19 @@ export function useTableScrolling(props?: UseTableScrollingProps) {
     isHovering,
     isScrolling,
     isTableBottomVisible,
-    
+
     // Scroll refs and state
     scrollRef,
     topScrollRef,
     scrollLeft,
-    
+
     // Event handlers
     handleMouseEnter,
     handleMouseLeave,
     handleScroll,
     handleMainScroll,
     handleTopScroll,
-    
+
     // Timeout refs for cleanup
     hoverTimeoutRef,
     scrollTimeoutRef,

@@ -100,7 +100,7 @@ export function StickyTableHeaders({
           className="flex h-full"
           style={{
             transform: `translateX(var(--scroll-offset, -${scrollLeft}px))`, // Use CSS variable with fallback
-            transition: 'transform 50ms ease-out', // Very short smooth animation
+            transition: "transform 50ms ease-out", // Very short smooth animation
           }}
         >
           {stickyHeaderData.map((headerData, index) => (

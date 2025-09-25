@@ -34,10 +34,13 @@ function VersionHeaderPriceAndLatency(props: VersionHeaderPriceAndLatencyProps) 
 }
 
 // Helper function to compare priceAndLatency objects
-function arePriceAndLatencyEqual(prev?: VersionHeaderPriceAndLatencyProps['priceAndLatency'], next?: VersionHeaderPriceAndLatencyProps['priceAndLatency']): boolean {
+function arePriceAndLatencyEqual(
+  prev?: VersionHeaderPriceAndLatencyProps["priceAndLatency"],
+  next?: VersionHeaderPriceAndLatencyProps["priceAndLatency"]
+): boolean {
   if (prev === next) return true;
   if (!prev || !next) return false;
-  
+
   return (
     prev.avgCost === next.avgCost &&
     prev.avgDuration === next.avgDuration &&

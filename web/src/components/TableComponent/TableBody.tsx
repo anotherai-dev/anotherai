@@ -7,12 +7,7 @@ interface TableBodyProps {
   columnWidth: number;
 }
 
-export function TableBody({
-  rowHeaders,
-  data,
-  headerRowWidth,
-  columnWidth,
-}: TableBodyProps) {
+export function TableBody({ rowHeaders, data, headerRowWidth, columnWidth }: TableBodyProps) {
   return (
     <tbody className="bg-white divide-y divide-gray-200">
       {rowHeaders.map((rowHeader, rowIndex) => (

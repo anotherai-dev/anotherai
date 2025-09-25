@@ -24,16 +24,9 @@ function InputHeaderCell(props: InputHeaderCellProps) {
 
 // Helper function to shallow compare Input objects
 function areInputsEqual(prev: Input, next: Input): boolean {
-  return (
-    prev.id === next.id &&
-    prev.variables === next.variables &&
-    prev.messages === next.messages
-  );
+  return prev.id === next.id && prev.variables === next.variables && prev.messages === next.messages;
 }
 
 export default memo(InputHeaderCell, (prevProps, nextProps) => {
-  return (
-    prevProps.index === nextProps.index &&
-    areInputsEqual(prevProps.input, nextProps.input)
-  );
+  return prevProps.index === nextProps.index && areInputsEqual(prevProps.input, nextProps.input);
 });

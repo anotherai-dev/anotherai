@@ -99,7 +99,7 @@ export const MemoizedModelIcon = memo(ModelIcon, (prevProps, nextProps) => {
   );
 });
 
-// Optimized ModelIconWithName export 
+// Optimized ModelIconWithName export
 export const MemoizedModelIconWithName = memo(ModelIconWithName, (prevProps, nextProps) => {
   return (
     prevProps.modelId === nextProps.modelId &&

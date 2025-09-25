@@ -52,7 +52,7 @@ export function TableScrollbar({
         // Force scrollbar to always be visible
         scrollbarWidth: "auto", // For Firefox
         msOverflowStyle: "scrollbar", // For IE/Edge
-        WebkitOverflowScrolling: 'touch',
+        WebkitOverflowScrolling: "touch",
         overscrollBehaviorX: "none", // Disable horizontal bounce scrolling in Safari
       }}
       onScroll={onScroll}

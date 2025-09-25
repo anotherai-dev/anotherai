@@ -146,7 +146,7 @@ function areAnnotationsEqual(prev?: Annotation[], next?: Annotation[]): boolean 
   if (prev === next) return true;
   if (!prev || !next) return false;
   if (prev.length !== next.length) return false;
-  
+
   for (let i = 0; i < prev.length; i++) {
     if (prev[i].id !== next[i].id || prev[i].text !== next[i].text) {
       return false;

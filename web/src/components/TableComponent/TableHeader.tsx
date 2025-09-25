@@ -1,4 +1,4 @@
-import { ReactNode, MutableRefObject } from "react";
+import { MutableRefObject, ReactNode } from "react";
 
 interface TableHeaderProps {
   headerRef: MutableRefObject<HTMLTableSectionElement | null>;

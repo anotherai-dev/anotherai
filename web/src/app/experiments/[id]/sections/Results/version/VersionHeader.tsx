@@ -255,7 +255,7 @@ function areVersionsEqual(prev: Version, next: Version): boolean {
 function areStringArraysEqual(prev: string[], next: string[]): boolean {
   if (prev === next) return true;
   if (prev.length !== next.length) return false;
-  
+
   for (let i = 0; i < prev.length; i++) {
     if (prev[i] !== next[i]) return false;
   }
@@ -267,7 +267,7 @@ function areVersionArraysEqual(prev?: Version[], next?: Version[]): boolean {
   if (prev === next) return true;
   if (!prev || !next) return false;
   if (prev.length !== next.length) return false;
-  
+
   for (let i = 0; i < prev.length; i++) {
     if (!areVersionsEqual(prev[i], next[i])) return false;
   }
@@ -279,7 +279,7 @@ function areMessageArraysEqual(prev?: Message[], next?: Message[]): boolean {
   if (prev === next) return true;
   if (!prev || !next) return false;
   if (prev.length !== next.length) return false;
-  
+
   for (let i = 0; i < prev.length; i++) {
     if (prev[i].role !== next[i].role || prev[i].content !== next[i].content) {
       return false;
@@ -289,10 +289,13 @@ function areMessageArraysEqual(prev?: Message[], next?: Message[]): boolean {
 }
 
 // Helper function to compare priceAndLatency objects
-function arePriceAndLatencyEqual(prev?: VersionHeaderProps['priceAndLatency'], next?: VersionHeaderProps['priceAndLatency']): boolean {
+function arePriceAndLatencyEqual(
+  prev?: VersionHeaderProps["priceAndLatency"],
+  next?: VersionHeaderProps["priceAndLatency"]
+): boolean {
   if (prev === next) return true;
   if (!prev || !next) return false;
-  
+
   return (
     prev.avgCost === next.avgCost &&
     prev.avgDuration === next.avgDuration &&
@@ -304,11 +307,14 @@ function arePriceAndLatencyEqual(prev?: VersionHeaderProps['priceAndLatency'], n
 }
 
 // Helper function to compare metrics arrays
-function areMetricsEqual(prev?: { key: string; average: number }[], next?: { key: string; average: number }[]): boolean {
+function areMetricsEqual(
+  prev?: { key: string; average: number }[],
+  next?: { key: string; average: number }[]
+): boolean {
   if (prev === next) return true;
   if (!prev || !next) return false;
   if (prev.length !== next.length) return false;
-  
+
   for (let i = 0; i < prev.length; i++) {
     if (prev[i].key !== next[i].key || prev[i].average !== next[i].average) {
       return false;
@@ -322,7 +328,7 @@ function areAnnotationsEqual(prev?: Annotation[], next?: Annotation[]): boolean 
   if (prev === next) return true;
   if (!prev || !next) return false;
   if (prev.length !== next.length) return false;
-  
+
   for (let i = 0; i < prev.length; i++) {
     if (prev[i].id !== next[i].id || prev[i].text !== next[i].text) {
       return false;

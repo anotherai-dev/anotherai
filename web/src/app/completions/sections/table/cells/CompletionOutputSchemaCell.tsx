@@ -48,7 +48,7 @@ function areStringArraysEqual(prev?: string[], next?: string[]): boolean {
   if (prev === next) return true;
   if (!prev || !next) return false;
   if (prev.length !== next.length) return false;
-  
+
   for (let i = 0; i < prev.length; i++) {
     if (prev[i] !== next[i]) {
       return false;

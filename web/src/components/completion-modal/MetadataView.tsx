@@ -63,17 +63,17 @@ function MetadataView({ metadata }: Props) {
 function areMetadataObjectsEqual(prev: Record<string, unknown>, next: Record<string, unknown>): boolean {
   const prevKeys = Object.keys(prev);
   const nextKeys = Object.keys(next);
-  
+
   if (prevKeys.length !== nextKeys.length) {
     return false;
   }
-  
+
   for (const key of prevKeys) {
     if (prev[key] !== next[key]) {
       return false;
     }
   }
-  
+
   return true;
 }
 

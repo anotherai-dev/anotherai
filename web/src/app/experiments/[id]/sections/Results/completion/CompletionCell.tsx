@@ -148,7 +148,7 @@ function CompletionCell(props: CompletionCellProps) {
 function areCompletionsEqual(prev?: ExperimentCompletion, next?: ExperimentCompletion): boolean {
   if (prev === next) return true;
   if (!prev || !next) return false;
-  
+
   return (
     prev.id === next.id &&
     prev.cost_usd === next.cost_usd &&
@@ -162,7 +162,7 @@ function areNumberArraysEqual(prev?: number[], next?: number[]): boolean {
   if (prev === next) return true;
   if (!prev || !next) return false;
   if (prev.length !== next.length) return false;
-  
+
   for (let i = 0; i < prev.length; i++) {
     if (prev[i] !== next[i]) return false;
   }
@@ -174,7 +174,7 @@ function areAnnotationsEqual(prev?: Annotation[], next?: Annotation[]): boolean 
   if (prev === next) return true;
   if (!prev || !next) return false;
   if (prev.length !== next.length) return false;
-  
+
   for (let i = 0; i < prev.length; i++) {
     if (prev[i].id !== next[i].id || prev[i].text !== next[i].text || prev[i].target !== next[i].target) {
       return false;
@@ -187,16 +187,16 @@ function areAnnotationsEqual(prev?: Annotation[], next?: Annotation[]): boolean 
 function areMetricsPerKeyForRowEqual(prev?: Record<string, number[]>, next?: Record<string, number[]>): boolean {
   if (prev === next) return true;
   if (!prev || !next) return false;
-  
+
   const prevKeys = Object.keys(prev);
   const nextKeys = Object.keys(next);
-  
+
   if (prevKeys.length !== nextKeys.length) return false;
-  
+
   for (const key of prevKeys) {
     if (!areNumberArraysEqual(prev[key], next[key])) return false;
   }
-  
+
   return true;
 }
 

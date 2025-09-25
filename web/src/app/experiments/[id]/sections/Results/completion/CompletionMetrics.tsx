@@ -60,11 +60,14 @@ function CompletionMetrics(props: CompletionMetricsProps) {
 }
 
 // Helper function to compare metrics arrays
-function areMetricsEqual(prev?: { key: string; average: number }[], next?: { key: string; average: number }[]): boolean {
+function areMetricsEqual(
+  prev?: { key: string; average: number }[],
+  next?: { key: string; average: number }[]
+): boolean {
   if (prev === next) return true;
   if (!prev || !next) return false;
   if (prev.length !== next.length) return false;
-  
+
   for (let i = 0; i < prev.length; i++) {
     if (prev[i].key !== next[i].key || prev[i].average !== next[i].average) {
       return false;
@@ -77,23 +80,23 @@ function areMetricsEqual(prev?: { key: string; average: number }[], next?: { key
 function areMetricsPerKeyForRowEqual(prev?: Record<string, number[]>, next?: Record<string, number[]>): boolean {
   if (prev === next) return true;
   if (!prev || !next) return false;
-  
+
   const prevKeys = Object.keys(prev);
   const nextKeys = Object.keys(next);
-  
+
   if (prevKeys.length !== nextKeys.length) return false;
-  
+
   for (const key of prevKeys) {
     const prevArray = prev[key];
     const nextArray = next[key];
-    
+
     if (!nextArray || prevArray.length !== nextArray.length) return false;
-    
+
     for (let i = 0; i < prevArray.length; i++) {
       if (prevArray[i] !== nextArray[i]) return false;
     }
   }
-  
+
   return true;
 }
 

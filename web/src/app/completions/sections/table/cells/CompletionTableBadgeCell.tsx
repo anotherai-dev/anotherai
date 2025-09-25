@@ -6,11 +6,7 @@ interface CompletionTableBadgeCellProps {
   rounded?: "default" | "sm" | "md" | "lg" | "none" | string;
 }
 
-function CompletionTableBadgeCell({
-  value,
-  variant = "default",
-  rounded = "md",
-}: CompletionTableBadgeCellProps) {
+function CompletionTableBadgeCell({ value, variant = "default", rounded = "md" }: CompletionTableBadgeCellProps) {
   if (value === null || value === undefined) {
     return <span className="text-xs text-gray-400">N/A</span>;
   }

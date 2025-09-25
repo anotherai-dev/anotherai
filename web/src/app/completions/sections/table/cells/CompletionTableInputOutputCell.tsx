@@ -109,7 +109,7 @@ function areMessageArraysEqual(prev?: Message[], next?: Message[]): boolean {
   if (prev === next) return true;
   if (!prev || !next) return false;
   if (prev.length !== next.length) return false;
-  
+
   for (let i = 0; i < prev.length; i++) {
     if (prev[i].role !== next[i].role || prev[i].content !== next[i].content) {
       return false;

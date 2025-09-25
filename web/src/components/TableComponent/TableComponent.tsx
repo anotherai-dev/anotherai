@@ -1,9 +1,9 @@
 import { cx } from "class-variance-authority";
-import { ReactNode, useRef, useMemo } from "react";
+import { ReactNode, useMemo, useRef } from "react";
 import { StickyTableHeaders } from "./StickyTableHeaders";
-import { TableScrollbar } from "./TableScrollbar";
-import { TableHeader } from "./TableHeader";
 import { TableBody } from "./TableBody";
+import { TableHeader } from "./TableHeader";
+import { TableScrollbar } from "./TableScrollbar";
 import { useTableScrolling } from "./useTableScrolling";
 
 export interface TableProps {
@@ -42,7 +42,7 @@ export function TableComponent({
 }: TableProps) {
   const headerRowWidth = "240px";
   const stickyHeaderRef = useRef<HTMLDivElement>(null);
-  
+
   const {
     containerRef,
     containerWidth,
@@ -62,9 +62,9 @@ export function TableComponent({
     onScrollChange: (scrollLeft) => {
       // Update CSS custom property for immediate visual feedback
       if (stickyHeaderRef.current) {
-        stickyHeaderRef.current.style.setProperty('--scroll-offset', `-${scrollLeft}px`);
+        stickyHeaderRef.current.style.setProperty("--scroll-offset", `-${scrollLeft}px`);
       }
-    }
+    },
   });
 
   // Calculate column width based on available space and number of columns
@@ -140,12 +140,12 @@ export function TableComponent({
         />
       )}
 
-      <div 
-        ref={scrollRef} 
-        className={cx("overflow-x-auto", "scrollbar-hide")} 
-        style={{ 
-          WebkitOverflowScrolling: 'touch',
-          overscrollBehaviorX: 'none'
+      <div
+        ref={scrollRef}
+        className={cx("overflow-x-auto", "scrollbar-hide")}
+        style={{
+          WebkitOverflowScrolling: "touch",
+          overscrollBehaviorX: "none",
         }}
         onScroll={handleMainScroll}
       >
@@ -157,12 +157,7 @@ export function TableComponent({
             columnWidth={columnWidth}
             minHeaderHeight={minHeaderHeight}
           />
-          <TableBody
-            rowHeaders={rowHeaders}
-            data={data}
-            headerRowWidth={headerRowWidth}
-            columnWidth={columnWidth}
-          />
+          <TableBody rowHeaders={rowHeaders} data={data} headerRowWidth={headerRowWidth} columnWidth={columnWidth} />
         </table>
       </div>
     </div>
