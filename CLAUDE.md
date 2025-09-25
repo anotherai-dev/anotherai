@@ -1,3 +1,9 @@
+## Hosted Version
+
+AnotherAI is available hosted at:
+- Web App: https://anotherai.dev
+- API: https://api.anotherai.dev
+
 ## Running AnotherAI Locally
 
 Ensure `.env` file exists with required API keys (OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.)
