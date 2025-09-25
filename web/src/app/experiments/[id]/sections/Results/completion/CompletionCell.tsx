@@ -1,6 +1,6 @@
 import { Copy } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { HoverPopover } from "@/components/HoverPopover";
 import { PageError } from "@/components/PageError";
 import { PriceAndLatencyDisplay } from "@/components/PriceAndLatencyDisplay";
@@ -9,7 +9,7 @@ import { AnnotationsView } from "@/components/annotations/AnnotationsView";
 import { MessagesViewer } from "@/components/messages/MessagesViewer";
 import { Annotation, ExperimentCompletion } from "@/types/models";
 import { getMetricsForCompletion } from "../../../utils";
-import { CompletionMetrics } from "./CompletionMetrics";
+import CompletionMetrics from "./CompletionMetrics";
 
 export type CompletionCellProps = {
   completion: ExperimentCompletion | undefined;
@@ -21,7 +21,7 @@ export type CompletionCellProps = {
   agentId?: string;
 };
 
-export function CompletionCell(props: CompletionCellProps) {
+function CompletionCell(props: CompletionCellProps) {
   const { completion, allCosts, allDurations, annotations, experimentId, allMetricsPerKeyForRow, agentId } = props;
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -143,3 +143,71 @@ export function CompletionCell(props: CompletionCellProps) {
     </div>
   );
 }
+
+// Helper function to compare ExperimentCompletion objects
+function areCompletionsEqual(prev?: ExperimentCompletion, next?: ExperimentCompletion): boolean {
+  if (prev === next) return true;
+  if (!prev || !next) return false;
+  
+  return (
+    prev.id === next.id &&
+    prev.cost_usd === next.cost_usd &&
+    prev.duration_seconds === next.duration_seconds &&
+    prev.output === next.output
+  );
+}
+
+// Helper function to compare number arrays
+function areNumberArraysEqual(prev?: number[], next?: number[]): boolean {
+  if (prev === next) return true;
+  if (!prev || !next) return false;
+  if (prev.length !== next.length) return false;
+  
+  for (let i = 0; i < prev.length; i++) {
+    if (prev[i] !== next[i]) return false;
+  }
+  return true;
+}
+
+// Helper function to compare Annotation arrays
+function areAnnotationsEqual(prev?: Annotation[], next?: Annotation[]): boolean {
+  if (prev === next) return true;
+  if (!prev || !next) return false;
+  if (prev.length !== next.length) return false;
+  
+  for (let i = 0; i < prev.length; i++) {
+    if (prev[i].id !== next[i].id || prev[i].text !== next[i].text || prev[i].target !== next[i].target) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// Helper function to compare metrics per key objects
+function areMetricsPerKeyForRowEqual(prev?: Record<string, number[]>, next?: Record<string, number[]>): boolean {
+  if (prev === next) return true;
+  if (!prev || !next) return false;
+  
+  const prevKeys = Object.keys(prev);
+  const nextKeys = Object.keys(next);
+  
+  if (prevKeys.length !== nextKeys.length) return false;
+  
+  for (const key of prevKeys) {
+    if (!areNumberArraysEqual(prev[key], next[key])) return false;
+  }
+  
+  return true;
+}
+
+export default memo(CompletionCell, (prevProps, nextProps) => {
+  return (
+    areCompletionsEqual(prevProps.completion, nextProps.completion) &&
+    areNumberArraysEqual(prevProps.allCosts, nextProps.allCosts) &&
+    areNumberArraysEqual(prevProps.allDurations, nextProps.allDurations) &&
+    prevProps.experimentId === nextProps.experimentId &&
+    prevProps.agentId === nextProps.agentId &&
+    areAnnotationsEqual(prevProps.annotations, nextProps.annotations) &&
+    areMetricsPerKeyForRowEqual(prevProps.allMetricsPerKeyForRow, nextProps.allMetricsPerKeyForRow)
+  );
+});

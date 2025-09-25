@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { VariablesViewer } from "@/components/VariablesViewer/VariablesViewer";
 import { MessagesViewer } from "@/components/messages/MessagesViewer";
 import { Input } from "@/types/models";
@@ -7,7 +8,7 @@ type InputHeaderCellProps = {
   index: number;
 };
 
-export function InputHeaderCell(props: InputHeaderCellProps) {
+function InputHeaderCell(props: InputHeaderCellProps) {
   const { input, index } = props;
 
   return (
@@ -20,3 +21,19 @@ export function InputHeaderCell(props: InputHeaderCellProps) {
     </div>
   );
 }
+
+// Helper function to shallow compare Input objects
+function areInputsEqual(prev: Input, next: Input): boolean {
+  return (
+    prev.id === next.id &&
+    prev.variables === next.variables &&
+    prev.messages === next.messages
+  );
+}
+
+export default memo(InputHeaderCell, (prevProps, nextProps) => {
+  return (
+    prevProps.index === nextProps.index &&
+    areInputsEqual(prevProps.input, nextProps.input)
+  );
+});

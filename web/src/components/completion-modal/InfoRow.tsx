@@ -1,5 +1,5 @@
 import { Copy } from "lucide-react";
-import { useState } from "react";
+import { memo, useState } from "react";
 import { useToast } from "../ToastProvider";
 
 type InfoRowProps = {
@@ -9,7 +9,7 @@ type InfoRowProps = {
   copyValue?: string; // Optional separate value for copying
 };
 
-export function InfoRow({ title, value, copyable = false, copyValue }: InfoRowProps) {
+function InfoRow({ title, value, copyable = false, copyValue }: InfoRowProps) {
   const { showToast } = useToast();
   const [isHovered, setIsHovered] = useState(false);
 
@@ -50,3 +50,5 @@ export function InfoRow({ title, value, copyable = false, copyValue }: InfoRowPr
     </div>
   );
 }
+
+export default memo(InfoRow);

@@ -1,5 +1,5 @@
 import { Plus } from "lucide-react";
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { HoverPopover } from "@/components/HoverPopover";
 import { AnnotationsView } from "@/components/annotations/AnnotationsView";
 import { Annotation } from "@/types/models";
@@ -24,7 +24,7 @@ type MatchingBaseValueProps = {
     | "bottomLeft";
 };
 
-export function MatchingBaseValue({
+function MatchingBaseValue({
   value,
   annotations,
   experimentId,
@@ -109,3 +109,29 @@ export function MatchingBaseValue({
     </>
   );
 }
+
+// Helper function to compare Annotation arrays
+function areAnnotationsEqual(prev?: Annotation[], next?: Annotation[]): boolean {
+  if (prev === next) return true;
+  if (!prev || !next) return false;
+  if (prev.length !== next.length) return false;
+  
+  for (let i = 0; i < prev.length; i++) {
+    if (prev[i].id !== next[i].id || prev[i].text !== next[i].text) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export default memo(MatchingBaseValue, (prevProps, nextProps) => {
+  return (
+    prevProps.value === nextProps.value &&
+    prevProps.experimentId === nextProps.experimentId &&
+    prevProps.completionId === nextProps.completionId &&
+    prevProps.keyPath === nextProps.keyPath &&
+    prevProps.supportMultiline === nextProps.supportMultiline &&
+    prevProps.position === nextProps.position &&
+    areAnnotationsEqual(prevProps.annotations, nextProps.annotations)
+  );
+});

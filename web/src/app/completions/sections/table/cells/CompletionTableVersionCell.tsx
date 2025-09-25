@@ -1,11 +1,12 @@
+import { memo } from "react";
 import { ModelIconWithName } from "@/components/ModelIcon";
-import { CompletionBaseTableCell } from "./CompletionBaseTableCell";
+import CompletionBaseTableCell from "./CompletionBaseTableCell";
 
 interface CompletionTableVersionCellProps {
   value: unknown;
 }
 
-export function CompletionTableVersionCell({ value }: CompletionTableVersionCellProps) {
+function CompletionTableVersionCell({ value }: CompletionTableVersionCellProps) {
   if (value === null || value === undefined) {
     return <span className="text-xs text-gray-400">N/A</span>;
   }
@@ -117,3 +118,5 @@ export function CompletionTableVersionCell({ value }: CompletionTableVersionCell
 
   return <CompletionBaseTableCell value={value} />;
 }
+
+export default memo(CompletionTableVersionCell);

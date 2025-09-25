@@ -1,5 +1,5 @@
 import { Plus } from "lucide-react";
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { HoverPopover } from "@/components/HoverPopover";
 import { AnnotationsView } from "@/components/annotations/AnnotationsView";
 import { Annotation } from "@/types/models";
@@ -25,7 +25,7 @@ type MatchingJSONValueProps = {
     | "bottomLeft";
 };
 
-export function MatchingJSONValue({
+function MatchingJSONValue({
   value,
   parsedJSON,
   annotations,
@@ -109,3 +109,30 @@ export function MatchingJSONValue({
     </>
   );
 }
+
+// Helper function to compare Annotation arrays
+function areAnnotationsEqual(prev?: Annotation[], next?: Annotation[]): boolean {
+  if (prev === next) return true;
+  if (!prev || !next) return false;
+  if (prev.length !== next.length) return false;
+  
+  for (let i = 0; i < prev.length; i++) {
+    if (prev[i].id !== next[i].id || prev[i].text !== next[i].text) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export default memo(MatchingJSONValue, (prevProps, nextProps) => {
+  return (
+    prevProps.value === nextProps.value &&
+    prevProps.parsedJSON === nextProps.parsedJSON &&
+    prevProps.experimentId === nextProps.experimentId &&
+    prevProps.completionId === nextProps.completionId &&
+    prevProps.keyPath === nextProps.keyPath &&
+    prevProps.containerPadding === nextProps.containerPadding &&
+    prevProps.position === nextProps.position &&
+    areAnnotationsEqual(prevProps.annotations, nextProps.annotations)
+  );
+});

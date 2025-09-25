@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { PriceAndLatencyDisplay } from "@/components/PriceAndLatencyDisplay";
 
 type VersionHeaderPriceAndLatencyProps = {
@@ -12,7 +13,7 @@ type VersionHeaderPriceAndLatencyProps = {
   showAvgPrefix?: boolean;
 };
 
-export function VersionHeaderPriceAndLatency(props: VersionHeaderPriceAndLatencyProps) {
+function VersionHeaderPriceAndLatency(props: VersionHeaderPriceAndLatencyProps) {
   const { priceAndLatency, showAvgPrefix } = props;
 
   if (!priceAndLatency) {
@@ -31,3 +32,25 @@ export function VersionHeaderPriceAndLatency(props: VersionHeaderPriceAndLatency
     />
   );
 }
+
+// Helper function to compare priceAndLatency objects
+function arePriceAndLatencyEqual(prev?: VersionHeaderPriceAndLatencyProps['priceAndLatency'], next?: VersionHeaderPriceAndLatencyProps['priceAndLatency']): boolean {
+  if (prev === next) return true;
+  if (!prev || !next) return false;
+  
+  return (
+    prev.avgCost === next.avgCost &&
+    prev.avgDuration === next.avgDuration &&
+    prev.allCosts === next.allCosts &&
+    prev.allDurations === next.allDurations &&
+    prev.versionCosts === next.versionCosts &&
+    prev.versionDurations === next.versionDurations
+  );
+}
+
+export default memo(VersionHeaderPriceAndLatency, (prevProps, nextProps) => {
+  return (
+    prevProps.showAvgPrefix === nextProps.showAvgPrefix &&
+    arePriceAndLatencyEqual(prevProps.priceAndLatency, nextProps.priceAndLatency)
+  );
+});

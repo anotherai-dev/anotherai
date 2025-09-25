@@ -9,7 +9,7 @@ import { Pagination } from "@/components/Pagination";
 import { SimpleTableComponent } from "@/components/SimpleTableComponent";
 import { formatRelativeDate } from "@/components/utils/utils";
 import { ExperimentListItem } from "@/types/models";
-import { ExperimentsBaseCell } from "./ExperimentsBaseCell";
+import ExperimentsBaseCell from "./ExperimentsBaseCell";
 import { ExperimentsTableExperimentCell } from "./ExperimentsTableExperimentCell";
 
 // Column key constants
