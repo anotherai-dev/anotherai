@@ -25,7 +25,7 @@ export function ExperimentInstructions({ agentName }: ExperimentInstructionsProp
   };
 
   const handleLearnMore = () => {
-    window.open("https://docs.anotherai.dev/experiments", "_blank");
+    window.open("https://docs.anotherai.dev/use-cases/fundamentals/experiments", "_blank");
   };
 
   const instructionsContent = (

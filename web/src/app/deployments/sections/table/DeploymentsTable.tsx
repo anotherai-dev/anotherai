@@ -121,7 +121,7 @@ export function DeploymentsTable(props: DeploymentsTableProps) {
       <EmptyState
         title="No deployments found"
         subtitle="Create your first deployment to get started"
-        documentationUrl="https://docs.anotherai.dev/deployments"
+        documentationUrl="https://docs.anotherai.dev/use-cases/fundamentals/deployments"
       />
     );
   }
