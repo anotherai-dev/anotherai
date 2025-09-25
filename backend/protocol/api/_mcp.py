@@ -23,7 +23,7 @@ from protocol.api._api_models import (
     Page,
     QueryCompletionResponse,
     SearchDocumentationResponse,
-    Version,
+    VersionRequest,
     View,
 )
 from protocol.api._services import models_service
@@ -109,7 +109,7 @@ async def add_experiment_result(
 async def add_versions_to_experiment(
     experiment_id: str,
     version: Annotated[
-        str | Version,
+        str | VersionRequest,
         Field(
             description="The base version to use for the experiment."
             " Can either be a full version object or the id of a version or a deployment. The version will be added to the "

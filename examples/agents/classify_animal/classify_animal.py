@@ -50,7 +50,7 @@ async def classify_animal(image_url: str, model: str = "gpt-4.1-mini") -> Animal
                     {
                         "type": "image_url",
                         "image_url": {
-                            "url": image_url,
+                            "url": "{{image_url}}",
                         },
                     },
                 ],
@@ -58,6 +58,9 @@ async def classify_animal(image_url: str, model: str = "gpt-4.1-mini") -> Animal
         ],
         extra_body={
             "agent_id": "animal-classifier",
+            "input": {
+                "image_url": image_url,
+            },
         },
         response_format=AnimalClassificationOutput,
     )
