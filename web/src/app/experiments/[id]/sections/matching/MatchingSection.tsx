@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { getMatchingVersionKeys, getVersionWithDefaults, sortVersionKeys } from "@/components/utils/utils";
 import { Annotation, ExperimentWithLookups } from "@/types/models";
-import { MatchingRow } from "./MatchingRow";
+import MatchingRow from "./MatchingRow";
 
 type Props = {
   experiment: ExperimentWithLookups;

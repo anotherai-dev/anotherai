@@ -10,7 +10,7 @@ import { Pagination } from "@/components/Pagination";
 import { SimpleTableComponent } from "@/components/SimpleTableComponent";
 import { formatDate, formatTotalCost } from "@/components/utils/utils";
 import { Deployment } from "@/types/models";
-import { DeploymentsBaseCell } from "./DeploymentsBaseCell";
+import DeploymentsBaseCell from "./DeploymentsBaseCell";
 
 // Column key constants
 export const DEPLOYMENTS_COLUMNS = {

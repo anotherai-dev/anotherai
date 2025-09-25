@@ -1,5 +1,5 @@
 import { Copy } from "lucide-react";
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { HoverPopover } from "@/components/HoverPopover";
 import { useToast } from "@/components/ToastProvider";
 import { DeployVersionInstructions } from "@/components/experiment/DeployVersionInstructions";
@@ -11,9 +11,9 @@ import {
 import { Annotation, ExperimentWithLookups, Message, Version } from "@/types/models";
 import { HeaderMatchingSection } from "../../matching/HeaderMatchingSection";
 import { DraggableColumnWrapper } from "./DraggableColumnWrapper";
-import { VersionHeaderMetrics } from "./VersionHeaderMetrics";
-import { VersionHeaderModel } from "./VersionHeaderModel";
-import { VersionHeaderPriceAndLatency } from "./VersionHeaderPriceAndLatency";
+import VersionHeaderMetrics from "./VersionHeaderMetrics";
+import VersionHeaderModel from "./VersionHeaderModel";
+import VersionHeaderPriceAndLatency from "./VersionHeaderPriceAndLatency";
 import { VersionHeaderPrompt } from "./VersionHeaderPrompt";
 import { VersionHeaderSchema } from "./VersionHeaderSchema";
 import { VersionHeaderSharedPromptAndSchema } from "./VersionHeaderSharedPromptAndSchema";
@@ -47,7 +47,7 @@ type VersionHeaderProps = {
   dragIndex?: number;
 };
 
-export function VersionHeader(props: VersionHeaderProps) {
+function VersionHeader(props: VersionHeaderProps) {
   const {
     version,
     optionalKeysToShow,
@@ -238,3 +238,121 @@ export function VersionHeader(props: VersionHeaderProps) {
     </DraggableColumnWrapper>
   );
 }
+
+// Helper function to compare Version objects
+function areVersionsEqual(prev: Version, next: Version): boolean {
+  return (
+    prev.id === next.id &&
+    prev.model === next.model &&
+    prev.reasoning_effort === next.reasoning_effort &&
+    prev.reasoning_budget === next.reasoning_budget &&
+    prev.prompt === next.prompt &&
+    prev.output_schema === next.output_schema
+  );
+}
+
+// Helper function to compare string arrays
+function areStringArraysEqual(prev: string[], next: string[]): boolean {
+  if (prev === next) return true;
+  if (prev.length !== next.length) return false;
+
+  for (let i = 0; i < prev.length; i++) {
+    if (prev[i] !== next[i]) return false;
+  }
+  return true;
+}
+
+// Helper function to compare Version arrays
+function areVersionArraysEqual(prev?: Version[], next?: Version[]): boolean {
+  if (prev === next) return true;
+  if (!prev || !next) return false;
+  if (prev.length !== next.length) return false;
+
+  for (let i = 0; i < prev.length; i++) {
+    if (!areVersionsEqual(prev[i], next[i])) return false;
+  }
+  return true;
+}
+
+// Helper function to compare Message arrays
+function areMessageArraysEqual(prev?: Message[], next?: Message[]): boolean {
+  if (prev === next) return true;
+  if (!prev || !next) return false;
+  if (prev.length !== next.length) return false;
+
+  for (let i = 0; i < prev.length; i++) {
+    if (prev[i].role !== next[i].role || prev[i].content !== next[i].content) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// Helper function to compare priceAndLatency objects
+function arePriceAndLatencyEqual(
+  prev?: VersionHeaderProps["priceAndLatency"],
+  next?: VersionHeaderProps["priceAndLatency"]
+): boolean {
+  if (prev === next) return true;
+  if (!prev || !next) return false;
+
+  return (
+    prev.avgCost === next.avgCost &&
+    prev.avgDuration === next.avgDuration &&
+    prev.allCosts === next.allCosts &&
+    prev.allDurations === next.allDurations &&
+    prev.versionCosts === next.versionCosts &&
+    prev.versionDurations === next.versionDurations
+  );
+}
+
+// Helper function to compare metrics arrays
+function areMetricsEqual(
+  prev?: { key: string; average: number }[],
+  next?: { key: string; average: number }[]
+): boolean {
+  if (prev === next) return true;
+  if (!prev || !next) return false;
+  if (prev.length !== next.length) return false;
+
+  for (let i = 0; i < prev.length; i++) {
+    if (prev[i].key !== next[i].key || prev[i].average !== next[i].average) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// Helper function to compare Annotation arrays
+function areAnnotationsEqual(prev?: Annotation[], next?: Annotation[]): boolean {
+  if (prev === next) return true;
+  if (!prev || !next) return false;
+  if (prev.length !== next.length) return false;
+
+  for (let i = 0; i < prev.length; i++) {
+    if (prev[i].id !== next[i].id || prev[i].text !== next[i].text) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export default memo(VersionHeader, (prevProps, nextProps) => {
+  return (
+    areVersionsEqual(prevProps.version, nextProps.version) &&
+    areStringArraysEqual(prevProps.optionalKeysToShow, nextProps.optionalKeysToShow) &&
+    prevProps.index === nextProps.index &&
+    arePriceAndLatencyEqual(prevProps.priceAndLatency, nextProps.priceAndLatency) &&
+    areVersionArraysEqual(prevProps.versions, nextProps.versions) &&
+    areMessageArraysEqual(prevProps.sharedPartsOfPrompts, nextProps.sharedPartsOfPrompts) &&
+    areStringArraysEqual(prevProps.sharedKeypathsOfSchemas || [], nextProps.sharedKeypathsOfSchemas || []) &&
+    prevProps.experimentId === nextProps.experimentId &&
+    prevProps.completionId === nextProps.completionId &&
+    prevProps.showAvgPrefix === nextProps.showAvgPrefix &&
+    prevProps.agentId === nextProps.agentId &&
+    prevProps.dragIndex === nextProps.dragIndex &&
+    areAnnotationsEqual(prevProps.annotations, nextProps.annotations) &&
+    areMetricsEqual(prevProps.metrics, nextProps.metrics)
+    // Note: onReorderColumns, allMetricsPerKey, and experiment are not compared as they should be stable or are complex objects
+  );
+});

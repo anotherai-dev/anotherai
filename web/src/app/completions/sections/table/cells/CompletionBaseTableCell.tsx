@@ -1,8 +1,10 @@
+import { memo } from "react";
+
 interface Props {
   value: unknown;
 }
 
-export function CompletionBaseTableCell(props: Props) {
+function CompletionBaseTableCell(props: Props) {
   const { value } = props;
 
   if (value === null || value === undefined) {
@@ -11,3 +13,5 @@ export function CompletionBaseTableCell(props: Props) {
 
   return <div className="flex text-xs text-gray-800 overflow-y-auto">{String(value)}</div>;
 }
+
+export default memo(CompletionBaseTableCell);

@@ -1,14 +1,27 @@
 import { useEffect, useRef, useState } from "react";
 
-export function useScrollbarPositioning() {
+interface UseTableScrollingProps {
+  onScrollChange?: (scrollLeft: number) => void;
+}
+
+export function useTableScrolling(props?: UseTableScrollingProps) {
+  // Container dimensions and positioning
   const [containerWidth, setContainerWidth] = useState(0);
   const [containerLeft, setContainerLeft] = useState(0);
   const [containerBottom, setContainerBottom] = useState(0);
   const [isHovering, setIsHovering] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
+
+  // Scroll position state
+  const [scrollLeft, setScrollLeft] = useState(0);
+
+  // Refs
+  const containerRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const topScrollRef = useRef<HTMLDivElement>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const lastScrollUpdateRef = useRef<{ source: "main" | "top"; timestamp: number } | null>(null);
 
   // Check if table bottom is visible in viewport
   const isTableBottomVisible =
@@ -25,12 +38,22 @@ export function useScrollbarPositioning() {
       }
     };
 
+    // Optimized scroll handler for better responsiveness
+    const handleWindowScroll = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        // Only update the position-related values during scroll for better performance
+        setContainerLeft(rect.left);
+        setContainerBottom(rect.bottom);
+      }
+    };
+
     // Use a timeout to ensure the DOM has rendered
     const timeoutId = setTimeout(updateDimensions, 0);
 
     updateDimensions();
     window.addEventListener("resize", updateDimensions);
-    window.addEventListener("scroll", updateDimensions);
+    window.addEventListener("scroll", handleWindowScroll, { passive: true });
 
     return () => {
       clearTimeout(timeoutId);
@@ -41,14 +64,12 @@ export function useScrollbarPositioning() {
         clearTimeout(scrollTimeoutRef.current);
       }
       window.removeEventListener("resize", updateDimensions);
-      window.removeEventListener("scroll", updateDimensions);
+      window.removeEventListener("scroll", handleWindowScroll);
     };
   }, []);
 
-  // Update dimensions continuously while hovering with 200ms interval
+  // Update dimensions continuously with 200ms interval (always, not just while hovering)
   useEffect(() => {
-    if (!isHovering) return;
-
     const updateDimensions = () => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
@@ -58,16 +79,13 @@ export function useScrollbarPositioning() {
       }
     };
 
-    // Update immediately when hovering starts
-    updateDimensions();
-
-    // Set up interval to update dimensions while hovering
-    const intervalId = setInterval(updateDimensions, 200); // Update every 200ms while hovering
+    // Set up interval to continuously update dimensions for scrollbar positioning
+    const intervalId = setInterval(updateDimensions, 200); // Update every 200ms always
 
     return () => {
       clearInterval(intervalId);
     };
-  }, [isHovering]);
+  }, []); // No dependency on isHovering - runs always
 
   const handleMouseEnter = () => {
     // Clear any pending hide timeout
@@ -115,7 +133,63 @@ export function useScrollbarPositioning() {
     }
   };
 
+  // Sync scroll positions between top and main scroll areas
+  const handleMainScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const now = Date.now();
+    const lastUpdate = lastScrollUpdateRef.current;
+
+    // If this scroll event was triggered by a programmatic update from the top scroll, ignore it
+    if (lastUpdate && lastUpdate.source === "top" && now - lastUpdate.timestamp < 50) {
+      return;
+    }
+
+    const newScrollLeft = e.currentTarget.scrollLeft;
+
+    // Always call the callback immediately for synchronous CSS updates
+    props?.onScrollChange?.(newScrollLeft);
+
+    // Update React state (can be slower, used as fallback)
+    setScrollLeft(newScrollLeft);
+
+    // Mark that we're updating from the main scroll
+    lastScrollUpdateRef.current = { source: "main", timestamp: now };
+
+    if (topScrollRef.current && topScrollRef.current.scrollLeft !== newScrollLeft) {
+      topScrollRef.current.scrollLeft = newScrollLeft;
+    }
+
+    handleScroll(); // Show scrollbar when scrolling occurs
+  };
+
+  const handleTopScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const now = Date.now();
+    const lastUpdate = lastScrollUpdateRef.current;
+
+    // If this scroll event was triggered by a programmatic update from the main scroll, ignore it
+    if (lastUpdate && lastUpdate.source === "main" && now - lastUpdate.timestamp < 50) {
+      return;
+    }
+
+    const newScrollLeft = e.currentTarget.scrollLeft;
+
+    // Always call the callback immediately for synchronous CSS updates
+    props?.onScrollChange?.(newScrollLeft);
+
+    // Update React state (can be slower, used as fallback)
+    setScrollLeft(newScrollLeft);
+
+    // Mark that we're updating from the top scroll
+    lastScrollUpdateRef.current = { source: "top", timestamp: now };
+
+    if (scrollRef.current && scrollRef.current.scrollLeft !== newScrollLeft) {
+      scrollRef.current.scrollLeft = newScrollLeft;
+    }
+
+    handleScroll(); // Show scrollbar when scrolling occurs
+  };
+
   return {
+    // Container positioning
     containerRef,
     containerWidth,
     containerLeft,
@@ -123,9 +197,20 @@ export function useScrollbarPositioning() {
     isHovering,
     isScrolling,
     isTableBottomVisible,
+
+    // Scroll refs and state
+    scrollRef,
+    topScrollRef,
+    scrollLeft,
+
+    // Event handlers
     handleMouseEnter,
     handleMouseLeave,
     handleScroll,
+    handleMainScroll,
+    handleTopScroll,
+
+    // Timeout refs for cleanup
     hoverTimeoutRef,
     scrollTimeoutRef,
   };

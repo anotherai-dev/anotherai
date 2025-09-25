@@ -1,5 +1,6 @@
 import { cx } from "class-variance-authority";
 import { ArrowUp } from "lucide-react";
+import { memo } from "react";
 import { getMetricBadgeWithRelative } from "@/components/utils/utils";
 
 type VersionHeaderMetricsProps = {
@@ -8,7 +9,7 @@ type VersionHeaderMetricsProps = {
   showAvgPrefix?: boolean;
 };
 
-export function VersionHeaderMetrics(props: VersionHeaderMetricsProps) {
+function VersionHeaderMetrics(props: VersionHeaderMetricsProps) {
   const { metrics, allMetricsPerKey, showAvgPrefix } = props;
 
   if (!metrics || metrics.length === 0) {
@@ -60,3 +61,52 @@ export function VersionHeaderMetrics(props: VersionHeaderMetricsProps) {
     </div>
   );
 }
+
+// Helper function to compare metrics arrays
+function areMetricsEqual(
+  prev?: { key: string; average: number }[],
+  next?: { key: string; average: number }[]
+): boolean {
+  if (prev === next) return true;
+  if (!prev || !next) return false;
+  if (prev.length !== next.length) return false;
+
+  for (let i = 0; i < prev.length; i++) {
+    if (prev[i].key !== next[i].key || prev[i].average !== next[i].average) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// Helper function to compare metrics per key objects
+function areMetricsPerKeyEqual(prev?: Record<string, number[]>, next?: Record<string, number[]>): boolean {
+  if (prev === next) return true;
+  if (!prev || !next) return false;
+
+  const prevKeys = Object.keys(prev);
+  const nextKeys = Object.keys(next);
+
+  if (prevKeys.length !== nextKeys.length) return false;
+
+  for (const key of prevKeys) {
+    const prevArray = prev[key];
+    const nextArray = next[key];
+
+    if (!nextArray || prevArray.length !== nextArray.length) return false;
+
+    for (let i = 0; i < prevArray.length; i++) {
+      if (prevArray[i] !== nextArray[i]) return false;
+    }
+  }
+
+  return true;
+}
+
+export default memo(VersionHeaderMetrics, (prevProps, nextProps) => {
+  return (
+    prevProps.showAvgPrefix === nextProps.showAvgPrefix &&
+    areMetricsEqual(prevProps.metrics, nextProps.metrics) &&
+    areMetricsPerKeyEqual(prevProps.allMetricsPerKey, nextProps.allMetricsPerKey)
+  );
+});
