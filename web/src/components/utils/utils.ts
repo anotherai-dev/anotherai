@@ -70,7 +70,7 @@ export function getMetricBadgeWithRelative(
     if (metricType === "duration") {
       return isBetterValue ? "faster" : "slower";
     }
-    return "better";
+    return ""; // Don't show any descriptor for unknown metric types
   };
 
   if (isHigherBetter) {
@@ -78,18 +78,26 @@ export function getMetricBadgeWithRelative(
     isWorst = value === min;
 
     if (isBest) {
-      color = "bg-green-200 border border-green-400 text-green-900";
-      relativeText = `${(max / min).toFixed(1)}x ${getComparisonText(true)}`;
+      color =
+        metricType === "cost" || metricType === "duration"
+          ? "bg-green-200 border border-green-400 text-green-900"
+          : "bg-transparent border border-gray-200 text-gray-700";
+      const comparisonText = getComparisonText(true);
+      relativeText = comparisonText ? `${(max / min).toFixed(1)}x ${comparisonText}` : `${(max / min).toFixed(1)}x`;
     } else if (isWorst) {
-      color = "bg-red-200 border border-red-300 text-red-900";
-      relativeText = `${(value / min).toFixed(1)}x ${getComparisonText(false)}`;
+      color =
+        metricType === "cost" || metricType === "duration"
+          ? "bg-red-200 border border-red-300 text-red-900"
+          : "bg-transparent border border-gray-200 text-gray-700";
+      const comparisonText = getComparisonText(false);
+      relativeText = comparisonText ? `${(value / min).toFixed(1)}x ${comparisonText}` : `${(value / min).toFixed(1)}x`;
     } else {
       color = "bg-transparent border border-gray-200 text-gray-700";
     }
 
     // For non-best values, show how much worse they are
     if (!isBest && max > 0) {
-      if (metricType) {
+      if (metricType === "cost" || metricType === "duration") {
         relativeText = `${(max / value).toFixed(1)}x ${getComparisonText(false)}`;
       } else {
         relativeText = `${(max / value).toFixed(1)}x`;
@@ -100,18 +108,26 @@ export function getMetricBadgeWithRelative(
     isWorst = value === max;
 
     if (isBest) {
-      color = "bg-green-200 border border-green-400 text-green-900";
-      relativeText = `${(max / min).toFixed(1)}x ${getComparisonText(true)}`;
+      color =
+        metricType === "cost" || metricType === "duration"
+          ? "bg-green-200 border border-green-400 text-green-900"
+          : "bg-transparent border border-gray-200 text-gray-700";
+      const comparisonText = getComparisonText(true);
+      relativeText = comparisonText ? `${(max / min).toFixed(1)}x ${comparisonText}` : `${(max / min).toFixed(1)}x`;
     } else if (isWorst) {
-      color = "bg-red-200 border border-red-300 text-red-900";
-      relativeText = `${(value / min).toFixed(1)}x ${getComparisonText(false)}`;
+      color =
+        metricType === "cost" || metricType === "duration"
+          ? "bg-red-200 border border-red-300 text-red-900"
+          : "bg-transparent border border-gray-200 text-gray-700";
+      const comparisonText = getComparisonText(false);
+      relativeText = comparisonText ? `${(value / min).toFixed(1)}x ${comparisonText}` : `${(value / min).toFixed(1)}x`;
     } else {
       color = "bg-transparent border border-gray-200 text-gray-700";
     }
 
     // For non-best values, show how much worse they are
     if (!isBest && min > 0) {
-      if (metricType) {
+      if (metricType === "cost" || metricType === "duration") {
         relativeText = `${(value / min).toFixed(1)}x ${getComparisonText(false)}`;
       } else {
         relativeText = `${(value / min).toFixed(1)}x`;
