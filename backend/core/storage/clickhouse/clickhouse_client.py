@@ -25,7 +25,7 @@ from core.utils.strings import remove_urls
 
 _log = structlog.get_logger(__name__)
 
-_MAX_MEMORY_USAGE = 1024 * 1024 * 1024  # 1GB
+_MAX_MEMORY_USAGE = 3 * 1024 * 1024 * 1024  # 3GB
 _MAX_EXECUTION_TIME = 60  # 60 seconds
 
 
