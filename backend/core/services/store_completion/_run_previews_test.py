@@ -24,7 +24,9 @@ class TestMessageListPreview:
         assert _messages_list_preview(messages) == "User: Hello, world!"
 
     def test_messages_preview_with_file(self):
-        messages = [Message(content=[MessageContent(file=File(url="https://example.com/file.png"))], role="user")]
+        messages = [
+            Message(content=[MessageContent(file=File(url="https://example.com/file.png").sanitize())], role="user"),
+        ]
         assert _messages_list_preview(messages) == "User: [[img:https://example.com/file.png]]"
 
     def test_system_only(self):
@@ -127,7 +129,7 @@ class TestMessageListPreview:
                 content=[
                     MessageContent(
                         text="Text content",
-                        file=File(url="https://example.com/file.png"),
+                        file=File(url="https://example.com/file.png").sanitize(),
                     ),
                 ],
                 role="user",
@@ -148,7 +150,7 @@ class TestMessageListPreview:
             Message(
                 content=[
                     MessageContent(
-                        file=File(url="https://example.com/file.png"),
+                        file=File(url="https://example.com/file.png").sanitize(),
                         tool_call_result=tool_call,
                     ),
                 ],

@@ -6,6 +6,7 @@ from typing import Annotated, Any, Literal
 from mcp.types import ToolAnnotations
 from pydantic import Field
 
+from core.consts import ANOTHERAI_API_URL
 from core.domain.cache_usage import CacheUsage
 from core.services.documentation.documentation_search import DocumentationSearch
 from core.storage.experiment_storage import ExperimentFields
@@ -23,7 +24,7 @@ from protocol.api._api_models import (
     Page,
     QueryCompletionResponse,
     SearchDocumentationResponse,
-    Version,
+    VersionRequest,
     View,
 )
 from protocol.api._services import models_service
@@ -109,7 +110,7 @@ async def add_experiment_result(
 async def add_versions_to_experiment(
     experiment_id: str,
     version: Annotated[
-        str | Version,
+        str | VersionRequest,
         Field(
             description="The base version to use for the experiment."
             " Can either be a full version object or the id of a version or a deployment. The version will be added to the "
@@ -134,7 +135,17 @@ async def add_versions_to_experiment(
     return await (await _mcp_utils.playground_service()).add_versions_to_experiment(experiment_id, version, overrides)
 
 
-@mcp.tool(annotations=ToolAnnotations(idempotentHint=True))
+@mcp.tool(
+    annotations=ToolAnnotations(idempotentHint=True),
+    description=f"""Adds inputs to an existing experiment if they are not already present, and creates the completions for the added
+inputs based on the experiment's versions.
+
+When dealing with local images or audio files, instead of attempting to pass base64 data:
+- upload the file using `curl -X POST "{ANOTHERAI_API_URL}/v1/files" -F "file=@example.txt"` -H "Authorization: Bearer ..."
+- use the returned URL in the input
+
+Returns the ids of the added inputs.""",
+)
 async def add_inputs_to_experiment(
     experiment_id: str,
     inputs: Annotated[
@@ -160,11 +171,6 @@ async def add_inputs_to_experiment(
         ),
     ] = None,
 ) -> list[str]:
-    """Adds inputs to an existing experiment if they are not already present, and creates the completions for the added
-    inputs based on the experiment's versions.
-
-    Returns the ids of the added inputs.
-    """
     return await (await _mcp_utils.playground_service()).add_inputs_to_experiment(experiment_id, inputs, query)
 
 

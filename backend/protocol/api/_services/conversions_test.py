@@ -1,3 +1,4 @@
+# pyright: reportPrivateUsage=false
 from unittest.mock import patch
 
 import pytest
@@ -17,6 +18,7 @@ from protocol.api._api_models import (
     ToolCallResult,
 )
 from protocol.api._services.conversions import (
+    _extract_json_schema,
     experiments_url,
     graph_from_domain,
     graph_to_domain,
@@ -397,3 +399,154 @@ class TestUsageConversion:
         assert converted_domain.prompt.cost_usd == original_domain.prompt.cost_usd
         assert converted_domain.completion.text_token_count == original_domain.completion.text_token_count
         assert converted_domain.completion.cost_usd == original_domain.completion.cost_usd
+
+
+class TestExtractJsonSchema:
+    """Test the _extract_json_schema function."""
+
+    def test_empty_dict_input(self):
+        """Test that empty dict input returns None."""
+        assert _extract_json_schema({}) is None
+
+    def test_object_type(self):
+        """Test that object type returns the schema as-is."""
+        schema = {"type": "object", "properties": {"name": {"type": "string"}}}
+        result = _extract_json_schema(schema)
+        assert result == schema
+
+    def test_json_object_type(self):
+        """Test that json_object type returns empty dict."""
+        schema = {"type": "json_object"}
+        result = _extract_json_schema(schema)
+        assert result == {}
+
+    def test_text_type(self):
+        """Test that text type returns None."""
+        schema = {"type": "text"}
+        result = _extract_json_schema(schema)
+        assert result is None
+
+    def test_array_type_raises_error(self):
+        """Test that array root type raises BadRequestError."""
+        schema = {"type": "array", "items": {"type": "string"}}
+        with pytest.raises(BadRequestError, match="Array as root types are not supported"):
+            _extract_json_schema(schema)
+
+    def test_string_type_raises_error(self):
+        """Test that string root type raises BadRequestError."""
+        schema = {"type": "string"}
+        with pytest.raises(
+            BadRequestError,
+            match="String, integer, number, and boolean as root types are not supported",
+        ):
+            _extract_json_schema(schema)
+
+    def test_integer_type_raises_error(self):
+        """Test that integer root type raises BadRequestError."""
+        schema = {"type": "integer"}
+        with pytest.raises(
+            BadRequestError,
+            match="String, integer, number, and boolean as root types are not supported",
+        ):
+            _extract_json_schema(schema)
+
+    def test_number_type_raises_error(self):
+        """Test that number root type raises BadRequestError."""
+        schema = {"type": "number"}
+        with pytest.raises(
+            BadRequestError,
+            match="String, integer, number, and boolean as root types are not supported",
+        ):
+            _extract_json_schema(schema)
+
+    def test_boolean_type_raises_error(self):
+        """Test that boolean root type raises BadRequestError."""
+        schema = {"type": "boolean"}
+        with pytest.raises(
+            BadRequestError,
+            match="String, integer, number, and boolean as root types are not supported",
+        ):
+            _extract_json_schema(schema)
+
+    def test_no_type_with_json_schema_key(self):
+        """Test extraction when type is None but json_schema key exists."""
+        inner_schema = {"type": "object", "properties": {"id": {"type": "string"}}}
+        schema = {"json_schema": inner_schema}
+        result = _extract_json_schema(schema)
+        assert result == inner_schema
+
+    def test_no_type_with_schema_key(self):
+        """Test extraction when type is None but schema key exists."""
+        inner_schema = {"type": "object", "properties": {"id": {"type": "number"}}}
+        schema = {"schema": inner_schema}
+        result = _extract_json_schema(schema)
+        assert result == inner_schema
+
+    def test_no_type_no_keys_raises_error(self):
+        """Test that no type and no json_schema/schema keys raises BadRequestError."""
+        schema = {"some_other_key": "value"}
+        with pytest.raises(BadRequestError, match="Invalid output json schema"):
+            _extract_json_schema(schema)
+
+    def test_json_schema_type_with_valid_format(self):
+        """Test json_schema type with valid OpenAI response format."""
+        inner_schema = {"type": "object", "properties": {"result": {"type": "string"}}}
+        schema = {
+            "type": "json_schema",
+            "json_schema": {
+                "schema": inner_schema,
+                "name": "test_schema",
+                "strict": True,
+            },
+        }
+        # This will succeed because the format is actually valid
+        result = _extract_json_schema(schema)
+        assert result == inner_schema
+
+    def test_json_schema_type_missing_json_schema(self):
+        """Test json_schema type without json_schema field raises error."""
+        schema = {"type": "json_schema"}
+        with pytest.raises(BadRequestError, match="JSON Schema response format must have a json_schema"):
+            _extract_json_schema(schema)
+
+    def test_json_schema_type_invalid_format(self):
+        """Test json_schema type with invalid format raises error."""
+        schema = {
+            "type": "json_schema",
+            "json_schema": {"invalid_field": "value"},  # Invalid structure, no "schema" field
+        }
+        with pytest.raises(BadRequestError, match="Invalid JSON Schema response format"):
+            _extract_json_schema(schema)
+
+    def test_unknown_type_raises_error(self):
+        """Test that unknown type raises BadRequestError."""
+        schema = {"type": "unknown_type"}
+        with pytest.raises(BadRequestError, match="Invalid output json schema"):
+            _extract_json_schema(schema)
+
+    def test_json_schema_type(self):
+        inner_schema = {"type": "object", "properties": {"data": {"type": "string"}}}
+
+        schema = {
+            "type": "json_schema",
+            "json_schema": {
+                "schema": inner_schema,
+            },
+        }
+
+        result = _extract_json_schema(schema)
+        assert result == inner_schema
+
+    def test_json_schema_type_without_schema_field(self):
+        """Test json_schema type when validated object has no json_schema field."""
+
+        schema = {"type": "json_schema"}
+
+        with pytest.raises(BadRequestError, match="JSON Schema response format must have a json_schema"):
+            _extract_json_schema(schema)
+
+    def test_nested_json_schema_type(self):
+        """Test json_schema type when validated object has a json_schema field."""
+        schema = {"json_schema": {"type": "object", "properties": {"data": {"type": "string"}}}}
+        result = _extract_json_schema(schema)
+        assert result == {"type": "object", "properties": {"data": {"type": "string"}}}
