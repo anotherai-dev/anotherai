@@ -105,9 +105,12 @@ class BaseMiddleware(Middleware):
 def _add_string_to_property_type(property: dict[str, Any]) -> dict[str, Any]:
     if (t := property.get("type")) and isinstance(t, str) and t in {"array", "object"}:
         return {
-            **property,
-            "type": [t, "string"],
+            "anyOf": [
+                property,
+                {"type": "string"},
+            ],
         }
+
     if (
         (any_of := property.get("anyOf"))
         and isinstance(any_of, list)
