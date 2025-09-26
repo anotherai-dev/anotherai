@@ -1,6 +1,6 @@
 import { cx } from "class-variance-authority";
-import { JSONDisplay } from "@/components/JSONDisplay";
 import { memo } from "react";
+import { JSONDisplay } from "@/components/JSONDisplay";
 import { PageError } from "@/components/PageError";
 import { VariablesViewer } from "@/components/VariablesViewer/VariablesViewer";
 import { MessagesViewer } from "@/components/messages/MessagesViewer";

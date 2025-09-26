@@ -1,6 +1,6 @@
 import { cx } from "class-variance-authority";
-import { JSONDisplay } from "@/components/JSONDisplay";
 import { memo } from "react";
+import { JSONDisplay } from "@/components/JSONDisplay";
 import { SchemaViewer } from "@/components/SchemaViewer";
 import { OutputSchema } from "@/types/models";
 
