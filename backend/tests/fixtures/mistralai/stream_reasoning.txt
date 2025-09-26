@@ -1,0 +1,204 @@
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":""},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":"Okay"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":", so the text"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" is about"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" a"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" recent"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" advancement"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" in quantum computing."}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" Researchers at the University"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" of Technology have created"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" a 12"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":"7-qubit quantum"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" processor."}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" This"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" processor is much"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" faster than traditional"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" computers for"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" complex"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" calculations. It could"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" change"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" fields"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" like drug discovery,"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" financial modeling, and"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" climate simulation. The"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" processor uses superconducting"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" qubits that"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" are kept"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" very"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" cold"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":","}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" near"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" absolute zero,"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" to"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" keep"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" quantum"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" states stable. Commercial"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" uses"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" are still far"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" off"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":", but this"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" is"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" a big"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" step towards solving problems"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" that regular"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" computers can"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":"'t handle well"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":".\n\n"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":"Now"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":", let"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":"'s summarize"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" this"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" in"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" 2"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":"-3 sentences."}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" The"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" main"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" points are"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" the"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" breakthrough"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" in quantum computing with"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" a 12"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":"7-qubit processor"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":","}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" its"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" potential"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" applications"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":","}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" and the technology"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" behind"}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":" it."}]}]},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":"Research"},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":"ers at the University"},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":" of Technology have developed"},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":" a 12"},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":"7-qubit quantum"},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":" processor that"},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":" performs"},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":" complex"},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":" calculations exponentially faster than"},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":" traditional computers,"},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":" potentially"},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":" revolutionizing fields like"},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":" drug discovery and"},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":" climate"},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":" simulation. This"},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":" breakthrough"},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":" uses"},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":" superconducting qubits"},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":" maintained"},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":" near"},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":" absolute zero, bringing"},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":" us"},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":" closer to solving problems"},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":" that are currently impossible"},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":" for classical computers to"},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":" handle efficiently. However"},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":", commercial"},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":" applications are still years"},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":" away."},"finish_reason":null}]}
+
+data: {"id":"bbbbe9b42e1c4a329bdc611359ed7842","object":"chat.completion.chunk","created":1758891031,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":""},"finish_reason":"stop"}],"usage":{"prompt_tokens":151,"total_tokens":379,"completion_tokens":228}}
+
+data: [DONE]
+

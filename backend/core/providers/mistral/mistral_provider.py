@@ -121,11 +121,31 @@ class MistralAIProvider(HTTPXProvider[MistralAIConfig, CompletionResponse]):
                 capture=True,
             )
 
+        if isinstance(content, list):
+            _text_content = [c.text for c in content if c.text]
+            if len(_text_content) > 1:
+                self.logger.warning("Multiple text content items found in response", response=response)
+            if not _text_content:
+                self.logger.warning("No text content found in response", response=response)
+            return _text_content[0]
+
         return content or ""
 
     @override
     def _extract_usage(self, response: CompletionResponse) -> LLMUsage | None:
         return response.usage.to_domain()
+
+    @override
+    def _extract_reasoning_steps(self, response: CompletionResponse) -> str | None:
+        message = response.choices[0].message
+        if not message.content or not isinstance(message.content, list):
+            return None
+        thinking = list(message.thinking_iter())
+        if len(thinking) > 1:
+            self.logger.warning("Multiple thinking content items found in response", response=response)
+        if not thinking:
+            return None
+        return "\n\n".join(thinking)
 
     @override
     def _unknown_error(self, response: Response):
