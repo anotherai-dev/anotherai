@@ -74,6 +74,9 @@ async def create_experiment(
     An experiment allows trying out versions (completion parameters) of an agent against different inputs.
     - Use the add_versions_to_experiment tool to add versions to the experiment.
     - Use the add_inputs_to_experiment tool to add inputs to the experiment.
+
+    Note: Experiment tools work independently of the AnotherAI inference endpoint. You can create and manage
+    experiments without changing your existing code or base_url.
     """
     return await (await _mcp_utils.experiment_service()).create_experiment_mcp(
         experiment_id=id,
