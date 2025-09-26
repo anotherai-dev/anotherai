@@ -80,6 +80,8 @@ Learn more about by reading the [Observability](/observability) section.
 
 Experiments are containers for testing and comparing different model configurations, prompts, and parameters. They enable systematic evaluation and iteration of AI agents.
 
+> **Important:** The experiment tools (`create_experiment`, `add_inputs_to_experiment`, `add_versions_to_experiment`, etc.) work independently of the AnotherAI inference endpoint. You can use these tools to create and manage experiments without changing your existing code or base_url.
+
 **Key concepts:**
 - Experiments group related completions for analysis
 - Each experiment has a unique ID and can be annotated with feedback
