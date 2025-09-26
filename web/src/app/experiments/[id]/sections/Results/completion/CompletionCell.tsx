@@ -2,27 +2,25 @@ import { Copy } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { memo, useMemo, useState } from "react";
 import { HoverPopover } from "@/components/HoverPopover";
+import MetricsDisplay from "@/components/MetricsDisplay";
 import { PageError } from "@/components/PageError";
-import { PriceAndLatencyDisplay } from "@/components/PriceAndLatencyDisplay";
 import { useToast } from "@/components/ToastProvider";
 import { AnnotationsView } from "@/components/annotations/AnnotationsView";
 import { MessagesViewer } from "@/components/messages/MessagesViewer";
+import { shouldIncludeCostMetric, shouldIncludeDurationMetric } from "@/components/utils/utils";
 import { Annotation, ExperimentCompletion } from "@/types/models";
 import { getMetricsForCompletion } from "../../../utils";
-import CompletionMetrics from "./CompletionMetrics";
 
 export type CompletionCellProps = {
   completion: ExperimentCompletion | undefined;
-  allCosts?: number[];
-  allDurations?: number[];
   annotations?: Annotation[]; // All annotations from experiment
   experimentId?: string;
-  allMetricsPerKeyForRow?: Record<string, number[]>; // All metric values for this row (input) across versions
+  allMetricsPerKey?: Record<string, number[]>; // All metric values for this row (input) across versions
   agentId?: string;
 };
 
 function CompletionCell(props: CompletionCellProps) {
-  const { completion, allCosts, allDurations, annotations, experimentId, allMetricsPerKeyForRow, agentId } = props;
+  const { completion, annotations, experimentId, allMetricsPerKey, agentId } = props;
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
@@ -36,6 +34,29 @@ function CompletionCell(props: CompletionCellProps) {
     if (!annotations || !completion?.id) return [];
     return getMetricsForCompletion(annotations, completion.id);
   }, [annotations, completion?.id]);
+
+  const allMetrics = useMemo(() => {
+    const metrics: Array<{ key: string; average: number }> = [];
+
+    // Add cost metric if valid using centralized utility
+    if (shouldIncludeCostMetric(completion)) {
+      metrics.push({ key: "cost", average: completion.cost_usd });
+    }
+
+    // Add duration metric if valid using centralized utility
+    if (shouldIncludeDurationMetric(completion)) {
+      metrics.push({ key: "duration", average: completion.duration_seconds });
+    }
+
+    // Add custom metrics from annotations
+    if (completionMetrics.length > 0) {
+      metrics.push(...completionMetrics);
+    }
+
+    return metrics;
+  }, [completion, completionMetrics]);
+
+  const allMetricsPerKeyForCompletion = allMetricsPerKey || {};
 
   const openCompletionModal = () => {
     if (!completion?.id) return;
@@ -100,19 +121,15 @@ function CompletionCell(props: CompletionCellProps) {
         </div>
       </div>
 
-      {/* Price, Latency and Metrics Display at bottom */}
-      {((completion.cost_usd !== undefined && completion.duration_seconds !== undefined) ||
-        completionMetrics.length > 0) && (
-        <div className="pt-3 border-t border-gray-200 mt-3 space-y-1">
-          {completion.cost_usd !== undefined && completion.duration_seconds !== undefined && (
-            <PriceAndLatencyDisplay
-              cost={completion.cost_usd}
-              duration={completion.duration_seconds}
-              allCosts={allCosts}
-              allDurations={allDurations}
-            />
-          )}
-          <CompletionMetrics metrics={completionMetrics} allMetricsPerKeyForRow={allMetricsPerKeyForRow} />
+      {/* Metrics Display at bottom */}
+      {allMetrics.length > 0 && (
+        <div className="pt-3 border-t border-gray-200 mt-3">
+          <MetricsDisplay
+            metrics={allMetrics}
+            allMetricsPerKey={allMetricsPerKeyForCompletion}
+            showAvgPrefix={false}
+            className="space-y-1"
+          />
         </div>
       )}
 
@@ -203,11 +220,9 @@ function areMetricsPerKeyForRowEqual(prev?: Record<string, number[]>, next?: Rec
 export default memo(CompletionCell, (prevProps, nextProps) => {
   return (
     areCompletionsEqual(prevProps.completion, nextProps.completion) &&
-    areNumberArraysEqual(prevProps.allCosts, nextProps.allCosts) &&
-    areNumberArraysEqual(prevProps.allDurations, nextProps.allDurations) &&
     prevProps.experimentId === nextProps.experimentId &&
     prevProps.agentId === nextProps.agentId &&
     areAnnotationsEqual(prevProps.annotations, nextProps.annotations) &&
-    areMetricsPerKeyForRowEqual(prevProps.allMetricsPerKeyForRow, nextProps.allMetricsPerKeyForRow)
+    areMetricsPerKeyForRowEqual(prevProps.allMetricsPerKey, nextProps.allMetricsPerKey)
   );
 });

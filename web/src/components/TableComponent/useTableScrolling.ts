@@ -8,9 +8,11 @@ export function useTableScrolling(props?: UseTableScrollingProps) {
   // Container dimensions and positioning
   const [containerWidth, setContainerWidth] = useState(0);
   const [containerLeft, setContainerLeft] = useState(0);
+  const [containerTop, setContainerTop] = useState(0);
   const [containerBottom, setContainerBottom] = useState(0);
   const [isHovering, setIsHovering] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
+  const [hasHorizontalScroll, setHasHorizontalScroll] = useState(false);
 
   // Scroll position state
   const [scrollLeft, setScrollLeft] = useState(0);
@@ -24,17 +26,27 @@ export function useTableScrolling(props?: UseTableScrollingProps) {
   const lastScrollUpdateRef = useRef<{ source: "main" | "top"; timestamp: number } | null>(null);
 
   // Check if table bottom is visible in viewport
+  // Only stick to viewport bottom when table extends below the screen
+  // Stick to table bottom when: table is above viewport OR table bottom is within viewport
   const isTableBottomVisible =
-    typeof window !== "undefined" && containerBottom <= window.innerHeight && containerBottom > 0;
+    typeof window !== "undefined" &&
+    (containerTop >= window.innerHeight || // Table is completely below viewport (before table)
+      containerBottom <= window.innerHeight); // Table bottom is within viewport
 
   // Measure container dimensions and position
   useEffect(() => {
     const updateDimensions = () => {
-      if (containerRef.current) {
+      if (containerRef.current && scrollRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
         setContainerWidth(containerRef.current.offsetWidth);
         setContainerLeft(rect.left);
+        setContainerTop(rect.top);
         setContainerBottom(rect.bottom);
+
+        // Check if horizontal scroll is needed
+        const scrollElement = scrollRef.current;
+        const hasScroll = scrollElement.scrollWidth > scrollElement.clientWidth;
+        setHasHorizontalScroll(hasScroll);
       }
     };
 
@@ -44,6 +56,7 @@ export function useTableScrolling(props?: UseTableScrollingProps) {
         const rect = containerRef.current.getBoundingClientRect();
         // Only update the position-related values during scroll for better performance
         setContainerLeft(rect.left);
+        setContainerTop(rect.top);
         setContainerBottom(rect.bottom);
       }
     };
@@ -71,11 +84,17 @@ export function useTableScrolling(props?: UseTableScrollingProps) {
   // Update dimensions continuously with 200ms interval (always, not just while hovering)
   useEffect(() => {
     const updateDimensions = () => {
-      if (containerRef.current) {
+      if (containerRef.current && scrollRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
         setContainerWidth(containerRef.current.offsetWidth);
         setContainerLeft(rect.left);
+        setContainerTop(rect.top);
         setContainerBottom(rect.bottom);
+
+        // Check if horizontal scroll is needed
+        const scrollElement = scrollRef.current;
+        const hasScroll = scrollElement.scrollWidth > scrollElement.clientWidth;
+        setHasHorizontalScroll(hasScroll);
       }
     };
 
@@ -95,11 +114,17 @@ export function useTableScrolling(props?: UseTableScrollingProps) {
 
     setIsHovering(true);
     // Update dimensions when hovering starts
-    if (containerRef.current) {
+    if (containerRef.current && scrollRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       setContainerWidth(containerRef.current.offsetWidth);
       setContainerLeft(rect.left);
+      setContainerTop(rect.top);
       setContainerBottom(rect.bottom);
+
+      // Check if horizontal scroll is needed
+      const scrollElement = scrollRef.current;
+      const hasScroll = scrollElement.scrollWidth > scrollElement.clientWidth;
+      setHasHorizontalScroll(hasScroll);
     }
   };
 
@@ -125,11 +150,17 @@ export function useTableScrolling(props?: UseTableScrollingProps) {
     }, 1000); // Keep visible for 1 second after scrolling stops
 
     // Update dimensions during scroll
-    if (containerRef.current) {
+    if (containerRef.current && scrollRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       setContainerWidth(containerRef.current.offsetWidth);
       setContainerLeft(rect.left);
+      setContainerTop(rect.top);
       setContainerBottom(rect.bottom);
+
+      // Check if horizontal scroll is needed
+      const scrollElement = scrollRef.current;
+      const hasScroll = scrollElement.scrollWidth > scrollElement.clientWidth;
+      setHasHorizontalScroll(hasScroll);
     }
   };
 
@@ -193,10 +224,12 @@ export function useTableScrolling(props?: UseTableScrollingProps) {
     containerRef,
     containerWidth,
     containerLeft,
+    containerTop,
     containerBottom,
     isHovering,
     isScrolling,
     isTableBottomVisible,
+    hasHorizontalScroll,
 
     // Scroll refs and state
     scrollRef,

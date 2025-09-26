@@ -1,6 +1,7 @@
 import { Copy } from "lucide-react";
 import { memo, useMemo, useState } from "react";
 import { HoverPopover } from "@/components/HoverPopover";
+import MetricsDisplay from "@/components/MetricsDisplay";
 import { useToast } from "@/components/ToastProvider";
 import { DeployVersionInstructions } from "@/components/experiment/DeployVersionInstructions";
 import {
@@ -12,9 +13,7 @@ import { Annotation, ExperimentWithLookups, Message, Version } from "@/types/mod
 import { HeaderMatchingSection } from "../../matching/HeaderMatchingSection";
 import { DraggableColumnWrapper } from "./DraggableColumnWrapper";
 import { VersionDifferencesView } from "./VersionDifferencesView";
-import VersionHeaderMetrics from "./VersionHeaderMetrics";
 import VersionHeaderModel from "./VersionHeaderModel";
-import VersionHeaderPriceAndLatency from "./VersionHeaderPriceAndLatency";
 import { VersionHeaderPrompt } from "./VersionHeaderPrompt";
 import { VersionHeaderSchema } from "./VersionHeaderSchema";
 import { VersionHeaderSharedPromptAndSchema } from "./VersionHeaderSharedPromptAndSchema";
@@ -23,14 +22,6 @@ type VersionHeaderProps = {
   version: Version;
   optionalKeysToShow: string[];
   index: number;
-  priceAndLatency?: {
-    avgCost: number;
-    avgDuration: number;
-    allCosts: number[];
-    allDurations: number[];
-    versionCosts: number[];
-    versionDurations: number[];
-  };
   versions?: Version[];
   sharedPartsOfPrompts?: Message[];
   sharedKeypathsOfSchemas?: string[];
@@ -39,6 +30,7 @@ type VersionHeaderProps = {
   completionId?: string;
   metrics?: { key: string; average: number }[];
   allMetricsPerKey?: Record<string, number[]>;
+  versionMetricsPerKey?: Record<string, number[]>;
   showAvgPrefix?: boolean;
   agentId?: string;
   experiment?: ExperimentWithLookups;
@@ -52,7 +44,6 @@ function VersionHeader(props: VersionHeaderProps) {
     version,
     optionalKeysToShow,
     index,
-    priceAndLatency,
     versions,
     sharedPartsOfPrompts,
     sharedKeypathsOfSchemas,
@@ -61,6 +52,7 @@ function VersionHeader(props: VersionHeaderProps) {
     completionId,
     metrics,
     allMetricsPerKey,
+    versionMetricsPerKey,
     showAvgPrefix = true,
     agentId,
     experiment,
@@ -227,11 +219,16 @@ function VersionHeader(props: VersionHeaderProps) {
       </div>
 
       <div className="firefox-version-metrics">
-        {(priceAndLatency || metrics) && (
+        {metrics && metrics.length > 0 && (
           <>
             <div className="pt-2 mt-3 border-t border-gray-200" />
-            <VersionHeaderPriceAndLatency priceAndLatency={priceAndLatency} showAvgPrefix={showAvgPrefix} />
-            <VersionHeaderMetrics metrics={metrics} allMetricsPerKey={allMetricsPerKey} showAvgPrefix={showAvgPrefix} />
+            <MetricsDisplay
+              metrics={metrics}
+              allMetricsPerKey={allMetricsPerKey}
+              versionMetricsPerKey={versionMetricsPerKey}
+              showAvgPrefix={showAvgPrefix}
+              className="space-y-1 mt-1"
+            />
           </>
         )}
       </div>
@@ -288,24 +285,6 @@ function areMessageArraysEqual(prev?: Message[], next?: Message[]): boolean {
   return true;
 }
 
-// Helper function to compare priceAndLatency objects
-function arePriceAndLatencyEqual(
-  prev?: VersionHeaderProps["priceAndLatency"],
-  next?: VersionHeaderProps["priceAndLatency"]
-): boolean {
-  if (prev === next) return true;
-  if (!prev || !next) return false;
-
-  return (
-    prev.avgCost === next.avgCost &&
-    prev.avgDuration === next.avgDuration &&
-    prev.allCosts === next.allCosts &&
-    prev.allDurations === next.allDurations &&
-    prev.versionCosts === next.versionCosts &&
-    prev.versionDurations === next.versionDurations
-  );
-}
-
 // Helper function to compare metrics arrays
 function areMetricsEqual(
   prev?: { key: string; average: number }[],
@@ -342,7 +321,6 @@ export default memo(VersionHeader, (prevProps, nextProps) => {
     areVersionsEqual(prevProps.version, nextProps.version) &&
     areStringArraysEqual(prevProps.optionalKeysToShow, nextProps.optionalKeysToShow) &&
     prevProps.index === nextProps.index &&
-    arePriceAndLatencyEqual(prevProps.priceAndLatency, nextProps.priceAndLatency) &&
     areVersionArraysEqual(prevProps.versions, nextProps.versions) &&
     areMessageArraysEqual(prevProps.sharedPartsOfPrompts, nextProps.sharedPartsOfPrompts) &&
     areStringArraysEqual(prevProps.sharedKeypathsOfSchemas || [], nextProps.sharedKeypathsOfSchemas || []) &&
@@ -353,6 +331,6 @@ export default memo(VersionHeader, (prevProps, nextProps) => {
     prevProps.dragIndex === nextProps.dragIndex &&
     areAnnotationsEqual(prevProps.annotations, nextProps.annotations) &&
     areMetricsEqual(prevProps.metrics, nextProps.metrics)
-    // Note: onReorderColumns, allMetricsPerKey, and experiment are not compared as they should be stable or are complex objects
+    // Note: onReorderColumns, allMetricsPerKey, versionMetricsPerKey, and experiment are not compared as they should be stable or are complex objects
   );
 });

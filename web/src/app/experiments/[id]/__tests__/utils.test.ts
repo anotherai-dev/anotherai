@@ -3,8 +3,8 @@ import {
   findAllMetricKeysAndAverages,
   getAllMetricsPerKey,
   getAllMetricsPerKeyForRow,
+  getAveragedMetricsPerVersion,
   getMetricsForCompletion,
-  getMetricsPerVersion,
 } from "../utils";
 
 // Mock types for testing
@@ -127,7 +127,7 @@ describe("Experiment Utilities", () => {
     });
   });
 
-  describe("getMetricsPerVersion", () => {
+  describe("getAveragedMetricsPerVersion", () => {
     const completions = [
       mockExperimentCompletion("comp1", "input1", "version1"),
       mockExperimentCompletion("comp2", "input2", "version1"),
@@ -139,12 +139,12 @@ describe("Experiment Utilities", () => {
     const experiment = mockExperiment(completions, versions);
 
     it("returns undefined when no annotations provided", () => {
-      const result = getMetricsPerVersion(experiment as ExperimentWithLookups);
+      const result = getAveragedMetricsPerVersion(experiment as ExperimentWithLookups);
       expect(result).toBeUndefined();
     });
 
     it("returns undefined for undefined annotations", () => {
-      const result = getMetricsPerVersion(experiment as ExperimentWithLookups, undefined);
+      const result = getAveragedMetricsPerVersion(experiment as ExperimentWithLookups, undefined);
       expect(result).toBeUndefined();
     });
 
@@ -164,7 +164,7 @@ describe("Experiment Utilities", () => {
         }),
       ];
 
-      const result = getMetricsPerVersion(experiment as ExperimentWithLookups, annotations);
+      const result = getAveragedMetricsPerVersion(experiment as ExperimentWithLookups, annotations);
 
       expect(result).toBeDefined();
       expect(result!["version1"]).toHaveLength(1);
@@ -181,7 +181,7 @@ describe("Experiment Utilities", () => {
         }),
       ];
 
-      const result = getMetricsPerVersion(experiment as ExperimentWithLookups, annotations);
+      const result = getAveragedMetricsPerVersion(experiment as ExperimentWithLookups, annotations);
 
       expect(result!["version1"]).toEqual([]);
       expect(result!["version2"]).toEqual([]);
@@ -199,7 +199,7 @@ describe("Experiment Utilities", () => {
         }),
       ];
 
-      const result = getMetricsPerVersion(experiment as ExperimentWithLookups, annotations);
+      const result = getAveragedMetricsPerVersion(experiment as ExperimentWithLookups, annotations);
 
       expect(result!["version1"]).toHaveLength(1);
       expect(result!["version1"][0].key).toBe("precision");
@@ -442,7 +442,7 @@ describe("Experiment Utilities", () => {
       ];
 
       // Test full workflow
-      const metricsPerVersion = getMetricsPerVersion(experiment as ExperimentWithLookups, annotations);
+      const metricsPerVersion = getAveragedMetricsPerVersion(experiment as ExperimentWithLookups, annotations);
       const allMetricsPerKey = getAllMetricsPerKey(metricsPerVersion);
       const rowMetrics = getAllMetricsPerKeyForRow(experiment as ExperimentWithLookups, annotations, "input1");
 
@@ -479,7 +479,7 @@ describe("Experiment Utilities", () => {
         mockAnnotation({ target: { completion_id: "comp4" }, metric: { name: "accuracy", value: 0.9 } }),
       ];
 
-      const metricsPerVersion = getMetricsPerVersion(experiment as ExperimentWithLookups, annotations);
+      const metricsPerVersion = getAveragedMetricsPerVersion(experiment as ExperimentWithLookups, annotations);
 
       expect(metricsPerVersion!["version1"]).toHaveLength(2);
       expect(metricsPerVersion!["version1"].find((m) => m.key === "accuracy")?.average).toBe(0.82); // (0.8 + 0.85) / 2 = 0.825, rounded to 0.82
