@@ -11,13 +11,13 @@ import {
 import { Annotation, ExperimentWithLookups, Message, Version } from "@/types/models";
 import { HeaderMatchingSection } from "../../matching/HeaderMatchingSection";
 import { DraggableColumnWrapper } from "./DraggableColumnWrapper";
+import { VersionDifferencesView } from "./VersionDifferencesView";
 import VersionHeaderMetrics from "./VersionHeaderMetrics";
 import VersionHeaderModel from "./VersionHeaderModel";
 import VersionHeaderPriceAndLatency from "./VersionHeaderPriceAndLatency";
 import { VersionHeaderPrompt } from "./VersionHeaderPrompt";
 import { VersionHeaderSchema } from "./VersionHeaderSchema";
 import { VersionHeaderSharedPromptAndSchema } from "./VersionHeaderSharedPromptAndSchema";
-import { VersionOptionalKeysView } from "./VersionOptionalKeysView";
 
 type VersionHeaderProps = {
   version: Version;
@@ -161,9 +161,9 @@ function VersionHeader(props: VersionHeaderProps) {
           />
         </div>
 
-        <VersionOptionalKeysView
+        <VersionDifferencesView
           version={version}
-          optionalKeysToShow={optionalKeysToShowWithoutPromptAndOutputSchema}
+          differingKeys={optionalKeysToShowWithoutPromptAndOutputSchema}
           annotations={annotations}
           experimentId={experimentId}
           completionId={completionId}

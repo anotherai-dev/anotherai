@@ -1,5 +1,6 @@
 import { cx } from "class-variance-authority";
 import { memo } from "react";
+import { JSONDisplay } from "@/components/JSONDisplay";
 import { PageError } from "@/components/PageError";
 import { VariablesViewer } from "@/components/VariablesViewer/VariablesViewer";
 import { MessagesViewer } from "@/components/messages/MessagesViewer";
@@ -95,8 +96,8 @@ function CompletionTableInputOutputCell({
 
     // Fallback: show raw object structure for debugging
     return (
-      <div className={cx("text-xs text-gray-600 overflow-hidden", maxWidth)}>
-        <pre className="whitespace-pre-wrap">{JSON.stringify(obj, null, 2).substring(0, 200)}...</pre>
+      <div className={cx("overflow-hidden", maxWidth)}>
+        <JSONDisplay value={obj} variant="minimal" maxLength={200} />
       </div>
     );
   }
