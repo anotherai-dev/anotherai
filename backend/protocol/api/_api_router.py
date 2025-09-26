@@ -1,4 +1,5 @@
 from typing import Annotated, Any
+from uuid import UUID
 
 from fastapi import APIRouter, Body, Query, UploadFile
 
@@ -116,7 +117,7 @@ async def query_completions(
 @router.get("/v1/completions/{completion_id}", response_model_exclude_none=True)
 async def get_completion(
     completion_service: CompletionServiceDep,
-    completion_id: str,
+    completion_id: UUID,
 ) -> Completion:
     return await completion_service.get_completion(completion_id)
 

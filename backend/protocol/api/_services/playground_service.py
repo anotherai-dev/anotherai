@@ -185,10 +185,8 @@ class PlaygroundService:
         use_cache: CacheUsage | None,
     ) -> CompletionOutputTuple:
         _log.debug("Playground: Running single completion", version_id=version.id, input_id=input.id)
-        # TODO: fix to use UUIDs everywhere
-        completion_id_str = str(completion_id)
         cached = await self._completion_runner.check_cache(
-            completion_id=completion_id_str,
+            completion_id=completion_id,
             agent=Agent(id=agent_id, uid=0),
             version=version,
             input=input,
@@ -212,7 +210,7 @@ class PlaygroundService:
                 timeout=None,
                 use_fallback="never",
                 conversation_id=None,
-                completion_id=completion_id_str,
+                completion_id=completion_id,
             )
             completion = await self._completion_runner.run(runner, builder)
 

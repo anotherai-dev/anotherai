@@ -11,6 +11,7 @@ from core.domain.tool import HostedTool as DomainHostedTool
 from core.domain.tool import Tool as DomainTool
 from core.domain.trace import LLMTrace as DomainLLMTrace
 from core.domain.trace import ToolTrace as DomainToolTrace
+from core.utils.uuid import uuid7_generation_time
 from protocol.api._api_models import (
     Message,
     Tool,
@@ -19,6 +20,7 @@ from protocol.api._api_models import (
 )
 from protocol.api._services.conversions import (
     _extract_json_schema,
+    completion_from_domain,
     experiments_url,
     graph_from_domain,
     graph_to_domain,
@@ -34,7 +36,7 @@ from protocol.api._services.conversions import (
     view_to_domain,
     view_url,
 )
-from tests.fake_models import fake_graph, fake_version, fake_view
+from tests.fake_models import fake_completion, fake_graph, fake_version, fake_view
 
 
 @pytest.fixture(autouse=True)
@@ -399,6 +401,27 @@ class TestUsageConversion:
         assert converted_domain.prompt.cost_usd == original_domain.prompt.cost_usd
         assert converted_domain.completion.text_token_count == original_domain.completion.text_token_count
         assert converted_domain.completion.cost_usd == original_domain.completion.cost_usd
+
+
+class TestCompletionConversion:
+    def test_completion_from_domain_includes_created_at(self):
+        """Test that completion_from_domain derives created_at from UUID7 ID."""
+        from datetime import UTC
+
+        # Create a fake completion with a UUID7 ID
+        domain_completion = fake_completion(id_rand=12345)
+
+        # Convert to API model
+        api_completion = completion_from_domain(domain_completion)
+
+        # Verify created_at is set and matches the UUID7 timestamp
+        assert api_completion.created_at is not None
+        expected_created_at = uuid7_generation_time(domain_completion.id)
+        # Compare timestamps (allowing for microsecond sanitization)
+        assert api_completion.created_at.replace(microsecond=0, tzinfo=UTC) == expected_created_at.replace(
+            microsecond=0,
+            tzinfo=UTC,
+        )
 
 
 class TestExtractJsonSchema:

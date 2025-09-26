@@ -320,27 +320,6 @@ AMAZON_BEDROCK_PROVIDER_DATA: ProviderDataByModel = {
             source="https://aws.amazon.com/bedrock/pricing/",
         ),
     ),
-    # Model.LLAMA_3_2_90B: ModelProviderData(
-    #     text_price=TextPricePerToken(
-    #         prompt_cost_per_token=0.000_000_72,
-    #         completion_cost_per_token=0.000_000_72,
-    #         source="https://aws.amazon.com/bedrock/pricing/",
-    #     ),
-    # ),
-    # Model.LLAMA_3_2_11B: ModelProviderData(
-    #     text_price=TextPricePerToken(
-    #         prompt_cost_per_token=0.000_000_16,
-    #         completion_cost_per_token=0.000_000_16,
-    #         source="https://aws.amazon.com/bedrock/pricing/",
-    #     ),
-    # ),
-    # Model.LLAMA_3_2_3B: ModelProviderData(
-    #     text_price=TextPricePerToken(
-    #         prompt_cost_per_token=0.15 * ONE_MILLION_TH,
-    #         completion_cost_per_token=0.15 * ONE_MILLION_TH,
-    #         source="https://aws.amazon.com/bedrock/pricing/",
-    #     ),
-    # ),
     Model.LLAMA_3_3_70B: ModelProviderData(
         text_price=TextPricePerToken(
             prompt_cost_per_token=0.72 * ONE_MILLION_TH,
@@ -348,13 +327,6 @@ AMAZON_BEDROCK_PROVIDER_DATA: ProviderDataByModel = {
             source="https://aws.amazon.com/bedrock/pricing/",
         ),
     ),
-    # Model.LLAMA_3_2_1B: ModelProviderData(
-    #     text_price=TextPricePerToken(
-    #         prompt_cost_per_token=0.000_000_1,
-    #         completion_cost_per_token=0.000_000_1,
-    #         source="https://aws.amazon.com/bedrock/pricing/",
-    #     ),
-    # ),
 }
 
 GROQ_PROVIDER_DATA: ProviderDataByModel = {
@@ -471,6 +443,20 @@ MISTRAL_PROVIDER_DATA: ProviderDataByModel = {
             source="https://mistral.ai/products/la-plateforme#pricing",
         ),
     ),
+    Model.MISTRAL_SMALL_2509: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=0.1 * ONE_MILLION_TH,
+            completion_cost_per_token=0.3 * ONE_MILLION_TH,
+            source="https://mistral.ai/products/la-plateforme#pricing",
+        ),
+    ),
+    Model.MISTRAL_SMALL_2506: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=0.1 * ONE_MILLION_TH,
+            completion_cost_per_token=0.3 * ONE_MILLION_TH,
+            source="https://mistral.ai/products/la-plateforme#pricing",
+        ),
+    ),
     Model.MISTRAL_LARGE_2_2407: ModelProviderData(
         text_price=TextPricePerToken(
             prompt_cost_per_token=2.0 * ONE_MILLION_TH,
@@ -499,7 +485,21 @@ MISTRAL_PROVIDER_DATA: ProviderDataByModel = {
             source="https://mistral.ai/products/la-plateforme#pricing",
         ),
     ),
+    Model.CODESTRAL_2508: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=0.3 * ONE_MILLION_TH,
+            completion_cost_per_token=0.9 * ONE_MILLION_TH,
+            source="https://mistral.ai/products/la-plateforme#pricing",
+        ),
+    ),
     Model.MISTRAL_MEDIUM_2505: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=0.4 * ONE_MILLION_TH,
+            completion_cost_per_token=2 * ONE_MILLION_TH,
+            source="https://mistral.ai/products/la-plateforme#pricing",
+        ),
+    ),
+    Model.MISTRAL_MEDIUM_2508: ModelProviderData(
         text_price=TextPricePerToken(
             prompt_cost_per_token=0.4 * ONE_MILLION_TH,
             completion_cost_per_token=2 * ONE_MILLION_TH,
@@ -513,7 +513,35 @@ MISTRAL_PROVIDER_DATA: ProviderDataByModel = {
             source="https://mistral.ai/pricing#api-pricing",
         ),
     ),
+    Model.MAGISTRAL_SMALL_2507: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=0.5 * ONE_MILLION_TH,
+            completion_cost_per_token=1.5 * ONE_MILLION_TH,
+            source="https://mistral.ai/pricing#api-pricing",
+        ),
+    ),
+    Model.MAGISTRAL_SMALL_2509: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=0.5 * ONE_MILLION_TH,
+            completion_cost_per_token=1.5 * ONE_MILLION_TH,
+            source="https://mistral.ai/pricing#api-pricing",
+        ),
+    ),
     Model.MAGISTRAL_MEDIUM_2506: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=2.0 * ONE_MILLION_TH,
+            completion_cost_per_token=5.0 * ONE_MILLION_TH,
+            source="https://mistral.ai/pricing#api-pricing",
+        ),
+    ),
+    Model.MAGISTRAL_MEDIUM_2507: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=2.0 * ONE_MILLION_TH,
+            completion_cost_per_token=5.0 * ONE_MILLION_TH,
+            source="https://mistral.ai/pricing#api-pricing",
+        ),
+    ),
+    Model.MAGISTRAL_MEDIUM_2509: ModelProviderData(
         text_price=TextPricePerToken(
             prompt_cost_per_token=2.0 * ONE_MILLION_TH,
             completion_cost_per_token=5.0 * ONE_MILLION_TH,

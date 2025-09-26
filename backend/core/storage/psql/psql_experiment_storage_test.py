@@ -124,16 +124,16 @@ class TestAddRunId:
     ):
         await experiment_storage.create(sample_experiment)
 
-        run_id = "run-123"
+        run_id = uuid.uuid4()
         await experiment_storage.add_run_id(sample_experiment.id, run_id)
 
         retrieved = await experiment_storage.get_experiment(sample_experiment.id)
-        assert retrieved.run_ids == [run_id]
+        assert retrieved.run_ids == [str(run_id)]
 
         # Add it again to make sure it's not added again
         await experiment_storage.add_run_id(sample_experiment.id, run_id)
         retrieved = await experiment_storage.get_experiment(sample_experiment.id)
-        assert retrieved.run_ids == [run_id]
+        assert retrieved.run_ids == [str(run_id)]
 
     async def test_add_multiple_run_ids(
         self,
@@ -142,20 +142,20 @@ class TestAddRunId:
     ):
         await experiment_storage.create(sample_experiment)
 
-        run_ids = ["run-1", "run-2", "run-3"]
+        run_ids = [uuid7(), uuid7(), uuid7()]
         for run_id in run_ids:
             await experiment_storage.add_run_id(sample_experiment.id, run_id)
 
         retrieved = await experiment_storage.get_experiment(sample_experiment.id)
         for run_id in run_ids:
-            assert run_id in retrieved.run_ids
+            assert str(run_id) in retrieved.run_ids
 
     async def test_add_run_id_nonexistent_experiment(
         self,
         experiment_storage: PsqlExperimentStorage,
     ):
         # This should not raise an error - it's a valid operation that just doesn't match any rows
-        await experiment_storage.add_run_id("nonexistent-experiment", "run-123")
+        await experiment_storage.add_run_id("nonexistent-experiment", uuid7())
 
 
 class TestDelete:

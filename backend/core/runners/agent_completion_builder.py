@@ -1,4 +1,5 @@
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -15,7 +16,7 @@ from core.runners.runner_output import RunnerOutput
 
 
 class AgentCompletionBuilder(BaseModel):
-    id: str
+    id: UUID
     agent: Agent
     version: Version
     agent_input: AgentInput
