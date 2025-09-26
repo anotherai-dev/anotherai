@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -13,7 +14,7 @@ class Annotation(BaseModel):
     author_name: str
 
     class Target(BaseModel):
-        completion_id: str | None = None
+        completion_id: UUID | None = None
         experiment_id: str | None = None
         key_path: str | None = None
 

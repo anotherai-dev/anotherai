@@ -1,4 +1,5 @@
 from urllib.parse import quote, quote_plus
+from uuid import UUID
 
 from core.consts import ANOTHERAI_APP_URL
 
@@ -11,7 +12,7 @@ def view_url(view_id: str) -> str:
     return f"{ANOTHERAI_APP_URL}/views/{view_id}"
 
 
-def completion_url(run_id: str) -> str:
+def completion_url(run_id: UUID) -> str:
     return f"{ANOTHERAI_APP_URL}/completions/{run_id}"
 
 

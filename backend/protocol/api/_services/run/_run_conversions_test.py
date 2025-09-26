@@ -329,7 +329,7 @@ class TestCompletionChunkChoiceFinalFromCompletion:
         assert result.finish_reason == "stop"
         assert result.cost_usd == completion.cost_usd
         assert result.duration_seconds == completion.duration_seconds
-        assert result.url.endswith(completion.id)
+        assert result.url.endswith(str(completion.id))
 
         # Verify delta content
         assert result.delta.role == "assistant"

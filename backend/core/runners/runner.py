@@ -3,6 +3,7 @@ import re
 from collections.abc import AsyncIterator, Sequence
 from contextlib import asynccontextmanager
 from typing import Any
+from uuid import UUID
 
 from pydantic import ValidationError
 from structlog import get_logger
@@ -104,7 +105,7 @@ class Runner:
         self,
         agent_input: AgentInput,
         start_time: float,
-        completion_id: str,
+        completion_id: UUID,
         metadata: dict[str, Any] | None = None,
         conversation_id: str | None = None,
     ) -> AgentCompletionBuilder:

@@ -410,7 +410,7 @@ def completion_response_from_domain(
     deprecated_function: bool,
 ):
     return OpenAIProxyChatCompletionResponse(
-        id=completion.id,
+        id=str(completion.id),
         choices=[completion_choice_from_domain(completion, deprecated_function)],
         created=int(completion.created_at.timestamp()),
         model=completion.final_model or "unknown",

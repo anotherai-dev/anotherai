@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Any, override
+from uuid import UUID
 
 import structlog
 from asyncpg.pool import PoolConnectionProxy
@@ -201,7 +202,7 @@ class _AnnotationRow(PsqlBaseRow, WithUpdatedAtRow):
         return cls(
             slug=ann.id,
             author_name=ann.author_name,
-            target_completion_id=ann.target.completion_id if ann.target else None,
+            target_completion_id=str(ann.target.completion_id) if ann.target else None,
             target_experiment_uid=target_experiment_uid,
             target_key_path=ann.target.key_path if ann.target else None,
             context_experiment_uid=context_experiment_uid,
@@ -233,7 +234,7 @@ class _AnnotationRow(PsqlBaseRow, WithUpdatedAtRow):
             return None
         target = Annotation.Target(
             experiment_id=experiment_ids.get(self.target_experiment_uid, "") if self.target_experiment_uid else None,
-            completion_id=self.target_completion_id,
+            completion_id=UUID(self.target_completion_id) if self.target_completion_id else None,
             key_path=self.target_key_path,
         )
         if not target.model_dump(exclude_none=True):

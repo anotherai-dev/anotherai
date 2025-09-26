@@ -1,6 +1,7 @@
 import asyncio
 from contextlib import contextmanager
 from typing import Any
+from uuid import UUID
 
 import structlog
 
@@ -36,7 +37,7 @@ class CompletionRunner:
 
     async def _from_cache(
         self,
-        completion_id: str,
+        completion_id: UUID,
         agent: Agent,
         version: Version,
         input: AgentInput,
@@ -75,7 +76,7 @@ class CompletionRunner:
 
     async def check_cache(
         self,
-        completion_id: str,
+        completion_id: UUID,
         agent: Agent,
         version: Version,
         input: AgentInput,
@@ -108,7 +109,7 @@ class CompletionRunner:
         metadata: dict[str, Any],
         timeout: float | None,  # noqa: ASYNC109
         use_fallback: FallbackOption,
-        completion_id: str,
+        completion_id: UUID,
         conversation_id: str | None,
     ):
         runner = Runner(

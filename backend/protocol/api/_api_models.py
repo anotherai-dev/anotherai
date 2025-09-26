@@ -13,6 +13,7 @@ from core.domain.cache_usage import CacheUsage
 from core.domain.reasoning_effort import ReasoningEffort
 from core.domain.tool_choice import ToolChoice
 from core.utils.fields import datetime_factory
+from core.utils.uuid import uuid_zero
 
 
 class Page[T](BaseModel):
@@ -243,7 +244,7 @@ class Annotation(BaseModel):
     )
 
     class Target(BaseModel):
-        completion_id: str | None = Field(
+        completion_id: UUID | None = Field(
             default=None,
             description="The unique identifier of the completion that the annotation is associated with, if any. "
             "At least one of completion_id or experiment_id must be present.",
@@ -350,8 +351,8 @@ class Trace(BaseModel):
 
 
 class Completion(BaseModel):
-    id: str = Field(
-        default="",
+    id: UUID = Field(
+        default_factory=uuid_zero,
         description="The id of the completion. Must be a UUID7. Auto generated if not provided.",
     )
     agent_id: str
@@ -410,7 +411,7 @@ class ImportCompletionResponse(BaseModel):
     We do not return the entire completion here as it can be quite large.
     If you need the entire completion, you can fetch it using the id."""
 
-    id: str
+    id: UUID
     url: str
 
 

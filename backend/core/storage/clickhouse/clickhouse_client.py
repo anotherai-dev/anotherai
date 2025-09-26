@@ -11,7 +11,7 @@ from pydantic.main import BaseModel
 
 from core.domain.agent_completion import AgentCompletion
 from core.domain.annotation import Annotation
-from core.domain.exceptions import BadRequestError, InvalidQueryError, ObjectNotFoundError
+from core.domain.exceptions import InvalidQueryError, ObjectNotFoundError
 from core.domain.experiment import Experiment
 from core.domain.version import Version
 from core.storage.clickhouse._models._ch_annotation import ClickhouseAnnotation
@@ -66,15 +66,10 @@ class ClickhouseClient(CompletionStorage):
     async def add_completion_to_experiment(
         self,
         experiment_id: str,
-        completion_id: str,
+        completion_id: UUID,
         settings: dict[str, Any] | None = None,
     ):
-        try:
-            completion_uuid = UUID(completion_id)
-        except ValueError as e:
-            raise BadRequestError("Invalid completion UUID") from e
-
-            # Use ALTER TABLE to update the completion_ids array
+        # Use ALTER TABLE to update the completion_ids array
         # Since we're using ReplacingMergeTree, we need to update the updated_at as well
         await self._client.command(
             """
@@ -83,8 +78,7 @@ class ClickhouseClient(CompletionStorage):
             WHERE id = {experiment_id:String}
             """,
             parameters={
-                "completion_id": completion_uuid,
-                "tenant_uid": self.tenant_uid,
+                "completion_id": completion_id,
                 "experiment_id": experiment_id,
             },
             settings=settings or {},
@@ -114,16 +108,13 @@ class ClickhouseClient(CompletionStorage):
     @override
     async def completions_by_ids(
         self,
-        completions_ids: list[str],
+        completions_ids: list[UUID],
         exclude: set[CompletionField] | None = None,
     ) -> list[AgentCompletion]:
         if not completions_ids:
             return []
 
-        try:
-            uuids = {f"v{i}": UUID(uuid) for i, uuid in enumerate(completions_ids)}
-        except ValueError as e:
-            raise BadRequestError("Invalid UUIDs") from e
+        uuids = {f"v{i}": uuid for i, uuid in enumerate(completions_ids)}
 
         raw_exclude: set[str] = (
             {"input_variables", "input_messages", "output_messages", "traces"}
@@ -143,21 +134,16 @@ class ClickhouseClient(CompletionStorage):
     @override
     async def completions_by_id(
         self,
-        completion_id: str,
+        completion_id: UUID,
         include: set[CompletionField] | None = None,
     ) -> AgentCompletion:
-        try:
-            uuid = UUID(completion_id)
-        except ValueError as e:
-            raise BadRequestError("Invalid UUID") from e
-
         included = ", ".join(include) if include else "*"
 
         result = await self._client.query(
             f"""
             SELECT {included} FROM completions WHERE id = {{uuid:UUID}} and created_at = UUIDv7ToDateTime({{uuid:UUID}})
             """,  # noqa: S608
-            parameters={"uuid": uuid},
+            parameters={"uuid": completion_id},
         )
         if not result.result_rows:
             raise ObjectNotFoundError(object_type="completion")
