@@ -151,6 +151,7 @@ export interface ExperimentCompletion {
 export interface Completion {
   id: string;
   agent_id: string;
+  created_at?: string;
   version: Version;
   conversation_id?: string;
   input: Input;

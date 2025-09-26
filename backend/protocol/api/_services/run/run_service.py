@@ -1,6 +1,7 @@
 import re
 import time
 from typing import Any, NamedTuple
+from uuid import UUID
 
 import structlog
 
@@ -120,7 +121,7 @@ class RunService:
 
     async def _cached_response(
         self,
-        completion_id: str,
+        completion_id: UUID,
         use_cache: CacheUsage | None,
         stream: bool,
         prepared_run: PreparedRun,
@@ -165,7 +166,7 @@ class RunService:
                 else:
                     choice = completion_chunk_choice_from_output(chunk, request.function_call is not None)
                 yield OpenAIProxyChatCompletionChunk(
-                    id=builder.id,
+                    id=str(builder.id),
                     created=int(time.time()),
                     model=builder.version.model or "",
                     choices=[choice],
@@ -217,7 +218,7 @@ class RunService:
 
         stream = request.stream or False
         deprecated_function = request.function_call is not None
-        completion_id = str(uuid7())
+        completion_id = uuid7()
         if cached := await self._cached_response(
             completion_id,
             request.use_cache,

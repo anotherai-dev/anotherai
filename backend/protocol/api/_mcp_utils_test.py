@@ -13,8 +13,13 @@ class TestAddStringToPropertyType:
         }
         updated = _add_string_to_property_type(property)
         assert updated == {
-            "type": ["array", "string"],
-            "items": {"type": "string"},
+            "anyOf": [
+                {
+                    "type": "array",
+                    "items": {"type": "string"},
+                },
+                {"type": "string"},
+            ],
         }
         assert property == {  # property should be untouched
             "type": "array",
@@ -29,8 +34,13 @@ class TestAddStringToPropertyType:
         }
         updated = _add_string_to_property_type(property)
         assert updated == {
-            "type": ["object", "string"],
-            "properties": {"name": {"type": "string"}},
+            "anyOf": [
+                {
+                    "type": "object",
+                    "properties": {"name": {"type": "string"}},
+                },
+                {"type": "string"},
+            ],
         }
         assert property == {  # property should be untouched
             "type": "object",
@@ -44,8 +54,13 @@ class TestAddStringToPropertyType:
         updated2 = _add_string_to_property_type(updated1)
         assert updated1 == updated2
         assert updated2 == {
-            "type": ["array", "string"],
-            "items": {"type": "string"},
+            "anyOf": [
+                {
+                    "type": "array",
+                    "items": {"type": "string"},
+                },
+                {"type": "string"},
+            ],
         }
 
     def test_idempotency_object(self):
@@ -55,8 +70,13 @@ class TestAddStringToPropertyType:
         updated2 = _add_string_to_property_type(updated1)
         assert updated1 == updated2
         assert updated2 == {
-            "type": ["object", "string"],
-            "properties": {"name": {"type": "string"}},
+            "anyOf": [
+                {
+                    "type": "object",
+                    "properties": {"name": {"type": "string"}},
+                },
+                {"type": "string"},
+            ],
         }
 
     def test_anyof_without_string_adds_string(self):
@@ -186,11 +206,16 @@ class TestAddStringToPropertyType:
         }
         updated = _add_string_to_property_type(property)
         assert updated == {
-            "type": ["array", "string"],
-            "items": {"type": "string"},
-            "description": "An array of strings",
-            "minItems": 1,
-            "maxItems": 10,
+            "anyOf": [
+                {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "An array of strings",
+                    "minItems": 1,
+                    "maxItems": 10,
+                },
+                {"type": "string"},
+            ],
         }
 
     def test_complex_anyof_scenario(self):

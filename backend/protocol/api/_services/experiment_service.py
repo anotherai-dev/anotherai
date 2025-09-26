@@ -2,6 +2,7 @@ import asyncio
 import time
 from collections.abc import Collection
 from typing import Any, Literal, cast, final
+from uuid import UUID
 
 from core.domain.agent import Agent
 from core.domain.annotation import Annotation
@@ -87,7 +88,7 @@ class ExperimentService:
         annotations: list[Annotation] = []
         if include is None or "annotations" in include:
             annotations = await self.annotation_storage.list(
-                target=TargetFilter(completion_id=set(exp.run_ids)),
+                target=TargetFilter(completion_id={UUID(run_id) for run_id in exp.run_ids}),
                 context=None,
                 since=None,
                 limit=100,

@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from uuid import UUID
 
 from structlog import get_logger
 
@@ -104,7 +105,7 @@ class DeploymentService:
         )
         return deployment_from_domain(updated)
 
-    async def _get_version_by_id(self, agent_id: str, version_id: str) -> tuple[Version, str]:
+    async def _get_version_by_id(self, agent_id: str, version_id: str) -> tuple[Version, UUID]:
         version_id = sanitize_id(version_id, IDType.VERSION)
         # Check agent exists:
         try:

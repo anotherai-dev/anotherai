@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import final
+from uuid import UUID
 
 from core.domain.annotation import Annotation as DomainAnnotation
 from core.storage.annotation_storage import AnnotationStorage, ContextFilter, TargetFilter
@@ -30,13 +31,13 @@ class AnnotationService:
         since: str | None = None,
         limit: int = 100,
     ) -> Page[Annotation]:
-        target_completion_ids = set[str]()
+        target_completion_ids = set[UUID]()
         if completion_id:
-            target_completion_ids.add(completion_id)
+            target_completion_ids.add(UUID(completion_id))
         if experiment_id:
             # When querying via experiment_id we also include annotations for any run in the experiment
             experiment = await self.experiment_storage.get_experiment(experiment_id)
-            target_completion_ids.update(experiment.run_ids)
+            target_completion_ids.update(map(UUID, experiment.run_ids))  # TODO
 
         target = TargetFilter(
             experiment_id={experiment_id} if experiment_id else None,

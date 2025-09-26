@@ -59,7 +59,7 @@ def fake_input(**kwargs: Any):
 def fake_completion(agent: Agent | None = None, id_rand: int = 1, **kwargs: Any):
     base = AgentCompletion(
         agent=agent or Agent(uid=1, id="hello", name="hello", created_at=datetime(2025, 1, 1, 1, 1, 1, tzinfo=UTC)),
-        id=str(uuid7(ms=lambda: 0, rand=lambda: id_rand)),
+        id=uuid7(ms=lambda: 0, rand=lambda: id_rand),
         duration_seconds=1.0,
         cost_usd=1.0,
         traces=[
@@ -153,7 +153,7 @@ def fake_tool():
 
 
 def fake_experiment(**kwargs: Any):
-    return Experiment(
+    base = Experiment(
         id="test-experiment",
         author_name="Test Author",
         title="Test Experiment",
@@ -162,7 +162,13 @@ def fake_experiment(**kwargs: Any):
         agent_id="test-agent",
         run_ids=[],
         metadata={"key": "value"},
-    ).model_copy(update=kwargs)
+    )
+    return Experiment.model_validate(
+        {
+            **base.model_dump(),
+            **kwargs,
+        },
+    )
 
 
 def fake_annotation(**kwargs: Any):
@@ -170,7 +176,7 @@ def fake_annotation(**kwargs: Any):
         id="test-annotation",
         author_name="Test Author",
         target=Annotation.Target(
-            completion_id="test-completion",
+            completion_id=uuid7(ms=lambda: 0, rand=lambda: 1),
             experiment_id="test-experiment",
             key_path="response.message",
         ),

@@ -431,9 +431,12 @@ def output_to_domain(output: Output) -> DomainOutput:
 
 
 def completion_from_domain(completion: DomainCompletion) -> Completion:
+    # Always derive created_at from the UUID7 ID for consistency
+
     return Completion(
         id=completion.id,
         agent_id=completion.agent.id,
+        created_at=_sanitize_datetime(completion.created_at),
         version=version_from_domain(completion.version),
         input=input_from_domain(completion.agent_input),
         output=output_from_domain(completion.agent_output),
@@ -447,6 +450,8 @@ def completion_from_domain(completion: DomainCompletion) -> Completion:
 
 
 def completion_to_domain(completion: Completion) -> DomainCompletion:
+    # Always derive created_at from the UUID7 ID for consistency
+
     return DomainCompletion(
         id=completion.id,
         agent=DomainAgent(id=completion.agent_id, uid=0),
