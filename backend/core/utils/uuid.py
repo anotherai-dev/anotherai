@@ -1,3 +1,4 @@
+import re
 import time
 from collections.abc import Callable
 from datetime import UTC, datetime
@@ -58,3 +59,6 @@ def is_uuid7_str(uuid: str) -> bool:
 def uuid7_generation_time(uuid: UUID) -> datetime:
     """Get the generation time of the uuid"""
     return datetime.fromtimestamp((uuid.int >> 80) / 1000, tz=UTC)
+
+
+UUID7_REGEXP = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}")

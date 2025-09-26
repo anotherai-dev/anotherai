@@ -5,7 +5,7 @@ from uuid import UUID, uuid1, uuid3, uuid4, uuid5
 import pytest
 from freezegun import freeze_time
 
-from .uuid import is_uuid7, uuid7, uuid7_generation_time
+from .uuid import UUID7_REGEXP, is_uuid7, uuid7, uuid7_generation_time
 
 
 class TestUUID7:
@@ -42,3 +42,8 @@ class TestIsUUID7:
     @pytest.mark.parametrize("gen", [uuid4, lambda: uuid5(uuid4(), "b"), uuid1, lambda: uuid3(uuid4(), "b")])
     def test_is_not_uuid7(self, gen: Callable[[], UUID]):
         assert not is_uuid7(gen())
+
+
+class TestUUIDRegExp:
+    def test_sanity(self):
+        assert UUID7_REGEXP.match("00000000-0000-7000-0000-000000000000")

@@ -12,7 +12,6 @@ from core.storage.annotation_storage import AnnotationStorage, TargetFilter
 from core.storage.completion_storage import CompletionStorage
 from core.storage.experiment_storage import ExperimentFields, ExperimentStorage
 from core.utils.background import add_background_task
-from core.utils.hash import HASH_REGEXP_32
 from protocol.api._api_models import CreateExperimentRequest, Experiment, Page
 from protocol.api._services.conversions import (
     create_experiment_to_domain,
@@ -45,8 +44,8 @@ class ExperimentService:
     ) -> Experiment:
         # we need a list here because we want to order the returned outputs the same way the versions and inputs
         # are ordered
-        sanitized_versions = list(sanitize_ids(version_ids, IDType.VERSION, HASH_REGEXP_32)) if version_ids else None
-        sanitized_inputs = list(sanitize_ids(input_ids, IDType.INPUT, HASH_REGEXP_32)) if input_ids else None
+        sanitized_versions = list(sanitize_ids(version_ids, IDType.VERSION)) if version_ids else None
+        sanitized_inputs = list(sanitize_ids(input_ids, IDType.INPUT)) if input_ids else None
 
         start_time = time.time()
 

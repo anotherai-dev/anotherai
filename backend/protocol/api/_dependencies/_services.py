@@ -89,6 +89,7 @@ def deployment_service(tenant: TenantDep, dependencies: LifecycleDependenciesDep
     return DeploymentService(
         dependencies.storage_builder.deployments(tenant.uid),
         dependencies.storage_builder.completions(tenant.uid),
+        agents_storage=dependencies.storage_builder.agents(tenant.uid),
     )
 
 
