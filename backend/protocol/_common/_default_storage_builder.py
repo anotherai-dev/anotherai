@@ -79,7 +79,11 @@ class DefaultStorageBuilder(StorageBuilder):
     @classmethod
     async def create(cls):
         psql_pool = await asyncpg.create_pool(dsn=os.environ["PSQL_DSN"])
-        clickhouse_client = await create_async_client(dsn=os.environ["CLICKHOUSE_DSN"])
+        clickhouse_client = await create_async_client(
+            dsn=os.environ["CLICKHOUSE_DSN"],
+            connect_timeout=30,
+            send_receive_timeout=300,
+        )
 
         return cls(
             clickhouse_client=clickhouse_client,
