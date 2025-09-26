@@ -117,6 +117,69 @@ async def test_structured_output(test_case: ProviderTestCase, test_api_client: I
 
 
 @pytest.mark.parametrize("test_case", _test_cases)
+async def test_variablized_files(test_case: ProviderTestCase, test_api_client: IntegrationTestClient):
+    test_api_client.mock_provider_call(
+        test_case.provider(),
+        test_case.model(),
+        f"{test_case.provider()}/completion.json",
+    )
+
+    test_api_client.httpx_mock.add_response(
+        url="https://example.com/image.png",
+        content=b"image",
+    )
+
+    client = test_api_client.openai_client()
+
+    response = await client.chat.completions.create(
+        model=test_case.model(),
+        messages=[
+            {"role": "system", "content": "Hello, world!"},
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": "{{file_url}}",
+                        },
+                    },
+                ],
+            },
+        ],
+        extra_body={
+            "input": {
+                "file_url": "https://example.com/image.png",
+            },
+        },
+    )
+    assert response.choices[0].message.content == "The meaning of life is 42"
+    reqs = test_api_client.get_provider_requests(test_case.provider(), test_case.model())
+    assert len(reqs) == 1
+    test_case.check_includes_image(json.loads(reqs[0].content), reqs[0], "https://example.com/image.png")
+
+    await test_api_client.wait_for_background()
+    # Check that the completion's version is valid
+    completion = await test_api_client.get(f"/v1/completions/{response.id}")
+    version = completion["version"]
+    assert version["input_variables_schema"] == {
+        "type": "object",
+        "properties": {"file_url": {"type": "string"}},
+    }
+    assert version["prompt"] == [
+        {"role": "system", "content": "Hello, world!"},
+        {
+            "role": "user",
+            "content": [
+                {
+                    "image_url": "{{file_url}}",
+                },
+            ],
+        },
+    ]
+
+
+@pytest.mark.parametrize("test_case", _test_cases)
 async def test_parameters(test_case: ProviderTestCase, test_api_client: IntegrationTestClient):
     """Check that parameters are correctly set in the request"""
     test_api_client.mock_provider_call(

@@ -16,6 +16,7 @@ interface StickyTableHeadersProps {
   containerWidth: number;
   headerRef: React.RefObject<HTMLTableSectionElement | null>;
   tableRef: React.RefObject<HTMLTableElement | null>;
+  stickyHeaderRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export function StickyTableHeaders({
@@ -26,41 +27,49 @@ export function StickyTableHeaders({
   containerWidth,
   headerRef,
   tableRef,
+  stickyHeaderRef,
 }: StickyTableHeadersProps) {
   // State to track if headers are visible
   const [showStickyHeaders, setShowStickyHeaders] = useState(false);
 
-  // Use intersection observer to detect when headers and table are visible
+  // Use intersection observer to detect when to show/hide sticky headers
   useEffect(() => {
     if (!headerRef.current || !tableRef.current) return;
 
-    let headerIntersecting = true;
-    let tableIntersecting = true;
+    let headerBottomCrossedTop = false;
+    let stickyHeadersReachedTableBottom = false;
 
     const updateStickyHeaderVisibility = () => {
-      // Show sticky headers only when:
-      // 1. Headers are not visible (scrolled out of view)
-      // 2. Table is still visible (not completely scrolled past)
-      setShowStickyHeaders(!headerIntersecting && tableIntersecting);
+      // Show sticky headers when:
+      // 1. Header bottom has crossed the viewport top
+      // 2. Sticky headers haven't reached the table bottom yet
+      setShowStickyHeaders(headerBottomCrossedTop && !stickyHeadersReachedTableBottom);
     };
 
+    // Observer for the header to detect when its bottom crosses the viewport top
     const headerObserver = new IntersectionObserver(
       ([entry]) => {
-        headerIntersecting = entry.isIntersecting;
+        // When threshold is 0, isIntersecting=false means the header is completely above viewport
+        // This happens when the bottom of the header crosses the top of the viewport
+        headerBottomCrossedTop = !entry.isIntersecting;
         updateStickyHeaderVisibility();
       },
       {
-        threshold: 0.1, // Trigger when less than 10% of headers are visible
+        threshold: 0, // Trigger when header completely leaves the viewport
       }
     );
 
+    // Observer for the table to detect when sticky headers would overlap with table bottom
     const tableObserver = new IntersectionObserver(
       ([entry]) => {
-        tableIntersecting = entry.isIntersecting;
+        // Use rootMargin to create a 64px buffer from the top (height of sticky headers)
+        // When table is not intersecting with this buffer, it means sticky headers would overlap
+        stickyHeadersReachedTableBottom = !entry.isIntersecting;
         updateStickyHeaderVisibility();
       },
       {
-        threshold: 0.01, // Trigger when table is barely visible
+        rootMargin: "-64px 0px 0px 0px", // 64px from top (sticky header height)
+        threshold: 0,
       }
     );
 
@@ -73,13 +82,11 @@ export function StickyTableHeaders({
     };
   }, [headerRef, tableRef]);
 
-  if (!showStickyHeaders) {
-    return null;
-  }
-
   return (
     <div
-      className="fixed top-0 z-30 pointer-events-none overflow-hidden border-l border-r border-gray-200"
+      className={`fixed top-0 z-30 pointer-events-none overflow-hidden border-l border-r border-gray-200 transition-opacity duration-150 ease-in-out ${
+        showStickyHeaders ? "opacity-100" : "opacity-0"
+      }`}
       style={{
         left: containerLeft + 240, // Position after the sticky first column
         width: containerWidth - 240, // Take up remaining width
@@ -89,9 +96,11 @@ export function StickyTableHeaders({
       {/* Main header content */}
       <div className="bg-gray-50/90 backdrop-blur-sm border-b border-gray-200 h-[60px]">
         <div
+          ref={stickyHeaderRef}
           className="flex h-full"
           style={{
-            transform: `translateX(-${scrollLeft}px)`, // Follow horizontal scroll
+            transform: `translateX(var(--scroll-offset, -${scrollLeft}px))`, // Use CSS variable with fallback
+            transition: "transform 50ms ease-out", // Very short smooth animation
           }}
         >
           {stickyHeaderData.map((headerData, index) => (

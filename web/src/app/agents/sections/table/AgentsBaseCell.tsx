@@ -1,9 +1,11 @@
+import { memo } from "react";
+
 interface AgentsBaseCellProps {
   value: unknown;
   formatter?: (value: unknown) => string;
 }
 
-export function AgentsBaseCell({ value, formatter }: AgentsBaseCellProps) {
+function AgentsBaseCell({ value, formatter }: AgentsBaseCellProps) {
   const displayValue = formatter
     ? formatter(value)
     : value === null || value === undefined || value === ""
@@ -12,3 +14,5 @@ export function AgentsBaseCell({ value, formatter }: AgentsBaseCellProps) {
 
   return <span className="text-xs text-gray-500">{displayValue}</span>;
 }
+
+export default memo(AgentsBaseCell);

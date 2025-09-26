@@ -1,0 +1,54 @@
+---
+title: Testing New Models on an Existing Agent
+summary: Use case for evaluating new AI models against your production model
+description: How to test and compare new models before switching
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+import { Callout } from 'fumadocs-ui/components/callout';
+
+Suppose you're currently using GPT-4o-mini for a given agent, but you've heard rave reviews about GPT-5 that was just released. You want to test whether the quality improvement justifies the higher cost before switching.
+
+With how often new models are released, the above scenario is extremely common, so we wanted to make it as easy as possible for our users to test new models on existing agents.
+
+### Creating a side by side model comparison
+<Steps>
+<Step>
+Ask your AI assistant to create a experiment between your current and new model
+
+```
+Compare how anotherai/agent/calendar-event-extractor performs using current GPT-4o-mini 
+vs the new GPT-5 model
+```
+</Step>
+<Step>
+If you want to be sure to test with real data, you can modify your prompt to include that instruction
+
+```
+Compare how anotherai/agent/calendar-event-extractor performs using current GPT-4o-mini 
+vs the new GPT-5 model. Use the inputs from the last 20 completions.
+```
+
+Alternatively, if you have a [dataset](/use-cases/fundamentals/evaluating#using-datasets-to-evaluate-your-agents) of standard test inputs you like to use to validate changes, you can modify your prompt to include that instruction:
+
+```
+Compare how anotherai/agent/calendar-event-extractor performs using current GPT-4o-mini 
+vs the new GPT-5 model. Use the inputs from @email_test_cases.txt
+```
+<Callout type="info">
+**Tip:** Based on our testing, we've found that using Claude Opus to be our preferred model for evaluating the side by side performance of two other models.
+</Callout>
+
+Your AI assistant will analyze the results and provide a clear comparison:
+
+![AI Analysis of Model Comparison](/images/checking-new-models-ai-analysis.png)
+
+Or you can view the experiment in the AnotherAI experiments view to see a side-by-side comparison of how each version in the experiment handles each input.
+
+![Calendar Event Extraction Experiment](/images/checking-new-models-experiment.png)
+</Step>
+</Steps>
+
+<Callout type="info">
+**Tip:** Use real production data for testing, not artificial examples to ensure you're testing the new model with real-life scenarios.
+</Callout>

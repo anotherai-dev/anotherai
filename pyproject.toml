@@ -112,7 +112,7 @@ lint.fixable = ["ALL"]
 [tool.ruff.lint.per-file-ignores]
 # in bin we use rich.print
 "scripts/*" = ["T201", "G004"]
-"examples/*" = ["T201", "G004", "A004"]
+"examples/*" = ["T201", "G004", "A004", "INP001"]
 "api/tests/integration/mcp/*" = ["T201", "G004"]
 "integrations/python/*" = ["T201", "G004"]
 "./*test.py" = ["S101", "SLF001", "PGH003", "A001", "ARG001", "FBT003"]

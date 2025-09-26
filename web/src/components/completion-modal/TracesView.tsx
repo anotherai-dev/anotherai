@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Trace } from "@/types/models";
-import { InfoRow } from "./InfoRow";
+import InfoRow from "./InfoRow";
 
 type Props = {
   traces?: Trace[];

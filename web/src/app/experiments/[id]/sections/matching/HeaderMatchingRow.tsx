@@ -8,9 +8,9 @@ import {
 import { Annotation, ExtendedVersion, Message, OutputSchema, Tool } from "@/types/models";
 import { VersionPromptSection } from "../Results/version/VersionPromptSection";
 import { VersionSchemaSection } from "../Results/version/VersionSchemaSection";
-import { MatchingBaseValue } from "./MatchingBaseValue";
-import { MatchingJSONValue } from "./MatchingJSONValue";
-import { MatchingToolValue } from "./MatchingToolValue";
+import MatchingBaseValue from "./MatchingBaseValue";
+import MatchingJSONValue from "./MatchingJSONValue";
+import MatchingToolValue from "./MatchingToolValue";
 
 type HeaderMatchingRowProps = {
   keyName: string;

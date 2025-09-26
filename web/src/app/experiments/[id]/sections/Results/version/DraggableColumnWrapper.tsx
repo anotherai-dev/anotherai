@@ -121,7 +121,7 @@ export function DraggableColumnWrapper({
 
       {/* Drag handle - shown when drag is available */}
       {onReorderColumns && (
-        <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 z-10">
+        <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 z-3">
           <div
             className="bg-gray-100 hover:bg-gray-200 rounded px-1 py-0.5 cursor-grab active:cursor-grabbing opacity-60 hover:opacity-100 transition-opacity"
             onMouseDown={(e) => e.stopPropagation()}

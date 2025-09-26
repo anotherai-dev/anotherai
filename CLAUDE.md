@@ -1,3 +1,9 @@
+## Hosted Version
+
+AnotherAI is available hosted at:
+- Web App: https://anotherai.dev
+- API: https://api.anotherai.dev
+
 ## Running AnotherAI Locally
 
 Ensure `.env` file exists with required API keys (OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.)
@@ -31,6 +37,15 @@ uv run ruff check --fix backend
 ```
 
 ## Testing
+
+### Backend Tests (pytest)
+
+Run pytest tests locally:
+```bash
+uv run pytest backend ...
+```
+
+
 
 ### Frontend Tests (Jest)
 

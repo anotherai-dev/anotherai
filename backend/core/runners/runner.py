@@ -248,6 +248,9 @@ class Runner:
     async def _build_messages(self, agent_input: AgentInput):
         base = await MessageRenderer.render(_template_manager, agent_input.variables, self._version.prompt)
         if agent_input.messages:
+            for m in agent_input.messages:
+                for f in m.file_iterator():
+                    f.sanitize()
             base.extend(agent_input.messages)
 
         return base

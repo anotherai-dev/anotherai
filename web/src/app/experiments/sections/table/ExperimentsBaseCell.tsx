@@ -1,9 +1,11 @@
+import { memo } from "react";
+
 interface ExperimentsBaseCellProps {
   value: unknown;
   formatter?: (value: unknown) => string;
 }
 
-export function ExperimentsBaseCell({ value, formatter }: ExperimentsBaseCellProps) {
+function ExperimentsBaseCell({ value, formatter }: ExperimentsBaseCellProps) {
   const displayValue = formatter
     ? formatter(value)
     : value === null || value === undefined || value === ""
@@ -12,3 +14,5 @@ export function ExperimentsBaseCell({ value, formatter }: ExperimentsBaseCellPro
 
   return <span className="text-xs text-gray-500">{displayValue}</span>;
 }
+
+export default memo(ExperimentsBaseCell);

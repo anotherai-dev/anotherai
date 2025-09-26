@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 import httpx
+import pytest
 
 from core.domain.models.models import Model
 from core.domain.models.providers import Provider
@@ -50,6 +51,10 @@ class ProviderTestCase(ABC):
     def check_parallel_tool_calls(self, value: bool, payload: dict[str, Any], request: httpx.Request):
         pass
 
+    @abstractmethod
+    def check_includes_image(self, payload: dict[str, Any], request: httpx.Request, image_url: str):
+        pass
+
 
 class OpenAITestCase(ProviderTestCase):
     def provider(self) -> Provider:
@@ -90,6 +95,17 @@ class OpenAITestCase(ProviderTestCase):
 
     def check_parallel_tool_calls(self, value: bool, payload: dict[str, Any], request: httpx.Request):
         assert payload.get("parallel_tool_calls") == value
+
+    def check_includes_image(self, payload: dict[str, Any], request: httpx.Request, image_url: str):
+        messages: list[dict[str, Any]] = payload["messages"]
+        for m in messages:
+            content = m.get("content")
+            if not content or not isinstance(content, list):
+                continue
+            for c in content:
+                if c.get("image_url") and c.get("image_url").get("url") == image_url:
+                    return
+        pytest.fail("Could not find image in messages")
 
 
 class GroqTestCase(ProviderTestCase):
@@ -137,3 +153,14 @@ class GroqTestCase(ProviderTestCase):
 
     def check_parallel_tool_calls(self, value: bool, payload: dict[str, Any], request: httpx.Request):
         assert payload.get("parallel_tool_calls") == value
+
+    def check_includes_image(self, payload: dict[str, Any], request: httpx.Request, image_url: str):
+        messages: list[dict[str, Any]] = payload["messages"]
+        for m in messages:
+            content = m.get("content")
+            if not content or not isinstance(content, list):
+                continue
+            for c in content:
+                if c.get("image_url") and c.get("image_url").get("url") == image_url:
+                    return
+        pytest.fail("Could not find image in messages")

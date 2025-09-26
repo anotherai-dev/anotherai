@@ -245,3 +245,65 @@ def mock_deployment_storage():
     from core.storage.deployment_storage import DeploymentStorage
 
     return Mock(spec=DeploymentStorage)
+
+
+@pytest.fixture
+def mock_annotation_storage():
+    from core.storage.annotation_storage import AnnotationStorage
+
+    return Mock(spec=AnnotationStorage)
+
+
+@pytest.fixture
+def mock_view_storage():
+    from core.storage.view_storage import ViewStorage
+
+    return Mock(spec=ViewStorage)
+
+
+@pytest.fixture
+def mock_user_storage():
+    from core.storage.user_storage import UserStorage
+
+    return Mock(spec=UserStorage)
+
+
+@pytest.fixture
+def mock_tenant_storage():
+    from core.storage.tenant_storage import TenantStorage
+
+    return Mock(spec=TenantStorage)
+
+
+@pytest.fixture
+def mock_storage_builder(
+    mock_agent_storage: Mock,
+    mock_completion_storage: Mock,
+    mock_experiment_storage: Mock,
+    mock_annotation_storage: Mock,
+    mock_view_storage: Mock,
+    mock_deployment_storage: Mock,
+    mock_user_storage: Mock,
+    mock_tenant_storage: Mock,
+    mock_event_router: Mock,
+):
+    from core.storage.storage_builder import StorageBuilder
+
+    builder = Mock(spec=StorageBuilder)
+    builder.agents.return_value = mock_agent_storage
+    builder.completions.return_value = mock_completion_storage
+    builder.experiments.return_value = mock_experiment_storage
+    builder.annotations.return_value = mock_annotation_storage
+    builder.views.return_value = mock_view_storage
+    builder.deployments.return_value = mock_deployment_storage
+    builder.users.return_value = mock_user_storage
+    builder.tenants.return_value = mock_tenant_storage
+
+    return builder
+
+
+@pytest.fixture
+def mock_provider_factory():
+    from core.providers.factory.abstract_provider_factory import AbstractProviderFactory
+
+    return Mock(spec=AbstractProviderFactory)

@@ -2,8 +2,8 @@ import { AnnotationsView } from "@/components/annotations/AnnotationsView";
 import { VersionDetailsView } from "@/components/version-details/VersionDetailsView";
 import { Annotation, Completion } from "@/types/models";
 import { AnnotationsPromptLabel } from "../annotations/AnnotationsPromptLabel";
-import { InfoRow } from "./InfoRow";
-import { MetadataView } from "./MetadataView";
+import InfoRow from "./InfoRow";
+import MetadataView from "./MetadataView";
 import { TracesView } from "./TracesView";
 
 type Props = {
@@ -41,10 +41,7 @@ export function CompletionDetailsView(props: Props) {
         <div className="space-y-2 px-4">
           <InfoRow title="Agent ID" value={completion.agent_id} />
           {completion.created_at && (
-            <InfoRow
-              title="Created"
-              value={new Date(completion.created_at).toLocaleString()}
-            />
+            <InfoRow title="Created" value={new Date(completion.created_at).toLocaleString()} />
           )}
           <InfoRow
             title="Version ID"

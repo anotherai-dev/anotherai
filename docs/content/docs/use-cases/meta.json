@@ -1,0 +1,13 @@
+{
+  "title": "Use Cases",
+  "icon": "UserGroup",
+  "defaultOpen": true,
+  "pages": [
+    "fundamentals",
+    "user-feedback",
+    "checking-new-models",
+    "lowering-costs",
+    "connecting-agents",
+    "for-product-managers"
+  ]
+}
