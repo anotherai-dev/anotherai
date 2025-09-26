@@ -1,14 +1,12 @@
+import { memo } from "react";
+
 interface CompletionTableBadgeCellProps {
   value: unknown;
   variant?: "default" | "success" | "warning" | "error" | "white";
   rounded?: "default" | "sm" | "md" | "lg" | "none" | string;
 }
 
-export function CompletionTableBadgeCell({
-  value,
-  variant = "default",
-  rounded = "md",
-}: CompletionTableBadgeCellProps) {
+function CompletionTableBadgeCell({ value, variant = "default", rounded = "md" }: CompletionTableBadgeCellProps) {
   if (value === null || value === undefined) {
     return <span className="text-xs text-gray-400">N/A</span>;
   }
@@ -53,3 +51,5 @@ export function CompletionTableBadgeCell({
     </span>
   );
 }
+
+export default memo(CompletionTableBadgeCell);

@@ -1,6 +1,6 @@
 import { cx } from "class-variance-authority";
 import { Copy } from "lucide-react";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { memo, useCallback, useEffect, useRef, useState } from "react";
 import { TextBreak } from "@/components/utils/TextBreak";
 import { useToast } from "../ToastProvider";
 import { ImageViewer } from "../messages/ImageViewer";
@@ -29,7 +29,7 @@ export type ValueDisplayProps = {
   showSeeMore: boolean;
 };
 
-export function ValueDisplay({ value, textSize, showSeeMore }: ValueDisplayProps) {
+function ValueDisplay({ value, textSize, showSeeMore }: ValueDisplayProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldTruncateByHeight, setShouldTruncateByHeight] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -182,3 +182,11 @@ export function ValueDisplay({ value, textSize, showSeeMore }: ValueDisplayProps
     </span>
   );
 }
+
+export default memo(ValueDisplay, (prevProps, nextProps) => {
+  return (
+    prevProps.value === nextProps.value &&
+    prevProps.textSize === nextProps.textSize &&
+    prevProps.showSeeMore === nextProps.showSeeMore
+  );
+});

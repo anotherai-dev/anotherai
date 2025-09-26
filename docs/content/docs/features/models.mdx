@@ -1,0 +1,178 @@
+---
+title: Supported Models
+summary: Documentation for using and switching between different AI models. Covers how to list available models and manage versions for agents.
+description: A unified API for 100+ models from leading AI providers including OpenAI, Anthropic, Google, Meta, DeepSeek, Mistral, and more.
+---
+
+import { WorkflowModelsWrapper } from '@/components/workflow-models-wrapper';
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+import { WorkflowModelCount } from '@/components/workflow-model-count';
+
+
+
+## Switching between models
+
+To use a specific model, simply change the `model` parameter in your API call.
+
+<Tabs items={["Python", "JavaScript", "curl"]}>
+  <Tab>
+  ```python
+  import openai
+
+  client = openai.OpenAI(
+      api_key="YOUR_ANOTHERAI_API_KEY",
+      base_url="{{API_URL}}/v1"
+  )
+
+  # Using GPT-4
+  response = client.chat.completions.create(
+      model="gpt-4o", # [!code highlight]
+      messages=[{"role": "user", "content": "Hello!"}],
+      metadata={"agent_id": "my-agent"}
+  )
+
+  # Switching to Claude
+  response = client.chat.completions.create(
+      model="claude-3-7-sonnet-latest", # [!code highlight]
+      messages=[{"role": "user", "content": "Hello!"}],
+      metadata={"agent_id": "my-agent"}
+  )
+
+  # Using Llama
+  response = client.chat.completions.create(
+      model="llama4-maverick-instruct-fast", # [!code highlight]
+      messages=[{"role": "user", "content": "Hello!"}],
+      metadata={"agent_id": "my-agent"}
+  )
+  ```
+  </Tab>
+  <Tab>
+  ```javascript
+  import OpenAI from 'openai';
+
+  const client = new OpenAI({
+    apiKey: 'YOUR_ANOTHERAI_API_KEY',
+    baseURL: '{{API_URL}}/v1',
+  });
+
+  // Using GPT-4
+  let response = await client.chat.completions.create({
+    model: 'gpt-4o', // [!code highlight]
+    messages: [{ role: 'user', content: 'Hello!' }],
+    metadata: { agent_id: 'my-agent' }
+  });
+
+  // Switching to Claude
+  response = await client.chat.completions.create({
+    model: 'claude-3-7-sonnet-latest', // [!code highlight]
+    messages: [{ role: 'user', content: 'Hello!' }],
+    metadata: { agent_id: 'my-agent' }
+  });
+
+  // Using Llama
+  response = await client.chat.completions.create({
+    model: 'llama4-maverick-instruct-fast', // [!code highlight]
+    messages: [{ role: 'user', content: 'Hello!' }],
+    metadata: { agent_id: 'my-agent' }
+  });
+  ```
+  </Tab>
+  <Tab>
+  ```bash
+  # Using GPT-4
+  curl {{API_URL}}/v1/chat/completions \
+    -H "Authorization: Bearer YOUR_ANOTHERAI_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "model": "gpt-4o", // [!code highlight]
+      "messages": [{"role": "user", "content": "Hello!"}],
+      "metadata": {"agent_id": "my-agent"}
+    }'
+
+  # Switching to Claude
+  curl {{API_URL}}/v1/chat/completions \
+    -H "Authorization: Bearer YOUR_ANOTHERAI_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "model": "claude-3-7-sonnet-latest", // [!code highlight]
+      "messages": [{"role": "user", "content": "Hello!"}],
+      "metadata": {"agent_id": "my-agent"}
+    }'
+  ```
+  </Tab>
+</Tabs>
+
+## Supported models
+
+### Using the MCP
+
+You can list the models available to you via MCP, by asking your preferred AI assistant to list the models:
+
+```bash
+What models are available to use on AnotherAI?
+```
+
+![MCP List Models Example](/images/mcp-list-models-example.png)
+
+### Using the API
+
+You can access the [list of models]({{API_URL}}/v1/models) and their `id` via our API:
+- without any authentication
+- in a format compatible with the OpenAI API.
+
+<Tabs items={["curl", "Python", "TypeScript"]}>
+  <Tab>
+  ```bash
+  curl -X GET "{{API_URL}}/v1/models"
+  ```
+  </Tab>
+  <Tab>
+  ```python
+  import openai
+
+  client = openai.OpenAI(api_key="YOUR_API_KEY", base_url="{{API_URL}}/v1")
+
+  models = client.models.list()
+
+  for model in models:
+      print(model.id)
+  ```
+  </Tab>
+  <Tab>
+  ```typescript
+  import OpenAI from 'openai';
+
+  const client = new OpenAI({
+    apiKey: 'YOUR_API_KEY',
+    baseURL: '{{API_URL}}/v1',
+  });
+
+  const models = await client.models.list();
+
+  models.data.forEach((model) => {
+    console.log(model.id);
+  });
+  ```
+  </Tab>
+</Tabs>
+
+### List
+
+{/* <Callout type="warning">
+TODO:
+- Add pricing information.
+- Show "price match info"
+- ✅ Removed support columns for image, audio, PDF to save space
+
+Add an image ?
+</Callout> */}
+
+{/* ![Supported Models](/images/reference/supported-models/tmp-playground-preview-model.png) */}
+
+<WorkflowModelsWrapper />
+
+## Requesting a new model
+
+<Callout type="info">
+  If you don't see the model you are looking for, you can request it by [contacting us](mailto:team@workflowai.support).
+</Callout>

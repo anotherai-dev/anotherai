@@ -1,5 +1,6 @@
 import { cx } from "class-variance-authority";
 import { JSONDisplay } from "@/components/JSONDisplay";
+import { memo } from "react";
 import { SchemaViewer } from "@/components/SchemaViewer";
 import { OutputSchema } from "@/types/models";
 
@@ -9,7 +10,7 @@ interface CompletionOutputSchemaCellProps {
   sharedKeypathsOfSchemas?: string[];
 }
 
-export function CompletionOutputSchemaCell({
+function CompletionOutputSchemaCell({
   value,
   maxWidth = "max-w-xs",
   sharedKeypathsOfSchemas,
@@ -42,3 +43,25 @@ export function CompletionOutputSchemaCell({
     </div>
   );
 }
+
+// Helper function to compare string arrays for memoization
+function areStringArraysEqual(prev?: string[], next?: string[]): boolean {
+  if (prev === next) return true;
+  if (!prev || !next) return false;
+  if (prev.length !== next.length) return false;
+
+  for (let i = 0; i < prev.length; i++) {
+    if (prev[i] !== next[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export default memo(CompletionOutputSchemaCell, (prevProps, nextProps) => {
+  return (
+    prevProps.value === nextProps.value &&
+    prevProps.maxWidth === nextProps.maxWidth &&
+    areStringArraysEqual(prevProps.sharedKeypathsOfSchemas, nextProps.sharedKeypathsOfSchemas)
+  );
+});

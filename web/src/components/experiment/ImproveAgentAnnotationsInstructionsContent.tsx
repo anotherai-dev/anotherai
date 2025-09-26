@@ -18,7 +18,7 @@ export function ImproveAgentAnnotationsInstructionsContent({
     ? `Adjust anotherai/agent/${agentId} based on the annotations that have been added in anotherai/experiment/${experimentId}. `
     : `Adjust anotherai/agent/${agentId} based on the annotations that have been added. `;
   const copyButtonText = "Copy Annotation Prompt";
-  const learnMoreUrl = "https://docs.anotherai.dev/agents/improving#annotations";
+  const learnMoreUrl = "https://docs.anotherai.dev/use-cases/fundamentals/annotations";
   const learnMoreButtonText = "Learn More About Annotations";
   const copySuccessMessage = "Annotation prompt copied to clipboard";
 

@@ -9,7 +9,7 @@ import { Pagination } from "@/components/Pagination";
 import { SimpleTableComponent } from "@/components/SimpleTableComponent";
 import { formatRelativeDate } from "@/components/utils/utils";
 import { ExperimentListItem } from "@/types/models";
-import { ExperimentsBaseCell } from "./ExperimentsBaseCell";
+import ExperimentsBaseCell from "./ExperimentsBaseCell";
 import { ExperimentsTableExperimentCell } from "./ExperimentsTableExperimentCell";
 
 // Column key constants
@@ -87,7 +87,7 @@ export function ExperimentsTable(props: ExperimentsTableProps) {
       <EmptyState
         title="No experiments found."
         subtitle="Create your first experiment to get started"
-        documentationUrl="https://docs.anotherai.dev/agents/improving#experiments"
+        documentationUrl="https://docs.anotherai.dev/use-cases/fundamentals/experiments"
       />
     );
   }

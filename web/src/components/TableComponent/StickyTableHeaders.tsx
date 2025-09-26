@@ -16,6 +16,7 @@ interface StickyTableHeadersProps {
   containerWidth: number;
   headerRef: React.RefObject<HTMLTableSectionElement | null>;
   tableRef: React.RefObject<HTMLTableElement | null>;
+  stickyHeaderRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export function StickyTableHeaders({
@@ -26,6 +27,7 @@ export function StickyTableHeaders({
   containerWidth,
   headerRef,
   tableRef,
+  stickyHeaderRef,
 }: StickyTableHeadersProps) {
   // State to track if headers are visible
   const [showStickyHeaders, setShowStickyHeaders] = useState(false);
@@ -94,9 +96,11 @@ export function StickyTableHeaders({
       {/* Main header content */}
       <div className="bg-gray-50/90 backdrop-blur-sm border-b border-gray-200 h-[60px]">
         <div
+          ref={stickyHeaderRef}
           className="flex h-full"
           style={{
-            transform: `translateX(-${scrollLeft}px)`, // Follow horizontal scroll
+            transform: `translateX(var(--scroll-offset, -${scrollLeft}px))`, // Use CSS variable with fallback
+            transition: "transform 50ms ease-out", // Very short smooth animation
           }}
         >
           {stickyHeaderData.map((headerData, index) => (

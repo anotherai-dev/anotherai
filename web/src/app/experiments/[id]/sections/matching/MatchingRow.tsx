@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import {
   createOutputSchemaFromJSON,
   getVersionKeyDisplayName,
@@ -8,9 +8,9 @@ import {
 import { Annotation, ExtendedVersion, Message, OutputSchema, Tool } from "@/types/models";
 import { VersionPromptSection } from "../Results/version/VersionPromptSection";
 import { VersionSchemaSection } from "../Results/version/VersionSchemaSection";
-import { MatchingBaseValue } from "./MatchingBaseValue";
-import { MatchingJSONValue } from "./MatchingJSONValue";
-import { MatchingToolValue } from "./MatchingToolValue";
+import MatchingBaseValue from "./MatchingBaseValue";
+import MatchingJSONValue from "./MatchingJSONValue";
+import MatchingToolValue from "./MatchingToolValue";
 
 type MatchingRowProps = {
   keyName: string;
@@ -21,7 +21,7 @@ type MatchingRowProps = {
   agentId?: string;
 };
 
-export function MatchingRow({
+function MatchingRow({
   keyName,
   versionWithDefaults,
   annotations,
@@ -127,3 +127,41 @@ export function MatchingRow({
     </div>
   );
 }
+
+// Helper function to compare ExtendedVersion objects
+function areExtendedVersionsEqual(prev: ExtendedVersion, next: ExtendedVersion): boolean {
+  return (
+    prev.id === next.id &&
+    prev.model === next.model &&
+    prev.prompt === next.prompt &&
+    prev.output_schema === next.output_schema &&
+    prev.tools === next.tools &&
+    prev.reasoning_effort === next.reasoning_effort &&
+    prev.reasoning_budget === next.reasoning_budget
+  );
+}
+
+// Helper function to compare Annotation arrays
+function areAnnotationsEqual(prev?: Annotation[], next?: Annotation[]): boolean {
+  if (prev === next) return true;
+  if (!prev || !next) return false;
+  if (prev.length !== next.length) return false;
+
+  for (let i = 0; i < prev.length; i++) {
+    if (prev[i].id !== next[i].id || prev[i].text !== next[i].text) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export default memo(MatchingRow, (prevProps, nextProps) => {
+  return (
+    prevProps.keyName === nextProps.keyName &&
+    areExtendedVersionsEqual(prevProps.versionWithDefaults, nextProps.versionWithDefaults) &&
+    prevProps.experimentId === nextProps.experimentId &&
+    prevProps.completionId === nextProps.completionId &&
+    prevProps.agentId === nextProps.agentId &&
+    areAnnotationsEqual(prevProps.annotations, nextProps.annotations)
+  );
+});

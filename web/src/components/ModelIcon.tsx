@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { useState } from "react";
+import { memo, useState } from "react";
 import { useOrFetchModels } from "@/store/models";
 
 interface ModelIconProps {
@@ -8,7 +8,7 @@ interface ModelIconProps {
   size?: number;
 }
 
-export function ModelIcon({ modelId, className = "", size = 12 }: ModelIconProps) {
+function ModelIcon({ modelId, className = "", size = 12 }: ModelIconProps) {
   const { getModelById } = useOrFetchModels();
   const [imageError, setImageError] = useState(false);
 
@@ -41,7 +41,7 @@ interface ModelIconWithNameProps extends ModelIconProps {
   reasoningBudget?: number;
 }
 
-export function ModelIconWithName({
+function ModelIconWithName({
   modelId,
   className = "",
   size = 12,
@@ -89,3 +89,29 @@ export function ModelIconWithName({
     </div>
   );
 }
+
+// Optimized ModelIcon export
+export const MemoizedModelIcon = memo(ModelIcon, (prevProps, nextProps) => {
+  return (
+    prevProps.modelId === nextProps.modelId &&
+    prevProps.className === nextProps.className &&
+    prevProps.size === nextProps.size
+  );
+});
+
+// Optimized ModelIconWithName export
+export const MemoizedModelIconWithName = memo(ModelIconWithName, (prevProps, nextProps) => {
+  return (
+    prevProps.modelId === nextProps.modelId &&
+    prevProps.className === nextProps.className &&
+    prevProps.size === nextProps.size &&
+    prevProps.showName === nextProps.showName &&
+    prevProps.nameClassName === nextProps.nameClassName &&
+    prevProps.reasoningEffort === nextProps.reasoningEffort &&
+    prevProps.reasoningBudget === nextProps.reasoningBudget
+  );
+});
+
+// Keep original named exports for backward compatibility
+export { MemoizedModelIcon as ModelIcon };
+export { MemoizedModelIconWithName as ModelIconWithName };

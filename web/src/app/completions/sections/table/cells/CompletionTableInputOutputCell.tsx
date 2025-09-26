@@ -1,5 +1,6 @@
 import { cx } from "class-variance-authority";
 import { JSONDisplay } from "@/components/JSONDisplay";
+import { memo } from "react";
 import { PageError } from "@/components/PageError";
 import { VariablesViewer } from "@/components/VariablesViewer/VariablesViewer";
 import { MessagesViewer } from "@/components/messages/MessagesViewer";
@@ -11,7 +12,7 @@ interface CompletionTableInputOutputCellProps {
   sharedPartsOfPrompts?: Message[];
 }
 
-export function CompletionTableInputOutputCell({
+function CompletionTableInputOutputCell({
   value,
   maxWidth = "max-w-xs",
   sharedPartsOfPrompts,
@@ -103,3 +104,25 @@ export function CompletionTableInputOutputCell({
 
   return <span className="text-xs text-gray-400">N/A</span>;
 }
+
+// Helper function to compare Message arrays for memoization
+function areMessageArraysEqual(prev?: Message[], next?: Message[]): boolean {
+  if (prev === next) return true;
+  if (!prev || !next) return false;
+  if (prev.length !== next.length) return false;
+
+  for (let i = 0; i < prev.length; i++) {
+    if (prev[i].role !== next[i].role || prev[i].content !== next[i].content) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export default memo(CompletionTableInputOutputCell, (prevProps, nextProps) => {
+  return (
+    prevProps.value === nextProps.value &&
+    prevProps.maxWidth === nextProps.maxWidth &&
+    areMessageArraysEqual(prevProps.sharedPartsOfPrompts, nextProps.sharedPartsOfPrompts)
+  );
+});
