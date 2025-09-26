@@ -2,14 +2,14 @@ import { Copy } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { memo, useMemo, useState } from "react";
 import { HoverPopover } from "@/components/HoverPopover";
+import { MetricItem } from "@/components/MetricItem";
+import MetricsDisplay from "@/components/MetricsDisplay";
 import { PageError } from "@/components/PageError";
-import { PriceAndLatencyDisplay } from "@/components/PriceAndLatencyDisplay";
 import { useToast } from "@/components/ToastProvider";
 import { AnnotationsView } from "@/components/annotations/AnnotationsView";
 import { MessagesViewer } from "@/components/messages/MessagesViewer";
 import { Annotation, ExperimentCompletion } from "@/types/models";
 import { getMetricsForCompletion } from "../../../utils";
-import CompletionMetrics from "./CompletionMetrics";
 
 export type CompletionCellProps = {
   completion: ExperimentCompletion | undefined;
@@ -105,14 +105,22 @@ function CompletionCell(props: CompletionCellProps) {
         completionMetrics.length > 0) && (
         <div className="pt-3 border-t border-gray-200 mt-3 space-y-1">
           {completion.cost_usd !== undefined && completion.duration_seconds !== undefined && (
-            <PriceAndLatencyDisplay
-              cost={completion.cost_usd}
-              duration={completion.duration_seconds}
-              allCosts={allCosts}
-              allDurations={allDurations}
-            />
+            <div className="space-y-1">
+              <MetricItem
+                metricKey="cost"
+                average={completion.cost_usd}
+                allMetricsPerKey={allCosts ? { cost: allCosts } : undefined}
+                showAvgPrefix={false}
+              />
+              <MetricItem
+                metricKey="duration"
+                average={completion.duration_seconds}
+                allMetricsPerKey={allDurations ? { duration: allDurations } : undefined}
+                showAvgPrefix={false}
+              />
+            </div>
           )}
-          <CompletionMetrics metrics={completionMetrics} allMetricsPerKeyForRow={allMetricsPerKeyForRow} />
+          <MetricsDisplay metrics={completionMetrics} allMetricsPerKey={allMetricsPerKeyForRow} showAvgPrefix={false} />
         </div>
       )}
 
