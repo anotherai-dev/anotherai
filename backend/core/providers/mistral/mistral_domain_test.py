@@ -4,6 +4,7 @@ from core.domain.file import File
 from core.domain.message import MessageDeprecated
 from core.domain.tool_call import ToolCallRequest
 from core.providers.mistral.mistral_domain import (
+    AssistantMessage,
     CompletionChunk,
     DocumentURLChunk,
     ImageURLChunk,
@@ -136,3 +137,28 @@ class TestMistralAIMessage:
         assert len(result.tool_calls) == 1
         assert result.tool_calls[0].function.name == "calculator"
         assert result.tool_calls[0].function.arguments == {"operation": "add", "numbers": [1, 2]}
+
+
+class TestAssistantMessage:
+    def test_model_validate_thinking(self) -> None:
+        result = AssistantMessage.model_validate(
+            {
+                "content": [
+                    {
+                        "type": "thinking",
+                        "thinking": [
+                            {
+                                "type": "text",
+                                "text": "Thinking about the answer",
+                            },
+                        ],
+                    },
+                    {
+                        "type": "text",
+                        "text": "The answer is 42",
+                    },
+                ],
+            },
+        )
+        assert result.content
+        assert isinstance(result.content, list)

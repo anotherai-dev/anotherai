@@ -490,6 +490,23 @@ class TestComplete:
         body = json.loads(request.read().decode())
         assert body["response_format"]["type"] == "text"
 
+    async def test_complete_reasoning(self, httpx_mock: HTTPXMock, mistral_provider: MistralAIProvider):
+        httpx_mock.add_response(
+            url="https://api.mistral.ai/v1/chat/completions",
+            json=fixtures_json("mistralai", "completion_reasoning.json"),
+        )
+        o = await mistral_provider.complete(
+            [Message.with_text("Hello")],
+            options=ProviderOptions(model=Model.MAGISTRAL_MEDIUM_2506, max_tokens=10, temperature=0),
+            output_factory=lambda x: x,
+        )
+        assert o.agent_output
+        assert isinstance(o.agent_output, str)
+        assert o.agent_output.startswith("Researchers at the University of Technology have demonstrated")
+        assert o.tool_call_requests is None
+        assert o.reasoning
+        assert o.reasoning.startswith("Okay, the text is about a recent advancement in quantum computing.")
+
     async def test_complete_500(self, httpx_mock: HTTPXMock):
         httpx_mock.add_response(
             url="https://api.mistral.ai/v1/chat/completions",

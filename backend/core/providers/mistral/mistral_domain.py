@@ -244,11 +244,28 @@ class CompletionRequest(BaseModel):
         return tool_choice
 
 
+class _ThinkingContent(BaseModel):
+    text: str | None = None
+
+
 class AssistantMessage(BaseModel):
-    content: str | None = None
+    class Content(BaseModel):
+        thinking: list[_ThinkingContent] | None = None
+        text: str | None = None
+
+    content: str | list[Content] | None = None
     tool_calls: list[MistralToolCall] | None = None
     # prefix: bool = False
     # role: Literal["assistant"] = "assistant"
+
+    def thinking_iter(self):
+        if not isinstance(self.content, list):
+            return
+        for c in self.content:
+            if c.thinking:
+                for t in c.thinking:
+                    if t.text:
+                        yield t.text
 
 
 FinishReasonEnum = Literal["stop", "length", "model_length", "error", "tool_calls"]
