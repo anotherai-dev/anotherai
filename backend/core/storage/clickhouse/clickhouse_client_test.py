@@ -774,7 +774,7 @@ class TestAddCompletionToExperiment:
 
         assert len(result.result_rows) == 1
         completion_ids = result.result_rows[0][0]  # First row, first column
-        assert completion_id in [str(cid) for cid in completion_ids]
+        assert completion_id in completion_ids
 
     async def test_add_completion_to_experiment_duplicate_ignored(self, client: ClickhouseClient):
         """Test that adding the same completion ID twice doesn't create duplicates."""
@@ -784,7 +784,7 @@ class TestAddCompletionToExperiment:
         experiment = fake_experiment(
             id="test-experiment-456",
             agent_id="test-agent",
-            run_ids=[completion_id],  # Start with one completion
+            run_ids=[str(completion_id)],  # Start with one completion
         )
 
         # Store the experiment first

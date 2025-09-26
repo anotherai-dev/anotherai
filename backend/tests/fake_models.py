@@ -153,7 +153,7 @@ def fake_tool():
 
 
 def fake_experiment(**kwargs: Any):
-    return Experiment(
+    base = Experiment(
         id="test-experiment",
         author_name="Test Author",
         title="Test Experiment",
@@ -162,7 +162,13 @@ def fake_experiment(**kwargs: Any):
         agent_id="test-agent",
         run_ids=[],
         metadata={"key": "value"},
-    ).model_copy(update=kwargs)
+    )
+    return Experiment.model_validate(
+        {
+            **base.model_dump(),
+            **kwargs,
+        },
+    )
 
 
 def fake_annotation(**kwargs: Any):
