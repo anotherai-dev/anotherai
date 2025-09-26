@@ -266,7 +266,7 @@ class TestSingleStream:
 
         parsed_chunks = [o async for o in raw_chunks]
 
-        assert len(parsed_chunks) == 4
+        assert len(parsed_chunks) == 3
         final_chunk = parsed_chunks[-1].final_chunk
         assert final_chunk
         assert final_chunk.agent_output == {"greeting": "Hello James!"}
@@ -302,7 +302,7 @@ class TestStream:
             output_factory=_output_factory,
         )
         chunks = [o async for o in streamer]
-        assert len(chunks) == 4
+        assert len(chunks) == 3
 
         # Not sure why the pyright in the CI reports an error here
         request = httpx_mock.get_requests()[0]
@@ -692,7 +692,7 @@ class TestExtractStreamDelta:
         assert mistral_provider._extract_stream_delta(
             sses[0],
         ) == ParsedResponse(
-            delta="",
+            delta=None,
         )
 
         assert mistral_provider._extract_stream_delta(
