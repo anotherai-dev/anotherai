@@ -225,7 +225,10 @@ describe("Error-based Filtering Functions", () => {
     });
 
     it("returns false for zero cost with error", () => {
-      const completion = { ...mockExperimentCompletion(0, 10), output: { error: "Some error", messages: [] } };
+      const completion = {
+        ...mockExperimentCompletion(0, 10),
+        output: { error: { error: "Some error" }, messages: [] },
+      };
       expect(shouldIncludeCostMetric(completion)).toBe(false);
     });
 
@@ -246,7 +249,10 @@ describe("Error-based Filtering Functions", () => {
     });
 
     it("returns false for zero duration with error", () => {
-      const completion = { ...mockExperimentCompletion(5, 0), output: { error: "Some error", messages: [] } };
+      const completion = {
+        ...mockExperimentCompletion(5, 0),
+        output: { error: { error: "Some error" }, messages: [] },
+      };
       expect(shouldIncludeDurationMetric(completion)).toBe(false);
     });
 
@@ -260,7 +266,7 @@ describe("Error-based Filtering Functions", () => {
     it("filters out invalid costs", () => {
       const completions = [
         mockExperimentCompletion(5, 10),
-        { ...mockExperimentCompletion(0, 10), output: { error: "Some error", messages: [] } },
+        { ...mockExperimentCompletion(0, 10), output: { error: { error: "Some error" }, messages: [] } },
         mockExperimentCompletion(3, 5),
         undefined,
       ];
@@ -278,7 +284,7 @@ describe("Error-based Filtering Functions", () => {
     it("filters out invalid durations", () => {
       const completions = [
         mockExperimentCompletion(5, 10),
-        { ...mockExperimentCompletion(5, 0), output: { error: "Some error", messages: [] } },
+        { ...mockExperimentCompletion(5, 0), output: { error: { error: "Some error" }, messages: [] } },
         mockExperimentCompletion(3, 7),
         undefined,
       ];

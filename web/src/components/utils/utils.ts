@@ -240,11 +240,15 @@ export function formatDate(
 }
 
 // Utility functions for error-based filtering
-export function shouldIncludeCostMetric(completion: ExperimentCompletion | undefined): boolean {
+export function shouldIncludeCostMetric(
+  completion: ExperimentCompletion | undefined
+): completion is ExperimentCompletion {
   return completion != null && completion.cost_usd != null && !(completion.cost_usd === 0 && completion.output?.error);
 }
 
-export function shouldIncludeDurationMetric(completion: ExperimentCompletion | undefined): boolean {
+export function shouldIncludeDurationMetric(
+  completion: ExperimentCompletion | undefined
+): completion is ExperimentCompletion {
   return (
     completion != null &&
     completion.duration_seconds != null &&
