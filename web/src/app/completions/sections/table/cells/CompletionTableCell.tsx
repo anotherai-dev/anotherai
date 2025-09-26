@@ -1,12 +1,13 @@
+import { useMemo } from "react";
 import { isDateValue, parseJSONValue } from "@/components/utils/utils";
 import { Message } from "@/types/models";
-import { CompletionBaseTableCell } from "./CompletionBaseTableCell";
-import { CompletionObjectTableCell } from "./CompletionObjectTableCell";
-import { CompletionOutputSchemaCell } from "./CompletionOutputSchemaCell";
-import { CompletionTableBadgeCell } from "./CompletionTableBadgeCell";
-import { CompletionTableDateCell } from "./CompletionTableDateCell";
-import { CompletionTableMetadataCell } from "./CompletionTableMetadataCell";
-import { CompletionTableVersionCell } from "./CompletionTableVersionCell";
+import CompletionBaseTableCell from "./CompletionBaseTableCell";
+import CompletionObjectTableCell from "./CompletionObjectTableCell";
+import CompletionOutputSchemaCell from "./CompletionOutputSchemaCell";
+import CompletionTableBadgeCell from "./CompletionTableBadgeCell";
+import CompletionTableDateCell from "./CompletionTableDateCell";
+import CompletionTableMetadataCell from "./CompletionTableMetadataCell";
+import CompletionTableVersionCell from "./CompletionTableVersionCell";
 
 interface Props {
   columnKey: string;
@@ -19,7 +20,7 @@ interface Props {
 export function CompletionTableCell(props: Props) {
   const { columnKey, value, maxWidth, sharedPartsOfPrompts, sharedKeypathsOfSchemas } = props;
 
-  const parsedJSON = parseJSONValue(value);
+  const parsedJSON = useMemo(() => parseJSONValue(value), [value]);
 
   if (parsedJSON !== null) {
     switch (columnKey) {

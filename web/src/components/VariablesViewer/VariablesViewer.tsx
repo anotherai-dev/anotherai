@@ -3,7 +3,7 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import React, { useState } from "react";
 import { Annotation } from "../../types/models";
 import { HoverContainer } from "./HoverContainer";
-import { ValueDisplay } from "./ValueDisplay";
+import ValueDisplay from "./ValueDisplay";
 
 export type VariablesViewerProps = {
   variables: Record<string, unknown>;

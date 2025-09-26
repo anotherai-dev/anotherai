@@ -1,0 +1,571 @@
+---
+title: Evaluating an Agent
+summary: Learn how to systematically evaluate your AI agents through dataset testing and LLM-as-a-judge techniques to ensure quality and performance.
+description: Learn how to use datasets and LLMs as a judge to create a robust evaluation system for your AI agents.
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Accordions, Accordion } from 'fumadocs-ui/components/accordion';
+import { Callout } from 'fumadocs-ui/components/callout';
+
+Evaluating your AI agents in a repeatable way is important for ensuring they meet quality standards, and that you can compare different versions of your agent over time.
+
+## Using Datasets to Evaluate Your Agents
+
+A dataset is a collection of test inputs (and optionally expected outputs) that you use to evaluate your agent. Think of it like a standardized test - the same set of questions you run against different versions of your agent to see how they perform.
+
+Datasets give you a consistent benchmark to compare different versions of your agent and ensure important use cases always work correctly. 
+
+### Selecting a Dataset Type
+
+When creating datasets for agent evaluation, you can choose between two main approaches depending on your use case:
+
+**Input and Expected Output Datasets**
+
+These datasets include both the input and the expected output for each test case. In cases where there is only one correct output (ex: math problems, classification tasks), 
+your evaluation process simply consists of comparing a completion's output to the correct output to determine the quality of a given version. This can be done by utilizing a script to check if they're identical (recommended) or you can manually review each completion created when the dataset is run by looking at your agent's completions on the AnotherAI web app. 
+
+When there is more than one correct output (ex: creative writing, analysis tasks), but you still want to include the expected output in your dataset, it can be useful to use [LLM-as-a-judge](#handling-complex-evaluations-with-llms-as-a-judge) to evaluate the quality of the output. In those cases, the LLM judge compares the actual output against the expected output to evaluate how well they match, considering factors 
+like semantic similarity, completeness, and accuracy.
+
+**Examples of good use cases for input and expected output datasets:**
+- Solving math problems
+- Data extraction tasks
+- Classification tasks
+
+<details>
+<summary>Example Dataset: Input and Output with Exact Match Expected Output</summary>
+
+```json
+{
+  "dataset_name": "customer_support_exact_match",
+  "test_cases": [
+    {
+      "id": "support_001",
+      "input": {
+        "variables": {
+          "customer_message": "I've been waiting 3 weeks for my refund!",
+          "order_id": "ORD-12345"
+        }
+      },
+      "expected_output": {
+        "response": "I sincerely apologize for the delay with your refund. I can see that your refund for order ORD-12345 was processed on our end but may be delayed by your bank. Refunds typically appear within 5-7 business days. I'm escalating this to our finance team for immediate review. Your case number is #CS-98765. We'll email you within 24 hours with an update.",
+        "case_created": true,
+        "escalated": true
+      }
+    },
+    {
+      "id": "support_002",
+      "input": {
+        "variables": {
+          "customer_message": "The product arrived damaged and I need a replacement",
+          "order_id": "ORD-67890"
+        }
+      },
+      "expected_output": {
+        "response": "I'm so sorry to hear your product arrived damaged. That's definitely not the experience we want you to have. I've initiated a replacement for order ORD-67890 which will ship within 24 hours via express shipping at no extra cost. You'll receive a prepaid return label via email to send back the damaged item. No need to return it before receiving your replacement.",
+        "replacement_initiated": true,
+        "return_label_sent": true
+      }
+    },
+    {
+      "id": "support_003",
+      "input": {
+        "variables": {
+          "customer_message": "How do I track my order?",
+          "order_id": "ORD-11111"
+        }
+      },
+      "expected_output": {
+        "response": "You can track order ORD-11111 using this link: track.shipping.com/ORD-11111. Your order is currently in transit and expected to arrive by Thursday, November 15th. You'll receive a notification when it's out for delivery.",
+        "tracking_link_provided": true,
+        "delivery_date": "2024-11-15"
+      }
+    }
+  ]
+}
+```
+
+</details>
+
+<details>
+<summary>Example Dataset: Input and Output with Criteria-Based Expected Output</summary>
+
+```json
+{
+  "dataset_name": "customer_support_criteria",
+  "test_cases": [
+    {
+      "id": "support_001",
+      "input": {
+        "variables": {
+          "customer_message": "I've been waiting 3 weeks for my refund!",
+          "order_id": "ORD-12345"
+        }
+      },
+      "expected_criteria": {
+        "must_include_topics": ["apology", "refund_status", "timeline", "next_steps"],
+        "tone": "empathetic_professional",
+        "max_word_count": 150,
+        "includes_case_number": true,
+        "offers_escalation": true
+      }
+    },
+    {
+      "id": "support_002",
+      "input": {
+        "variables": {
+          "customer_message": "The product arrived damaged and I need a replacement",
+          "order_id": "ORD-67890"
+        }
+      },
+      "expected_criteria": {
+        "must_include_topics": ["apology", "replacement_process", "shipping_timeline"],
+        "tone": "empathetic_professional",
+        "max_word_count": 150,
+        "includes_return_instructions": true,
+        "offers_expedited_shipping": true
+      }
+    },
+    {
+      "id": "support_003",
+      "input": {
+        "variables": {
+          "customer_message": "How do I track my order?",
+          "order_id": "ORD-11111"
+        }
+      },
+      "expected_criteria": {
+        "must_include_topics": ["tracking_information", "delivery_status", "estimated_arrival"],
+        "tone": "helpful_friendly",
+        "max_word_count": 100,
+        "provides_tracking_link": true,
+        "mentions_notifications": true
+      }
+    }
+  ]
+}
+```
+
+</details>
+
+**Input-Only Datasets**
+
+These datasets contain only inputs without predefined expected outputs. Evaluation relies on [LLM-as-a-judge](#handling-complex-evaluations-with-llms-as-a-judge) (recommended) or human reviewers to assess quality as there is no single correct output. This approach is much better for agents that can have multiple valid outputs for a given input.
+
+**Examples of good use cases for input-only datasets:**
+- Creative writing
+- Content summarization
+- Analysis tasks
+
+<details>
+<summary>Example Dataset: Input-Only</summary>
+
+```json
+{
+  "dataset_name": "customer_support_quality_only",
+  "test_cases": [
+    {
+      "id": "support_001",
+      "input": {
+        "variables": {
+          "customer_message": "I've been waiting 3 weeks for my refund!",
+          "order_id": "ORD-12345"
+        }
+      }
+    },
+    {
+      "id": "support_002",
+      "input": {
+        "variables": {
+          "customer_message": "The product arrived damaged and I need a replacement",
+          "order_id": "ORD-67890"
+        }
+      }
+    },
+    {
+      "id": "support_003",
+      "input": {
+        "variables": {
+          "customer_message": "How do I track my order?",
+          "order_id": "ORD-11111"
+        }
+      }
+    }
+  ]
+}
+```
+
+</details>
+
+### Populating Your Evaluation Dataset
+
+While there is no one-size-fits-all way to build a dataset, there are a few common ways to collect content for your dataset:
+
+#### From User Feedback
+
+When users report issues with your agent's outputs, these completions become valuable test cases because they represent a case that your agent is not handling well but should. To add the content of a completion to your dataset:
+
+1. Locate the completion in AnotherAI
+    - The exact process for this step will vary depending on how your received the feedback that the completion had an issue. 
+2. Open the completion details and copy the completion ID
+    - The completion ID is location in the top right corner of the completion details modal.
+3. Paste the completion ID into your AI coding agent's chat and ask them to add the completion to your dataset.
+    - Your AI agent will be able to convert the completion content into the format of your existing dataset entries. 
+
+#### From Production Data
+
+Using data from production completions instead of mocked data ensures that you're testing real-world scenarios. AnotherAI logs all completions from your agents, so you can easily review past completions for important cases to add to your dataset.
+
+You can browse past completions from your in the AnotherAI web app:
+
+1. Go the [anotherai.dev/agents](https://anotherai.dev/agents)
+2. Locate the agent whose completions you want to review
+3. Select the agent and scroll down it's page
+   - You'll be able to see some of the recent completions immediately, but for a full list, select "View all completions"
+
+## Evaluating the Results of Running Your Dataset
+
+To evaluate your agent's outputs from running your dataset, you have two approaches:
+
+1. **Deterministic evaluation (using code)**
+
+This approach is best when there is one correct, expected output for each input. In these cases you can write a simple script to compare the actual and expected outputs and run the script to evaluate the results.
+
+Types of agents that can usually be evaluated using deterministic evaluation:
+- Math problems: `2 + 2 = 4` (exact match)
+- Data extraction: Extracted JSON must match expected structure
+- Classification: Output must be one of specific categories
+
+2. **LLM-as-a-judge (automated)** 
+
+Many agents don't have just one correct answer, though. When multiple outputs could be considered correct, you cannot evaluate deterministically with code. In these cases we recommend building an LLM-as-a-judge system to evaluate the results.
+
+Types of agents that can usually be evaluated using LLM-as-a-judge:
+- Text generation: Two different summaries can both be correct even with different wording
+- Creative writing: Many valid ways to write the same content
+- Analysis tasks: Different interpretations can be equally valid
+
+For example: If generating a product description, "This comfortable blue shirt is perfect for casual wear" and "A relaxed-fit blue shirt ideal for everyday occasions" are both correct despite being completely different text. You need LLM as a judge to evaluate if both capture the key product features correctly.
+
+### Handling Complex Evaluations with LLMs as a Judge
+
+LLM-as-a-judge is recommended when you cannot evaluate deterministically with code using equality checks. This style of evalution uses one AI model to evaluate the outputs of another, thus taking advantage of LLM's ability to reason and deduce correctness based on previous examples or criteria instead of a strict equality check.
+
+### Key Benefits
+
+- **Scalability**: Evaluate hundreds or thousands of outputs automatically
+- **Consistency**: Apply the same evaluation criteria uniformly using a single judge model
+- **Structured Feedback**: Get detailed scores and explanations for each criterion
+- **Continuous Monitoring**: Track quality over time as you iterate
+
+### Example: Email Summarizer Evaluation
+
+Let's walk through evaluating an email summarization agent. In this example, our agent:
+- Takes an email as input
+- Returns a summary
+
+![Email Summarizer Completion Details](/images/email-summarizer-completion-details.png)
+
+<Steps>
+
+<Step>
+**Decide on Your Dataset**
+
+Before evaluating, you need to make sure you have a robust dataset (we generally recommend at least 20 test inputs, but the number can be much higher depending on your use case). See [Build Your Evaluation Dataset](#build-your-evaluation-dataset) to learn more about this process
+
+**Example Dataset Structure:**
+For this example, we'll use an **Input-Only Dataset** since there are multiple valid ways to summarize each email. Each test input would be structured as such:
+
+```json
+// Input-only dataset
+{
+  "id": [test input id here],
+  "email_title": [email title here],
+  "email_body": [email body here]
+}
+```
+
+</Step>
+
+<Step>
+**Create the Judge Agent**
+
+Define evaluation criteria and scoring structure. You can ask your AI coding agent:
+
+```
+Create an evaluation agent for anotherai/agent/email-summarizer that evaluates outputs 
+on completeness, accuracy, clarity, and conciseness. Each criterion should be scored 
+1-10 with explanations.
+```
+The key points to clarify in your request are:
+- What dimensions of the output do you want evaluated? (In the case above, completeness, accuracy, clarity, and conciseness)
+- How do you want them evaluated? (In the case above, 1-10 with explanations)
+
+<Accordions>
+<Accordion title="Example of an evaluation agent's implementation code">
+
+```python
+from pydantic import BaseModel, Field
+
+class CriterionScore(BaseModel):
+    """Score for a single evaluation criterion"""
+    score: int = Field(ge=1, le=10, description="Score from 1-10")
+    explanation: str = Field(description="Detailed explanation for the score")
+
+class SummaryEvaluation(BaseModel):
+    """Complete evaluation of an email summary"""
+    completeness: CriterionScore
+    accuracy: CriterionScore
+    clarity: CriterionScore
+    conciseness: CriterionScore
+    overall_score: float = Field(ge=1, le=10)
+    overall_feedback: str
+
+async def create_summary_judge(client, original_email, summary):
+    """Judge the quality of an email summary"""
+    return await client.beta.chat.completions.parse(
+        model="gpt-4o-mini",  # Use consistent model for fair evaluation
+        messages=[{
+            "role": "system",
+            "content": """You are an expert evaluator of email summaries.
+
+            Evaluate the summary on these criteria:
+            1. Completeness (1-10): Does it capture the key information?
+            2. Accuracy (1-10): Is the information correctly represented?
+            3. Clarity (1-10): Is it clear and well-structured?
+            4. Conciseness (1-10): Is it appropriately brief?
+
+            Provide detailed explanations for each score."""
+        }, {
+            "role": "user",
+            "content": "Original email: {{original_email}}. Summary to evaluate: {{summary}}"
+        }],
+        extra_body={
+            "input": {
+                "variables": {
+                    "original_email": original_email,
+                    "summary": summary
+                }
+            }
+        },
+        response_format=SummaryEvaluation
+    )
+```
+
+</Accordion>
+</Accordions>
+</Step>
+
+<Step>
+**Create the Evaluation Pipeline**
+
+Define the pipeline functions that will evaluate your agent across multiple models. Ask your AI coding agent:
+
+```
+Create an evaluation pipeline that:
+1. Runs anotherai/agent/email-summarizer on each test email in @email-summarizer-dataset.json
+2. Uses the @email-judge-agent.py to score each summary
+3. Sends the scores as annotations to AnotherAI
+4. Calculates average scores to compare model performance
+```
+
+<Accordions>
+<Accordion title="Example of evaluation pipeline implementation code">
+
+```python
+import asyncio
+import httpx
+import json
+import os
+from datetime import datetime
+
+async def process_email(email, model, client, experiment_id):
+    """Process a single email with a specific model"""
+    # Generate summary using the model
+    summary_response = await client.chat.completions.create(
+        model=model,
+        messages=[{
+            "role": "system",
+            "content": "Summarize this email concisely."
+        }, {
+            "role": "user",
+            "content": email['content']
+        }],
+        extra_body={
+            "metadata": {
+                "experiment_id": experiment_id,
+                "agent_id": "email-summarizer"
+            }
+        }
+    )
+    
+    summary = summary_response.choices[0].message.content
+    completion_id = summary_response.id
+    
+    # Evaluate the summary
+    eval_response = await create_summary_judge(client, email['content'], summary)
+    evaluation = eval_response.choices[0].message.parsed
+    
+    # Send annotations to AnotherAI
+    annotations = []
+    
+    # Individual criterion scores
+    for criterion in ['completeness', 'accuracy', 'clarity', 
+                    'conciseness']:
+        score_data = evaluation.__dict__[criterion]
+        annotations.append({
+            "target": {
+                "completion_id": completion_id,
+                "key_path": f"{criterion}"
+            },
+            "metric": {
+                "name": criterion,
+                "value": score_data.score
+            },
+            "text": score_data.explanation,
+            "metadata": {
+                "model": model,
+                "email_id": email['id'],
+                "experiment_id": experiment_id
+            },
+            "author_name": "summary-judge"
+        })
+    
+    # Overall score
+    annotations.append({
+        "target": {"completion_id": completion_id},
+        "metric": {
+            "name": "overall_score",
+            "value": evaluation.overall_score
+        },
+        "text": evaluation.overall_feedback,
+        "metadata": {
+            "model": model,
+            "experiment_id": experiment_id
+        },
+        "author_name": "summary-judge"
+    })
+    
+    # Send annotations to AnotherAI API
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            "{{API_URL}}/v1/annotations",
+            json={"annotations": annotations},
+            headers={"Authorization": f"Bearer {os.environ.get('ANOTHERAI_API_KEY')}"}
+        )
+        if response.status_code != 200:
+            print(f"Failed to send annotations: {response.text}")
+    
+    return {
+        "email_id": email['id'],
+        "model": model,
+        "success": True,
+        "evaluation": evaluation
+    }
+
+async def evaluate_email_summaries(emails, models, client):
+    """Run complete evaluation pipeline"""
+    
+    # Create an experiment to group results
+    experiment_id = f"email-eval-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+    
+    # Process all combinations concurrently
+    tasks = [
+        process_email(email, model, client, experiment_id) 
+        for email in emails 
+        for model in models
+    ]
+    
+    results = await asyncio.gather(*tasks)
+    
+    # Calculate statistics
+    model_stats = {}
+    for model in models:
+        model_results = [r for r in results if r['model'] == model and r['success']]
+        if model_results:
+            avg_score = sum(r['evaluation'].overall_score for r in model_results) / len(model_results)
+            model_stats[model] = {
+                "average_score": avg_score,
+                "success_count": len(model_results),
+                "total_count": len([r for r in results if r['model'] == model])
+            }
+    
+    return {
+        "experiment_id": experiment_id,
+        "model_stats": model_stats,
+        "detailed_results": results
+    }
+```
+
+</Accordion>
+</Accordions>
+</Step>
+
+<Step>
+**Run Evaluation and Analyze Results**
+
+Execute the evaluation pipeline and analyze the results. Ask your AI coding agent:
+
+```
+Create a script that runs @email-evaluation-pipline.py on gpt-4o-mini and gpt-4.1-nano-latest.
+Load the dataset from @email-summarizer-dataset.json and show me the average scores and success rates for each model.
+```
+
+<Accordions>
+<Accordion title="Example of evaluation pipeline execution code">
+
+```python
+# Example usage
+async def main():
+    # Initialize the client
+    client = AsyncOpenAI(
+        base_url="{{API_URL}}/v1",
+        api_key=os.environ.get("ANOTHERAI_API_KEY")
+    )
+    
+    # Load test dataset
+    with open('dataset.json', 'r') as f:
+        emails = json.load(f)['emails']
+    
+    # Compare models
+    models = ["gpt-4o-mini", "gpt-4.1-nano-latest"]
+    
+    # Run evaluation
+    results = await evaluate_email_summaries(emails, models, client)
+    
+    # Print summary
+    print(f"\nExperiment ID: {results['experiment_id']}")
+    print("\nModel Performance:")
+    for model, stats in results['model_stats'].items():
+        print(f"  {model}:")
+        print(f"    Average Score: {stats['average_score']:.2f}/10")
+        print(f"    Success Rate: {stats['success_count']}/{stats['total_count']}")
+
+# Run the evaluation
+asyncio.run(main())
+```
+
+</Accordion>
+</Accordions>
+
+This prompt and subsequent code will:
+1. Generates email summaries using the specified models
+2. Run the judge agent to evaluate each summary
+3. Store the evaluation scores as annotations in AnotherAI
+
+Here's an example of what the evaluation results from LLM-as-a-judge might look like:
+
+![LLM Judge Evaluation Results](/images/llm-judge-evaluation-results.png)
+
+You can then ask your AI coding agent to analyze these evaluation results by querying the annotations:
+
+```
+Which model configuration of email-summarizer performed best overall according to the judge?
+```
+
+```
+What were the most common issues the judge found in the email summaries?
+```
+</Step>
+</Steps>

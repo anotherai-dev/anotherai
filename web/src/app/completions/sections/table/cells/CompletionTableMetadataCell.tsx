@@ -1,11 +1,12 @@
+import { memo } from "react";
 import { TextBreak } from "@/components/utils/TextBreak";
-import { CompletionTableBadgeCell } from "./CompletionTableBadgeCell";
+import CompletionTableBadgeCell from "./CompletionTableBadgeCell";
 
 interface CompletionTableMetadataCellProps {
   value: unknown;
 }
 
-export function CompletionTableMetadataCell({ value }: CompletionTableMetadataCellProps) {
+function CompletionTableMetadataCell({ value }: CompletionTableMetadataCellProps) {
   if (value === null || value === undefined) {
     return <span className="text-xs text-gray-400">N/A</span>;
   }
@@ -35,3 +36,5 @@ export function CompletionTableMetadataCell({ value }: CompletionTableMetadataCe
     </div>
   );
 }
+
+export default memo(CompletionTableMetadataCell);

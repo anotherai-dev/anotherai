@@ -1,5 +1,6 @@
 import { useRouter } from "next/navigation";
-import { useCallback } from "react";
+import { memo, useCallback } from "react";
+import { buildQuery } from "../../utils/queries";
 
 type InfoRowProps = {
   title: string;
@@ -7,7 +8,7 @@ type InfoRowProps = {
   onClick?: () => void;
 };
 
-function InfoRow({ title, value, onClick }: InfoRowProps) {
+const InfoRow = memo(function InfoRow({ title, value, onClick }: InfoRowProps) {
   return (
     <div
       className={`bg-white border border-gray-200 rounded-[2px] p-2 ${onClick ? "cursor-pointer hover:bg-gray-50 hover:border-gray-300" : ""}`}
@@ -19,19 +20,20 @@ function InfoRow({ title, value, onClick }: InfoRowProps) {
       </div>
     </div>
   );
-}
+});
 
 type Props = {
   metadata: Record<string, unknown>;
 };
 
-export function MetadataView({ metadata }: Props) {
+function MetadataView({ metadata }: Props) {
   const router = useRouter();
 
   const handleMetadataClick = useCallback(
     (key: string, value: unknown) => {
       const stringValue = typeof value === "string" ? value : JSON.stringify(value);
-      const query = `SELECT * FROM completions WHERE metadata['${key}'] = '${stringValue}'`;
+      const whereClause = `metadata['${key}'] = '${stringValue}'`;
+      const query = buildQuery(whereClause);
       const encodedQuery = encodeURIComponent(query);
       router.push(`/completions?newQuery=${encodedQuery}`);
     },
@@ -58,3 +60,25 @@ export function MetadataView({ metadata }: Props) {
     </div>
   );
 }
+
+// Helper function to shallow compare metadata objects
+function areMetadataObjectsEqual(prev: Record<string, unknown>, next: Record<string, unknown>): boolean {
+  const prevKeys = Object.keys(prev);
+  const nextKeys = Object.keys(next);
+
+  if (prevKeys.length !== nextKeys.length) {
+    return false;
+  }
+
+  for (const key of prevKeys) {
+    if (prev[key] !== next[key]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+export default memo(MetadataView, (prevProps, nextProps) => {
+  return areMetadataObjectsEqual(prevProps.metadata, nextProps.metadata);
+});

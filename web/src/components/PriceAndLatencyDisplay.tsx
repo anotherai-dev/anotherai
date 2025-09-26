@@ -1,5 +1,6 @@
 import { cx } from "class-variance-authority";
 import { ArrowUp } from "lucide-react";
+import { memo } from "react";
 import { formatCurrency, formatDuration, getMetricBadgeWithRelative } from "@/components/utils/utils";
 import { HoverPopover } from "./HoverPopover";
 
@@ -22,7 +23,7 @@ type PercentilesPopoverProps = {
   formatValue: (value: number) => string;
 };
 
-function PercentilesPopover({ p50, p90, p99, formatValue }: PercentilesPopoverProps) {
+const PercentilesPopover = memo(function PercentilesPopover({ p50, p90, p99, formatValue }: PercentilesPopoverProps) {
   return (
     <div className="space-y-1 py-1 w-[120px]">
       <div className="flex justify-between items-center">
@@ -45,7 +46,7 @@ function PercentilesPopover({ p50, p90, p99, formatValue }: PercentilesPopoverPr
       </div>
     </div>
   );
-}
+});
 
 function calculatePercentile(sortedArray: number[], percentile: number): number {
   const index = (percentile / 100) * (sortedArray.length - 1);

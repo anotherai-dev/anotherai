@@ -89,7 +89,7 @@ export function CompletionsTable({
   };
 
   if (error) {
-    return <PageError error={error.message} />;
+    return <PageError error={error} />;
   }
 
   if (isLoading) {

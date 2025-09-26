@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { formatDate } from "@/components/utils/utils";
 
 interface CompletionTableDateCellProps {
@@ -6,7 +6,7 @@ interface CompletionTableDateCellProps {
   format?: "date" | "datetime" | "time" | "relative" | "relative_with_time";
 }
 
-export function CompletionTableDateCell({ value, format = "date" }: CompletionTableDateCellProps) {
+function CompletionTableDateCell({ value, format = "date" }: CompletionTableDateCellProps) {
   const formattedDate = useMemo(() => formatDate(value, format), [value, format]);
 
   if (formattedDate === "N/A" || formattedDate === "Invalid Date") {
@@ -15,3 +15,5 @@ export function CompletionTableDateCell({ value, format = "date" }: CompletionTa
 
   return <span className="text-xs text-gray-800">{formattedDate}</span>;
 }
+
+export default memo(CompletionTableDateCell);

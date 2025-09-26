@@ -26,7 +26,7 @@ export function DeployVersionInstructions({ versionId, agentId }: DeployVersionI
   };
 
   const handleLearnMore = () => {
-    window.open("https://docs.anotherai.dev/deployments", "_blank");
+    window.open("https://docs.anotherai.dev/use-cases/fundamentals/deployments", "_blank");
   };
 
   const instructionsContent = (

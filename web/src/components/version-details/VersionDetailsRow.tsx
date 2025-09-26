@@ -1,5 +1,6 @@
 import { Copy } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
+import { JSONDisplay } from "@/components/JSONDisplay";
 import { SchemaViewer } from "@/components/SchemaViewer";
 import { useToast } from "@/components/ToastProvider";
 import {
@@ -17,7 +18,7 @@ type VersionDetailsRowProps = {
 
 export function VersionDetailsRow({ keyName, value, showExamples = false }: VersionDetailsRowProps) {
   const displayName = getVersionKeyDisplayName(keyName);
-  const parsedJSON = parseJSONValue(value);
+  const parsedJSON = useMemo(() => parseJSONValue(value), [value]);
   const isSchema = useMemo(() => isJSONSchema(parsedJSON), [parsedJSON]);
   const [isHovered, setIsHovered] = useState(false);
   const { showToast } = useToast();
@@ -64,11 +65,7 @@ export function VersionDetailsRow({ keyName, value, showExamples = false }: Vers
 
     // JSON case (but not schema)
     if (parsedJSON !== null) {
-      return (
-        <pre className="text-xs text-gray-900 whitespace-pre-wrap break-words font-mono bg-gray-50 p-2 rounded border">
-          {JSON.stringify(parsedJSON, null, 2)}
-        </pre>
-      );
+      return <JSONDisplay value={parsedJSON} variant="default" />;
     }
 
     // Array case
@@ -79,11 +76,7 @@ export function VersionDetailsRow({ keyName, value, showExamples = false }: Vers
 
     // Object case
     if (value && typeof value === "object") {
-      return (
-        <pre className="text-xs text-gray-900 whitespace-pre-wrap break-words font-mono bg-gray-50 p-2 rounded border">
-          {JSON.stringify(value, null, 2)}
-        </pre>
-      );
+      return <JSONDisplay value={value} variant="default" />;
     }
 
     // Primitive values

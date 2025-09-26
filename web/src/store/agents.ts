@@ -1,6 +1,7 @@
 import { enableMapSet, produce } from "immer";
 import { useCallback, useEffect, useRef } from "react";
 import { create } from "zustand";
+import { createErrorFromResponse } from "@/lib/apiError";
 import { apiFetch } from "@/lib/apiFetch";
 
 enableMapSet();
@@ -41,7 +42,7 @@ export const useAgents = create<AgentsState>((set, get) => ({
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch agents list: ${response.status} ${response.statusText}`);
+        throw await createErrorFromResponse(response);
       }
 
       const agentsData = await response.json();
@@ -54,7 +55,11 @@ export const useAgents = create<AgentsState>((set, get) => ({
         })
       );
     } catch (error) {
-      console.error("Failed to fetch agents:", error);
+      // Skip console logging for API errors to reduce noise
+      const errorObj = error as Error & { isApiError?: boolean };
+      if (!errorObj.isApiError) {
+        console.error("Failed to fetch agents:", error);
+      }
 
       set(
         produce((state: AgentsState) => {

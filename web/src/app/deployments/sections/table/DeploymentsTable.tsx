@@ -10,7 +10,7 @@ import { Pagination } from "@/components/Pagination";
 import { SimpleTableComponent } from "@/components/SimpleTableComponent";
 import { formatDate, formatTotalCost } from "@/components/utils/utils";
 import { Deployment } from "@/types/models";
-import { DeploymentsBaseCell } from "./DeploymentsBaseCell";
+import DeploymentsBaseCell from "./DeploymentsBaseCell";
 
 // Column key constants
 export const DEPLOYMENTS_COLUMNS = {
@@ -112,7 +112,7 @@ export function DeploymentsTable(props: DeploymentsTableProps) {
 
   // Error state
   if (error) {
-    return <PageError error={error.message} />;
+    return <PageError error={error} />;
   }
 
   // Empty state
@@ -121,7 +121,7 @@ export function DeploymentsTable(props: DeploymentsTableProps) {
       <EmptyState
         title="No deployments found"
         subtitle="Create your first deployment to get started"
-        documentationUrl="https://docs.anotherai.dev/deployments"
+        documentationUrl="https://docs.anotherai.dev/use-cases/fundamentals/deployments"
       />
     );
   }
