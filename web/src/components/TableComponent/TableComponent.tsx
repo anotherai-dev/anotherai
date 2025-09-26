@@ -50,6 +50,7 @@ export function TableComponent({
     isHovering: _isHovering, // eslint-disable-line @typescript-eslint/no-unused-vars
     isScrolling: _isScrolling, // eslint-disable-line @typescript-eslint/no-unused-vars
     isTableBottomVisible,
+    hasHorizontalScroll,
     scrollRef,
     topScrollRef,
     scrollLeft,
@@ -116,7 +117,7 @@ export function TableComponent({
       )}
 
       {/* Scrollbar - shows at bottom of viewport when table extends beyond screen, otherwise at bottom of table */}
-      {!hideScrollbar && (
+      {!hideScrollbar && hasHorizontalScroll && (
         <TableScrollbar
           topScrollRef={topScrollRef}
           isTableBottomVisible={isTableBottomVisible}

@@ -7,6 +7,8 @@ import {
   getPriceAndLatencyPerVersion,
   getSharedKeypathsOfSchemas,
   getSharedPartsOfPrompts,
+  getValidCosts,
+  getValidDurations,
 } from "@/components/utils/utils";
 import { Annotation, ExperimentWithLookups } from "@/types/models";
 import {
@@ -89,9 +91,13 @@ export function MatrixSection(props: Props) {
     const sharedKeypathsOfSchemas = getSharedKeypathsOfSchemas(orderedVersions);
     const completionsPerVersion = getCompletionsPerVersion(experiment);
     const priceAndLatencyPerVersion = getPriceAndLatencyPerVersion(completionsPerVersion);
-    // Get arrays of average metrics per version for badge coloring
-    const allAvgCosts = priceAndLatencyPerVersion.map(({ metrics }) => metrics.avgCost);
-    const allAvgDurations = priceAndLatencyPerVersion.map(({ metrics }) => metrics.avgDuration);
+    // Get arrays of average metrics per version for badge coloring (filter out undefined values)
+    const allAvgCosts = priceAndLatencyPerVersion
+      .map(({ metrics }) => metrics.avgCost)
+      .filter((cost): cost is number => cost !== undefined);
+    const allAvgDurations = priceAndLatencyPerVersion
+      .map(({ metrics }) => metrics.avgDuration)
+      .filter((duration): duration is number => duration !== undefined);
 
     // Calculate raw metrics lookup for percentile data
     const rawMetricsPerVersionPerKey = getRawMetricsPerVersionPerKey(experiment, annotations);
@@ -109,17 +115,25 @@ export function MatrixSection(props: Props) {
       // Combine regular metrics with price and latency metrics
       const allMetrics = [...metrics];
       if (priceAndLatency?.metrics) {
-        allMetrics.unshift(
-          { key: "cost", average: priceAndLatency.metrics.avgCost },
-          { key: "duration", average: priceAndLatency.metrics.avgDuration }
-        );
+        // Only add cost metric if it has a valid value
+        if (priceAndLatency.metrics.avgCost !== undefined) {
+          allMetrics.unshift({ key: "cost", average: priceAndLatency.metrics.avgCost });
+        }
+        // Only add duration metric if it has a valid value
+        if (priceAndLatency.metrics.avgDuration !== undefined) {
+          allMetrics.unshift({ key: "duration", average: priceAndLatency.metrics.avgDuration });
+        }
       }
 
       // Combine allMetricsPerKey with price and latency data
       const allMetricsPerKeyForVersion = { ...allMetricsPerKey };
       if (priceAndLatency?.metrics) {
-        allMetricsPerKeyForVersion.cost = allAvgCosts;
-        allMetricsPerKeyForVersion.duration = allAvgDurations;
+        if (allAvgCosts.length > 0) {
+          allMetricsPerKeyForVersion.cost = allAvgCosts;
+        }
+        if (allAvgDurations.length > 0) {
+          allMetricsPerKeyForVersion.duration = allAvgDurations;
+        }
       }
 
       // Combine rawMetricsPerKey with price and latency data
@@ -165,12 +179,25 @@ export function MatrixSection(props: Props) {
           .map((version) => findCompletionForInputAndVersion(experiment.completions || [], input.id, version.id))
           .filter(Boolean); // Remove undefined completions
 
-        // Calculate cost and duration arrays for this row
-        const allCostsForRow = completionsForInput.map((completion) => completion!.cost_usd || 0);
-        const allDurationsForRow = completionsForInput.map((completion) => completion!.duration_seconds || 0);
+        // Calculate cost and duration arrays for this row using centralized utility functions
+        const allCostsForRow = getValidCosts(completionsForInput);
+        const allDurationsForRow = getValidDurations(completionsForInput);
 
         // Calculate metrics per key for this row (for row-based comparison coloring)
-        const allMetricsPerKeyForRow = getAllMetricsPerKeyForRow(experiment, annotations, input.id);
+        const allMetricsPerKeyForRowData = getAllMetricsPerKeyForRow(experiment, annotations, input.id);
+
+        // Combine all metrics per key for this row
+        const allMetricsPerKeyForRow: Record<string, number[]> = {
+          ...allMetricsPerKeyForRowData,
+        };
+
+        // Add cost and duration arrays if they have data
+        if (allCostsForRow.length > 0) {
+          allMetricsPerKeyForRow.cost = allCostsForRow;
+        }
+        if (allDurationsForRow.length > 0) {
+          allMetricsPerKeyForRow.duration = allDurationsForRow;
+        }
 
         return orderedVersions.map((version) => {
           const completion = findCompletionForInputAndVersion(experiment.completions || [], input.id, version.id);
@@ -179,11 +206,9 @@ export function MatrixSection(props: Props) {
             <CompletionCell
               key={`${input.id}-${version.id}`}
               completion={completion}
-              allCosts={allCostsForRow}
-              allDurations={allDurationsForRow}
               annotations={annotations}
               experimentId={experiment.id}
-              allMetricsPerKeyForRow={allMetricsPerKeyForRow}
+              allMetricsPerKey={allMetricsPerKeyForRow}
               agentId={experiment.agent_id}
             />
           );
