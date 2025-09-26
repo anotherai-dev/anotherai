@@ -26,7 +26,7 @@ from core.providers.mistral.mistral_domain import (
 )
 from core.providers.mistral.mistral_provider import MistralAIConfig, MistralAIProvider
 from core.runners.runner_output import ToolCallRequestDelta
-from tests.utils import fixture_bytes, fixtures_json
+from tests.utils import fixture_bytes, fixtures_json, fixtures_stream
 
 
 @pytest.fixture
@@ -266,7 +266,7 @@ class TestSingleStream:
 
         parsed_chunks = [o async for o in raw_chunks]
 
-        assert len(parsed_chunks) == 4
+        assert len(parsed_chunks) == 3
         final_chunk = parsed_chunks[-1].final_chunk
         assert final_chunk
         assert final_chunk.agent_output == {"greeting": "Hello James!"}
@@ -302,7 +302,7 @@ class TestStream:
             output_factory=_output_factory,
         )
         chunks = [o async for o in streamer]
-        assert len(chunks) == 4
+        assert len(chunks) == 3
 
         # Not sure why the pyright in the CI reports an error here
         request = httpx_mock.get_requests()[0]
@@ -344,6 +344,24 @@ class TestStream:
 
         assert e.value.capture
         assert str(e.value) == "blabla"
+
+    async def test_stream_with_reasoning(self, httpx_mock: HTTPXMock, mistral_provider: MistralAIProvider):
+        httpx_mock.add_response(
+            url="https://api.mistral.ai/v1/chat/completions",
+            stream=IteratorStream(fixtures_stream("mistralai", "stream_reasoning.txt")),
+        )
+        provider = MistralAIProvider()
+        streamer = provider.stream(
+            [Message.with_text("Hello")],
+            options=ProviderOptions(model=Model.PIXTRAL_12B_2409, max_tokens=10, temperature=0),
+            output_factory=lambda x: x,
+        )
+        chunks = [chunk async for chunk in streamer]
+        assert len(chunks) == 99
+        text = "".join([c.delta for c in chunks if c.delta])
+        thinking = "".join([c.reasoning for c in chunks if c.reasoning])
+        assert len(text) == 499
+        assert len(thinking) == 760
 
 
 class TestComplete:
@@ -489,6 +507,23 @@ class TestComplete:
         assert request.method == "POST"  # pyright: ignore reportUnknownMemberType
         body = json.loads(request.read().decode())
         assert body["response_format"]["type"] == "text"
+
+    async def test_complete_reasoning(self, httpx_mock: HTTPXMock, mistral_provider: MistralAIProvider):
+        httpx_mock.add_response(
+            url="https://api.mistral.ai/v1/chat/completions",
+            json=fixtures_json("mistralai", "completion_reasoning.json"),
+        )
+        o = await mistral_provider.complete(
+            [Message.with_text("Hello")],
+            options=ProviderOptions(model=Model.MAGISTRAL_MEDIUM_2506, max_tokens=10, temperature=0),
+            output_factory=lambda x: x,
+        )
+        assert o.agent_output
+        assert isinstance(o.agent_output, str)
+        assert o.agent_output.startswith("Researchers at the University of Technology have demonstrated")
+        assert o.tool_call_requests is None
+        assert o.reasoning
+        assert o.reasoning.startswith("Okay, the text is about a recent advancement in quantum computing.")
 
     async def test_complete_500(self, httpx_mock: HTTPXMock):
         httpx_mock.add_response(
@@ -657,7 +692,7 @@ class TestExtractStreamDelta:
         assert mistral_provider._extract_stream_delta(
             sses[0],
         ) == ParsedResponse(
-            delta="",
+            delta=None,
         )
 
         assert mistral_provider._extract_stream_delta(

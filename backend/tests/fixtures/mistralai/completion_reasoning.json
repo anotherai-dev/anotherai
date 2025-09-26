@@ -1,0 +1,36 @@
+{
+  "id": "98a27ab71ee04f0991482c60c069a207",
+  "created": 1758884528,
+  "model": "magistral-medium-2509",
+  "usage": {
+    "prompt_tokens": 151,
+    "total_tokens": 331,
+    "completion_tokens": 180
+  },
+  "object": "chat.completion",
+  "choices": [
+    {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "tool_calls": null,
+        "content": [
+          {
+            "type": "thinking",
+            "thinking": [
+              {
+                "type": "text",
+                "text": "Okay, the text is about a recent advancement in quantum computing. Researchers at the University of Technology have demonstrated a 127-qubit quantum processor that can perform complex calculations much faster than traditional computers. This breakthrough could revolutionize fields like drug discovery, financial modeling, and climate simulation. The processor uses superconducting qubits at very low temperatures to maintain quantum states. Commercial applications are still years away, but this is a significant step forward. I need to summarize this in 2-3 sentences, capturing the main points and key details."
+              }
+            ]
+          },
+          {
+            "type": "text",
+            "text": "Researchers at the University of Technology have demonstrated a 127-qubit quantum processor that can perform complex calculations exponentially faster than traditional computers. This breakthrough, which uses superconducting qubits at near absolute zero temperatures, could revolutionize fields such as drug discovery, financial modeling, and climate simulation, although commercial applications are still years away."
+          }
+        ]
+      }
+    }
+  ]
+}
