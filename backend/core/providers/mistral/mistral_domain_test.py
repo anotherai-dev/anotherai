@@ -6,6 +6,7 @@ from core.domain.tool_call import ToolCallRequest
 from core.providers.mistral.mistral_domain import (
     AssistantMessage,
     CompletionChunk,
+    DeltaMessage,
     DocumentURLChunk,
     ImageURLChunk,
     MistralAIMessage,
@@ -162,3 +163,15 @@ class TestAssistantMessage:
         )
         assert result.content
         assert isinstance(result.content, list)
+        assert result.thinking_joined() == "Thinking about the answer"
+        assert result.text_joined() == "The answer is 42"
+
+
+class TestDeltaMessage:
+    def test_thinking(self) -> None:
+        base = DeltaMessage.model_validate(
+            {"content": [{"type": "thinking", "thinking": [{"type": "text", "text": ", so the text"}]}]},
+        )
+        assert base
+        assert base.thinking_joined() == ", so the text"
+        assert base.text_joined() is None

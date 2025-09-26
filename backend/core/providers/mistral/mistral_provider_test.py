@@ -26,7 +26,7 @@ from core.providers.mistral.mistral_domain import (
 )
 from core.providers.mistral.mistral_provider import MistralAIConfig, MistralAIProvider
 from core.runners.runner_output import ToolCallRequestDelta
-from tests.utils import fixture_bytes, fixtures_json
+from tests.utils import fixture_bytes, fixtures_json, fixtures_stream
 
 
 @pytest.fixture
@@ -344,6 +344,24 @@ class TestStream:
 
         assert e.value.capture
         assert str(e.value) == "blabla"
+
+    async def test_stream_with_reasoning(self, httpx_mock: HTTPXMock, mistral_provider: MistralAIProvider):
+        httpx_mock.add_response(
+            url="https://api.mistral.ai/v1/chat/completions",
+            stream=IteratorStream(fixtures_stream("mistralai", "stream_reasoning.txt")),
+        )
+        provider = MistralAIProvider()
+        streamer = provider.stream(
+            [Message.with_text("Hello")],
+            options=ProviderOptions(model=Model.PIXTRAL_12B_2409, max_tokens=10, temperature=0),
+            output_factory=lambda x: x,
+        )
+        chunks = [chunk async for chunk in streamer]
+        assert len(chunks) == 99
+        text = "".join([c.delta for c in chunks if c.delta])
+        thinking = "".join([c.reasoning for c in chunks if c.reasoning])
+        assert len(text) == 499
+        assert len(thinking) == 760
 
 
 class TestComplete:
