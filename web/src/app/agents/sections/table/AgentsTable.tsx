@@ -1,7 +1,8 @@
 "use client";
 
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { EmptyState } from "@/components/EmptyState";
 import { LoadingState } from "@/components/LoadingState";
 import { PageError } from "@/components/PageError";
@@ -17,6 +18,9 @@ export const AGENTS_COLUMNS = {
   TOTAL_COST: "Total Cost",
   CREATED_AT: "Created at",
 } as const;
+
+type SortDirection = "asc" | "desc";
+type SortableColumn = keyof typeof AGENTS_COLUMNS;
 
 interface Agent {
   id: string;
@@ -43,15 +47,64 @@ export function AgentsTable(props: AgentsTableProps) {
   const { agents, agentsStats, isLoading, error } = props;
   const router = useRouter();
 
-  // Define display columns
+  // Sorting state
+  const [sortColumn, setSortColumn] = useState<SortableColumn>("CREATED_AT");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+
+  // Sorting handler
+  const handleSort = useCallback(
+    (column: SortableColumn) => {
+      if (sortColumn === column) {
+        setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+      } else {
+        setSortColumn(column);
+        setSortDirection("asc");
+      }
+    },
+    [sortColumn, sortDirection]
+  );
+
+  // Define display columns with sortable headers
   const columnHeaders = useMemo(() => {
+    // Create sortable header component
+    const SortableHeader = ({ column, children }: { column: SortableColumn; children: React.ReactNode }) => (
+      <button
+        onClick={() => handleSort(column)}
+        className="flex items-center gap-1 text-left w-full hover:text-gray-700 transition-colors"
+      >
+        <span>{children}</span>
+        <div className="flex flex-col ml-1">
+          <ChevronUp
+            size={12}
+            className={`${
+              sortColumn === column && sortDirection === "asc" ? "text-gray-900" : "text-gray-400"
+            } transition-colors`}
+          />
+          <ChevronDown
+            size={12}
+            className={`${
+              sortColumn === column && sortDirection === "desc" ? "text-gray-900" : "text-gray-400"
+            } transition-colors -mt-1`}
+          />
+        </div>
+      </button>
+    );
+
     return [
-      AGENTS_COLUMNS.AI_AGENT,
-      AGENTS_COLUMNS.COMPLETIONS_LAST_7_DAYS,
-      AGENTS_COLUMNS.TOTAL_COST,
-      AGENTS_COLUMNS.CREATED_AT,
+      <SortableHeader key="AI_AGENT" column="AI_AGENT">
+        {AGENTS_COLUMNS.AI_AGENT}
+      </SortableHeader>,
+      <SortableHeader key="COMPLETIONS_LAST_7_DAYS" column="COMPLETIONS_LAST_7_DAYS">
+        {AGENTS_COLUMNS.COMPLETIONS_LAST_7_DAYS}
+      </SortableHeader>,
+      <SortableHeader key="TOTAL_COST" column="TOTAL_COST">
+        {AGENTS_COLUMNS.TOTAL_COST}
+      </SortableHeader>,
+      <SortableHeader key="CREATED_AT" column="CREATED_AT">
+        {AGENTS_COLUMNS.CREATED_AT}
+      </SortableHeader>,
     ];
-  }, []);
+  }, [sortColumn, sortDirection, handleSort]);
 
   // Transform agent data for display
   const displayData = useMemo(() => {
@@ -70,22 +123,50 @@ export function AgentsTable(props: AgentsTableProps) {
       };
     });
 
-    // Sort by last completion date (most recent first), then by agent name
-    return agentDisplayData.sort((a, b) => {
-      // First sort by last completion date (most recent first)
-      const dateA = a._lastCompletionDate ? new Date(a._lastCompletionDate).getTime() : 0;
-      const dateB = b._lastCompletionDate ? new Date(b._lastCompletionDate).getTime() : 0;
+    // Apply sorting based on current sort column and direction
+    const sortedData = agentDisplayData.sort((a, b) => {
+      let valueA: string | number;
+      let valueB: string | number;
 
-      if (dateA !== dateB) {
-        return dateB - dateA; // Most recent first
+      switch (sortColumn) {
+        case "AI_AGENT":
+          valueA = (a[AGENTS_COLUMNS.AI_AGENT] as { name: string }).name.toLowerCase();
+          valueB = (b[AGENTS_COLUMNS.AI_AGENT] as { name: string }).name.toLowerCase();
+          break;
+        case "COMPLETIONS_LAST_7_DAYS":
+          valueA = a[AGENTS_COLUMNS.COMPLETIONS_LAST_7_DAYS] ?? 0;
+          valueB = b[AGENTS_COLUMNS.COMPLETIONS_LAST_7_DAYS] ?? 0;
+          break;
+        case "TOTAL_COST":
+          valueA = a[AGENTS_COLUMNS.TOTAL_COST] ?? 0;
+          valueB = b[AGENTS_COLUMNS.TOTAL_COST] ?? 0;
+          break;
+        case "CREATED_AT":
+          valueA = new Date(a[AGENTS_COLUMNS.CREATED_AT]).getTime();
+          valueB = new Date(b[AGENTS_COLUMNS.CREATED_AT]).getTime();
+          break;
+        default:
+          return 0;
       }
 
-      // If dates are equal (or both null), sort by agent name
-      const nameA = (a[AGENTS_COLUMNS.AI_AGENT] as { name: string }).name;
-      const nameB = (b[AGENTS_COLUMNS.AI_AGENT] as { name: string }).name;
-      return String(nameA).localeCompare(String(nameB));
+      // Handle string comparison
+      if (typeof valueA === "string" && typeof valueB === "string") {
+        const comparison = valueA.localeCompare(valueB);
+        return sortDirection === "asc" ? comparison : -comparison;
+      }
+
+      // Handle numeric comparison
+      if (typeof valueA === "number" && typeof valueB === "number") {
+        const comparison = valueA - valueB;
+        return sortDirection === "asc" ? comparison : -comparison;
+      }
+
+      // Fallback
+      return 0;
     });
-  }, [agents, agentsStats]);
+
+    return sortedData;
+  }, [agents, agentsStats, sortColumn, sortDirection]);
 
   const handleRowClick = (rowIndex: number) => {
     const displayRow = displayData[rowIndex];
@@ -125,26 +206,26 @@ export function AgentsTable(props: AgentsTableProps) {
     <SimpleTableComponent
       columnHeaders={columnHeaders}
       data={displayData.map((row) =>
-        columnHeaders.map((header) => {
-          const value = row[header as keyof typeof row];
+        Object.values(AGENTS_COLUMNS).map((columnKey) => {
+          const value = row[columnKey as keyof typeof row];
 
-          switch (header) {
+          switch (columnKey) {
             case AGENTS_COLUMNS.AI_AGENT:
               return (
-                <AgentsTableAgentCell key={header} value={value as { name: string; completionsLast3Days: number }} />
+                <AgentsTableAgentCell key={columnKey} value={value as { name: string; completionsLast3Days: number }} />
               );
 
             case AGENTS_COLUMNS.COMPLETIONS_LAST_7_DAYS:
-              return <AgentsBaseCell key={header} value={value} />;
+              return <AgentsBaseCell key={columnKey} value={value} />;
 
             case AGENTS_COLUMNS.TOTAL_COST:
-              return <AgentsBaseCell key={header} value={value} formatter={formatTotalCost} />;
+              return <AgentsBaseCell key={columnKey} value={value} formatter={formatTotalCost} />;
 
             case AGENTS_COLUMNS.CREATED_AT:
-              return <AgentsBaseCell key={header} value={value} formatter={formatRelativeDate} />;
+              return <AgentsBaseCell key={columnKey} value={value} formatter={formatRelativeDate} />;
 
             default:
-              return <AgentsBaseCell key={header} value={value} />;
+              return <AgentsBaseCell key={columnKey} value={value} />;
           }
         })
       )}
