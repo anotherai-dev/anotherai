@@ -7,7 +7,7 @@ import { LoadingState } from "@/components/LoadingState";
 import { PageError } from "@/components/PageError";
 import { SimpleTableComponent } from "@/components/SimpleTableComponent";
 import { formatRelativeDate, formatTotalCost } from "@/components/utils/utils";
-import { AgentsBaseCell } from "./AgentsBaseCell";
+import AgentsBaseCell from "./AgentsBaseCell";
 import { AgentsTableAgentCell } from "./AgentsTableAgentCell";
 
 // Column key constants
@@ -112,7 +112,7 @@ export function AgentsTable(props: AgentsTableProps) {
       <EmptyState
         title="No agents found."
         subtitle="Create your first agent to get started"
-        documentationUrl="https://docs.anotherai.dev/agents/building"
+        documentationUrl="https://docs.anotherai.dev/use-cases/fundamentals/building"
       />
     );
   }

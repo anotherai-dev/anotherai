@@ -2,8 +2,8 @@ import { AnnotationsView } from "@/components/annotations/AnnotationsView";
 import { VersionDetailsView } from "@/components/version-details/VersionDetailsView";
 import { Annotation, Completion } from "@/types/models";
 import { AnnotationsPromptLabel } from "../annotations/AnnotationsPromptLabel";
-import { InfoRow } from "./InfoRow";
-import { MetadataView } from "./MetadataView";
+import InfoRow from "./InfoRow";
+import MetadataView from "./MetadataView";
 import { TracesView } from "./TracesView";
 
 type Props = {

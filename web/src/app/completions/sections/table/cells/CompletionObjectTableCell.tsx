@@ -1,6 +1,7 @@
+import { memo } from "react";
 import { Message } from "@/types/models";
-import { CompletionBaseTableCell } from "./CompletionBaseTableCell";
-import { CompletionTableInputOutputCell } from "./CompletionTableInputOutputCell";
+import CompletionBaseTableCell from "./CompletionBaseTableCell";
+import CompletionTableInputOutputCell from "./CompletionTableInputOutputCell";
 
 interface Props {
   value: unknown;
@@ -50,7 +51,7 @@ function isContainerType(value: unknown): value is Record<string, unknown> {
   return hasMessages || hasVariables || hasError;
 }
 
-export function CompletionObjectTableCell(props: Props) {
+function CompletionObjectTableCell(props: Props) {
   const { value, maxWidth, sharedPartsOfPrompts } = props;
 
   // Check if it's a container type from transformCompletionsData first
@@ -89,3 +90,25 @@ export function CompletionObjectTableCell(props: Props) {
   // For other object types, fall back to BaseTableCell
   return <CompletionBaseTableCell value={value} />;
 }
+
+// Helper function to compare Message arrays for memoization
+function areMessageArraysEqual(prev?: Message[], next?: Message[]): boolean {
+  if (prev === next) return true;
+  if (!prev || !next) return false;
+  if (prev.length !== next.length) return false;
+
+  for (let i = 0; i < prev.length; i++) {
+    if (prev[i].role !== next[i].role || prev[i].content !== next[i].content) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export default memo(CompletionObjectTableCell, (prevProps, nextProps) => {
+  return (
+    prevProps.value === nextProps.value &&
+    prevProps.maxWidth === nextProps.maxWidth &&
+    areMessageArraysEqual(prevProps.sharedPartsOfPrompts, nextProps.sharedPartsOfPrompts)
+  );
+});

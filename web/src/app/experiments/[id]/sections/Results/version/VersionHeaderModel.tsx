@@ -1,5 +1,5 @@
 import { Plus } from "lucide-react";
-import { useState } from "react";
+import { memo, useState } from "react";
 import { HoverPopover } from "@/components/HoverPopover";
 import { ModelIconWithName } from "@/components/ModelIcon";
 import { AnnotationsView } from "@/components/annotations/AnnotationsView";
@@ -13,7 +13,7 @@ type VersionHeaderModelProps = {
   index?: number;
 };
 
-export function VersionHeaderModel(props: VersionHeaderModelProps) {
+function VersionHeaderModel(props: VersionHeaderModelProps) {
   const { version, annotations, experimentId, completionId, index } = props;
   const [showAddForm, setShowAddForm] = useState(false);
 
@@ -80,3 +80,37 @@ export function VersionHeaderModel(props: VersionHeaderModelProps) {
     </div>
   );
 }
+
+// Helper function to compare Version objects for model-related properties
+function areVersionModelsEqual(prev: Version, next: Version): boolean {
+  return (
+    prev.id === next.id &&
+    prev.model === next.model &&
+    prev.reasoning_effort === next.reasoning_effort &&
+    prev.reasoning_budget === next.reasoning_budget
+  );
+}
+
+// Helper function to compare Annotation arrays
+function areAnnotationsEqual(prev?: Annotation[], next?: Annotation[]): boolean {
+  if (prev === next) return true;
+  if (!prev || !next) return false;
+  if (prev.length !== next.length) return false;
+
+  for (let i = 0; i < prev.length; i++) {
+    if (prev[i].id !== next[i].id || prev[i].text !== next[i].text) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export default memo(VersionHeaderModel, (prevProps, nextProps) => {
+  return (
+    prevProps.experimentId === nextProps.experimentId &&
+    prevProps.completionId === nextProps.completionId &&
+    prevProps.index === nextProps.index &&
+    areVersionModelsEqual(prevProps.version, nextProps.version) &&
+    areAnnotationsEqual(prevProps.annotations, nextProps.annotations)
+  );
+});
