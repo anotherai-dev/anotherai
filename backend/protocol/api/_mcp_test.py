@@ -81,3 +81,39 @@ class TestAddVersionsToExperiment:
             },
             "required": ["animals"],
         }
+
+
+class TestCreateAPIKey:
+    async def test_create_api_key_includes_api_host(self, test_mcp_client: Client[Any], mock_tenant_storage: Mock):
+        from datetime import datetime, timezone
+        from core.domain.api_key import CompleteAPIKey as DomainCompleteAPIKey
+        
+        # Mock the tenant storage to return a CompleteAPIKey
+        mock_domain_api_key = DomainCompleteAPIKey(
+            id="test-key-id",
+            name="Test API Key",
+            partial_key="aai-test****",
+            api_key="aai-test-full-key-123",
+            created_at=datetime.now(timezone.utc),
+            last_used_at=None,
+            created_by="user"
+        )
+        mock_tenant_storage.create_api_key.return_value = mock_domain_api_key
+        
+        # Call the create_api_key tool
+        result = await test_mcp_client.call_tool("create_api_key", {"name": "Test API Key"})
+        
+        # Verify the response includes api_host field
+        assert "api_host" in result
+        assert isinstance(result["api_host"], str)
+        assert result["api_host"]  # Should not be empty
+        
+        # Verify other expected fields are present
+        assert result["id"] == "test-key-id"
+        assert result["name"] == "Test API Key"
+        assert result["partial_key"] == "aai-test****"
+        assert result["key"] == "aai-test-full-key-123"
+        assert result["created_by"] == "user"
+        
+        # Verify the tenant storage was called
+        mock_tenant_storage.create_api_key.assert_called_once_with("Test API Key", "user")
