@@ -793,6 +793,7 @@ class APIKey(BaseModel):
 
 class CompleteAPIKey(APIKey):
     key: str
+    api_host: str
 
 
 class CreateAPIKeyRequest(BaseModel):
