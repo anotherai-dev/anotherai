@@ -70,7 +70,7 @@ export function AgentsTable(props: AgentsTableProps) {
     const SortableHeader = ({ column, children }: { column: SortableColumn; children: React.ReactNode }) => (
       <button
         onClick={() => handleSort(column)}
-        className="flex items-center gap-1 text-left w-full hover:text-gray-700 transition-colors"
+        className="flex items-center gap-1 text-left w-full hover:text-gray-700 transition-colors cursor-pointer"
       >
         <span>{children}</span>
         <div className="flex flex-col ml-1">
@@ -206,7 +206,8 @@ export function AgentsTable(props: AgentsTableProps) {
     <SimpleTableComponent
       columnHeaders={columnHeaders}
       data={displayData.map((row) =>
-        Object.values(AGENTS_COLUMNS).map((columnKey) => {
+        Object.keys(AGENTS_COLUMNS).map((columnKeyName) => {
+          const columnKey = AGENTS_COLUMNS[columnKeyName as keyof typeof AGENTS_COLUMNS];
           const value = row[columnKey as keyof typeof row];
 
           switch (columnKey) {
