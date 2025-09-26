@@ -288,7 +288,7 @@ class TestCompletionResponseFromDomain:
         response = completion_response_from_domain(completion, deprecated_function=False)
 
         # Verify the response structure
-        assert response.id == completion.id
+        assert response.id == str(completion.id)
         assert response.model == (completion.final_model if completion.final_model else "unknown")
         assert response.created == int(completion.created_at.timestamp())
         assert response.version_id == completion.version.id

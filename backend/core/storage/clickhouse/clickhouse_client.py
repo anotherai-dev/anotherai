@@ -190,7 +190,7 @@ class ClickhouseClient(CompletionStorage):
         return [dict(zip(column_names, row, strict=False)) for row in result.result_rows]
 
     @override
-    async def get_version_by_id(self, agent_id: str, version_id: str) -> tuple[Version, str]:
+    async def get_version_by_id(self, agent_id: str, version_id: str) -> tuple[Version, UUID]:
         result = await self._client.query(
             """
             SELECT id, version FROM completions WHERE version_id = {version_id:String} and agent_id = {agent_id:String} LIMIT 1
@@ -199,7 +199,7 @@ class ClickhouseClient(CompletionStorage):
         )
         if not result.result_rows:
             raise ObjectNotFoundError(object_type="version")
-        return Version.model_validate_json(result.result_rows[0][1]), str(result.result_rows[0][0])
+        return Version.model_validate_json(result.result_rows[0][1]), result.result_rows[0][0]
 
     @override
     async def cached_completion(

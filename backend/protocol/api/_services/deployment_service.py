@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from uuid import UUID
 
 from structlog import get_logger
 
@@ -100,7 +101,7 @@ class DeploymentService:
         )
         return deployment_from_domain(updated)
 
-    async def _get_version_by_id(self, agent_id: str, version_id: str) -> tuple[Version, str]:
+    async def _get_version_by_id(self, agent_id: str, version_id: str) -> tuple[Version, UUID]:
         try:
             return await self._completions_storage.get_version_by_id(agent_id, version_id)
         except ObjectNotFoundError:

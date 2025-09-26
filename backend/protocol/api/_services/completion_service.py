@@ -7,7 +7,7 @@ from core.domain.exceptions import BadRequestError
 from core.services.store_completion.completion_storer import CompletionStorer
 from core.storage.agent_storage import AgentStorage
 from core.storage.completion_storage import CompletionStorage
-from core.utils.uuid import is_uuid7, uuid7
+from core.utils.uuid import is_uuid7, is_zero, uuid7
 from protocol.api._api_models import Completion, ImportCompletionResponse, QueryCompletionResponse
 from protocol.api._services._urls import completion_url
 from protocol.api._services.conversions import completion_from_domain, completion_to_domain
@@ -36,7 +36,7 @@ class CompletionService:
         completion: Completion,
         completion_storer: CompletionStorer,
     ) -> ImportCompletionResponse:
-        if not completion.id:
+        if is_zero(completion.id):
             completion.id = uuid7()
         elif not is_uuid7(completion.id):
             raise BadRequestError(f"Invalid completion id '{completion.id}'. The completion ID must be a UUID7.")

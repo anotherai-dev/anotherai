@@ -20,5 +20,5 @@ def deployment_url(deployment_id: str) -> str:
     return f"{ANOTHERAI_APP_URL}/deployments/{quote(deployment_id)}"
 
 
-def deploy_url(deployment_id: str, completion_id: str) -> str:
-    return f"{ANOTHERAI_APP_URL}/deploy?deployment_id={quote_plus(deployment_id)}&completion_id={quote_plus(completion_id)}"
+def deploy_url(deployment_id: str, completion_id: UUID) -> str:
+    return f"{ANOTHERAI_APP_URL}/deploy?deployment_id={quote_plus(deployment_id)}&completion_id={quote_plus(str(completion_id))}"
