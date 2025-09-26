@@ -1,12 +1,13 @@
 from datetime import datetime
 from typing import NamedTuple, Protocol
+from uuid import UUID
 
 from core.domain.annotation import Annotation
 
 
 class TargetFilter(NamedTuple):
     experiment_id: set[str] | None = None
-    completion_id: set[str] | None = None
+    completion_id: set[UUID] | None = None
 
 
 class ContextFilter(NamedTuple):

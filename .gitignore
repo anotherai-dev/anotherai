@@ -175,3 +175,4 @@ docs/.source
 !.yarn/versions
 .pnp.*
 install-state.gz
+.mcp.json

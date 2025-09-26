@@ -42,6 +42,14 @@ def uuid7(
     return UUID(int=uuid_int)
 
 
+def uuid_zero():
+    return UUID(int=0)
+
+
+def is_zero(uuid: UUID) -> bool:
+    return uuid.int == 0
+
+
 def is_uuid7(uuid: UUID) -> bool:
     """Check if the uuid is a uuid7"""
     # Check if version bits (bits 48-51) are set to 7

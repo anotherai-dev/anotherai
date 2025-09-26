@@ -288,7 +288,7 @@ class TestCompletionResponseFromDomain:
         response = completion_response_from_domain(completion, deprecated_function=False)
 
         # Verify the response structure
-        assert response.id == completion.id
+        assert response.id == str(completion.id)
         assert response.model == (completion.final_model if completion.final_model else "unknown")
         assert response.created == int(completion.created_at.timestamp())
         assert response.version_id == completion.version.id
@@ -329,7 +329,7 @@ class TestCompletionChunkChoiceFinalFromCompletion:
         assert result.finish_reason == "stop"
         assert result.cost_usd == completion.cost_usd
         assert result.duration_seconds == completion.duration_seconds
-        assert result.url.endswith(completion.id)
+        assert result.url.endswith(str(completion.id))
 
         # Verify delta content
         assert result.delta.role == "assistant"

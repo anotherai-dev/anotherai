@@ -42,7 +42,7 @@ class CompletionStorer:
 
         async def _download_file(key: str, file: File):
             with capture_errors(log, "Error downloading file"):
-                _storage_urls[key] = await self._file_storage.store_file(file, completion.id)
+                _storage_urls[key] = await self._file_storage.store_file(file, str(completion.id))
 
         async with asyncio.TaskGroup() as tg:
             for key, file in unique_files.items():

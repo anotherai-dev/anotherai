@@ -77,7 +77,7 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
             )
 
     @override
-    async def add_run_id(self, experiment_id: str, run_id: str) -> None:
+    async def add_run_id(self, experiment_id: str, run_id: UUID) -> None:
         async with self._connect() as connection:
             _ = await connection.execute(
                 """
@@ -85,7 +85,7 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
                 SET run_ids = array_append(run_ids, $1), updated_at = CURRENT_TIMESTAMP
                 WHERE slug = $2 AND NOT ($1 = ANY(run_ids))
                 """,
-                run_id,
+                str(run_id),
                 experiment_id,
             )
 

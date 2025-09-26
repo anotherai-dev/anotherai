@@ -10,6 +10,7 @@ from core.storage.annotation_storage import ContextFilter, TargetFilter
 from core.storage.psql.psql_agent_storage import PsqlAgentsStorage
 from core.storage.psql.psql_annotation_storage import PsqlAnnotationStorage
 from core.storage.psql.psql_experiment_storage import PsqlExperimentStorage
+from core.utils.uuid import uuid7
 from tests.fake_models import fake_annotation, fake_experiment
 
 
@@ -36,7 +37,7 @@ def sample_annotation(test_experiment: Experiment):
     return fake_annotation(
         id=f"test-annotation-{uuid.uuid4().hex[:8]}",
         target=Annotation.Target(
-            completion_id="test-completion",
+            completion_id=uuid7(ms=lambda: 0, rand=lambda: 1),
             experiment_id=test_experiment.id,
             key_path="response.message",
         ),
@@ -106,13 +107,13 @@ class TestList:
             # run target, no context
             fake_annotation(
                 id="1",
-                target=Annotation.Target(completion_id="00000000-0000-0007-0000-000000000001"),
+                target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 1)),
                 context=None,
             ),
             # run target, experiment context
             fake_annotation(
                 id="2",
-                target=Annotation.Target(completion_id="00000000-0000-0007-0000-000000000001"),
+                target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 1)),
                 context=Annotation.Context(experiment_id=test_experiment.id, agent_id=test_agent.id),
             ),
             # experiment target
@@ -124,7 +125,7 @@ class TestList:
             # Another run
             fake_annotation(
                 id="4",
-                target=Annotation.Target(completion_id="00000000-0000-0007-0000-000000000002"),
+                target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 2)),
                 context=None,
             ),
         ]
@@ -157,7 +158,7 @@ class TestList:
         inserted_annotations: list[Annotation],
     ):
         retrieved = await annotation_storage.list(
-            TargetFilter(completion_id={"00000000-0000-0007-0000-000000000001"}),
+            TargetFilter(completion_id={uuid7(ms=lambda: 0, rand=lambda: 1)}),
             ContextFilter(experiment_id=set()),
             None,
             10,
@@ -171,7 +172,7 @@ class TestList:
         inserted_annotations: list[Annotation],
     ):
         retrieved = await annotation_storage.list(
-            TargetFilter(completion_id={"00000000-0000-0007-0000-000000000001"}),
+            TargetFilter(completion_id={uuid7(ms=lambda: 0, rand=lambda: 1)}),
             None,
             None,
             10,
@@ -186,7 +187,7 @@ class TestList:
         test_experiment: Experiment,
     ):
         retrieved = await annotation_storage.list(
-            TargetFilter(completion_id={"00000000-0000-0007-0000-000000000001"}),
+            TargetFilter(completion_id={uuid7(ms=lambda: 0, rand=lambda: 1)}),
             ContextFilter(experiment_id={test_experiment.id}),
             None,
             10,
@@ -201,7 +202,10 @@ class TestList:
     ):
         retrieved = await annotation_storage.list(
             TargetFilter(
-                completion_id={"00000000-0000-0007-0000-000000000001", "00000000-0000-0007-0000-000000000002"},
+                completion_id={
+                    uuid7(ms=lambda: 0, rand=lambda: 1),
+                    uuid7(ms=lambda: 0, rand=lambda: 2),
+                },
             ),
             None,
             None,
@@ -232,7 +236,10 @@ class TestList:
         test_experiment: Experiment,
     ):
         retrieved = await annotation_storage.list(
-            TargetFilter(experiment_id={test_experiment.id}, completion_id={"00000000-0000-0007-0000-000000000001"}),
+            TargetFilter(
+                experiment_id={test_experiment.id},
+                completion_id={uuid7(ms=lambda: 0, rand=lambda: 1)},
+            ),
             None,
             None,
             10,
