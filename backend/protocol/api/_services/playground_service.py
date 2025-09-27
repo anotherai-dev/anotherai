@@ -35,7 +35,7 @@ from protocol.api._services.conversions import (
     version_request_from_domain,
     version_request_to_domain,
 )
-from protocol.api._services.utils_service import IDType, sanitize_id
+from protocol.api._services.utils_service import IDType, extract_id
 
 _log = get_logger(__name__)
 
@@ -59,7 +59,7 @@ class PlaygroundService:
         self._event_router = event_router
 
     async def _get_version_by_id(self, agent_id: str, version_id: str) -> DomainVersion:
-        id_type, id = sanitize_id(version_id)
+        id_type, id = extract_id(version_id)
         if not id_type:
             # Not sure what this is so we check if it's a hash
             id_type = IDType.VERSION if is_hash_32(id) else IDType.DEPLOYMENT
