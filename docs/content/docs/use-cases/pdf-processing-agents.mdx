@@ -1,7 +1,7 @@
 ---
-title: Image Agents
-description: Learn how to build, test, and optimize AI agents that process images.
-summary: Build and optimize AI agents that process images with systematic experimentation and testing strategies.
+title: PDF Processing Agents
+description: Learn how to build, test, and optimize AI agents that extract information from PDF documents.
+summary: Build and optimize AI agents that extract structured data from PDF documents with systematic experimentation and testing strategies.
 ---
 
 import { Step, Steps } from 'fumadocs-ui/components/steps';
@@ -28,7 +28,7 @@ The easiest way to create a new agent is to ask your preferred AI assistant to b
 Start by describing what your agent should do:
 
 ```
-Create a new AnotherAI agent that provides a description for a given image
+Create a new AnotherAI agent that extracts key information from PDF documents
 ```
 
 #### Adding Performance Requirements
@@ -38,13 +38,13 @@ If you have other criteria or constraints for your agent, you can include them i
 **For customer-facing agents that need fast responses:**
 
 ```
-Create a new AnotherAI agent that provides a description for a given image where the average response time is less than 4 seconds
+Create a new AnotherAI agent that extracts key information from PDF documents where the average response time is less than 4 seconds
 ```
 
 **For high-volume agents that need to be cost-effective:**
 
 ```
-Create a new AnotherAI agent that provides a description for a given image that costs less than $5 for 1000 requests
+Create a new AnotherAI agent that extracts key information from PDF documents that costs less than $5 for 1000 requests
 ```
 
 Your AI assistant will be able to construct the agent's code, and will be able to use AnotherAI to access 100+ different models to find the best configuration to help you achieve your goals.
@@ -58,7 +58,7 @@ You can also add custom metadata to your agents to help organize and track them.
 - **User identication**: include a user_id customer_email key. 
 
 ```
-Create a new AnotherAI agent that provides a description for a given image and include a customer_id metadata key.
+Create a new AnotherAI agent that extracts key information from PDF documents and include a customer_id metadata key.
 ```
 
 **Agent IDs in Metadata**
@@ -67,7 +67,7 @@ When your AI assistant creates an agent, it automatically assigns an `agent_id` 
 
 You might ask your AI assistant a question about a specific agent, like:
 ```
-How much is anotherai/agent/image-description-generator costing me this month?
+How much is anotherai/agent/pdf-extractor costing me this month?
 ```
 (if you're curious about costs of agents, see our [metrics](/use-cases/fundamentals/metrics) page!)
 
@@ -84,64 +84,64 @@ In the cases above where certain constraints were specified, your AI assistant w
 
 For the prompt requesting a fast agent:
 
-TODO: UPDATE TO SHOW IMAGE AGENT
+TODO: UPDATE TO SHOW PDF AGENT
 ![Fast models experiment](/images/checking-new-models-experiment.png)
 
 For the prompt requesting a cost-effective agent:
 
-TODO: UPDATE TO SHOW IMAGE AGENT
+TODO: UPDATE TO SHOW PDF AGENT
 ![Cost-effective models experiment](/images/cost-optimization-experiment.png)
 
 If you find there is additional criteria you want to test, you can always ask your AI assistant to create additional experiments. The most common parameters to experiment with are prompts and models, however you can also experiment with changes to other parameters like temperature. 
 
-### Data for Image Experiments
+### Data for PDF Processing Experiments
 
-For text-based agents, it's quite simple for your AI assistant to generate data for you, however for image-based agents, AI assistants are inconsistent about generating valid image URLs as input. Therefore, to produce useful results, you will need to use your own images for testing. There a couple ways to do this:
+For text-based agents, it's quite simple for your AI assistant to generate data for you, however for PDF processing agents, AI assistants are inconsistent about generating valid PDF URLs as input. Therefore, to produce useful results, you will need to use your own PDFs for testing. There a couple ways to do this:
 
 #### Using a Dataset
 
-A dataset is a collection of images in a file format that your AI assistant can understand. Datasets can contain expected outputs, but do not need to. 
+A dataset is a collection of PDFs in a file format that your AI assistant can understand. Datasets can contain expected outputs, but do not need to.
 
-Datasets can be useful because they allow you to make a large number of image inputs easily available in one file. If working in an IDE, you can commit the dataset file to your codebase to make it accessible to your team. If working with an AI assistant like ChatGPT, having a dataset means you only need to upload one file instead of each image individually.
+Datasets can be useful because they allow you to make a large number of PDF inputs easily available in one file. If working in an IDE, you can commit the dataset file to your codebase to make it accessible to your team. If working with an AI assistant like ChatGPT, having a dataset means you only need to upload one file instead of each PDF individually.
 
 Example dataset with expected outputs:
 ```json
 [
   {
-    "image_url": "https://example.com/images/photo1.jpg",
-    "expected_description_elements": ["forest", "mountain", "lake"]
+    "pdf_url": "https://example.com/documents/invoice1.pdf",
+    "expected_extracted_fields": ["invoice_number", "total_amount", "due_date"]
   },
   {
-    "image_url": "https://example.com/images/photo2.jpg",
-    "expected_description_elements": ["black cat", "green eyes", "blue background"]
+    "pdf_url": "https://example.com/documents/contract2.pdf",
+    "expected_extracted_fields": ["contract_id", "parties", "effective_date"]
   },
   {
-    "image_url": "https://example.com/images/photo3.jpg",
-    "expected_description_elements": ["salad", "white bowl", "table", "silverware"]
+    "pdf_url": "https://example.com/documents/report3.pdf",
+    "expected_extracted_fields": ["report_title", "author", "key_findings"]
   }
 ]
 ```
 
-Example dataset with images only:
+Example dataset with PDFs only:
 ```json
 [
   {
-    "image_url": "https://example.com/images/photo1.jpg",
+    "pdf_url": "https://example.com/documents/invoice1.pdf",
   },
   {
-    "image_url": "https://example.com/images/photo2.jpg",
+    "pdf_url": "https://example.com/documents/contract2.pdf",
   },
   {
-    "image_url": "https://example.com/images/photo3.jpg",
+    "pdf_url": "https://example.com/documents/report3.pdf",
   }
 ]
 ```
 
 You can learn more about datasets and how to use them [here](/use-cases/fundamentals/evaluating#using-datasets-to-evaluate-your-agents).
 
-#### Uploading Individual Images
+#### Uploading Individual PDFs
 
-If you have a small number of images to test that you can also upload them individually to your AI assistant. Since images uploaded this way aren't stored in a persistent dataset, this approach is best suited for ad-hoc testing rather than systematic experimentation.  While any completions created using these images will be stored in AnotherAI and can be reused in future experiments, if you wanted to test any specific images again at a later date, you would need to provide links to the specific completions that used those images.
+If you have a small number of PDFs to test that you can also upload them individually to your AI assistant. Since PDFs uploaded this way aren't stored in a persistent dataset, this approach is best suited for ad-hoc testing rather than systematic experimentation. While any completions created using these PDFs will be stored in AnotherAI and can be reused in future experiments, if you wanted to test any specific PDFs again at a later date, you would need to provide links to the specific completions that used those documents.
 
 
 ### Prompts
@@ -151,18 +151,18 @@ Comparing different prompts is one of the most effective ways to improve your ag
 Example:
 
 ```
-Look at the prompt of anotherai/agent/image-description-generator and create an experiment in AnotherAI 
-that compares the current prompt with a new prompt that better emphasizes direct over flowery descriptions.
+Look at the prompt of anotherai/agent/pdf-extractor and create an experiment in AnotherAI
+that compares the current prompt with a new prompt that better emphasizes extracting structured data.
 ```
 
 Your AI assistant will create the experiment and give you an initial analysis of the results and well as a URL to view the results in the AnotherAI web app.
 
-TODO: UPDATE TO SHOW IMAGE AGENT
+TODO: UPDATE TO SHOW PDF AGENT
 ![Terminal output showing experiment creation](/images/experiment-prompt-enhancement-terminal.png)
 
 You can use the provided URL to view the results in the AnotherAI web app to perform manual analysis of the results.
 
-TODO: UPDATE TO SHOW IMAGE AGENT
+TODO: UPDATE TO SHOW PDF AGENT
 ![Experiment prompts comparison](/images/experiment-prompts-comparison.png)
 
 ### Models
@@ -172,20 +172,20 @@ Different models excel at different tasks. AnotherAI supports over 100 different
 Example:
 
 ```
-Create an AnotherAI experiment to help me find a faster model for anotherai/agent/image-description-generator,
-but still maintains the clear and concise description style as my current model.
+Create an AnotherAI experiment to help me find a faster model for anotherai/agent/pdf-extractor,
+but still maintains the same accuracy for data extraction as my current model.
 ```
 
-If you have a specific model in mind that you want to try - **for example, a newly released model** - you can ask your AI assistant to help you test that model against your existing agent version. You can always request that your AI assistant uses inputs from existing completions, to ensure that you're testing with real, production data. 
+If you have a specific model in mind that you want to try - **for example, a newly released model** - you can ask your AI assistant to help you test that model against your existing agent version. You can always request that your AI assistant uses inputs from existing completions, to ensure that you're testing with real, production data.
 
 Example:
 
 ```
-Can you retry the last 5 completions of anotherai/agent/image-description-generator and compare the outputs with
+Can you retry the last 5 completions of anotherai/agent/pdf-extractor and compare the outputs with
 GPT 5 mini?
 ```
 
-TODO: UPDATE TO SHOW IMAGE AGENT
+TODO: UPDATE TO SHOW PDF AGENT
 ![Model comparison experiment](/images/model-comparison-experiment.png)
 
 ### Other Parameters
@@ -218,17 +218,17 @@ Temperature is the most important parameter to experiment with after prompts and
 Example:
 
 ```
-Test my image-description-generator agent with temperatures 0.2, 0.5, and 0.8 to find
-the right balance between creativity and professionalism
+Test my pdf-extractor agent with temperatures 0.2, 0.5, and 0.8 to find
+the right balance between consistency and flexibility in data extraction
 ```
 
-TODO: UPDATE TO SHOW IMAGE AGENT
+TODO: UPDATE TO SHOW PDF AGENT
 ![Email Rewriter Temperature Experiment](/images/email-rewriter-temperature-experiment.png)
 
 ### Managing Large Experiments with Claude Code
 If you're testing an agent that has a large system prompt and/or very long inputs, you may encounter token limit issues with the `get_experiment` MCP tool that impacts Claude Code's ability to provide accurate insights on your agent.
 
-TODO: UPDATE TO SHOW IMAGE AGENT
+TODO: UPDATE TO SHOW PDF AGENT
 ![Claude Code Token Limit Error](/images/claude-code-token-limit-error.png)
 
 In this case, you can manually increase Claude Code's output token limit.
@@ -275,21 +275,21 @@ Or if adding annotations to an experiment later:
 <Step>
 Locate the "Add Annotation" button under each completion's output. Select the button to open a text box where you can add your feedback about the content of that specific completion.
 
-TODO: UPDATE TO SHOW IMAGE AGENT
+TODO: UPDATE TO SHOW PDF AGENT
 ![Add Annotation Button on Completion Output](/images/add-annotation-completion-output.png)
 </Step>
 
 <Step>
 To annotate individual fields within the output, hover over the field you want to annotate and select the "Add Annotation" button.
 
-TODO: UPDATE TO SHOW IMAGE AGENT
+TODO: UPDATE TO SHOW PDF AGENT
 ![Add Annotation on Individual Field](/images/add-annotation-individual-field.png)
 </Step>
 
 <Step>
 You can also add annotations to the model, prompt, output schema (if structured output is enabled for the agent), and other parameters like temperature, top_p, etc.
 
-TODO: UPDATE TO SHOW IMAGE AGENT
+TODO: UPDATE TO SHOW PDF AGENT
 ![Add Annotation on Parameters](/images/add-annotation-parameters.png)
 </Step>
 
@@ -313,7 +313,3 @@ Your AI assistant will analyze your feedback and create an improved version of y
 </Steps>
 
 To learn more about how annotations can be used to improve your agent, see our [Improving an Agent with Annotations](/use-cases/fundamentals/annotations) page.
-
-<Callout type="info">
-Images can currently only be processed as input to agents. Image generation as output is not yet supported.
-</Callout>

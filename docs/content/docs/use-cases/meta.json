@@ -9,6 +9,7 @@
     "lowering-costs",
     "connecting-agents",
     "for-product-managers",
-    "image-agents"
+    "image-agents",
+    "pdf-processing-agents"
   ]
 }
