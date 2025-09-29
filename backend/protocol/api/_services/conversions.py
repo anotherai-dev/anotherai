@@ -5,6 +5,7 @@ from pydantic import TypeAdapter
 from pydantic_core import ValidationError
 from structlog import get_logger
 
+from core.consts import ANOTHERAI_API_URL
 from core.domain.agent import Agent as DomainAgent
 from core.domain.agent_completion import AgentCompletion as DomainCompletion
 from core.domain.agent_input import AgentInput as DomainInput
@@ -748,6 +749,7 @@ def api_key_from_domain_complete(api_key: DomainCompleteAPIKey) -> CompleteAPIKe
         last_used_at=api_key.last_used_at,
         created_by=api_key.created_by,
         key=api_key.api_key,
+        api_host=ANOTHERAI_API_URL,
     )
 
 
