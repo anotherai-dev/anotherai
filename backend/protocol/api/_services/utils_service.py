@@ -44,6 +44,7 @@ class IDType(StrEnum):
     INPUT = "input"
     OUTPUT = "output"
     ANNOTATION = "annotation"
+    AGENT = "agent"
 
     def wrap(self, id: str) -> str:
         return f"anotherai/{self.value}/{id}"
