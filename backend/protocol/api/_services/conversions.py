@@ -1,5 +1,6 @@
 from datetime import UTC, datetime
 from typing import Any, Literal
+from uuid import UUID
 
 from pydantic import TypeAdapter
 from pydantic_core import ValidationError
@@ -81,6 +82,7 @@ from protocol.api._api_models import (
 )
 from protocol.api._run_models import OpenAIProxyResponseFormat
 from protocol.api._services._urls import deployment_url, experiments_url, view_url
+from protocol.api._services.ids_service import IDType, sanitize_id
 
 _log = get_logger(__name__)
 
@@ -583,11 +585,15 @@ def model_response_from_domain(model_id: str, model: FinalModelData) -> Model:
     )
 
 
+def _sanitized_completion_id(completion_id: str) -> UUID:
+    return UUID(sanitize_id(completion_id, IDType.COMPLETION))
+
+
 def annotation_from_domain(annotation: DomainAnnotation) -> Annotation:
     target = None
     if annotation.target:
         target = Annotation.Target(
-            completion_id=annotation.target.completion_id,
+            completion_id=str(annotation.target.completion_id) if annotation.target.completion_id else None,
             experiment_id=annotation.target.experiment_id,
             key_path=annotation.target.key_path,
         )
@@ -623,16 +629,24 @@ def annotation_to_domain(api_annotation: Annotation) -> DomainAnnotation:
     target = None
     if api_annotation.target:
         target = DomainAnnotation.Target(
-            completion_id=api_annotation.target.completion_id,
-            experiment_id=api_annotation.target.experiment_id,
+            completion_id=_sanitized_completion_id(api_annotation.target.completion_id)
+            if api_annotation.target.completion_id
+            else None,
+            experiment_id=sanitize_id(api_annotation.target.experiment_id, IDType.EXPERIMENT)
+            if api_annotation.target.experiment_id
+            else None,
             key_path=api_annotation.target.key_path,
         )
 
     context = None
     if api_annotation.context:
         context = DomainAnnotation.Context(
-            experiment_id=api_annotation.context.experiment_id,
-            agent_id=api_annotation.context.agent_id,
+            experiment_id=sanitize_id(api_annotation.context.experiment_id, IDType.EXPERIMENT)
+            if api_annotation.context.experiment_id
+            else None,
+            agent_id=sanitize_id(api_annotation.context.agent_id, IDType.AGENT)
+            if api_annotation.context.agent_id
+            else None,
         )
 
     metric = None

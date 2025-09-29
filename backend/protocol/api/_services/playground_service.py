@@ -35,7 +35,7 @@ from protocol.api._services.conversions import (
     version_request_from_domain,
     version_request_to_domain,
 )
-from protocol.api._services.utils_service import IDType, extract_id
+from protocol.api._services.ids_service import IDType, extract_id
 
 _log = get_logger(__name__)
 

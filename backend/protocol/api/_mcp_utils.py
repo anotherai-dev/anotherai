@@ -27,9 +27,9 @@ from protocol.api._services.completion_service import CompletionService
 from protocol.api._services.deployment_service import DeploymentService
 from protocol.api._services.documentation_service import DocumentationService
 from protocol.api._services.experiment_service import ExperimentService
+from protocol.api._services.ids_service import IDType, sanitize_id
 from protocol.api._services.organization_service import OrganizationService
 from protocol.api._services.playground_service import PlaygroundService
-from protocol.api._services.utils_service import IDType, sanitize_id
 from protocol.api._services.view_service import ViewService
 
 _log = get_logger(__name__)
