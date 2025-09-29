@@ -9,7 +9,7 @@ from structlog import get_logger
 from core.domain.exceptions import BadRequestError, InternalError
 from core.domain.tenant_data import TenantData
 from core.services.payment_service import PaymentService
-from core.storage.tenant_storage import TenantStorage
+from core.storage.tenant_storage import AutomaticPayment, TenantStorage
 from core.utils.background import add_background_task
 
 _log = get_logger(__name__)
@@ -157,6 +157,47 @@ class StripeService:
             client_secret=payment_intent.client_secret,
             payment_intent_id=payment_intent.id,
         )
+
+    @classmethod
+    async def get_payment_method(cls, org_settings: TenantData) -> PaymentMethodResponse | None:
+        if not org_settings.customer_id:
+            return None
+
+        return await _get_payment_method(org_settings.customer_id)
+
+    async def configure_automatic_payment(
+        self,
+        org_settings: TenantData,
+        opt_in: bool,
+        threshold: float | None,
+        balance_to_maintain: float | None,
+    ):
+        # This will throw an error if the customer does not exist
+        stripe_customer_id = _customer_id_or_raise(org_settings, capture=False)
+
+        default_payment_method = await _get_payment_method(stripe_customer_id)
+        if not default_payment_method:
+            raise MissingPaymentMethodError(
+                "Organization has no default payment method",
+                capture=True,  # Capturing, that would mean a bug in the frontend
+            )
+
+        if opt_in:
+            if threshold is None or balance_to_maintain is None:
+                raise ValueError("Threshold and balance_to_maintain are required when opt_in is true")
+
+            if threshold > balance_to_maintain:
+                raise ValueError("Threshold must be greater than balance_to_maintain")
+
+            automatic_payment = AutomaticPayment(threshold, balance_to_maintain)
+        else:
+            if threshold is not None or balance_to_maintain is not None:
+                raise ValueError("Threshold and balance_to_maintain must be None when opt_in is false")
+            automatic_payment = None
+
+        await self._tenant_storage.update_automatic_payment(automatic_payment)
+        if opt_in:
+            add_background_task(self._payment_service.decrement_credits(0))
 
 
 def _customer_id_or_raise(data: TenantData, capture: bool = True) -> str:

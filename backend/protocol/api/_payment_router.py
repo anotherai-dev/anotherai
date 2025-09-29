@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from core.domain.exceptions import BadRequestError
-from core.services.stripe.stripe_service import StripeService
+from core.services.stripe.stripe_service import PaymentMethodResponse, StripeService
 from protocol._common.documentation import INCLUDE_PRIVATE_ROUTES
 from protocol.api._dependencies._lifecycle import LifecycleDependenciesDep
 from protocol.api._dependencies._services import PaymentServiceDep
@@ -54,6 +54,13 @@ async def add_payment_method(
     )
 
 
+@router.get("/payment-methods", description="Get the payment method attached to the organization")
+async def get_payment_method(
+    user_org: TenantDep,
+) -> PaymentMethodResponse | None:
+    return await StripeService.get_payment_method(user_org)
+
+
 @router.delete("/payment-methods", description="Delete the payment method attached to the organization")
 async def delete_payment_method(
     stripe_service: _StripeServiceDep,
@@ -85,4 +92,24 @@ async def create_payment_intent(
     return PaymentIntentCreatedResponse(
         client_secret=payment_intent.client_secret,
         payment_intent_id=payment_intent.payment_intent_id,
+    )
+
+
+class AutomaticPaymentRequest(BaseModel):
+    opt_in: bool
+    threshold: float | None = None
+    balance_to_maintain: float | None = None
+
+
+@router.put("/automatic-payments", description="Enable or disable automatic payments")
+async def update_automatic_payments(
+    request: AutomaticPaymentRequest,
+    stripe_service: _StripeServiceDep,
+    tenant: TenantDep,
+) -> None:
+    await stripe_service.configure_automatic_payment(
+        org_settings=tenant,
+        opt_in=request.opt_in,
+        threshold=request.threshold,
+        balance_to_maintain=request.balance_to_maintain,
     )
