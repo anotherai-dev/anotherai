@@ -13,6 +13,21 @@ const isImageDataUri = (value: string): boolean => {
   return typeof value === "string" && value.startsWith("data:image/");
 };
 
+// Helper function to detect image URLs
+const isImageUrl = (value: string): boolean => {
+  if (typeof value !== "string") return false;
+
+  const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".bmp", ".ico", ".tiff"];
+  const lowercaseValue = value.toLowerCase();
+
+  // Check if it's a URL and ends with an image extension
+  if (value.startsWith("http://") || value.startsWith("https://")) {
+    return imageExtensions.some((ext) => lowercaseValue.includes(ext));
+  }
+
+  return false;
+};
+
 const getTextSizeStyle = (textSize: "xs" | "sm" | "base" | string = "xs") => {
   if (textSize === "xs" || textSize === "sm" || textSize === "base") {
     return {
@@ -84,6 +99,32 @@ function ValueDisplay({ value, textSize, showSeeMore }: ValueDisplayProps) {
               }}
               className="absolute top-1 right-1 p-1 bg-white border border-gray-200 rounded-[2px] hover:bg-gray-100 transition-colors cursor-pointer"
               title="Copy image data URI to clipboard"
+            >
+              <Copy size={12} />
+            </button>
+          )}
+        </div>
+      );
+    }
+
+    // Special handling for image URLs
+    if (isImageUrl(value)) {
+      return (
+        <div
+          className={cx("inline-block relative", textSizeClass)}
+          style={textSizeStyle}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          <ImageViewer imageUrl={value} alt="Variable image" />
+          {isHovered && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                copyToClipboard();
+              }}
+              className="absolute top-1 right-1 p-1 bg-white border border-gray-200 rounded-[2px] hover:bg-gray-100 transition-colors cursor-pointer"
+              title="Copy image URL to clipboard"
             >
               <Copy size={12} />
             </button>

@@ -1,4 +1,4 @@
-import { Copy } from "lucide-react";
+import { Copy, EyeOff } from "lucide-react";
 import { memo, useMemo, useState } from "react";
 import { HoverPopover } from "@/components/HoverPopover";
 import MetricsDisplay from "@/components/MetricsDisplay";
@@ -37,6 +37,8 @@ type VersionHeaderProps = {
   // Drag and drop props
   onReorderColumns?: (fromIndex: number, toIndex: number) => void;
   dragIndex?: number;
+  // Hide version functionality
+  onHideVersion?: (versionId: string) => void;
 };
 
 function VersionHeader(props: VersionHeaderProps) {
@@ -58,6 +60,7 @@ function VersionHeader(props: VersionHeaderProps) {
     experiment,
     onReorderColumns,
     dragIndex,
+    onHideVersion,
   } = props;
 
   const [isHovered, setIsHovered] = useState(false);
@@ -71,6 +74,13 @@ function VersionHeader(props: VersionHeaderProps) {
     } catch (err) {
       console.error("Failed to copy: ", err);
       showToast("Failed to copy");
+    }
+  };
+
+  const handleHideVersion = () => {
+    if (onHideVersion) {
+      onHideVersion(version.id);
+      showToast("Version hidden");
     }
   };
 
@@ -130,18 +140,32 @@ function VersionHeader(props: VersionHeaderProps) {
           <div className="flex items-center gap-2 mb-2">
             <div className="text-gray-800 font-semibold text-sm">Version {index + 1}</div>
             {isHovered && (
-              <HoverPopover
-                content={<div className="text-xs">Copy Version ID</div>}
-                position="top"
-                popoverClassName="bg-gray-800 text-white rounded-[4px] px-2 py-1"
-              >
-                <button
-                  onClick={handleCopyVersion}
-                  className="bg-white border border-gray-200 text-gray-900 hover:bg-gray-100 cursor-pointer h-5 w-5 rounded-[2px] flex items-center justify-center"
+              <div className="flex items-center gap-1">
+                <HoverPopover
+                  content={<div className="text-xs">Copy Version ID</div>}
+                  position="top"
+                  popoverClassName="bg-gray-800 text-white rounded-[4px] px-2 py-1"
                 >
-                  <Copy size={12} />
-                </button>
-              </HoverPopover>
+                  <button
+                    onClick={handleCopyVersion}
+                    className="bg-white border border-gray-200 text-gray-900 hover:bg-gray-100 cursor-pointer h-5 w-5 rounded-[2px] flex items-center justify-center"
+                  >
+                    <Copy size={12} />
+                  </button>
+                </HoverPopover>
+                <HoverPopover
+                  content={<div className="text-xs">Hide Version</div>}
+                  position="top"
+                  popoverClassName="bg-gray-800 text-white rounded-[4px] px-2 py-1"
+                >
+                  <button
+                    onClick={handleHideVersion}
+                    className="bg-white border border-gray-200 text-gray-900 hover:bg-gray-100 cursor-pointer h-5 w-5 rounded-[2px] flex items-center justify-center"
+                  >
+                    <EyeOff size={12} />
+                  </button>
+                </HoverPopover>
+              </div>
             )}
           </div>
           <VersionHeaderModel
@@ -331,6 +355,6 @@ export default memo(VersionHeader, (prevProps, nextProps) => {
     prevProps.dragIndex === nextProps.dragIndex &&
     areAnnotationsEqual(prevProps.annotations, nextProps.annotations) &&
     areMetricsEqual(prevProps.metrics, nextProps.metrics)
-    // Note: onReorderColumns, allMetricsPerKey, versionMetricsPerKey, and experiment are not compared as they should be stable or are complex objects
+    // Note: onReorderColumns, onHideVersion, allMetricsPerKey, versionMetricsPerKey, and experiment are not compared as they should be stable or are complex objects
   );
 });

@@ -1,6 +1,6 @@
 import contextlib
 import json
-from typing import Any, override
+from typing import Annotated, Any, override
 
 import pydantic_core
 from fastmcp.exceptions import ToolError
@@ -10,7 +10,7 @@ from fastmcp.server.dependencies import get_access_token
 from fastmcp.server.middleware import CallNext, Middleware, MiddlewareContext
 from fastmcp.tools.tool import Tool, ToolResult
 from mcp.types import CallToolRequestParams, ListToolsRequest
-from pydantic import ValidationError
+from pydantic import BeforeValidator, Field, ValidationError
 from structlog import get_logger
 from structlog.contextvars import bind_contextvars
 
@@ -27,6 +27,7 @@ from protocol.api._services.completion_service import CompletionService
 from protocol.api._services.deployment_service import DeploymentService
 from protocol.api._services.documentation_service import DocumentationService
 from protocol.api._services.experiment_service import ExperimentService
+from protocol.api._services.ids_service import IDType, sanitize_id
 from protocol.api._services.organization_service import OrganizationService
 from protocol.api._services.playground_service import PlaygroundService
 from protocol.api._services.view_service import ViewService
@@ -236,7 +237,11 @@ async def organization_service() -> OrganizationService:
 async def deployment_service() -> DeploymentService:
     deps = lifecycle_dependencies()
     tenant = await _authenticated_tenant()
-    return DeploymentService(deps.storage_builder.deployments(tenant.uid), deps.storage_builder.completions(tenant.uid))
+    return DeploymentService(
+        deps.storage_builder.deployments(tenant.uid),
+        deps.storage_builder.completions(tenant.uid),
+        deps.storage_builder.agents(tenant.uid),
+    )
 
 
 class CustomTokenVerifier(TokenVerifier):
@@ -260,3 +265,15 @@ class CustomTokenVerifier(TokenVerifier):
 
 def build_auth_provider() -> AuthProvider:
     return CustomTokenVerifier()
+
+
+def IdValidator(id_type: IDType):  # noqa: N802
+    def _validate(id: str) -> str:
+        return sanitize_id(id, id_type)
+
+    return BeforeValidator(_validate)
+
+
+type ExperimentID = Annotated[str, IdValidator(IDType.EXPERIMENT), Field(description="The id of the experiment")]
+type CompletionID = Annotated[str, IdValidator(IDType.COMPLETION), Field(description="The id of the completion")]
+type AgentID = Annotated[str, IdValidator(IDType.AGENT), Field(description="The id of the agent")]

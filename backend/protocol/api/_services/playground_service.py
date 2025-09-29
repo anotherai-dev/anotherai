@@ -35,7 +35,7 @@ from protocol.api._services.conversions import (
     version_request_from_domain,
     version_request_to_domain,
 )
-from protocol.api._services.utils_service import IDType, sanitize_id
+from protocol.api._services.ids_service import IDType, extract_id
 
 _log = get_logger(__name__)
 
@@ -58,19 +58,28 @@ class PlaygroundService:
         self._deployment_storage = deployment_storage
         self._event_router = event_router
 
-    async def _get_version_by_id(self, agent_id: str, version_id: str) -> DomainVersion:
-        id_type, id = sanitize_id(version_id)
+    async def _get_version_by_id(self, agent_id: str, version_id: str) -> VersionRequest:
+        id_type, id = extract_id(version_id)
         if not id_type:
+            if version_id.startswith("{"):
+                # Possible that the model decided to pass a version as string...
+                try:
+                    return VersionRequest.model_validate_json(id)
+                except ValidationError as e:
+                    raise BadRequestError(f"Invalid version: {e}") from e
+
             # Not sure what this is so we check if it's a hash
             id_type = IDType.VERSION if is_hash_32(id) else IDType.DEPLOYMENT
 
         match id_type:
             case IDType.VERSION:
+                # The double conversion to and from domain sucks here but is necessary
+                # Since the overrides will apply to the exposed version type
                 val, _ = await self._completion_storage.get_version_by_id(agent_id, id)
-                return val
+                return version_request_from_domain(val)
             case IDType.DEPLOYMENT:
                 deployment = await self._deployment_storage.get_deployment(id)
-                return deployment.version
+                return version_request_from_domain(deployment.version)
             case _:
                 raise BadRequestError(f"Invalid version id: {version_id}")
 
@@ -84,10 +93,7 @@ class PlaygroundService:
         experiment = await self._experiment_storage.get_experiment(experiment_id, include={"agent_id", "inputs"})
 
         if isinstance(version, str):
-            # The double conversion to and from domain sucks here but is necessary
-            # Since the overrides will apply to the exposed version type
-            from_storage = await self._get_version_by_id(experiment.agent_id, version)
-            base_version: VersionRequest = version_request_from_domain(from_storage)
+            base_version = await self._get_version_by_id(experiment.agent_id, version)
         else:
             base_version = version
 

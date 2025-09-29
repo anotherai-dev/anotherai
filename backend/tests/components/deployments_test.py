@@ -211,8 +211,12 @@ async def test_deployment_archive(test_api_client: IntegrationTestClient):
 
     # Try and deploy the version but for a different agent
     with pytest.raises(ToolError) as e:
+        await _create_deployment_via_mcp(test_api_client, "5144586608f55cda79e9d7df1ad179d1", agent_id="test-agent")
+    assert "Version 5144586608f55cda79e9d7df1ad179d1 not found for agent test-agent" in str(e.value)
+
+    with pytest.raises(ToolError) as e:
         await _create_deployment_via_mcp(test_api_client, version_id, agent_id="test-agent-2")
-    assert f"Version {version_id} not found for agent test-agent-2" in str(e.value)
+    assert "Agent test-agent-2 not found" in str(e.value)
 
     # Now deploy for real
     await _create_deployment_via_mcp(test_api_client, version_id, agent_id="test-agent")
