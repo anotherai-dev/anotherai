@@ -10,6 +10,7 @@ import {
   getValidCosts,
   getValidDurations,
 } from "@/components/utils/utils";
+import { useVersionHiding } from "@/hooks/useVersionHiding";
 import { Annotation, ExperimentWithLookups } from "@/types/models";
 import {
   getAllMetricsPerKey,
@@ -39,6 +40,9 @@ export function MatrixSection(props: Props) {
   // State for column order - initially ordered by sorted version index
   const [columnOrder, setColumnOrder] = useState<string[]>([]);
 
+  // Version hiding hook
+  const { hiddenVersionIds, hideVersion, showAllHiddenVersions, hasHiddenVersions } = useVersionHiding(experiment.id);
+
   // Update column order when sorted versions change
   useEffect(() => {
     setColumnOrder(sortedVersions.map((version) => version.id));
@@ -55,12 +59,13 @@ export function MatrixSection(props: Props) {
     [columnOrder]
   );
 
-  // Get versions in the current column order
+  // Get versions in the current column order, excluding hidden versions
   const orderedVersions = useMemo(() => {
     return columnOrder
+      .filter((versionId) => !hiddenVersionIds.includes(versionId))
       .map((versionId) => sortedVersions.find((v) => v.id === versionId))
       .filter(Boolean) as typeof sortedVersions;
-  }, [columnOrder, sortedVersions]);
+  }, [columnOrder, sortedVersions, hiddenVersionIds]);
 
   const { averagedMetricsPerVersion, allMetricsPerKey } = useMemo(() => {
     const averagedMetrics = getAveragedMetricsPerVersion(experiment, annotations);
@@ -163,6 +168,7 @@ export function MatrixSection(props: Props) {
           experiment={experiment}
           onReorderColumns={reorderColumns}
           dragIndex={dragIndex}
+          onHideVersion={hideVersion}
         />
       );
     });
@@ -224,11 +230,25 @@ export function MatrixSection(props: Props) {
     allMetricsPerKey,
     reorderColumns,
     sortedVersions,
+    hideVersion,
   ]);
 
   return (
     <div className="mb-8">
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">Experiment outputs</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold text-gray-900">Experiment outputs</h2>
+        {hasHiddenVersions && (
+          <button
+            onClick={showAllHiddenVersions}
+            className="bg-white border border-gray-200 text-gray-900 hover:bg-gray-100 cursor-pointer px-2 py-1 rounded-[2px] h-8 flex items-center justify-center shadow-sm shadow-black/5"
+            title={`Show ${hiddenVersionIds.length} hidden version${hiddenVersionIds.length === 1 ? "" : "s"}`}
+          >
+            <span className="text-xs font-medium">
+              Show {hiddenVersionIds.length} hidden version{hiddenVersionIds.length === 1 ? "" : "s"}
+            </span>
+          </button>
+        )}
+      </div>
       <TableComponent
         columnHeaders={tableData.columnHeaders}
         rowHeaders={tableData.rowHeaders}
