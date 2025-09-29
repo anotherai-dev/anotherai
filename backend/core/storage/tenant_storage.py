@@ -1,8 +1,13 @@
 from datetime import datetime
-from typing import Protocol
+from typing import NamedTuple, Protocol
 
 from core.domain.api_key import APIKey, CompleteAPIKey
 from core.domain.tenant_data import TenantData
+
+
+class AutomaticPayment(NamedTuple):
+    threshold: float
+    balance_to_maintain: float
 
 
 class TenantStorage(Protocol):
@@ -27,3 +32,4 @@ class TenantStorage(Protocol):
     async def decrement_credits(self, credits: float) -> TenantData: ...
     async def set_customer_id(self, customer_id: str) -> TenantData: ...
     async def clear_payment_failure(self): ...
+    async def update_automatic_payment(self, automatic_payment: AutomaticPayment | None) -> None: ...

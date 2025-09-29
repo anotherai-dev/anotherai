@@ -1,11 +1,10 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from core.domain.exceptions import BadRequestError
 from core.services.stripe.stripe_service import StripeService
-from core.utils.background import add_background_task
 from protocol._common.documentation import INCLUDE_PRIVATE_ROUTES
 from protocol.api._dependencies._lifecycle import LifecycleDependenciesDep
 from protocol.api._dependencies._services import PaymentServiceDep
@@ -42,7 +41,6 @@ async def add_payment_method(
     stripe_service: _StripeServiceDep,
     tenant: TenantDep,
     request: PaymentMethodRequest,
-    payment_service: PaymentServiceDep,
 ) -> PaymentMethodIdResponse:
     if not tenant.user or not tenant.user.email:
         raise BadRequestError("A user email is required")
@@ -51,8 +49,40 @@ async def add_payment_method(
         request.payment_method_id,
         tenant.user.email,
     )
-    # Triggering an automatic payment only if under the threshold
-    add_background_task(payment_service.decrement_credits(0))
     return PaymentMethodIdResponse(
         payment_method_id=payment_method_id,
+    )
+
+
+@router.delete("/payment-methods", description="Delete the payment method attached to the organization")
+async def delete_payment_method(
+    stripe_service: _StripeServiceDep,
+    tenant: TenantDep,
+) -> None:
+    await stripe_service.delete_payment_method(tenant)
+
+
+class CreatePaymentIntentRequest(BaseModel):
+    amount: float
+
+
+class PaymentIntentCreatedResponse(BaseModel):
+    client_secret: str = Field(
+        description="The stripe client secret for the payment intent, "
+        "that can be used by the client to retrieve the payment using the client secret and a publishable key.",
+    )
+    payment_intent_id: str
+
+
+@router.post("/payment-intents", description="Create a manual payment intent in Stripe for the organization")
+async def create_payment_intent(
+    request: CreatePaymentIntentRequest,
+    tenant: TenantDep,
+) -> PaymentIntentCreatedResponse:
+    payment_intent = await StripeService.create_payment_intent(tenant, request.amount, trigger="manual")
+    if not payment_intent.client_secret:
+        raise ValueError("Payment intent creation failed")
+    return PaymentIntentCreatedResponse(
+        client_secret=payment_intent.client_secret,
+        payment_intent_id=payment_intent.payment_intent_id,
     )

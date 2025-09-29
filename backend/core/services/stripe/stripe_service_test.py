@@ -5,10 +5,12 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 import stripe
 
+from core.domain.exceptions import BadRequestError
 from core.domain.tenant_data import TenantData
 from core.services.payment_service import PaymentService
 from core.services.stripe.stripe_service import StripeService
 from core.utils.background import wait_for_background_tasks
+from tests.fake_models import fake_tenant
 
 
 @pytest.fixture
@@ -27,6 +29,7 @@ def mock_stripe():
         mock.PaymentIntent = AsyncMock(spec=stripe.PaymentIntent)
         mock.Customer = AsyncMock(spec=stripe.Customer)
         mock.PaymentMethod = AsyncMock(spec=stripe.PaymentMethod)
+        mock.PaymentMethod.detach_async = AsyncMock(spec=stripe.PaymentMethod.detach_async)
         mock.CardError = stripe.CardError
 
         yield mock
@@ -38,13 +41,7 @@ def _mock_customer(payment_method: bool):
     customer.id = "cus_123"
     customer.invoice_settings = Mock()
     if payment_method:
-        customer.invoice_settings.default_payment_method = Mock()
-        customer.invoice_settings.default_payment_method.id = "pm_123"
-        customer.invoice_settings.default_payment_method.card = Mock()
-        customer.invoice_settings.default_payment_method.card.last4 = "4242"
-        customer.invoice_settings.default_payment_method.card.brand = "visa"
-        customer.invoice_settings.default_payment_method.card.exp_month = 12
-        customer.invoice_settings.default_payment_method.card.exp_year = 2025
+        customer.invoice_settings.default_payment_method = _mock_payment_method()
     else:
         customer.invoice_settings.default_payment_method = None
     return customer
@@ -60,6 +57,11 @@ def _payment_intent():
 def _mock_payment_method():
     payment_method = AsyncMock()
     payment_method.id = "pm_123"
+    payment_method.card = Mock()
+    payment_method.card.last4 = "4242"
+    payment_method.card.brand = "visa"
+    payment_method.card.exp_month = 12
+    payment_method.card.exp_year = 2025
     return payment_method
 
 
@@ -186,4 +188,75 @@ class TestAddPaymentMethod:
                 "bla",
                 "pm_123",
                 "test@example.com",
+            )
+
+
+class TestDeletePaymentMethod:
+    async def test_delete_payment_method(
+        self,
+        stripe_service: StripeService,
+        mock_tenant_storage: AsyncMock,
+        mock_stripe: Mock,
+    ):
+        customer = _mock_customer(payment_method=True)
+        mock_stripe.Customer.retrieve_async.return_value = customer
+
+        data = fake_tenant(customer_id="cus_123")
+
+        await stripe_service.delete_payment_method(data)
+
+        mock_tenant_storage.update_automatic_payment.assert_called_once_with(None)
+        mock_stripe.PaymentMethod.detach_async.assert_called_once_with("pm_123")
+
+
+class TestCreatePaymentIntent:
+    async def test_create_payment_intent(
+        self,
+        mock_stripe: Mock,
+    ):
+        # Create a fake payment method
+        customer = _mock_customer(payment_method=True)
+        mock_stripe.Customer.retrieve_async.return_value = customer
+        mock_stripe.PaymentIntent.create_async.return_value = _payment_intent()
+        data = fake_tenant(customer_id="cus_123")
+
+        payment_intent = await StripeService.create_payment_intent(
+            data,
+            100.0,
+            trigger="manual",
+        )
+
+        assert payment_intent.client_secret == "secret_123"  # noqa: S105
+        assert payment_intent.payment_intent_id == "pi_123"
+
+        mock_stripe.PaymentIntent.create_async.assert_called_once_with(
+            amount=10000,  # $100.00 in cents
+            currency="usd",
+            customer="cus_123",
+            payment_method="pm_123",
+            setup_future_usage="off_session",
+            automatic_payment_methods={"enabled": True, "allow_redirects": "never"},
+            metadata={
+                "tenant": "test-tenant",
+                "tenant_uid": "1",
+                "organization_id": "test-org",
+                "owner_id": "test-owner",
+                "trigger": "manual",
+            },
+        )
+
+    async def test_create_payment_intent_no_payment_method(
+        self,
+        mock_stripe: Mock,
+    ):
+        tenant = fake_tenant(customer_id="cus_123")
+
+        customer = _mock_customer(payment_method=False)
+        mock_stripe.Customer.retrieve_async.return_value = customer
+
+        with pytest.raises(BadRequestError, match="Organization has no default payment method"):
+            await StripeService.create_payment_intent(
+                tenant,
+                100.0,
+                trigger="manual",
             )
