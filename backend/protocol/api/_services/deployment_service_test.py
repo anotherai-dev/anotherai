@@ -4,8 +4,10 @@ import pytest
 
 from core.domain.exceptions import BadRequestError, ObjectNotFoundError
 from core.domain.version import Version
+from core.storage.agent_storage import AgentStorage
 from core.storage.completion_storage import CompletionStorage
 from core.storage.deployment_storage import DeploymentStorage
+from core.utils.hash import hash_string
 from protocol.api._api_models import Deployment
 from protocol.api._services.deployment_service import DeploymentService
 from tests.fake_models import fake_deployment, fake_version
@@ -25,8 +27,9 @@ def mock_completions_storage() -> CompletionStorage:
 def deployment_service(
     mock_deployments_storage: DeploymentStorage,
     mock_completions_storage: CompletionStorage,
+    mock_agent_storage: AgentStorage,
 ) -> DeploymentService:
-    return DeploymentService(mock_deployments_storage, mock_completions_storage)
+    return DeploymentService(mock_deployments_storage, mock_completions_storage, mock_agent_storage)
 
 
 class TestUpsertDeployment:
@@ -39,7 +42,7 @@ class TestUpsertDeployment:
         """Test creating a new deployment when deployment_id doesn't exist."""
         # Arrange
         agent_id = "agent-123"
-        version_id = "version-456"
+        version_id = hash_string("version-456")
         deployment_id = "deployment-789"
         author_name = "test-author"
         completion_id = "completion-abc"
@@ -77,7 +80,7 @@ class TestUpsertDeployment:
         """Test returning confirmation URL when deployment exists and schemas are compatible."""
         # Arrange
         agent_id = "agent-123"
-        version_id = "version-456"
+        version_id = hash_string("version-456")
         deployment_id = "deployment-789"
         author_name = "test-author"
         completion_id = "completion-abc"
@@ -128,7 +131,7 @@ class TestUpsertDeployment:
         """Test failure when new version has no input schema but existing deployment does."""
         # Arrange
         agent_id = "agent-123"
-        version_id = "version-456"
+        version_id = hash_string("version-456")
         deployment_id = "deployment-789"
         author_name = "test-author"
         completion_id = "completion-abc"
@@ -159,7 +162,7 @@ class TestUpsertDeployment:
         """Test failure when new version has input schema but existing deployment doesn't."""
         # Arrange
         agent_id = "agent-123"
-        version_id = "version-456"
+        version_id = hash_string("version-456")
         deployment_id = "deployment-789"
         author_name = "test-author"
         completion_id = "completion-abc"
@@ -190,7 +193,7 @@ class TestUpsertDeployment:
         """Test failure when new version has no output schema but existing deployment does."""
         # Arrange
         agent_id = "agent-123"
-        version_id = "version-456"
+        version_id = hash_string("version-456")
         deployment_id = "deployment-789"
         author_name = "test-author"
         completion_id = "completion-abc"
@@ -225,7 +228,7 @@ class TestUpsertDeployment:
         """Test failure when new version has output schema but existing deployment doesn't."""
         # Arrange
         agent_id = "agent-123"
-        version_id = "version-456"
+        version_id = hash_string("version-456")
         deployment_id = "deployment-789"
         author_name = "test-author"
         completion_id = "completion-abc"
@@ -260,7 +263,7 @@ class TestUpsertDeployment:
         """Test failure when input schemas have different structures."""
         # Arrange
         agent_id = "agent-123"
-        version_id = "version-456"
+        version_id = hash_string("version-456")
         deployment_id = "deployment-789"
         author_name = "test-author"
         completion_id = "completion-abc"
@@ -292,7 +295,7 @@ class TestUpsertDeployment:
         """Test failure when output schemas have different structures."""
         # Arrange
         agent_id = "agent-123"
-        version_id = "version-456"
+        version_id = hash_string("version-456")
         deployment_id = "deployment-789"
         author_name = "test-author"
         completion_id = "completion-abc"
@@ -327,7 +330,7 @@ class TestUpsertDeployment:
         """Test success when both deployments have no schemas (null values)."""
         # Arrange
         agent_id = "agent-123"
-        version_id = "version-456"
+        version_id = hash_string("version-456")
         deployment_id = "deployment-789:Hello#/bla"
         author_name = "test-author"
         completion_id = "completion-abc"
@@ -360,3 +363,18 @@ class TestUpsertDeployment:
         assert "http://localhost:3000/deploy" in result
         assert "deployment_id=deployment-789%3AHello%23%2Fbla" in result
         assert f"completion_id={completion_id}" in result
+
+    async def test_agent_not_found(
+        self,
+        deployment_service: DeploymentService,
+        mock_completions_storage: Mock,
+        mock_deployments_storage: Mock,
+        mock_agent_storage: Mock,
+    ):
+        mock_agent_storage.get_agent.side_effect = ObjectNotFoundError("Agent")
+
+        # Act & Assert
+        with pytest.raises(BadRequestError) as exc_info:
+            await deployment_service.upsert_deployment("agent-123", hash_string("bla"), "deployment-789", "test-author")
+
+        assert "Agent agent-123 not found" in str(exc_info.value)

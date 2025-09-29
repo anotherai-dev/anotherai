@@ -236,7 +236,11 @@ async def organization_service() -> OrganizationService:
 async def deployment_service() -> DeploymentService:
     deps = lifecycle_dependencies()
     tenant = await _authenticated_tenant()
-    return DeploymentService(deps.storage_builder.deployments(tenant.uid), deps.storage_builder.completions(tenant.uid))
+    return DeploymentService(
+        deps.storage_builder.deployments(tenant.uid),
+        deps.storage_builder.completions(tenant.uid),
+        deps.storage_builder.agents(tenant.uid),
+    )
 
 
 class CustomTokenVerifier(TokenVerifier):
