@@ -133,6 +133,25 @@ async def add_versions_to_experiment(
     - the version is added as is
     - a version is added per provided override
 
+    IMPORTANT for image and audio inputs:
+    When using template variables for images or audio, you MUST use the correct message content structure.
+    The template variable goes in the image_url or input_audio field, NOT in a text string.
+
+    CORRECT format for image inputs:
+    {
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "Please describe this image:"},
+            {"type": "image_url", "image_url": {"url": "{{image_url}}"}}
+        ]
+    }
+
+    INCORRECT format (will not work):
+    {
+        "role": "user",
+        "content": "Please describe {{image_url}}"  # Wrong - treats as text
+    }
+
     Returns the ids of the added versions.
     """
     return await (await _mcp_utils.playground_service()).add_versions_to_experiment(experiment_id, version, overrides)
