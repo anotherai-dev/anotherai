@@ -111,7 +111,7 @@ async def add_experiment_result(
 
 @mcp.tool(annotations=ToolAnnotations(idempotentHint=True))
 async def add_versions_to_experiment(
-    experiment_id: str,
+    experiment_id: _mcp_utils.ExperimentID,
     version: Annotated[
         str | VersionRequest,
         Field(
@@ -150,7 +150,7 @@ When dealing with local images or audio files, instead of attempting to pass bas
 Returns the ids of the added inputs.""",
 )
 async def add_inputs_to_experiment(
-    experiment_id: str,
+    experiment_id: _mcp_utils.ExperimentID,
     inputs: Annotated[
         list[Input] | None,
         Field(
@@ -179,7 +179,7 @@ async def add_inputs_to_experiment(
 
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def get_experiment(
-    id: Annotated[str, Field(description="the id of the experiment")],
+    id: _mcp_utils.ExperimentID,
     version_ids: Annotated[list[str] | None, Field(description="version ids to filter the experiment outputs")] = None,
     input_ids: Annotated[list[str] | None, Field(description="input ids to filter the experiment outputs")] = None,
     include: Annotated[
@@ -250,9 +250,9 @@ async def list_agents() -> Page[Agent]:
 
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def get_annotations(
-    experiment_id: str | None = None,
-    completion_id: str | None = None,
-    agent_id: str | None = None,
+    experiment_id: _mcp_utils.ExperimentID | None = None,
+    completion_id: _mcp_utils.CompletionID | None = None,
+    agent_id: _mcp_utils.AgentID | None = None,
     since: str | None = None,
 ) -> Page[Annotation]:
     """

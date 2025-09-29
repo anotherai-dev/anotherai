@@ -18,7 +18,7 @@ from protocol.api._services.conversions import (
     create_experiment_to_domain,
     experiment_from_domain,
 )
-from protocol.api._services.utils_service import IDType, sanitize_ids
+from protocol.api._services.ids_service import IDType, sanitize_ids
 
 
 @final

@@ -2,6 +2,7 @@
 
 from typing import Any
 from unittest.mock import Mock, patch
+from uuid import UUID
 
 import pytest
 
@@ -14,7 +15,7 @@ from protocol.api._services.playground_service import (
     _validate_version,
     _version_request_with_override,
 )
-from tests.fake_models import fake_experiment, fake_input, fake_version
+from tests.fake_models import fake_deployment, fake_experiment, fake_input, fake_version
 
 
 @pytest.fixture
@@ -90,6 +91,50 @@ class TestValidateVersion:
         v = VersionRequest(model="gpt-4o-mini-latest")
         with pytest.raises(BadRequestError, match="Versions must have an explicit prompt parameter"):
             _validate_version(v)
+
+
+class TestVersionById:
+    async def test_deployment(
+        self,
+        playground_service: PlaygroundService,
+        mock_deployment_storage: Mock,
+        mock_completion_storage: Mock,
+    ):
+        """Version does not conform to hash so we guess it's a deployment"""
+        d = fake_deployment()
+        mock_deployment_storage.get_deployment.return_value = d
+
+        v = await playground_service._get_version_by_id("test-agent", "test-deployment")
+
+        assert v.model == d.version.model
+
+        mock_completion_storage.get_version_by_id.assert_not_called()
+        mock_deployment_storage.get_deployment.assert_called_once_with("test-deployment")
+
+    async def test_version_id(
+        self,
+        playground_service: PlaygroundService,
+        mock_completion_storage: Mock,
+        mock_deployment_storage: Mock,
+    ):
+        v = fake_version()
+        mock_completion_storage.get_version_by_id.return_value = v, UUID(int=0)
+        found = await playground_service._get_version_by_id("test-agent", v.id)
+        assert found.model == v.model
+        mock_completion_storage.get_version_by_id.assert_called_once_with("test-agent", v.id)
+        mock_deployment_storage.get_deployment.assert_not_called()
+
+    async def test_serialized_version(
+        self,
+        playground_service: PlaygroundService,
+        mock_completion_storage: Mock,
+        mock_deployment_storage: Mock,
+    ):
+        found = await playground_service._get_version_by_id("test-agent", '{"model": "gpt-4o-mini-latest"}')
+
+        assert found.model == "gpt-4o-mini-latest"
+        mock_completion_storage.get_version_by_id.assert_not_called()
+        mock_deployment_storage.get_deployment.assert_not_called()
 
 
 class TestVersionWithOverride:

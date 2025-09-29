@@ -261,7 +261,7 @@ class Annotation(BaseModel):
     )
 
     class Target(BaseModel):
-        completion_id: UUID | None = Field(
+        completion_id: str | None = Field(
             default=None,
             description="The unique identifier of the completion that the annotation is associated with, if any. "
             "At least one of completion_id or experiment_id must be present.",
