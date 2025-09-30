@@ -28,7 +28,7 @@ The easiest way to create a new agent is to ask your preferred AI assistant to b
 Start by describing what your agent should do:
 
 ```
-Create a new AnotherAI agent that provides a description for a given image
+Create a new AnotherAI agent that provides a list of detected foods and their approximate calorie count from a given image
 ```
 
 #### Adding Performance Requirements
@@ -38,13 +38,13 @@ If you have other criteria or constraints for your agent, you can include them i
 **For customer-facing agents that need fast responses:**
 
 ```
-Create a new AnotherAI agent that provides a description for a given image where the average response time is less than 4 seconds
+Create a new AnotherAI agent that provides a list of detected foods and their approximate calorie count from a given imagewhere the average response time is less than 4 seconds
 ```
 
 **For high-volume agents that need to be cost-effective:**
 
 ```
-Create a new AnotherAI agent that provides a description for a given image that costs less than $5 for 1000 requests
+Create a new AnotherAI agent that provides a list of detected foods and their approximate calorie count from a given image that costs less than $5 for 1000 requests
 ```
 
 Your AI assistant will be able to construct the agent's code, and will be able to use AnotherAI to access 100+ different models to find the best configuration to help you achieve your goals.
@@ -58,7 +58,7 @@ You can also add custom metadata to your agents to help organize and track them.
 - **User identication**: include a user_id customer_email key. 
 
 ```
-Create a new AnotherAI agent that provides a description for a given image and include a customer_id metadata key.
+Create a new AnotherAI agent that provides a list of detected foods and their approximate calorie count from a given image and include a customer_id metadata key.
 ```
 
 **Agent IDs in Metadata**
@@ -67,7 +67,7 @@ When your AI assistant creates an agent, it automatically assigns an `agent_id` 
 
 You might ask your AI assistant a question about a specific agent, like:
 ```
-How much is anotherai/agent/image-description-generator costing me this month?
+How much is anotherai/agent/food-analyzer costing me this month?
 ```
 (if you're curious about costs of agents, see our [metrics](/use-cases/fundamentals/metrics) page!)
 
@@ -149,8 +149,8 @@ Comparing different prompts is one of the most effective ways to improve your ag
 Example:
 
 ```
-Look at the prompt of anotherai/agent/image-description-generator and create an experiment in AnotherAI 
-that compares the current prompt with a new prompt that better emphasizes direct over flowery descriptions.
+Look at the prompt of anotherai/agent/food-analyzer and create an experiment in AnotherAI 
+that compares the current prompt with a new prompt that ensures the food is listed from largest to smallest detected quantity.
 ```
 
 Your AI assistant will create the experiment and give you an initial analysis of the results and well as a URL to view the results in the AnotherAI web app.
@@ -168,8 +168,8 @@ Different models excel at different tasks. AnotherAI supports over 100 different
 Example:
 
 ```
-Create an AnotherAI experiment to help me find a faster model for anotherai/agent/image-description-generator,
-but still maintains the clear and concise description style as my current model.
+Create an AnotherAI experiment to help me find a faster model for anotherai/agent/food-analyzer,
+but still maintains the clear and accurate analysis as my current model.
 ```
 
 If you have a specific model in mind that you want to try - **for example, a newly released model** - you can ask your AI assistant to help you test that model against your existing agent version. You can always request that your AI assistant uses inputs from existing completions, to ensure that you're testing with real, production data. 
@@ -177,7 +177,7 @@ If you have a specific model in mind that you want to try - **for example, a new
 Example:
 
 ```
-Can you retry the last 5 completions of anotherai/agent/image-description-generator and compare the outputs with
+Can you retry the last 5 completions of anotherai/agent/food-analyzer and compare the outputs with
 GPT 5 mini?
 ```
 
@@ -213,7 +213,7 @@ Temperature is the most important parameter to experiment with after prompts and
 Example:
 
 ```
-Test my image-description-generator agent with temperatures 0.2, 0.5, and 0.8 to find
+Test my food-analyzer agent with temperatures 0.2, 0.5, and 0.8 to find
 the right balance between creativity and professionalism
 ```
 
