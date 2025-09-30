@@ -376,7 +376,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             display_name="o3 (2025-04-16)",
             supports_json_mode=True,
             supports_input_image=True,
-            supports_input_pdf=True,
+            supports_input_pdf=False,
             supports_input_audio=False,
             supports_structured_output=True,
             release_date=date(2025, 4, 16),
