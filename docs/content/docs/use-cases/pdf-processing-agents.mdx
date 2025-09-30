@@ -84,13 +84,11 @@ In the cases above where certain constraints were specified, your AI assistant w
 
 For the prompt requesting a fast agent:
 
-TODO: UPDATE TO SHOW PDF AGENT
-![Fast models experiment](/images/checking-new-models-experiment.png)
+![Fast models experiment](/images/pdf-extraction-fast-models.png)
 
 For the prompt requesting a cost-effective agent:
 
-TODO: UPDATE TO SHOW PDF AGENT
-![Cost-effective models experiment](/images/cost-optimization-experiment.png)
+![Cost-effective models experiment](/images/pdf-extraction-low-cost.png)
 
 If you find there is additional criteria you want to test, you can always ask your AI assistant to create additional experiments. The most common parameters to experiment with are prompts and models, however you can also experiment with changes to other parameters like temperature. 
 
@@ -152,18 +150,16 @@ Example:
 
 ```
 Look at the prompt of anotherai/agent/pdf-extractor and create an experiment in AnotherAI
-that compares the current prompt with a new prompt that better emphasizes extracting structured data.
+that compares the current prompt with a new prompt that requests the output only include extract information and no intro from the AI.
 ```
 
 Your AI assistant will create the experiment and give you an initial analysis of the results and well as a URL to view the results in the AnotherAI web app.
 
-TODO: UPDATE TO SHOW PDF AGENT
-![Terminal output showing experiment creation](/images/experiment-prompt-enhancement-terminal.png)
+![Terminal output showing experiment creation](/images/pdf-extraction-prompt-enhancement-terminal.png)
 
 You can use the provided URL to view the results in the AnotherAI web app to perform manual analysis of the results.
 
-TODO: UPDATE TO SHOW PDF AGENT
-![Experiment prompts comparison](/images/experiment-prompts-comparison.png)
+![Experiment prompts comparison](/images/pdf-extraction-prompt-compare.png)
 
 ### Models
 
@@ -182,11 +178,10 @@ Example:
 
 ```
 Can you retry the last 5 completions of anotherai/agent/pdf-extractor and compare the outputs with
-GPT 5 mini?
+Magistral Medium 1.2 (the most recently released model with PDF support)?
 ```
 
-TODO: UPDATE TO SHOW PDF AGENT
-![Model comparison experiment](/images/model-comparison-experiment.png)
+![Model comparison experiment](/images/pdf-extraction-new-model.png)
 
 ### Other Parameters
 
@@ -222,13 +217,11 @@ Test my pdf-extractor agent with temperatures 0.2, 0.5, and 0.8 to find
 the right balance between consistency and flexibility in data extraction
 ```
 
-TODO: UPDATE TO SHOW PDF AGENT
-![Email Rewriter Temperature Experiment](/images/email-rewriter-temperature-experiment.png)
+![PDF Extraction Temperature Experiment](/images/pdf-extraction-temperature-experiment.png)
 
 ### Managing Large Experiments with Claude Code
 If you're testing an agent that has a large system prompt and/or very long inputs, you may encounter token limit issues with the `get_experiment` MCP tool that impacts Claude Code's ability to provide accurate insights on your agent.
 
-TODO: UPDATE TO SHOW PDF AGENT
 ![Claude Code Token Limit Error](/images/claude-code-token-limit-error.png)
 
 In this case, you can manually increase Claude Code's output token limit.
@@ -275,21 +268,18 @@ Or if adding annotations to an experiment later:
 <Step>
 Locate the "Add Annotation" button under each completion's output. Select the button to open a text box where you can add your feedback about the content of that specific completion.
 
-TODO: UPDATE TO SHOW PDF AGENT
 ![Add Annotation Button on Completion Output](/images/add-annotation-completion-output.png)
 </Step>
 
 <Step>
 To annotate individual fields within the output, hover over the field you want to annotate and select the "Add Annotation" button.
 
-TODO: UPDATE TO SHOW PDF AGENT
 ![Add Annotation on Individual Field](/images/add-annotation-individual-field.png)
 </Step>
 
 <Step>
 You can also add annotations to the model, prompt, output schema (if structured output is enabled for the agent), and other parameters like temperature, top_p, etc.
 
-TODO: UPDATE TO SHOW PDF AGENT
 ![Add Annotation on Parameters](/images/add-annotation-parameters.png)
 </Step>
 
