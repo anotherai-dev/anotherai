@@ -1,14 +1,17 @@
 import os
-from typing import final
+from typing import Protocol, final
 
 from structlog import get_logger
 
 from core.domain.events import EventRouter
 from core.providers._base.httpx_provider_base import HTTPXProviderBase
 from core.providers.factory.abstract_provider_factory import AbstractProviderFactory
+from core.services.email_service import EmailService
 from core.services.user_manager import UserManager
+from core.services.user_service import OrganizationDetails, UserDetails, UserService
 from core.storage.kv_storage import KVStorage
 from core.storage.storage_builder import StorageBuilder
+from core.storage.tenant_storage import TenantStorage
 from core.utils.background import wait_for_background_tasks
 from core.utils.signature_verifier import (
     JWKSetSignatureVerifier,
@@ -28,7 +31,7 @@ class LifecycleDependencies:
         self,
         storage_builder: StorageBuilder,
         provider_factory: AbstractProviderFactory,
-        user_manager: UserManager,
+        user_manager: "_UserHandler",
     ):
         self.storage_builder = storage_builder
         self.provider_factory = provider_factory
@@ -45,6 +48,7 @@ class LifecycleDependencies:
         from core.utils import remote_cached
 
         remote_cached.shared_cache = self._kv_storage
+        self._email_service_builder = _default_email_service_builder()
 
     async def close(self):
         # TODO: not great ownership here, the objects are passed as parameters but we are closing them here
@@ -57,6 +61,9 @@ class LifecycleDependencies:
 
     def system_event_router(self) -> EventRouter:
         return self._system_event_router
+
+    def email_service(self, tenant_uid: int) -> EmailService:
+        return self._email_service_builder(self.storage_builder.tenants(tenant_uid), self._user_manager)
 
     shared: "LifecycleDependencies | None" = None
 
@@ -108,18 +115,55 @@ async def _default_storage_builder() -> StorageBuilder:
     return await DefaultStorageBuilder.create()
 
 
-def _default_user_manager() -> UserManager:
+class _UserHandler(UserManager, UserService, Protocol):
+    pass
+
+
+def _default_user_manager() -> _UserHandler:
     if clerk_secret := os.environ.get("CLERK_SECRET"):
         from core.services.clerk.clerk_user_manager import ClerkUserManager
 
         return ClerkUserManager(clerk_secret)
     _log.warning("No user manager configured, using noop")
 
-    class NoopUserManager(UserManager):
+    class NoopUserManager(_UserHandler):
         async def close(self):
             pass
 
         async def validate_oauth_token(self, token: str) -> str:
             raise NotImplementedError("NoopUserManager does not support oauth tokens")
 
+        async def get_organization(self, org_id: str) -> OrganizationDetails:
+            raise NotImplementedError("NoopUserManager does not support organizations")
+
+        async def get_org_admins(self, org_id: str) -> list[UserDetails]:
+            raise NotImplementedError("NoopUserManager does not support org admins")
+
+        async def get_user(self, user_id: str) -> UserDetails:
+            raise NotImplementedError("NoopUserManager does not support users")
+
     return NoopUserManager()
+
+
+def _default_email_service_builder():
+    if loops_api_key := os.environ.get("LOOPS_API_KEY"):
+        from core.services.loops.loops_email_service import LoopsEmailService
+
+        def _build(tenant_storage: TenantStorage, user_service: UserService):
+            return LoopsEmailService(loops_api_key, tenant_storage, user_service)
+
+        return _build
+    _log.warning("No email service configured, using noop")
+
+    class NoopEmailService(EmailService):
+        async def send_payment_failure_email(self) -> None:
+            _log.warning("NoopEmailService does not support payment failure emails")
+
+        async def send_low_credits_email(self) -> None:
+            _log.warning("NoopEmailService does not support low credits emails")
+
+        @classmethod
+        def build(cls, tenant_storage: TenantStorage, user_service: UserService):
+            return cls()
+
+    return NoopEmailService.build

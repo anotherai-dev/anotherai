@@ -1,9 +1,10 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Header, Request
 from pydantic import BaseModel, Field
 
 from core.domain.exceptions import BadRequestError
+from core.services.payment_service import PaymentService
 from core.services.stripe.stripe_service import PaymentMethodResponse, StripeService
 from protocol._common.documentation import INCLUDE_PRIVATE_ROUTES
 from protocol.api._dependencies._lifecycle import LifecycleDependenciesDep
@@ -30,6 +31,7 @@ def _stripe_service(
     return StripeService(
         tenant_storage=dependencies.storage_builder.tenants(tenant.uid),
         payment_service=payment_service,
+        email_service=dependencies.email_service(tenant.uid),
     )
 
 
@@ -112,4 +114,28 @@ async def update_automatic_payments(
         opt_in=request.opt_in,
         threshold=request.threshold,
         balance_to_maintain=request.balance_to_maintain,
+    )
+
+
+async def _stripe_service_builder(dependencies: LifecycleDependenciesDep, tenant_uid: int) -> StripeService:
+    tenant_storage = dependencies.storage_builder.tenants(tenant_uid)
+    payment_service = PaymentService(tenant_storage=tenant_storage)
+    email_service = dependencies.email_service(tenant_uid)
+    return StripeService(
+        tenant_storage=tenant_storage,
+        payment_service=payment_service,
+        email_service=email_service,
+    )
+
+
+@router.post("/stripe/webhook")
+async def stripe_webhook(
+    request: Request,
+    stripe_signature: Annotated[str, Header(alias="Stripe-Signature")],
+    dependencies: LifecycleDependenciesDep,
+) -> None:
+    await StripeService.stripe_webhook(
+        lambda uid: _stripe_service_builder(dependencies, uid),
+        request,
+        stripe_signature,
     )

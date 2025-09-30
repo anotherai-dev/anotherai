@@ -10,6 +10,7 @@ from structlog import get_logger
 
 from core.domain.exceptions import BadRequestError, InternalError, ObjectNotFoundError
 from core.domain.tenant_data import TenantData
+from core.services.email_service import EmailService
 from core.services.payment_service import PaymentService
 from core.storage.tenant_storage import AutomaticPayment, TenantStorage
 from core.utils.background import add_background_task
@@ -34,9 +35,10 @@ stripe.api_key = os.environ.get("STRIPE_API_KEY")
 
 
 class StripeService:
-    def __init__(self, tenant_storage: TenantStorage, payment_service: PaymentService):
+    def __init__(self, tenant_storage: TenantStorage, payment_service: PaymentService, email_service: EmailService):
         self._tenant_storage = tenant_storage
         self._payment_service = payment_service
+        self._email_service = email_service
 
     async def _create_customer(self, user_email: str) -> str:
         org_settings = await self._tenant_storage.current_tenant()
@@ -234,8 +236,7 @@ class StripeService:
             failure_reason=failure_reason,
         )
 
-        # TODO: send email
-        # add_background_task(self._email_service.send_payment_failure_email(tenant))
+        add_background_task(self._email_service.send_payment_failure_email())
 
     async def handle_payment_failure(self, metadata: dict[str, str], failure_reason: str):
         parsed_metadata = _IntentMetadata.model_validate(metadata)
