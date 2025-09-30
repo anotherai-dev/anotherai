@@ -84,9 +84,9 @@ class ObjectNotFoundError(DefaultError):
     code = "object_not_found"
     default_capture = False
 
-    def __init__(self, object_type: str, **kwargs: Any):
+    def __init__(self, object_type: str, msg: str | None = None, **kwargs: Any):
         self.object_type = object_type
-        super().__init__(msg=f"{object_type} not found", **kwargs)
+        super().__init__(msg=msg or f"{object_type} not found", **kwargs)
 
 
 class EntityTooLargeError(DefaultError):

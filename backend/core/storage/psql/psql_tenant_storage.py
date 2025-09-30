@@ -1,7 +1,7 @@
 import secrets
 import uuid
 from datetime import UTC, datetime
-from typing import Any, override
+from typing import Any, Literal, override
 
 import asyncpg
 from asyncpg import UniqueViolationError
@@ -11,7 +11,7 @@ from core.domain.api_key import APIKey, CompleteAPIKey
 from core.domain.exceptions import DuplicateValueError, InternalError, ObjectNotFoundError
 from core.domain.tenant_data import TenantData
 from core.storage.psql._psql_base_storage import JSONList, PsqlBaseStorage
-from core.storage.tenant_storage import TenantStorage
+from core.storage.tenant_storage import AutomaticPayment, TenantStorage
 from core.utils.fields import datetime_zero
 from core.utils.hash import secure_hash
 from core.utils.strings import slugify
@@ -135,7 +135,7 @@ class PsqlTenantStorage(PsqlBaseStorage, TenantStorage):
                 tenant.uid,
             )
             if not row:
-                raise ObjectNotFoundError(f"Tenant with uid {tenant.uid} not found")
+                raise self._tenant_not_found_error()
             return self._validate(_TenantRow, row).to_domain()
 
     @override
@@ -206,6 +206,10 @@ class PsqlTenantStorage(PsqlBaseStorage, TenantStorage):
             return [self._validate(_APIKeyRow, row).to_domain() for row in rows]
 
     @override
+    async def current_tenant(self) -> TenantData:
+        return await self.tenant_by_uid(self._tenant_uid)
+
+    @override
     async def decrement_credits(self, credits: float):
         async with self._pool.acquire() as connection:
             row = await connection.fetchrow(
@@ -218,6 +222,158 @@ class PsqlTenantStorage(PsqlBaseStorage, TenantStorage):
             if not row:
                 raise ObjectNotFoundError(f"Tenant with uid {self._tenant_uid} not found")
             return self._validate(_TenantRow, row).to_domain()
+
+    @override
+    async def set_customer_id(self, customer_id: str) -> TenantData:
+        async with self._pool.acquire() as connection:
+            row = await connection.fetchrow(
+                """
+                UPDATE tenants SET stripe_customer_id = $1 WHERE uid = $2 RETURNING *
+                """,
+                customer_id,
+                self._tenant_uid,
+            )
+            if not row:
+                raise ObjectNotFoundError(f"Tenant with uid {self._tenant_uid} not found")
+            return self._validate(_TenantRow, row).to_domain()
+
+    @override
+    async def clear_payment_failure(self):
+        async with self._pool.acquire() as connection:
+            uid = await connection.fetchval(
+                """
+                UPDATE tenants SET
+                    payment_failure_date = NULL,
+                    payment_failure_code = NULL,
+                    payment_failure_reason = NULL
+                WHERE uid = $1
+                RETURNING uid
+                """,
+                self._tenant_uid,
+            )
+            if not uid:
+                raise self._tenant_not_found_error()
+
+    def _tenant_not_found_error(self) -> ObjectNotFoundError:
+        return ObjectNotFoundError(object_type="tenant", msg=f"Tenant with uid {self._tenant_uid} not found")
+
+    @override
+    async def update_automatic_payment(self, automatic_payment: AutomaticPayment | None) -> None:
+        async with self._pool.acquire() as connection:
+            if automatic_payment is None:
+                uid = await connection.fetchval(
+                    """
+                    UPDATE tenants SET
+                        automatic_payment_enabled = FALSE,
+                        automatic_payment_threshold = NULL,
+                        automatic_payment_balance_to_maintain = NULL
+                    WHERE uid = $1
+                    RETURNING uid
+                    """,
+                    self._tenant_uid,
+                )
+            else:
+                uid = await connection.fetchval(
+                    """
+                    UPDATE tenants SET
+                        automatic_payment_enabled = TRUE,
+                        automatic_payment_threshold = $1,
+                        automatic_payment_balance_to_maintain = $2
+                    WHERE uid = $3
+                    RETURNING uid
+                    """,
+                    automatic_payment.threshold,
+                    automatic_payment.balance_to_maintain,
+                    self._tenant_uid,
+                )
+            if not uid:
+                raise self._tenant_not_found_error()
+
+    @override
+    async def add_credits(self, credits: float) -> TenantData:
+        async with self._pool.acquire() as connection:
+            row = await connection.fetchrow(
+                """
+                UPDATE tenants SET current_credits_usd = current_credits_usd + $1 WHERE uid = $2 RETURNING *
+                """,
+                credits,
+                self._tenant_uid,
+            )
+            if not row:
+                raise self._tenant_not_found_error()
+            return self._validate(_TenantRow, row).to_domain()
+
+    @override
+    async def unlock_payment_for_success(self, amount: float) -> None:
+        async with self._pool.acquire() as connection:
+            uid = await connection.fetchval(
+                """
+                UPDATE tenants SET
+                    locked_for_payment = FALSE,
+                    current_credits_usd = current_credits_usd + $1
+                WHERE uid = $2
+                RETURNING uid
+                """,
+                amount,
+                self._tenant_uid,
+            )
+            if not uid:
+                raise self._tenant_not_found_error()
+
+    @override
+    async def unlock_payment_for_failure(
+        self,
+        now: datetime,
+        code: Literal["internal", "payment_failed"],
+        failure_reason: str,
+    ):
+        async with self._pool.acquire() as connection:
+            uid = await connection.fetchval(
+                """
+                UPDATE tenants SET
+                    locked_for_payment = FALSE,
+                    payment_failure_date = $1,
+                    payment_failure_code = $2,
+                    payment_failure_reason = $3
+                WHERE uid = $4
+                RETURNING uid
+                """,
+                self._map_value(now),
+                code,
+                failure_reason,
+                self._tenant_uid,
+            )
+            if not uid:
+                raise self._tenant_not_found_error()
+
+    @override
+    async def check_unlocked_payment_failure(self) -> TenantData.PaymentFailure | None:
+        async with self._pool.acquire() as connection:
+            row = await connection.fetchrow(
+                """
+                SELECT locked_for_payment, payment_failure_date, payment_failure_code, payment_failure_reason
+                FROM tenants
+                WHERE uid = $1
+                """,
+                self._tenant_uid,
+            )
+            if not row:
+                raise self._tenant_not_found_error()
+
+            # If locked, raise error
+            if row["locked_for_payment"]:
+                raise InternalError("Organization is locked for payment")
+
+            # If no failure, return None
+            if not row["payment_failure_date"]:
+                return None
+
+            # Return payment failure
+            return TenantData.PaymentFailure(
+                failure_date=row["payment_failure_date"],
+                failure_code=row["payment_failure_code"],
+                failure_reason=row["payment_failure_reason"],
+            )
 
 
 class _TenantRow(BaseModel):

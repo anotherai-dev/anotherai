@@ -9,6 +9,7 @@ from core.domain.api_key import APIKey, CompleteAPIKey
 from core.domain.exceptions import DuplicateValueError, InternalError, ObjectNotFoundError
 from core.domain.tenant_data import TenantData
 from core.storage.psql.psql_tenant_storage import PsqlTenantStorage
+from core.storage.tenant_storage import AutomaticPayment
 from core.utils.hash import secure_hash
 
 
@@ -527,3 +528,194 @@ class TestTenantByUID:
     async def test_not_found(self, tenant_storage: PsqlTenantStorage, purged_psql: asyncpg.Pool):
         with pytest.raises(ObjectNotFoundError, match="Tenant with uid = \\$1 not found"):
             await tenant_storage.tenant_by_uid(999999)
+
+
+class TestCurrentTenant:
+    async def test_success(self, inserted_tenant: TenantData, tenant_storage: PsqlTenantStorage):
+        tenant = await tenant_storage.current_tenant()
+        assert tenant.uid == inserted_tenant.uid
+        assert tenant.slug == inserted_tenant.slug
+        assert tenant.owner_id == inserted_tenant.owner_id
+
+
+class TestSetCustomerID:
+    async def test_success(self, inserted_tenant: TenantData, tenant_storage: PsqlTenantStorage):
+        result = await tenant_storage.set_customer_id("cus_123456")
+        assert result.uid == inserted_tenant.uid
+
+
+class TestClearPaymentFailure:
+    async def test_success(
+        self,
+        inserted_tenant: TenantData,
+        tenant_storage: PsqlTenantStorage,
+        purged_psql: asyncpg.Pool,
+    ):
+        # Set payment failure fields
+        async with purged_psql.acquire() as conn:
+            await conn.execute(
+                """
+                UPDATE tenants SET
+                    payment_failure_date = $1,
+                    payment_failure_code = $2,
+                    payment_failure_reason = $3
+                WHERE uid = $4
+                """,
+                datetime.now(tz=UTC),
+                "payment_failed",
+                "Card declined",
+                inserted_tenant.uid,
+            )
+
+        # Clear payment failure
+        await tenant_storage.clear_payment_failure()
+
+        # Verify cleared
+        async with purged_psql.acquire() as conn:
+            row = await conn.fetchrow(
+                "SELECT payment_failure_date, payment_failure_code, payment_failure_reason FROM tenants WHERE uid = $1",
+                inserted_tenant.uid,
+            )
+            assert row is not None
+            assert row["payment_failure_date"] is None
+            assert row["payment_failure_code"] is None
+            assert row["payment_failure_reason"] is None
+
+
+class TestUpdateAutomaticPayment:
+    async def test_enable(
+        self,
+        inserted_tenant: TenantData,
+        tenant_storage: PsqlTenantStorage,
+        purged_psql: asyncpg.Pool,
+    ):
+        automatic_payment = AutomaticPayment(threshold=10.0, balance_to_maintain=50.0)
+        await tenant_storage.update_automatic_payment(automatic_payment)
+
+        async with purged_psql.acquire() as conn:
+            row = await conn.fetchrow(
+                "SELECT automatic_payment_enabled, automatic_payment_threshold, automatic_payment_balance_to_maintain FROM tenants WHERE uid = $1",
+                inserted_tenant.uid,
+            )
+            assert row is not None
+            assert row["automatic_payment_enabled"] is True
+            assert row["automatic_payment_threshold"] == 10.0
+            assert row["automatic_payment_balance_to_maintain"] == 50.0
+
+    async def test_disable(
+        self,
+        inserted_tenant: TenantData,
+        tenant_storage: PsqlTenantStorage,
+        purged_psql: asyncpg.Pool,
+    ):
+        await tenant_storage.update_automatic_payment(None)
+
+        async with purged_psql.acquire() as conn:
+            row = await conn.fetchrow(
+                "SELECT automatic_payment_enabled, automatic_payment_threshold, automatic_payment_balance_to_maintain FROM tenants WHERE uid = $1",
+                inserted_tenant.uid,
+            )
+            assert row is not None
+            assert row["automatic_payment_enabled"] is False
+            assert row["automatic_payment_threshold"] is None
+            assert row["automatic_payment_balance_to_maintain"] is None
+
+
+class TestAddCredits:
+    async def test_success(self, tenant_storage: PsqlTenantStorage, purged_psql: asyncpg.Pool):
+        tenant_data = await _insert_tenant(purged_psql, "test-tenant", "owner123", current_credits_usd=100.0)
+        tenant_storage._tenant_uid = tenant_data.uid
+
+        result = await tenant_storage.add_credits(25.0)
+
+        assert result.uid == tenant_data.uid
+        assert result.current_credits_usd == 125.0
+
+
+class TestUnlockPaymentForSuccess:
+    async def test_success(
+        self,
+        inserted_tenant: TenantData,
+        tenant_storage: PsqlTenantStorage,
+        purged_psql: asyncpg.Pool,
+    ):
+        # Lock for payment first
+        async with purged_psql.acquire() as conn:
+            await conn.execute("UPDATE tenants SET locked_for_payment = TRUE WHERE uid = $1", inserted_tenant.uid)
+
+        await tenant_storage.unlock_payment_for_success(50.0)
+
+        async with purged_psql.acquire() as conn:
+            row = await conn.fetchrow(
+                "SELECT locked_for_payment, current_credits_usd FROM tenants WHERE uid = $1",
+                inserted_tenant.uid,
+            )
+            assert row is not None
+            assert row["locked_for_payment"] is False
+            assert row["current_credits_usd"] == 50.0
+
+
+class TestUnlockPaymentForFailure:
+    async def test_success(
+        self,
+        inserted_tenant: TenantData,
+        tenant_storage: PsqlTenantStorage,
+        purged_psql: asyncpg.Pool,
+    ):
+        # Lock for payment first
+        async with purged_psql.acquire() as conn:
+            await conn.execute("UPDATE tenants SET locked_for_payment = TRUE WHERE uid = $1", inserted_tenant.uid)
+
+        now = datetime.now(tz=UTC)
+        await tenant_storage.unlock_payment_for_failure(now, "payment_failed", "Card declined")
+
+        async with purged_psql.acquire() as conn:
+            row = await conn.fetchrow(
+                "SELECT locked_for_payment, payment_failure_date, payment_failure_code, payment_failure_reason FROM tenants WHERE uid = $1",
+                inserted_tenant.uid,
+            )
+            assert row is not None
+            assert row["locked_for_payment"] is False
+            assert row["payment_failure_code"] == "payment_failed"
+            assert row["payment_failure_reason"] == "Card declined"
+
+
+class TestCheckUnlockedPaymentFailure:
+    async def test_no_failure(self, inserted_tenant: TenantData, tenant_storage: PsqlTenantStorage):
+        result = await tenant_storage.check_unlocked_payment_failure()
+        assert result is None
+
+    async def test_with_failure(
+        self,
+        inserted_tenant: TenantData,
+        tenant_storage: PsqlTenantStorage,
+        purged_psql: asyncpg.Pool,
+    ):
+        # Set payment failure
+        now = datetime.now(tz=UTC)
+        async with purged_psql.acquire() as conn:
+            await conn.execute(
+                "UPDATE tenants SET payment_failure_date = $1, payment_failure_code = $2, payment_failure_reason = $3 WHERE uid = $4",
+                now,
+                "payment_failed",
+                "Card declined",
+                inserted_tenant.uid,
+            )
+
+        result = await tenant_storage.check_unlocked_payment_failure()
+        assert result is not None
+        assert result.failure_code == "payment_failed"
+        assert result.failure_reason == "Card declined"
+
+    async def test_locked(
+        self,
+        inserted_tenant: TenantData,
+        tenant_storage: PsqlTenantStorage,
+        purged_psql: asyncpg.Pool,
+    ):
+        # Lock for payment
+        async with purged_psql.acquire() as conn:
+            await conn.execute("UPDATE tenants SET locked_for_payment = TRUE WHERE uid = $1", inserted_tenant.uid)
+
+        with pytest.raises(InternalError, match="Organization is locked for payment"):
+            await tenant_storage.check_unlocked_payment_failure()
