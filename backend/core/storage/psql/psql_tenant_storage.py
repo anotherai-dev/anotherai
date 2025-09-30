@@ -21,6 +21,8 @@ from core.utils.strings import slugify
 # specifying a tenant_uid
 # So the tenant_uid needs to be manually specified when needed
 
+_NEW_TENANT_CREDITS = 1
+
 
 class PsqlTenantStorage(PsqlBaseStorage, TenantStorage):
     @override
@@ -77,11 +79,12 @@ class PsqlTenantStorage(PsqlBaseStorage, TenantStorage):
             with self._wrap_errors():
                 row = await connection.fetchrow(
                     """
-                    INSERT INTO tenants (slug, owner_id, org_id) VALUES ($1, $2, $3) RETURNING *
+                    INSERT INTO tenants (slug, owner_id, org_id, current_credits_usd) VALUES ($1, $2, $3, $4) RETURNING *
                     """,
                     tenant.slug,
                     tenant.owner_id,
                     tenant.org_id,
+                    _NEW_TENANT_CREDITS,
                 )
             if not row:
                 raise InternalError("Failed to create tenant")

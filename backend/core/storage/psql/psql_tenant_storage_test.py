@@ -168,6 +168,7 @@ class TestCreateTenant:
         assert created_tenant.slug == "new-tenant"
         assert created_tenant.owner_id == "owner123"
         assert created_tenant.org_id is None
+        assert created_tenant.current_credits_usd == 1
 
     async def test_success_with_org_id(
         self,
@@ -181,6 +182,7 @@ class TestCreateTenant:
         assert created_tenant.slug == "org-tenant"
         assert created_tenant.owner_id == "owner123"
         assert created_tenant.org_id == "org456"
+        assert created_tenant.current_credits_usd == 1
 
     async def test_duplicate(self, tenant_storage: PsqlTenantStorage):
         tenant_data = TenantData(slug="org-tenant", owner_id="owner123", org_id="org456")
@@ -207,6 +209,7 @@ class TestCreateTenantForOwnerID:
         assert created_tenant.slug == "owner123"  # Slugified owner_id
         assert created_tenant.owner_id == "owner123"
         assert created_tenant.org_id is None
+        assert created_tenant.current_credits_usd == 1
 
     async def test_duplicate(self, tenant_storage: PsqlTenantStorage):
         gathered = await asyncio.gather(
