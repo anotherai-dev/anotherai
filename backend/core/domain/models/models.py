@@ -171,7 +171,6 @@ class Model(StrEnum):
     MINISTRAL_3B_2410 = "ministral-3b-2410"
     MINISTRAL_8B_2410 = "ministral-8b-2410"
     MISTRAL_SMALL_LATEST = "mistral-small-latest"
-    MISTRAL_SMALL_2509 = "mistral-small-2509"
     MISTRAL_SMALL_2506 = "mistral-small-2506"
     MISTRAL_SMALL_2503 = "mistral-small-2503"
     MISTRAL_SMALL_2501 = "mistral-small-2501"
