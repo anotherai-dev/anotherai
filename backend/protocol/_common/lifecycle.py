@@ -7,6 +7,7 @@ from core.domain.events import EventRouter
 from core.providers._base.httpx_provider_base import HTTPXProviderBase
 from core.providers.factory.abstract_provider_factory import AbstractProviderFactory
 from core.services.user_manager import UserManager
+from core.storage.kv_storage import KVStorage
 from core.storage.storage_builder import StorageBuilder
 from core.utils.background import wait_for_background_tasks
 from core.utils.signature_verifier import (
@@ -40,11 +41,16 @@ class LifecycleDependencies:
             user_storage=self.storage_builder.users(-1),
             event_router=self._system_event_router,
         )
+        self._kv_storage = _default_kv_storage()
+        from core.utils import remote_cached
+
+        remote_cached.shared_cache = self._kv_storage
 
     async def close(self):
         # TODO: not great ownership here, the objects are passed as parameters but we are closing them here
         await self.storage_builder.close()
         await self._user_manager.close()
+        await self._kv_storage.close()
 
     def tenant_event_router(self, tenant_uid: int) -> EventRouter:
         return TenantEventRouter(tenant_uid, self._system_event_router)
@@ -83,6 +89,17 @@ def _default_verifier() -> SignatureVerifier:
         return JWKSignatureVerifier(jwk)
     _log.warning("No signature verifier configured, using noop")
     return NoopSignatureVerifier()
+
+
+def _default_kv_storage() -> KVStorage:
+    if "REDIS_DSN" in os.environ:
+        from core.storage.redis.redis_storage import RedisStorage
+
+        return RedisStorage(os.environ["REDIS_DSN"])
+    _log.warning("No kv storage configured, using local")
+    from core.storage.local_kv_storage.local_kv_storage import LocalKVStorage
+
+    return LocalKVStorage()
 
 
 async def _default_storage_builder() -> StorageBuilder:
