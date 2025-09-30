@@ -1,5 +1,6 @@
 # pyright: reportPrivateUsage=false
 
+from collections.abc import Awaitable, Callable
 from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -10,7 +11,7 @@ from core.domain.exceptions import BadRequestError
 from core.domain.tenant_data import TenantData
 from core.services.email_service import EmailService
 from core.services.payment_service import PaymentService
-from core.services.stripe.stripe_service import StripeService, _BaseMetadata, _skip_webhook
+from core.services.stripe.stripe_service import StripeService, _BaseMetadata, _skip_webhook, _verify_stripe_signature
 from core.utils.background import wait_for_background_tasks
 from tests.fake_models import fake_tenant
 
@@ -41,6 +42,7 @@ def mock_stripe():
         mock.Customer = AsyncMock(spec=stripe.Customer)
         mock.PaymentMethod = AsyncMock(spec=stripe.PaymentMethod)
         mock.PaymentMethod.detach_async = AsyncMock(spec=stripe.PaymentMethod.detach_async)
+        mock.Webhook = AsyncMock(spec=stripe.Webhook)
         mock.CardError = stripe.CardError
 
         yield mock
@@ -182,7 +184,7 @@ class TestAddPaymentMethod:
         self,
         stripe_service: StripeService,
         mock_tenant_storage: AsyncMock,
-        monkeypatch: Mock,
+        mock_stripe: Mock,
     ):
         mock_payment_method = Mock()
         mock_payment_method.id = "pm_123"
@@ -193,7 +195,7 @@ class TestAddPaymentMethod:
                 param="cvc",
             ),
         )
-        monkeypatch.setattr(stripe.PaymentMethod, "attach_async", mock_attach)
+        mock_stripe.PaymentMethod.attach_async.side_effect = mock_attach
 
         with pytest.raises(stripe.CardError, match="security code is incorrect"):
             await stripe_service.add_payment_method(
@@ -285,9 +287,8 @@ def _mock_event(obj: dict[str, Any]):
                     "object": "payment_intent",
                     "id": "pi_123",
                     "amount": 1000,
-                    "metadata": {"tenant": "test-tenant"},
+                    "metadata": {"tenant": "test-tenant", "tenant_uid": "1", "app": "anotherai"},
                     "status": "succeeded",
-                    "app": "anotherai",
                     **obj,
                 },
             },
@@ -310,3 +311,130 @@ class TestSkipWebhook:
             _skip_webhook(_BaseMetadata.model_validate({**metadata, "tenant": "test-tenant", "tenant_uid": "1"}))
             == expected
         )
+
+
+@pytest.fixture(autouse=True)
+def mock_stripe_webhook_secret():
+    with patch.dict("os.environ", {"STRIPE_WEBHOOK_SECRET": "whsec_test_secret"}):
+        yield
+
+
+def _mock_request(body: bytes = b"test_body"):
+    req = Mock()
+    req.body = AsyncMock(return_value=body)
+    return req
+
+
+class TestVerifyStripeSignature:
+    async def test_success(self, mock_stripe: Mock):
+        mock_event = _mock_event({})
+
+        mock_stripe.Webhook.construct_event.return_value = mock_event
+
+        mock_request = _mock_request()
+
+        event = await _verify_stripe_signature(
+            request=mock_request,
+            stripe_signature="test_signature",
+        )
+
+        assert event["type"] == "payment_intent.succeeded"
+        assert event["data"]["object"]["id"] == "pi_123"
+        mock_stripe.Webhook.construct_event.assert_called_once_with(
+            payload=b"test_body",
+            sig_header="test_signature",
+            secret="whsec_test_secret",  # noqa: S106
+        )
+
+    async def test_missing_signature(self):
+        with pytest.raises(BadRequestError) as exc:
+            await _verify_stripe_signature(
+                request=Mock(),
+                stripe_signature=None,
+            )
+        assert exc.value.status_code == 400
+        assert exc.value.capture is True
+        assert exc.value.args[0] == "No signature header"
+
+    async def test_invalid_signature(self, mock_stripe: Mock):
+        mock_stripe.Webhook.construct_event.side_effect = stripe.StripeError("Invalid", "sig")
+
+        with pytest.raises(stripe.StripeError):
+            await _verify_stripe_signature(
+                request=Mock(body=AsyncMock(return_value="test_body")),
+                stripe_signature="invalid_signature",
+            )
+
+
+class TestStripeWebhook:
+    @pytest.fixture
+    def builder(self, stripe_service: StripeService):
+        async def _builder(_: int):
+            return stripe_service
+
+        return _builder
+
+    async def test_payment_intent_succeeded(
+        self,
+        builder: Callable[[int], Awaitable[StripeService]],
+        mock_stripe: Mock,
+        mock_tenant_storage: Mock,
+    ):
+        mock_event = _mock_event({})
+        mock_stripe.Webhook.construct_event.return_value = mock_event
+        mock_request = _mock_request()
+
+        await StripeService.stripe_webhook(
+            builder,
+            mock_request,
+            "test_signature",
+        )
+        mock_tenant_storage.add_credits.assert_called_once_with(
+            10.0,
+        )
+
+    async def test_payment_intent_no_tenant(
+        self,
+        builder: Callable[[int], Awaitable[StripeService]],
+        mock_stripe: Mock,
+        mock_tenant_storage: Mock,
+    ):
+        mock_event = _mock_event(
+            {
+                "metadata": {"app": "anotherai"},
+            },
+        )
+
+        mock_stripe.Webhook.construct_event.return_value = mock_event
+        mock_request = _mock_request()
+
+        await StripeService.stripe_webhook(
+            builder,
+            mock_request,
+            "test_signature",
+        )
+
+        mock_tenant_storage.add_credits.assert_not_called()
+
+    async def test_ignored(
+        self,
+        builder: Callable[[int], Awaitable[StripeService]],
+        mock_stripe: Mock,
+        mock_tenant_storage: Mock,
+    ):
+        mock_event = _mock_event(
+            {
+                "metadata": {"webhook_ignore": "true", "app": "anotherai"},
+            },
+        )
+
+        mock_stripe.Webhook.construct_event.return_value = mock_event
+        mock_request = _mock_request()
+
+        await StripeService.stripe_webhook(
+            builder,
+            mock_request,
+            "test_signature",
+        )
+
+        mock_tenant_storage.add_credits.assert_not_called()
