@@ -299,23 +299,22 @@ class TestCreateTenantForOrgID:
 
 
 class TestUpdateTenantSlug:
-    async def test_success(self, tenant_storage: PsqlTenantStorage, purged_psql: asyncpg.Pool) -> None:
-        # Insert tenant
-        inserted_tenant = await _insert_tenant(purged_psql, "old-slug", "owner123")
-
+    async def test_success(
+        self,
+        tenant_storage: PsqlTenantStorage,
+        purged_psql: asyncpg.Pool,
+        inserted_tenant: TenantData,
+    ) -> None:
         # Update slug
-        tenant_data = TenantData(uid=inserted_tenant.uid, slug="new-slug", owner_id="owner123")
-        updated_tenant = await tenant_storage.update_tenant_slug(tenant_data)
+        updated_tenant = await tenant_storage.update_tenant_slug("new-slug")
 
         assert updated_tenant.uid == inserted_tenant.uid
         assert updated_tenant.slug == "new-slug"
         assert updated_tenant.owner_id == "owner123"
 
     async def test_not_found(self, tenant_storage: PsqlTenantStorage, purged_psql: asyncpg.Pool) -> None:
-        tenant_data = TenantData(uid=999, slug="new-slug", owner_id="owner123")
-
-        with pytest.raises(ObjectNotFoundError, match="Tenant with uid 999 not found"):
-            await tenant_storage.update_tenant_slug(tenant_data)
+        with pytest.raises(ObjectNotFoundError, match="Tenant with uid 1 not found"):
+            await tenant_storage.update_tenant_slug("new-slug")
 
 
 class TestCreateAPIKey:
@@ -556,12 +555,11 @@ class TestClearPaymentFailure:
             await conn.execute(
                 """
                 UPDATE tenants SET
-                    payment_failure_date = $1,
-                    payment_failure_code = $2,
-                    payment_failure_reason = $3
-                WHERE uid = $4
+                    payment_failure_date = CURRENT_TIMESTAMP,
+                    payment_failure_code = $1,
+                    payment_failure_reason = $2
+                WHERE uid = $3
                 """,
-                datetime.now(tz=UTC),
                 "payment_failed",
                 "Card declined",
                 inserted_tenant.uid,
@@ -692,11 +690,10 @@ class TestCheckUnlockedPaymentFailure:
         purged_psql: asyncpg.Pool,
     ):
         # Set payment failure
-        now = datetime.now(tz=UTC)
+
         async with purged_psql.acquire() as conn:
             await conn.execute(
-                "UPDATE tenants SET payment_failure_date = $1, payment_failure_code = $2, payment_failure_reason = $3 WHERE uid = $4",
-                now,
+                "UPDATE tenants SET payment_failure_date = CURRENT_TIMESTAMP, payment_failure_code = $1, payment_failure_reason = $2 WHERE uid = $3",
                 "payment_failed",
                 "Card declined",
                 inserted_tenant.uid,

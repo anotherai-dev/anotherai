@@ -68,7 +68,7 @@ class TestGetUserEmail:
         req = httpx_mock.get_requests()
         assert len(req) == 1
         assert req[0].url == "https://api.clerk.com/v1/users/test_user_id"
-        assert req[0].headers["Authorization"] == "Bearer test_secret"
+        assert req[0].headers["Authorization"] == "Bearer not_a_secret"
 
     async def test_get_user_email_with_no_primary_email(
         self,

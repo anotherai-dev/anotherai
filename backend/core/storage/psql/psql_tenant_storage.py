@@ -125,14 +125,14 @@ class PsqlTenantStorage(PsqlBaseStorage, TenantStorage):
                 return await self.tenant_by_org_id(org_id)
 
     @override
-    async def update_tenant_slug(self, tenant: TenantData) -> TenantData:
+    async def update_tenant_slug(self, slug: str) -> TenantData:
         async with self._pool.acquire() as connection:
             row = await connection.fetchrow(
                 """
                 UPDATE tenants SET slug = $1 WHERE uid = $2 RETURNING *
                 """,
-                tenant.slug,
-                tenant.uid,
+                slug,
+                self._tenant_uid,
             )
             if not row:
                 raise self._tenant_not_found_error()
