@@ -100,16 +100,16 @@ class _NoopCache(RemoteCache):
 shared_cache = _NoopCache()
 
 
-def remote_cached(expiration_seconds: timedelta | None = None, cache: RemoteCache | None = None):
-    if not expiration_seconds:
-        expiration_seconds = timedelta(seconds=60 * 60 * 24)
+def remote_cached(expiration: timedelta | None = None, cache: RemoteCache | None = None):
+    if not expiration:
+        expiration = timedelta(seconds=60 * 60 * 24)
     if not cache:
         cache = shared_cache
 
     def decorator[F: Callable[..., Awaitable[Any]]](func: F) -> F:
         @functools.wraps(func)
         async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
-            return await _wrap(shared_cache, func, expiration_seconds, *args, **kwargs)
+            return await _wrap(shared_cache, func, expiration, *args, **kwargs)
 
         return async_wrapper  # pyright: ignore[reportReturnType]
 

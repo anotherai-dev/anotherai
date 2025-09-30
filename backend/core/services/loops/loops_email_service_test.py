@@ -9,7 +9,7 @@ from pytest_httpx import HTTPXMock
 from core.domain.tenant_data import PublicOrganizationData
 from core.services.email_service import EmailSendError
 from core.services.loops.loops_email_service import LoopsEmailService
-from core.services.user_manager import UserDetails, UserService
+from core.services.user_service import UserDetails, UserService
 
 
 @pytest.fixture

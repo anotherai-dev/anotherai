@@ -1,16 +1,19 @@
 import math
 import os
-from typing import Literal, NamedTuple
+from collections.abc import Awaitable, Callable
+from typing import Any, Literal, NamedTuple, Self
 
 import stripe
-from pydantic import BaseModel, field_serializer, field_validator
+from fastapi import Request
+from pydantic import BaseModel, ValidationError, field_serializer, field_validator
 from structlog import get_logger
 
-from core.domain.exceptions import BadRequestError, InternalError
+from core.domain.exceptions import BadRequestError, InternalError, ObjectNotFoundError
 from core.domain.tenant_data import TenantData
 from core.services.payment_service import PaymentService
 from core.storage.tenant_storage import AutomaticPayment, TenantStorage
 from core.utils.background import add_background_task
+from core.utils.fields import datetime_factory
 
 _log = get_logger(__name__)
 
@@ -199,6 +202,110 @@ class StripeService:
         if opt_in:
             add_background_task(self._payment_service.decrement_credits(0))
 
+    async def _handle_payment_success(self, metadata: dict[str, str], amount: float):
+        try:
+            parsed_metadata = _IntentMetadata.model_validate(metadata)
+            if parsed_metadata.trigger == "automatic":
+                await self._tenant_storage.unlock_payment_for_success(amount)
+                return
+            # Otherwise we just need to add the credits
+            await self._tenant_storage.add_credits(amount)
+        except Exception as e:
+            # Wrap everything in an InternalError to make sure it's easy to spot
+            raise InternalError(
+                "Urgent: Failed to process adding credits",
+                extra={"metadata": metadata, "amount": amount},
+            ) from e
+
+    async def _handle_payment_requires_action(self, metadata: dict[str, str]):
+        parsed_metadata = _IntentMetadata.model_validate(metadata)
+        if parsed_metadata.trigger == "automatic":
+            _log.error("Automatic payment requires action", metadata=metadata)
+
+    async def _unlock_payment_for_failure(
+        self,
+        tenant: str,
+        code: Literal["internal", "payment_failed"],
+        failure_reason: str,
+    ):
+        await self._tenant_storage.unlock_payment_for_failure(
+            now=datetime_factory(),
+            code=code,
+            failure_reason=failure_reason,
+        )
+
+        # TODO: send email
+        # add_background_task(self._email_service.send_payment_failure_email(tenant))
+
+    async def handle_payment_failure(self, metadata: dict[str, str], failure_reason: str):
+        parsed_metadata = _IntentMetadata.model_validate(metadata)
+        if parsed_metadata.trigger == "automatic":
+            try:
+                await self._unlock_payment_for_failure(
+                    parsed_metadata.tenant,
+                    code="payment_failed",
+                    failure_reason=failure_reason,
+                )
+
+            except ObjectNotFoundError as e:
+                # That can happen if the payment was declined when confirming the intent
+                # In which case we already unlocked the payment error
+                # To make sure, let's just see that we have a payment error
+                failure = await self._tenant_storage.check_unlocked_payment_failure()
+                if not failure:
+                    # If we don't have a failure, it means there is something else weird going on so we should raise
+                    raise InternalError(
+                        "Automatic payment failed but we don't have a payment failure",
+                        extra={"metadata": metadata},
+                    ) from e
+
+    @classmethod
+    async def stripe_webhook(
+        cls,
+        service_builder: Callable[[int], Awaitable[Self]],
+        request: Request,
+        stripe_signature: str | None,
+    ):
+        _log.debug("Received Stripe webhook", request=request, stripe_signature=stripe_signature)
+        event = await _verify_stripe_signature(request, stripe_signature)
+
+        metadata = event.data.object.get("metadata", {})
+        if not metadata:
+            _log.error("Payment intent has no metadata", event_obj=event.data.object)
+            return
+        try:
+            metadata = _BaseMetadata.model_validate(metadata)
+        except ValidationError as e:
+            _log.error("Payment intent has invalid metadata", event_obj=event.data.object, exc_info=e)
+            return
+
+        if _skip_webhook(metadata):
+            _log.info("Skipping Stripe webhook", event_obj=event.data.object)
+            return
+
+        payment_service = await service_builder(metadata.tenant_uid)
+
+        match event.type:
+            case "payment_intent.created":
+                # Nothing to do here
+                pass
+            case "payment_intent.succeeded":
+                payment_intent = _PaymentIntentData.model_validate(event.data.object)
+                await payment_service._handle_payment_success(payment_intent.metadata, payment_intent.amount / 100)  # noqa: SLF001
+            case "payment_intent.requires_action":
+                # Not sure what to do here, it should not happen for automatic payments
+                payment_intent = _PaymentIntentData.model_validate(event.data.object)
+                await payment_service._handle_payment_requires_action(payment_intent.metadata)  # noqa: SLF001
+            case "payment_intent.payment_failed":
+                payment_intent = _PaymentIntentData.model_validate(event.data.object)
+                failure_reason = payment_intent.error_message
+                if not failure_reason:
+                    _log.error("Payment failed with an unknown error", event_obj=event.data.object)
+                    failure_reason = "Payment failed with an unknown error"
+                await payment_service.handle_payment_failure(payment_intent.metadata, failure_reason)
+            case _:
+                _log.warning("Unhandled Stripe event", event_obj=event.data.object)
+
 
 def _customer_id_or_raise(data: TenantData, capture: bool = True) -> str:
     if data.customer_id is None:
@@ -240,11 +347,11 @@ class PaymentIntent(NamedTuple):
     payment_intent_id: str
 
 
-class _CustomerMetadata(BaseModel):
+class _BaseMetadata(BaseModel):
+    app: str | None = "anotherai"
     tenant: str
-    tenant_uid: int = 0
-    organization_id: str | None = None
-    owner_id: str | None = None
+    tenant_uid: int
+    webhook_ignore: str | None = None
 
     @field_serializer("tenant_uid")
     def serialize_tenant_uid(self, tenant_uid: int) -> str:
@@ -258,5 +365,61 @@ class _CustomerMetadata(BaseModel):
         return v
 
 
+class _CustomerMetadata(_BaseMetadata):
+    organization_id: str | None = None
+    owner_id: str | None = None
+
+
 class _IntentMetadata(_CustomerMetadata):
     trigger: Literal["automatic", "manual"] = "manual"
+
+
+def _skip_webhook(metadata: _BaseMetadata) -> bool:
+    if metadata.webhook_ignore == "true":
+        return True
+
+    return metadata.app != "anotherai"
+
+
+async def _verify_stripe_signature(
+    request: Request,
+    stripe_signature: str | None,
+) -> stripe.Event:
+    if not stripe_signature:
+        raise BadRequestError(
+            "No signature header",
+            capture=True,
+        )
+
+    webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET")
+    if not webhook_secret:
+        raise InternalError(
+            "Webhook secret not configured",
+            capture=True,
+        )
+
+    body = await request.body()
+    stripe_event: stripe.Event = stripe.Webhook.construct_event(
+        payload=body,
+        sig_header=str(stripe_signature),
+        secret=str(webhook_secret),
+    )
+    _log.debug("Raw Stripe Event", stripe_event=stripe_event)
+    return stripe_event
+
+
+class _PaymentIntentData(BaseModel):
+    object: Literal["payment_intent"]
+    id: str
+    amount: int
+    metadata: dict[str, Any]
+    status: str
+
+    class LastPaymentError(BaseModel):
+        message: str | None
+
+    last_payment_error: LastPaymentError | None = None
+
+    @property
+    def error_message(self) -> str | None:
+        return self.last_payment_error.message if self.last_payment_error else None

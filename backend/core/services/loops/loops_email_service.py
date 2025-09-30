@@ -6,7 +6,7 @@ import httpx
 
 from core.domain.exceptions import ObjectNotFoundError
 from core.services.email_service import EmailSendError, EmailService
-from core.services.user_manager import UserService
+from core.services.user_service import UserService
 from core.storage.tenant_storage import TenantStorage
 from core.utils.uuid import uuid7
 

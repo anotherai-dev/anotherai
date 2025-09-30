@@ -2,9 +2,10 @@ import httpx
 
 from core.domain.exceptions import InvalidTokenError
 from core.services.user_manager import UserManager
+from core.services.user_service import UserService
 
 
-class ClerkUserManager(UserManager):
+class ClerkUserManager(UserManager, UserService):
     def __init__(self, secret_key: str):
         self._client = httpx.AsyncClient(
             base_url="https://api.clerk.com/v1",

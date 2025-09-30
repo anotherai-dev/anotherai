@@ -1,5 +1,6 @@
 # pyright: reportPrivateUsage=false
 
+from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -8,7 +9,7 @@ import stripe
 from core.domain.exceptions import BadRequestError
 from core.domain.tenant_data import TenantData
 from core.services.payment_service import PaymentService
-from core.services.stripe.stripe_service import StripeService
+from core.services.stripe.stripe_service import StripeService, _skip_webhook
 from core.utils.background import wait_for_background_tasks
 from tests.fake_models import fake_tenant
 
@@ -260,3 +261,37 @@ class TestCreatePaymentIntent:
                 100.0,
                 trigger="manual",
             )
+
+
+def _mock_event(obj: dict[str, Any]):
+    return stripe.Event.construct_from(
+        {
+            "id": "evt_123",
+            "type": "payment_intent.succeeded",
+            "data": {
+                "object": {
+                    "object": "payment_intent",
+                    "id": "pi_123",
+                    "amount": 1000,
+                    "metadata": {"tenant": "test-tenant"},
+                    "status": "succeeded",
+                    "app": "anotherai",
+                    **obj,
+                },
+            },
+        },
+        key="evt_123",
+    )
+
+
+class TestSkipWebhook:
+    @pytest.mark.parametrize(
+        ("obj", "expected"),
+        [
+            pytest.param({}, False, id="default"),
+            pytest.param({"metadata": {"webhook_ignore": "true"}}, True, id="webhook_ignore"),
+            pytest.param({"metadata": {"app": "workflowai"}}, True, id="antoher app"),
+        ],
+    )
+    async def test_skip_webhook(self, obj: dict[str, Any], expected: bool):
+        assert _skip_webhook(_mock_event(obj)) == expected
