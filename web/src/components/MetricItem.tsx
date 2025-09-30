@@ -102,7 +102,7 @@ export function MetricItem({
 
   const formatValue = useMemo(() => {
     if (metricType === "cost") {
-      return formatCurrency;
+      return (value: number) => formatCurrency(value, 1000);
     } else if (metricType === "duration") {
       return formatDuration;
     } else {
@@ -110,7 +110,11 @@ export function MetricItem({
     }
   }, [metricType]);
 
-  const displayLabel = showAvgPrefix ? `Average ${metricKey.replace(/_/g, " ")}` : metricKey.replace(/_/g, " ");
+  const displayLabel = showAvgPrefix
+    ? `Average ${metricKey === "cost" ? "cost (Per 1k)" : metricKey.replace(/_/g, " ")}`
+    : metricKey === "cost"
+      ? "cost (Per 1k)"
+      : metricKey.replace(/_/g, " ");
 
   if (percentiles && showAvgPrefix) {
     return (

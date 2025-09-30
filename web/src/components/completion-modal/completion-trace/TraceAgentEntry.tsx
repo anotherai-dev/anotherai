@@ -1,5 +1,6 @@
 import { Flowchart16Regular } from "@fluentui/react-icons";
 import { useMemo } from "react";
+import { formatCurrency } from "@/components/utils/utils";
 import { TraceModelEntry } from "./TraceModelEntry";
 
 type TraceAgentEntryProps = {
@@ -32,7 +33,7 @@ export function TraceAgentEntry(props: TraceAgentEntryProps) {
 
   const formatCost = (costMillionthUsd: number) => {
     const costUsd = costMillionthUsd / 1000000;
-    return `$${costUsd.toFixed(4)}`;
+    return formatCurrency(costUsd, 1000);
   };
 
   const formatDuration = (durationDs: number) => {
@@ -47,7 +48,7 @@ export function TraceAgentEntry(props: TraceAgentEntryProps) {
         <span>{agentId}</span>
       </div>
       <div className="text-gray-500 font-medium text-[12px] space-x-2 mb-2">
-        <span>{formatCost(totals.totalCost)}</span>
+        <span>{formatCost(totals.totalCost)} (Per 1k)</span>
         <span>{formatDuration(totals.totalDuration)}</span>
       </div>
       {Object.entries(models).map(([modelId, completions]) => (

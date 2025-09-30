@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/components/utils/utils";
 import { AgentSummary } from "@/store/agent_stats";
 
 interface AgentSummarySectionProps {
@@ -17,8 +18,8 @@ export function AgentSummarySection({ summary }: AgentSummarySectionProps) {
           <p className="text-xs text-gray-600">Total Cost</p>
         </div>
         <div className="text-center py-3 px-4 border-r border-gray-200 last:border-r-0 lg:border-r">
-          <p className="text-xl font-semibold text-gray-900">${summary.avg_cost_per_run.toFixed(4)}</p>
-          <p className="text-xs text-gray-600">Average Cost per Completion</p>
+          <p className="text-xl font-semibold text-gray-900">{formatCurrency(summary.avg_cost_per_run, 1000)}</p>
+          <p className="text-xs text-gray-600">Average Cost (Per 1k)</p>
         </div>
         <div className="text-center py-3 px-4 border-r border-gray-200 last:border-r-0">
           <p className="text-xl font-semibold text-gray-900">{summary.avg_duration.toFixed(1)}s</p>

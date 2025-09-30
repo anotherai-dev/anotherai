@@ -42,7 +42,7 @@ export function MessageMetricsDisplay({ message }: MessageMetricsDisplayProps) {
 
           let formattedValue = metric.average.toFixed(2);
           if (metric.key === "cost") {
-            formattedValue = formatCurrency(metric.average);
+            formattedValue = formatCurrency(metric.average, 1000);
           } else if (metric.key === "duration") {
             formattedValue = formatDuration(metric.average);
           }
@@ -54,7 +54,9 @@ export function MessageMetricsDisplay({ message }: MessageMetricsDisplayProps) {
                 !isEven ? "border-l border-gray-200" : ""
               } ${isLastOdd ? "col-span-2" : ""} ${!isInLastRow ? "border-b border-gray-200" : ""}`}
             >
-              <span className="font-medium text-gray-600 capitalize">{metric.key.replace(/_/g, " ")}</span>
+              <span className="font-medium text-gray-600 capitalize">
+                {metric.key === "cost" ? "cost (Per 1k)" : metric.key.replace(/_/g, " ")}
+              </span>
               <span className="text-gray-800">{formattedValue}</span>
             </div>
           );
