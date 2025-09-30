@@ -69,7 +69,10 @@ export function TracesView({ traces }: Props) {
                   <div key={`${traceIndex}-${key}`} className="space-y-2">
                     <InfoRow title={formatTitle(key)} value={`${textTokenCount.toLocaleString()}`} />
                     {costUsd !== undefined && (
-                      <InfoRow title={`${formatCostTitle(key)} (Per 1k)`} value={formatCurrency(costUsd, 1000)} />
+                      <InfoRow
+                        title={`${formatCostTitle(key)} (Per 1k completions)`}
+                        value={formatCurrency(costUsd, 1000)}
+                      />
                     )}
                   </div>
                 );

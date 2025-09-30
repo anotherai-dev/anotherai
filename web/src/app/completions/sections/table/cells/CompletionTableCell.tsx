@@ -59,7 +59,7 @@ export function CompletionTableCell(props: Props) {
     case "cost_usd":
       return (
         <CompletionTableBadgeCell
-          value={`${formatCurrency(Number(value), 1000)} (Per 1k)`}
+          value={`${formatCurrency(Number(value), 1000)} (Per 1k completions)`}
           variant="white"
           rounded="2px"
         />

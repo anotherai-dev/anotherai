@@ -111,9 +111,9 @@ export function MetricItem({
   }, [metricType]);
 
   const displayLabel = showAvgPrefix
-    ? `Average ${metricKey === "cost" ? "cost (Per 1k)" : metricKey.replace(/_/g, " ")}`
+    ? `Average ${metricKey === "cost" ? "cost (Per 1k completions)" : metricKey.replace(/_/g, " ")}`
     : metricKey === "cost"
-      ? "cost (Per 1k)"
+      ? "cost (Per 1k completions)"
       : metricKey.replace(/_/g, " ");
 
   if (percentiles && showAvgPrefix) {

@@ -55,7 +55,7 @@ export function MessageMetricsDisplay({ message }: MessageMetricsDisplayProps) {
               } ${isLastOdd ? "col-span-2" : ""} ${!isInLastRow ? "border-b border-gray-200" : ""}`}
             >
               <span className="font-medium text-gray-600 capitalize">
-                {metric.key === "cost" ? "cost (Per 1k)" : metric.key.replace(/_/g, " ")}
+                {metric.key === "cost" ? "cost (Per 1k completions)" : metric.key.replace(/_/g, " ")}
               </span>
               <span className="text-gray-800">{formattedValue}</span>
             </div>

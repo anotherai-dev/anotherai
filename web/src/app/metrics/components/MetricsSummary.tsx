@@ -100,7 +100,7 @@ export function MetricsSummary({ timeRange }: MetricsSummaryProps) {
       // Cost Metrics
       { key: `Total Cost (${timeRange.label})`, value: `$${totalCost.toFixed(2)}` },
       { key: "This Month's Cost", value: `$${monthlySpending.toFixed(2)}`, color: "text-blue-600" },
-      { key: "Avg Cost (Per 1k)", value: formatCurrency(avgCost, 1000) },
+      { key: "Avg Cost (Per 1k completions)", value: formatCurrency(avgCost, 1000) },
 
       // Usage Analytics
       { key: "Avg Daily Completions", value: Math.round(avgDailyCompletions).toLocaleString() },

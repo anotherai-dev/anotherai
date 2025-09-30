@@ -46,7 +46,8 @@ export function TraceCompletionEntry(props: TraceCompletionEntryProps) {
       </div>
       <div className="text-gray-500 font-medium text-[12px] space-x-2">
         <span>
-          {formatCost(costMillionthUsd)} {costMillionthUsd !== undefined && costMillionthUsd !== null ? "(Per 1k)" : ""}
+          {formatCost(costMillionthUsd)}{" "}
+          {costMillionthUsd !== undefined && costMillionthUsd !== null ? "(Per 1k completions)" : ""}
         </span>
         <span>{formatDuration(durationDs)}</span>
       </div>

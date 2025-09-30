@@ -19,7 +19,7 @@ export function AgentSummarySection({ summary }: AgentSummarySectionProps) {
         </div>
         <div className="text-center py-3 px-4 border-r border-gray-200 last:border-r-0 lg:border-r">
           <p className="text-xl font-semibold text-gray-900">{formatCurrency(summary.avg_cost_per_run, 1000)}</p>
-          <p className="text-xs text-gray-600">Average Cost (Per 1k)</p>
+          <p className="text-xs text-gray-600">Average Cost (Per 1k completions)</p>
         </div>
         <div className="text-center py-3 px-4 border-r border-gray-200 last:border-r-0">
           <p className="text-xl font-semibold text-gray-900">{summary.avg_duration.toFixed(1)}s</p>

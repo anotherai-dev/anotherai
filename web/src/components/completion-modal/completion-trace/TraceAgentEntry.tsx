@@ -48,7 +48,7 @@ export function TraceAgentEntry(props: TraceAgentEntryProps) {
         <span>{agentId}</span>
       </div>
       <div className="text-gray-500 font-medium text-[12px] space-x-2 mb-2">
-        <span>{formatCost(totals.totalCost)} (Per 1k)</span>
+        <span>{formatCost(totals.totalCost)} (Per 1k completions)</span>
         <span>{formatDuration(totals.totalDuration)}</span>
       </div>
       {Object.entries(models).map(([modelId, completions]) => (
