@@ -29,8 +29,14 @@ class PublicOrganizationData(BaseModel):
     def is_anonymous(self) -> bool:
         return not self.org_id and not self.owner_id
 
+
+class User(BaseModel):
+    sub: str
+    email: str | None
+
+
 class TenantData(PublicOrganizationData):
-    stripe_customer_id: str | None = None
+    customer_id: str | None = None
     providers: list[ProviderSettings] = Field(default_factory=list, description="List of provider configurations")
 
     current_credits_usd: float = Field(default=0.0, description="Current credits available to the organization")
@@ -56,7 +62,8 @@ class TenantData(PublicOrganizationData):
         description="A dictionary of low credits emails sent by threshold that triggered the email",
     )
 
-    slack_channel_id: str | None = None
+    # Set by the security service
+    user: User | None = None
 
     def should_send_low_credits_email(self, threshold_usd: float) -> bool:
         if self.current_credits_usd >= threshold_usd:
