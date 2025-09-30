@@ -8,8 +8,9 @@ import stripe
 
 from core.domain.exceptions import BadRequestError
 from core.domain.tenant_data import TenantData
+from core.services.email_service import EmailService
 from core.services.payment_service import PaymentService
-from core.services.stripe.stripe_service import StripeService, _skip_webhook
+from core.services.stripe.stripe_service import StripeService, _BaseMetadata, _skip_webhook
 from core.utils.background import wait_for_background_tasks
 from tests.fake_models import fake_tenant
 
@@ -20,8 +21,17 @@ def mock_payment_service():
 
 
 @pytest.fixture
-def stripe_service(mock_tenant_storage: Mock, mock_payment_service: Mock):
-    return StripeService(tenant_storage=mock_tenant_storage, payment_service=mock_payment_service)
+def mock_email_service():
+    return Mock(spec=EmailService)
+
+
+@pytest.fixture
+def stripe_service(mock_tenant_storage: Mock, mock_payment_service: Mock, mock_email_service: Mock):
+    return StripeService(
+        tenant_storage=mock_tenant_storage,
+        payment_service=mock_payment_service,
+        email_service=mock_email_service,
+    )
 
 
 @pytest.fixture
@@ -91,6 +101,7 @@ class TestCreateCustomer:
             name="test-tenant",
             email="test@example.com",
             metadata={
+                "app": "anotherai",
                 "tenant": "test-tenant",
                 "owner_id": "test-owner",
                 "tenant_uid": "1",
@@ -238,6 +249,7 @@ class TestCreatePaymentIntent:
             setup_future_usage="off_session",
             automatic_payment_methods={"enabled": True, "allow_redirects": "never"},
             metadata={
+                "app": "anotherai",
                 "tenant": "test-tenant",
                 "tenant_uid": "1",
                 "organization_id": "test-org",
@@ -286,12 +298,15 @@ def _mock_event(obj: dict[str, Any]):
 
 class TestSkipWebhook:
     @pytest.mark.parametrize(
-        ("obj", "expected"),
+        ("metadata", "expected"),
         [
             pytest.param({}, False, id="default"),
-            pytest.param({"metadata": {"webhook_ignore": "true"}}, True, id="webhook_ignore"),
-            pytest.param({"metadata": {"app": "workflowai"}}, True, id="antoher app"),
+            pytest.param({"webhook_ignore": "true"}, True, id="webhook_ignore"),
+            pytest.param({"app": "workflowai"}, True, id="another app"),
         ],
     )
-    async def test_skip_webhook(self, obj: dict[str, Any], expected: bool):
-        assert _skip_webhook(_mock_event(obj)) == expected
+    async def test_skip_webhook(self, metadata: dict[str, Any], expected: bool):
+        assert (
+            _skip_webhook(_BaseMetadata.model_validate({**metadata, "tenant": "test-tenant", "tenant_uid": "1"}))
+            == expected
+        )
