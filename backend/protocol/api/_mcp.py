@@ -133,8 +133,8 @@ async def add_versions_to_experiment(
     - the version is added as is
     - a version is added per provided override
 
-    IMPORTANT for image and audio inputs:
-    When using template variables for images or audio, you MUST use the correct message content structure.
+    IMPORTANT for image, audio, and PDF inputs:
+    When using template variables for images, audio, or PDFs, you MUST use the correct message content structure.
     The template variable goes in the image_url or input_audio field, NOT in a text string.
 
     CORRECT format for image inputs:
