@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { formatCurrency, formatDuration } from "@/components/utils/utils";
+import { formatNumber } from "@/components/universal-charts/utils";
+import { formatDuration } from "@/components/utils/utils";
 import { Message } from "@/types/models";
 
 type MessageMetricsDisplayProps = {
@@ -42,7 +43,7 @@ export function MessageMetricsDisplay({ message }: MessageMetricsDisplayProps) {
 
           let formattedValue = metric.average.toFixed(2);
           if (metric.key === "cost") {
-            formattedValue = formatCurrency(metric.average, 1000);
+            formattedValue = `$${formatNumber(metric.average)}`;
           } else if (metric.key === "duration") {
             formattedValue = formatDuration(metric.average);
           }
@@ -55,7 +56,7 @@ export function MessageMetricsDisplay({ message }: MessageMetricsDisplayProps) {
               } ${isLastOdd ? "col-span-2" : ""} ${!isInLastRow ? "border-b border-gray-200" : ""}`}
             >
               <span className="font-medium text-gray-600 capitalize">
-                {metric.key === "cost" ? "cost (Per 1k completions)" : metric.key.replace(/_/g, " ")}
+                {metric.key === "cost" ? "cost" : metric.key.replace(/_/g, " ")}
               </span>
               <span className="text-gray-800">{formattedValue}</span>
             </div>
