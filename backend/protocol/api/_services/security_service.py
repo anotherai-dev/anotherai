@@ -108,7 +108,7 @@ class SecurityService:
             tenant = await self._tenant_from_owner_id(claims.sub)
         tenant.user = User(
             sub=claims.sub,
-            email=None,  # TODO:
+            email=claims.email,
         )
 
         self._event_router(UserConnectedEvent(user_id=claims.sub, organization_id=claims.org_id))
@@ -119,6 +119,7 @@ class _Claims(BaseModel):
     sub: str = Field(min_length=1)
     org_id: str | None = None
     org_slug: str | None = None
+    email: str | None = None
 
 
 def is_api_key(token: str) -> bool:
