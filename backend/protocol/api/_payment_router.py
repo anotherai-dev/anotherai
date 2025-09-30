@@ -35,7 +35,7 @@ def _stripe_service(
     )
 
 
-type _StripeServiceDep = Annotated[StripeService, Depends(_stripe_service)]
+_StripeServiceDep = Annotated[StripeService, Depends(_stripe_service)]
 
 
 @router.post("/payment-methods", description="Add a payment method to the organization")
