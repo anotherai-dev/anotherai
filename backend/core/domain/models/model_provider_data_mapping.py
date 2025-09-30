@@ -443,13 +443,6 @@ MISTRAL_PROVIDER_DATA: ProviderDataByModel = {
             source="https://mistral.ai/products/la-plateforme#pricing",
         ),
     ),
-    Model.MISTRAL_SMALL_2509: ModelProviderData(
-        text_price=TextPricePerToken(
-            prompt_cost_per_token=0.1 * ONE_MILLION_TH,
-            completion_cost_per_token=0.3 * ONE_MILLION_TH,
-            source="https://mistral.ai/products/la-plateforme#pricing",
-        ),
-    ),
     Model.MISTRAL_SMALL_2506: ModelProviderData(
         text_price=TextPricePerToken(
             prompt_cost_per_token=0.1 * ONE_MILLION_TH,
