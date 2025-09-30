@@ -165,27 +165,6 @@ def mistral_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             display_name="Mistral Small (latest)",
             aliases=["mistral-small"],
         ),
-        Model.MISTRAL_SMALL_2509: ModelData(
-            display_name="Mistral Small (25-09)",
-            supports_json_mode=True,
-            supports_input_image=True,
-            supports_input_pdf=True,
-            supports_input_audio=False,
-            max_tokens_data=MaxTokensData(
-                max_tokens=131072,
-                source="https://docs.mistral.ai/getting-started/models/",
-            ),
-            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/mistral.svg",
-            release_date=date(2025, 9, 26),
-            quality_data=QualityData(mmlu=52.9, gpqa=33.8),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2293, duration_seconds=20),
-            ),
-            provider_name=DisplayedProvider.MISTRAL_AI.value,
-            supports_tool_calling=True,
-            latest_model=Model.MISTRAL_SMALL_LATEST,
-            fallback=ModelFallback.default("cheapest"),
-        ),
         Model.MISTRAL_SMALL_2506: ModelData(
             display_name="Mistral Small (25-06)",
             supports_json_mode=True,
@@ -302,7 +281,7 @@ def mistral_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             supports_input_pdf=False,
             supports_input_audio=False,
             max_tokens_data=MaxTokensData(
-                max_tokens=262144,
+                max_tokens=256_000,
                 source="https://docs.mistral.ai/getting-started/models/",
             ),
             icon_url="https://workflowai.blob.core.windows.net/workflowai-public/mistral.svg",
@@ -402,7 +381,7 @@ def mistral_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             supports_input_pdf=True,
             supports_input_audio=False,
             max_tokens_data=MaxTokensData(
-                max_tokens=40_000,
+                max_tokens=40_960,
                 source="https://docs.mistral.ai/getting-started/models/models_overview/",
             ),
             icon_url="https://workflowai.blob.core.windows.net/workflowai-public/mistral.svg",
@@ -427,7 +406,7 @@ def mistral_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             supports_input_pdf=True,
             supports_input_audio=False,
             max_tokens_data=MaxTokensData(
-                max_tokens=40_000,
+                max_tokens=131_072,
                 source="https://docs.mistral.ai/getting-started/models/models_overview/",
             ),
             icon_url="https://workflowai.blob.core.windows.net/workflowai-public/mistral.svg",
@@ -503,7 +482,7 @@ def mistral_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             supports_input_pdf=True,
             supports_input_audio=False,
             max_tokens_data=MaxTokensData(
-                max_tokens=40_960,
+                max_tokens=131_072,
                 source="https://docs.mistral.ai/getting-started/models/models_overview/",
             ),
             icon_url="https://workflowai.blob.core.windows.net/workflowai-public/mistral.svg",
