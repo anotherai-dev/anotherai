@@ -1,11 +1,11 @@
 "use client";
 
+import { cx } from "class-variance-authority";
 import { AlertTriangle } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { CircularProgress } from "@/components/CircularProgress";
 import { HoverPopover } from "@/components/HoverPopover";
 import { PaymentModal } from "@/components/payment-modal/PaymentModal";
-import { cn } from "@/lib/utils";
 import { useOrFetchOrganizationSettings, useOrFetchPaymentMethod } from "@/store/mocked_payments";
 
 interface CreditsSectionProps {
@@ -68,7 +68,7 @@ export function CreditsSection({ className }: CreditsSectionProps) {
   if (isLoading && !organizationSettings) {
     return (
       <div
-        className={cn(
+        className={cx(
           "flex gap-3 pl-5 pr-4 py-2 justify-between items-center border-t border-gray-200",
           "animate-pulse",
           className
@@ -92,7 +92,7 @@ export function CreditsSection({ className }: CreditsSectionProps) {
         popoverClassName="bg-gray-800 text-white rounded-[4px]"
       >
         <div
-          className={cn(
+          className={cx(
             "flex gap-3 pl-5 pr-4 py-2 justify-between items-center border-t border-gray-200 w-full",
             "cursor-pointer transition-colors duration-200 hover:bg-gray-100",
             className

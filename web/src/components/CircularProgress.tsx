@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { cx } from "class-variance-authority";
 
 interface CircularProgressProps {
   value: number; // Progress value from 0 to 100
@@ -23,7 +23,7 @@ export function CircularProgress({
 
   return (
     <div
-      className={cn("relative inline-flex items-center justify-center", className)}
+      className={cx("relative inline-flex items-center justify-center", className)}
       style={{ width: size, height: size }}
     >
       <svg width={size} height={size} className="transform -rotate-90">
@@ -48,7 +48,7 @@ export function CircularProgress({
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}
           strokeLinecap="round"
-          className={cn("transition-all duration-300 ease-in-out", warning ? "text-red-500" : "text-blue-500")}
+          className={cx("transition-all duration-300 ease-in-out", warning ? "text-red-500" : "text-blue-500")}
         />
       </svg>
     </div>

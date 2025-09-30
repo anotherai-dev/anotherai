@@ -12,6 +12,7 @@ export { SignedIn, SignedOut } from "@clerk/nextjs";
 export { UserButton } from "./UserButton";
 
 export { ApiKeysButton } from "@/components/auth/ApiKeysButton";
+export { CreditsSection } from "@/components/sidebar/CreditsSection";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   return <ClerkProvider>{children}</ClerkProvider>;

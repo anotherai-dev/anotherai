@@ -20,6 +20,7 @@ export interface Components {
   SignUpButton: React.ComponentType<AuthComponentProps>;
   UserButton: React.ComponentType<{ className?: string }>;
   ApiKeysButton: React.ComponentType<{ onClick: () => void; className?: string }>;
+  CreditsSection: React.ComponentType<{ className?: string }>;
   AuthProvider: React.ComponentType<AuthComponentProps>;
   SignIn: React.ComponentType<{ redirect?: string }>;
   SignUp: React.ComponentType<{ redirect?: string }>;

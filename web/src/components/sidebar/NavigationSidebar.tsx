@@ -4,7 +4,7 @@ import { BarChart3, ChevronLeft, Cloud, FileText, Layers, Search, Settings } fro
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ApiKeysButton, UserButton } from "@/auth/components";
+import { ApiKeysButton, CreditsSection, UserButton } from "@/auth/components";
 import ViewsSection from "@/components/sidebar/ViewsSection";
 import WrappedNavigationSidebar from "@/components/sidebar/WrappedNavigationSidebar";
 import { useCookieState } from "@/hooks/useCookieState";
@@ -172,6 +172,7 @@ export default function NavigationSidebar({ onOpenCommandPalette, initialExpande
         </div>
 
         <UserButton className="border-t border-gray-200" />
+        <CreditsSection />
       </div>
     </div>
   );
