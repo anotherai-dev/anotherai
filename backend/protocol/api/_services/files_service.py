@@ -26,7 +26,7 @@ class FilesService:
         return data
 
     async def upload_file(self, file: UploadFile) -> UploadFileResponse:
-        data = await self._read_with_max_size(file, _1_MB // 2, _1_MB * 3)
+        data = await self._read_with_max_size(file, _1_MB // 2, _1_MB * 20)
         encoded = base64.b64encode(data).decode("utf-8")
         to_upload = File(
             data=encoded,
