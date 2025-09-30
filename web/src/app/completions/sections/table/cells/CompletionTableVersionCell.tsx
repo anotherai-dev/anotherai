@@ -1,11 +1,12 @@
-import { CompletionBaseTableCell } from "./CompletionBaseTableCell";
-import { CompletionTableBadgeCell } from "./CompletionTableBadgeCell";
+import { memo } from "react";
+import { ModelIconWithName } from "@/components/ModelIcon";
+import CompletionBaseTableCell from "./CompletionBaseTableCell";
 
 interface CompletionTableVersionCellProps {
   value: unknown;
 }
 
-export function CompletionTableVersionCell({ value }: CompletionTableVersionCellProps) {
+function CompletionTableVersionCell({ value }: CompletionTableVersionCellProps) {
   if (value === null || value === undefined) {
     return <span className="text-xs text-gray-400">N/A</span>;
   }
@@ -92,11 +93,19 @@ export function CompletionTableVersionCell({ value }: CompletionTableVersionCell
 
       return (
         <div className="space-y-1">
-          <CompletionTableBadgeCell value={obj.model} variant="default" rounded="2px" />
+          <div className="px-2 py-1 text-xs rounded-[2px] font-medium bg-gray-200 border border-gray-300 text-gray-900 w-fit">
+            <ModelIconWithName
+              modelId={String(obj.model)}
+              size={12}
+              nameClassName="text-xs text-gray-900 font-medium"
+              reasoningEffort={obj.reasoning_effort as "disabled" | "low" | "medium" | "high" | undefined}
+              reasoningBudget={obj.reasoning_budget as number | undefined}
+            />
+          </div>
           {nonDefaultEntries.map(({ key, value }, index) => (
             <div
               key={index}
-              className="flex items-center justify-between px-2 py-1 text-xs rounded-[2px] font-medium bg-gray-100 border border-gray-200 text-gray-700 w-full"
+              className="flex items-center justify-between gap-2 px-2 py-1 text-xs rounded-[2px] font-medium bg-gray-100 border border-gray-200 text-gray-700 w-full"
             >
               <span className="text-gray-700 capitalize">{key}</span>
               <span className="font-semibold">{value}</span>
@@ -109,3 +118,5 @@ export function CompletionTableVersionCell({ value }: CompletionTableVersionCell
 
   return <CompletionBaseTableCell value={value} />;
 }
+
+export default memo(CompletionTableVersionCell);

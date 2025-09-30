@@ -4,6 +4,10 @@
       "API_URL": "http://localhost:8000",
       "WEB_APP_URL": "http://localhost:3000"
     },
+    "staging": {
+      "API_URL": "https://api-staging.anotherai.dev",
+      "WEB_APP_URL": "https://staging.anotherai.dev"
+    },
     "production": {
       "API_URL": "https://api.anotherai.dev",
       "WEB_APP_URL": "https://anotherai.dev"

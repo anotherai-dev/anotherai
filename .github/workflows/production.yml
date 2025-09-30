@@ -1,0 +1,19 @@
+name: Production
+
+on:
+  push:
+    branches:
+      - production
+      - main
+
+permissions:
+  contents: read
+  id-token: write
+  packages: write
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/.azure-build-deploy.yml
+    secrets: inherit
+    with:
+      env: prod

@@ -4,10 +4,16 @@ or in the conversion layer."""
 
 from datetime import date, datetime
 from typing import Annotated, Any, Literal
+from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
+from pydantic.json_schema import SkipJsonSchema
 
+from core.domain.cache_usage import CacheUsage
+from core.domain.reasoning_effort import ReasoningEffort
+from core.domain.tool_choice import ToolChoice
 from core.utils.fields import datetime_factory
+from core.utils.uuid import uuid_zero
 
 
 class Page[T](BaseModel):
@@ -58,8 +64,18 @@ class ToolCallRequest(BaseModel):
 
 class ToolCallResult(BaseModel):
     id: str = Field(description="The id of the tool call result")
-    output: Any | None = Field(description="The output of the tool")
-    error: str | None = Field(description="The error of the tool")
+    output: Any | None = Field(default=None, description="The output of the tool")
+    error: str | None = Field(default=None, description="The error of the tool")
+
+    @model_validator(mode="after")
+    def post_validate(self):
+        if not self.output and not self.error:
+            raise ValueError("Either output or error must be present")
+        return self
+
+
+class URL(BaseModel):
+    url: str
 
 
 class Message(BaseModel):
@@ -70,8 +86,8 @@ class Message(BaseModel):
 
         text: str | None = None
         object: dict[str, Any] | list[Any] | None = None
-        image_url: str | None = None
-        audio_url: str | None = None
+        image_url: str | URL | None = None
+        audio_url: str | URL | None = None
         tool_call_request: ToolCallRequest | None = None  # function_call in response API
         tool_call_result: ToolCallResult | None = None  # function_call_output in response API
         reasoning: str | None = None
@@ -81,21 +97,18 @@ class Message(BaseModel):
 
 
 class OutputSchema(BaseModel):
-    id: str = Field(description="The id of the output schema. Auto generated from the json schema")
+    id: str = Field(default="", description="The id of the output schema. Auto generated from the json schema")
     json_schema: dict[str, Any] = Field(description="The JSON schema of the output")
 
 
-class Version(BaseModel):
-    id: str = Field(description="The id of the version. Auto generated.", default="")
+class _BaseVersion(BaseModel):
     model: str
-    # Default values match OpenAI API defaults (temperature=1.0, top_p=1.0)
-    temperature: float = 1.0
-    top_p: float = 1.0
+    temperature: float | None = None
+    top_p: float | None = None
     tools: list[Tool] | None = Field(
         default=None,
         description="A list of tools that the model can use. If empty, no tools are used.",
     )
-
     prompt: list[Message] | None = Field(
         default=None,
         description="A list of messages that will begin the message list sent to the model"
@@ -103,15 +116,53 @@ class Version(BaseModel):
         "to describe the variables used and the prompt will be rendered with the input variables before"
         "being sent to the model",
     )
+    max_output_tokens: int | None = Field(
+        default=None,
+        validation_alias=AliasChoices("max_output_tokens", "max_tokens", "max_completion_tokens"),
+        description="The maximum number of tokens to generate in the prompt",
+    )
+
+    tool_choice: ToolChoice | None = None
+
+    presence_penalty: float | None = None
+
+    frequency_penalty: float | None = None
+
+    parallel_tool_calls: bool | None = None
+
+    reasoning_effort: ReasoningEffort | None = None
+
+    reasoning_budget: int | None = None
+
+    use_structured_generation: SkipJsonSchema[bool | None] = None
+
+    provider: SkipJsonSchema[str | None] = None
+
+
+class VersionRequest(_BaseVersion):
+    model_config = ConfigDict(revalidate_instances="always", extra="forbid")
+
+    # Here we are trying to be as flexible as possible
+    # Models will likely send a response_format field
+    output_json_schema: dict[str, Any] | None = Field(
+        default=None,
+        description="A JSON schema for the output of the model, aka the schema in the response format",
+        validation_alias=AliasChoices("output_json_schema", "output_schema", "response_format"),
+    )
+
+
+class Version(_BaseVersion):
+    id: str = Field(description="The id of the version. Auto generated.", default="")
+
+    output_schema: OutputSchema | None = Field(
+        default=None,
+        description="A JSON schema for the output of the model, aka the schema in the response format",
+    )
 
     input_variables_schema: dict[str, Any] | None = Field(
         default=None,
         description="A JSON schema for the variables used to template the instructions during the inference."
         "Auto generated from the prompt if the prompt is a Jinja2 template",
-    )
-    output_schema: OutputSchema | None = Field(
-        default=None,
-        description="A JSON schema for the output of the model, aka the schema in the response format",
     )
 
 
@@ -280,9 +331,53 @@ class Annotation(BaseModel):
     )
 
 
+class TokenUsage(BaseModel):
+    text_token_count: float | None = None
+    audio_token_count: float | None = None
+    audio_count: int | None = None
+    image_token_count: float | None = None
+    image_count: int | None = None
+    cost_usd: float
+
+
+class CompletionUsage(TokenUsage):
+    cached_token_count: float | None = None
+    reasoning_token_count: float | None = None
+
+
+class InferenceUsage(BaseModel):
+    prompt: TokenUsage
+    completion: CompletionUsage
+
+
+class Trace(BaseModel):
+    kind: Literal["llm", "tool"]
+    duration_seconds: float
+    cost_usd: float
+
+    model: str | None = None
+    provider: str | None = None
+    name: str | None = None
+    tool_input_preview: str | None = None
+    tool_output_preview: str | None = None
+
+    usage: InferenceUsage | None = Field(
+        default=None,
+        description="The usage of the trace. Only present for LLM traces.",
+    )
+
+
 class Completion(BaseModel):
-    id: str
+    id: UUID = Field(
+        default_factory=uuid_zero,
+        description="The id of the completion. Must be a UUID7. Auto generated if not provided.",
+    )
     agent_id: str
+
+    created_at: datetime | None = Field(
+        default=None,
+        description="The timestamp when the completion was created.",
+    )
 
     version: Version = Field(
         description="The version of the model used for the inference.",
@@ -301,22 +396,40 @@ class Completion(BaseModel):
     output: Output = Field(description="The output of the inference")
 
     messages: list[Message] = Field(
+        default_factory=list,
         description="The full list of message sent to the model, includes the messages in the version prompt "
         "(rendered with the input variables if needed), the appended messages and the messages returned by the model",
     )
 
     annotations: list[Annotation] | None = Field(
+        default=None,
         description="Annotations associated with the completion and the completion only. Annotations added within the scope of an experiment are not included here.",
     )
 
-    metadata: dict[str, Any] = Field(
+    metadata: dict[str, Any] | None = Field(
+        default=None,
         description="Metadata associated with the completion. Can be used to store additional information about the completion.",
     )
 
     cost_usd: float = Field(description="The cost of the inference in USD.")
     duration_seconds: float | None = Field(
+        default=None,
         description="The duration of the inference in seconds.",
     )
+
+    traces: list[Trace] | None = Field(
+        default=None,
+        description="The traces of the inference, including the LLM and tool traces.",
+    )
+
+
+class ImportCompletionResponse(BaseModel):
+    """The response to the import completion request.
+    We do not return the entire completion here as it can be quite large.
+    If you need the entire completion, you can fetch it using the id."""
+
+    id: UUID
+    url: str
 
 
 class ExperimentItem(BaseModel):
@@ -330,22 +443,32 @@ class ExperimentItem(BaseModel):
     user_id: str
     title: str
     description: str
-    result: str | None
+    result: str | None = None
 
 
 class Experiment(BaseModel):
     id: str
     created_at: datetime
+    updated_at: datetime | None = Field(default=None, description="When the experiment was last updated.")
     author_name: str
     url: str
 
     title: str = Field(description="The title of the experiment.")
     description: str = Field(description="The description of the experiment.")
-    result: str | None = Field(description="A user defined result of the experiment.")
+    result: str | None = Field(default=None, description="A user defined result of the experiment.")
     agent_id: str = Field(description="The agent that created the experiment.")
 
+    versions: list[Version] | None = None
+
+    inputs: list[Input] | None = None
+
+    metadata: dict[str, Any] | None = Field(
+        default=None,
+        description="Metadata associated with the experiment. Can be used to store additional information about the experiment.",
+    )
+
     class Completion(BaseModel):
-        id: str
+        id: UUID
         # Only IDs are provided here but they have the same format as in the full object (completion.input.id)
         input: ModelWithID
         version: ModelWithID
@@ -353,19 +476,11 @@ class Experiment(BaseModel):
         cost_usd: float
         duration_seconds: float
 
-    completions: list[Completion] = Field(description="The completions of the experiment.")
-
-    versions: list[Version]
-
-    inputs: list[Input]
+    completions: list[Completion] | None = Field(default=None, description="The completions of the experiment.")
 
     annotations: list[Annotation] | None = Field(
-        description="Annotations associated with the experiment, either tied to the experiment only or to a completion within the experiment.",
-    )
-
-    metadata: dict[str, Any] | None = Field(
         default=None,
-        description="Metadata associated with the experiment. Can be used to store additional information about the experiment.",
+        description="Annotations associated with the experiment, either tied to the experiment only or to a completion within the experiment.",
     )
 
 
@@ -376,18 +491,7 @@ class CreateExperimentRequest(BaseModel):
     agent_id: str
     metadata: dict[str, Any] | None = None
     author_name: str
-
-
-class PlaygroundOutput(BaseModel):
-    class Completion(BaseModel):
-        id: str
-        output: Output
-        cost_usd: float | None
-        duration_seconds: float | None
-
-    experiment_id: str
-    experiment_url: str
-    completions: list[Completion]
+    use_cache: CacheUsage | None = None
 
 
 # ----------------------------------------
@@ -631,7 +735,14 @@ class View(BaseModel):
 
     id: str = Field(default="", description="Unique identifier for the view")
     title: str = Field(description="View title")
-    query: str = Field(description="SQL query to filter/aggregate completions")
+    query: str = Field(
+        description="SQL query to filter/aggregate completions. If using pagination, "
+        "add a `LIMIT {limit}` and `OFFSET {offset}` clauses as needed. The template arguments will "
+        "be replaced client side with actual values.",
+        examples=[
+            "SELECT * FROM completions LIMIT {limit} OFFSET {offset}",
+        ],
+    )
 
     graph: Graph | None = None
 
@@ -676,12 +787,13 @@ class APIKey(BaseModel):
     name: str
     partial_key: str
     created_at: datetime
-    last_used_at: datetime | None
+    last_used_at: datetime | None = None
     created_by: str
 
 
 class CompleteAPIKey(APIKey):
     key: str
+    api_host: str
 
 
 class CreateAPIKeyRequest(BaseModel):
@@ -692,3 +804,78 @@ class CreateAPIKeyRequest(BaseModel):
 class QueryCompletionResponse(BaseModel):
     rows: list[dict[str, Any]]
     url: str
+
+
+# ------------------------------------------------
+# Deployments
+
+
+class Deployment(BaseModel):
+    """A deployment represents a specific model configuration for production use."""
+
+    id: str = Field(
+        description="A unique user provided ID for the deployment",
+        examples=["my-agent-id:production#1"],
+    )
+
+    agent_id: str
+
+    version: Version = Field(
+        description="Version configuration including model, prompt, and tools",
+    )
+    created_at: datetime = Field(
+        default_factory=datetime_factory,
+        description="The timestamp when the deployment was created",
+    )
+
+    created_by: str
+
+    updated_at: datetime | None = None
+
+    metadata: dict[str, Any] | None = None
+
+    url: str
+
+    archived_at: datetime | None = None
+
+
+class DeploymentCreate(BaseModel):
+    version: Version
+    metadata: dict[str, Any] | None = None
+    created_by: str
+    agent_id: str
+    id: str
+
+
+class DeploymentUpdate(BaseModel):
+    version: Annotated[
+        Version | None,
+        Field(
+            description="""A new version for the deployment. Note that it is only possible to update the version of a
+        deployment when the new version expects a compatible variables (aka input_variables_schema) and response
+        format types (aka output_schema). Schemas are considered compatible if the structure they describe are
+        the same, i-e all fields have the same name, properties and types.""",
+        ),
+    ] = None
+
+    metadata: dict[str, Any] | None = None
+
+    @model_validator(mode="after")
+    def post_validate(self):
+        # check if at least one field is not None
+        if not self.version and not self.metadata:
+            raise ValueError("Either version or metadata must be provided")
+        return self
+
+
+class OpenAIListResult[T: BaseModel](BaseModel):
+    """A page of results as defined in the OpenAI api reference, see https://platform.openai.com/docs/api-reference/"""
+
+    object: Literal["list"] = "list"
+    data: list[T]
+
+
+class UploadFileResponse(BaseModel):
+    url: str
+    # TODO:
+    # expires_at: datetime

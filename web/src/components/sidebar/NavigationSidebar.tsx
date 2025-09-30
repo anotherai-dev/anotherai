@@ -1,21 +1,21 @@
 "use client";
 
-import { ChevronLeft, KeyRound, Search, Settings } from "lucide-react";
+import { BarChart3, ChevronLeft, Cloud, FileText, Layers, Search, Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
-import { UserButton } from "@/components/auth/UserButton";
-import { CreditsSection } from "@/components/sidebar/CreditsSection";
+import { ApiKeysButton, UserButton } from "@/auth/components";
 import ViewsSection from "@/components/sidebar/ViewsSection";
-import { isClerkEnabled } from "@/lib/utils";
+import WrappedNavigationSidebar from "@/components/sidebar/WrappedNavigationSidebar";
+import { useCookieState } from "@/hooks/useCookieState";
 
 interface NavigationSidebarProps {
   onOpenCommandPalette?: () => void;
+  initialExpanded?: boolean;
 }
 
-export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSidebarProps = {}) {
-  const [isExpanded, setIsExpanded] = useState(true);
+export default function NavigationSidebar({ onOpenCommandPalette, initialExpanded = true }: NavigationSidebarProps) {
+  const [isExpanded, setIsExpanded] = useCookieState("sidebar-expanded", initialExpanded);
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -27,13 +27,7 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
   };
 
   if (!isExpanded) {
-    return (
-      <div className="w-16 bg-gray-50 border-r border-gray-200 flex flex-col items-center py-4">
-        <button onClick={() => setIsExpanded(true)} className="mb-4 cursor-pointer" title="Expand sidebar">
-          <Image src="/sidebar-logo.png" alt="AnotherAI Logo" width={32} height={32} className="w-8 h-8" />
-        </button>
-      </div>
-    );
+    return <WrappedNavigationSidebar onOpenCommandPalette={onOpenCommandPalette} setIsExpanded={setIsExpanded} />;
   }
 
   return (
@@ -81,7 +75,7 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
         <div className="p-2 border-b border-gray-200">
           <Link
             href="/completions"
-            className={`flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-[2px] ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-[2px] cursor-pointer ${
               pathname === "/completions" ? "bg-blue-100 text-blue-700" : "text-gray-700 hover:bg-gray-100"
             }`}
           >
@@ -90,27 +84,9 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
             </svg>
             Completions
           </Link>
-
-          <Link
-            href="/experiments"
-            className={`flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-[2px] ${
-              pathname === "/experiments" ? "bg-blue-100 text-blue-700" : "text-gray-700 hover:bg-gray-100"
-            }`}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
-              />
-            </svg>
-            Experiments
-          </Link>
-
           <Link
             href="/agents"
-            className={`flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-[2px] ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-[2px] cursor-pointer ${
               pathname === "/agents" ? "bg-blue-100 text-blue-700" : "text-gray-700 hover:bg-gray-100"
             }`}
           >
@@ -124,38 +100,78 @@ export default function NavigationSidebar({ onOpenCommandPalette }: NavigationSi
             </svg>
             Agents
           </Link>
-
-          {isClerkEnabled() && (
-            <button
-              onClick={handleOpenApiKeysModal}
-              className="flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-[2px] text-gray-700 hover:bg-gray-100 w-full text-left cursor-pointer"
-            >
-              <KeyRound className="w-4 h-4" />
-              API Keys
-            </button>
-          )}
-
+          <Link
+            href="/experiments"
+            className={`flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-[2px] cursor-pointer ${
+              pathname === "/experiments" ? "bg-blue-100 text-blue-700" : "text-gray-700 hover:bg-gray-100"
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
+              />
+            </svg>
+            Experiments
+          </Link>
+          <Link
+            href="/metrics"
+            className={`flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-[2px] cursor-pointer ${
+              pathname === "/metrics" ? "bg-blue-100 text-blue-700" : "text-gray-700 hover:bg-gray-100"
+            }`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            Metrics
+          </Link>
+          <Link
+            href="/deployments"
+            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors mb-1 cursor-pointer ${
+              pathname.startsWith("/deployments") ? "bg-blue-100 text-blue-700" : "text-gray-700 hover:bg-gray-100"
+            }`}
+          >
+            <Cloud className="w-4 h-4" />
+            Deployments
+          </Link>
+          <ApiKeysButton onClick={handleOpenApiKeysModal} />
           <a
-            href="https://github.com/anotherai-dev/anotherai"
+            href="https://docs.anotherai.dev/getting-started"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-1 text-gray-700 hover:bg-gray-100"
+            className="flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-1 text-gray-700 hover:bg-gray-100 cursor-pointer"
           >
             <Settings className="w-4 h-4" />
             MCP Set Up
+          </a>
+          <a
+            href="https://docs.anotherai.dev"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-1 text-gray-700 hover:bg-gray-100 cursor-pointer"
+          >
+            <FileText className="w-4 h-4" />
+            Documentation
+          </a>
+          <a
+            href="https://docs.anotherai.dev/features/models"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm transition-colors mb-1 text-gray-700 hover:bg-gray-100 cursor-pointer"
+          >
+            <Layers className="w-4 h-4" />
+            Models
           </a>
         </div>
 
         <ViewsSection />
 
-        <UserButton className="border-t border-gray-200" />
+        {/* Auto-refresh indicator */}
+        <div className="px-3 py-3 border-t border-gray-200">
+          <p className="text-xs text-gray-400 text-center">Views update automatically</p>
+        </div>
 
-        {/* Credits Section - Only show when Clerk is enabled */}
-        {isClerkEnabled() && (
-          <div className="mt-auto">
-            <CreditsSection />
-          </div>
-        )}
+        <UserButton className="border-t border-gray-200" />
       </div>
     </div>
   );

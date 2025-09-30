@@ -1,5 +1,3 @@
-import json
-from json import JSONDecodeError
 from typing import Any, override
 
 from httpx import Response
@@ -10,10 +8,10 @@ from core.domain.message import MessageDeprecated
 from core.domain.models import Model, Provider
 from core.domain.models.model_data import ModelData
 from core.domain.models.utils import get_model_data
+from core.domain.reasoning_effort import ReasoningEffort
 from core.domain.tool_call import ToolCallRequest
 from core.providers._base.httpx_provider import HTTPXProvider
 from core.providers._base.llm_usage import LLMUsage
-from core.providers._base.models import RawCompletion
 from core.providers._base.provider_error import (
     ContentModerationError,
     FailedGenerationError,
@@ -26,7 +24,7 @@ from core.providers._base.provider_error import (
     UnknownProviderError,
 )
 from core.providers._base.provider_options import ProviderOptions
-from core.providers._base.streaming_context import ParsedResponse, ToolCallRequestBuffer
+from core.providers._base.streaming_context import ParsedResponse
 from core.providers._base.utils import get_provider_config_env, get_unique_schema_name, should_use_structured_output
 from core.providers.google.google_provider_domain import (
     internal_tool_name_to_native_tool_call,
@@ -69,6 +67,18 @@ class XAIProvider(HTTPXProvider[XAIConfig, CompletionResponse]):
             ),
         )
 
+    @classmethod
+    def model_name(cls, options: ProviderOptions, model_data: ModelData) -> tuple[str, str | None]:
+        final_reasoning = options.final_reasoning_effort(model_data.reasoning)
+        model = options.model
+        if model == Model.GROK_4_FAST:
+            if final_reasoning == ReasoningEffort.DISABLED:
+                model = "grok-4-fast-non-reasoning"
+                final_reasoning = None
+            else:
+                model = "grok-4-fast-reasoning"
+        return (model, final_reasoning)
+
     @override
     def _build_request(self, messages: list[MessageDeprecated], options: ProviderOptions, stream: bool) -> BaseModel:
         message: list[XAIMessage | XAIToolMessage] = []
@@ -79,16 +89,17 @@ class XAIProvider(HTTPXProvider[XAIConfig, CompletionResponse]):
                 message.append(XAIMessage.from_domain(m))
 
         model_data = get_model_data(options.model)
+        model, final_reasoning = self.model_name(options, model_data)
 
         completion_request = CompletionRequest(
             messages=message,
-            model=options.model,
+            model=model,
             temperature=options.temperature,
             max_tokens=options.max_tokens,
             stream=stream,
             stream_options=StreamOptions(include_usage=True) if stream else None,
             response_format=self._response_format(options, model_data),
-            reasoning_effort=options.final_reasoning_effort(model_data.reasoning),
+            reasoning_effort=final_reasoning,
             tool_choice=CompletionRequest.tool_choice_from_domain(options.tool_choice),
             top_p=options.top_p,
             presence_penalty=options.presence_penalty,
@@ -204,66 +215,12 @@ class XAIProvider(HTTPXProvider[XAIConfig, CompletionResponse]):
     def is_structured_generation_supported(self) -> bool:
         return True
 
-    def _extract_stream_delta(  # noqa: C901
-        self,
-        sse_event: bytes,
-        raw_completion: RawCompletion,
-        tool_call_request_buffer: dict[int, ToolCallRequestBuffer],
-    ):
+    @override
+    def _extract_stream_delta(self, sse_event: bytes):
         if sse_event == b"[DONE]":
-            return ParsedResponse("")
+            return ParsedResponse()
         raw = StreamedResponse.model_validate_json(sse_event)
-        for choice in raw.choices:
-            if choice.finish_reason == "length":
-                raise MaxTokensExceededError(
-                    msg="Model returned a response with a length finish reason, meaning the maximum number of tokens was exceeded.",
-                    raw_completion=raw,
-                )
-        if raw.usage:
-            raw_completion.usage = raw.usage.to_domain()
-
-        if not raw.choices:
-            return ParsedResponse("")
-
-        first_choice_delta = raw.choices[0].delta
-        tools_calls: list[ToolCallRequest] = []
-        if first_choice_delta.tool_calls:
-            for tool_call in first_choice_delta.tool_calls:
-                # Check if a tool call at that index is already in the buffer
-                if tool_call.index not in tool_call_request_buffer:
-                    tool_call_request_buffer[tool_call.index] = ToolCallRequestBuffer()
-
-                buffered_tool_call = tool_call_request_buffer[tool_call.index]
-
-                if tool_call.id and not buffered_tool_call.id:
-                    buffered_tool_call.id = tool_call.id
-
-                if tool_call.function.name and not buffered_tool_call.tool_name:
-                    buffered_tool_call.tool_name = tool_call.function.name
-
-                if tool_call.function.arguments:
-                    buffered_tool_call.tool_input += tool_call.function.arguments
-
-                if buffered_tool_call.id and buffered_tool_call.tool_name and buffered_tool_call.tool_input:
-                    try:
-                        tool_input_dict = json.loads(buffered_tool_call.tool_input)
-                    except JSONDecodeError:
-                        # That means the tool call is not full streamed yet
-                        continue
-
-                    tools_calls.append(
-                        ToolCallRequest(
-                            id=buffered_tool_call.id,
-                            tool_name=native_tool_name_to_internal(buffered_tool_call.tool_name),
-                            tool_input_dict=tool_input_dict,
-                        ),
-                    )
-
-        return ParsedResponse(
-            first_choice_delta.content or "",
-            reasoning=first_choice_delta.reasoning_content,
-            tool_calls=tools_calls,
-        )
+        return raw.to_parsed_response()
 
     def _compute_prompt_token_count(
         self,

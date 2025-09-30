@@ -2,6 +2,7 @@
 
 import json
 from collections.abc import Awaitable, Callable
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -10,15 +11,25 @@ from clickhouse_connect.driver.asyncclient import AsyncClient
 from clickhouse_connect.driver.exceptions import DatabaseError
 from pydantic import BaseModel
 
+from core.domain.agent import Agent
 from core.domain.agent_completion import AgentCompletion
+from core.domain.agent_input import AgentInput
+from core.domain.agent_output import AgentOutput
 from core.domain.annotation import Annotation
-from core.domain.exceptions import BadRequestError, ObjectNotFoundError
+from core.domain.error import Error
+from core.domain.exceptions import InvalidQueryError, ObjectNotFoundError
 from core.domain.experiment import Experiment
+from core.domain.message import Message
+from core.domain.version import Version
 from core.storage.clickhouse._models._ch_annotation import ClickhouseAnnotation
 from core.storage.clickhouse._models._ch_completion import ClickhouseCompletion
 from core.storage.clickhouse._models._ch_experiment import ClickhouseExperiment
 from core.storage.clickhouse._models._ch_field_utils import data_and_columns
-from core.storage.clickhouse.clickhouse_client import ClickhouseClient
+from core.storage.clickhouse.clickhouse_client import (
+    _CACHED_OUTPUT_QUERY,
+    ClickhouseClient,
+    _extract_clickhouse_error,
+)
 from core.utils.uuid import uuid7
 from tests.fake_models import fake_annotation, fake_completion, fake_experiment
 from tests.utils import fixtures_json
@@ -45,7 +56,7 @@ class TestStoreAnnotation:
     async def test_store_annotation_basic(self, client: ClickhouseClient):
         """Test storing a basic annotation successfully"""
         annotation = fake_annotation(
-            target=Annotation.Target(completion_id=str(uuid7(ms=lambda: 0, rand=lambda: 1))),
+            target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 1)),
         )
 
         # This should not raise any exceptions
@@ -54,7 +65,7 @@ class TestStoreAnnotation:
     async def test_store_annotation_with_float_metric(self, client: ClickhouseClient):
         """Test storing annotation with float metric value"""
         annotation = fake_annotation(
-            target=Annotation.Target(completion_id=str(uuid7(ms=lambda: 0, rand=lambda: 2))),
+            target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 2)),
             metric=Annotation.Metric(name="accuracy", value=0.95),
         )
 
@@ -63,7 +74,7 @@ class TestStoreAnnotation:
     async def test_store_annotation_with_string_metric(self, client: ClickhouseClient):
         """Test storing annotation with string metric value"""
         annotation = fake_annotation(
-            target=Annotation.Target(completion_id=str(uuid7(ms=lambda: 0, rand=lambda: 3))),
+            target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 3)),
             metric=Annotation.Metric(name="category", value="positive"),
         )
 
@@ -72,7 +83,7 @@ class TestStoreAnnotation:
     async def test_store_annotation_with_bool_metric(self, client: ClickhouseClient):
         """Test storing annotation with boolean metric value"""
         annotation = fake_annotation(
-            target=Annotation.Target(completion_id=str(uuid7(ms=lambda: 0, rand=lambda: 4))),
+            target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 4)),
             metric=Annotation.Metric(name="approved", value=True),
         )
 
@@ -81,7 +92,7 @@ class TestStoreAnnotation:
     async def test_store_annotation_with_no_metric(self, client: ClickhouseClient):
         """Test storing annotation without any metric"""
         annotation = fake_annotation(
-            target=Annotation.Target(completion_id=str(uuid7(ms=lambda: 0, rand=lambda: 5))),
+            target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 5)),
             metric=None,
         )
 
@@ -90,7 +101,7 @@ class TestStoreAnnotation:
     async def test_store_annotation_with_custom_metadata(self, client: ClickhouseClient):
         """Test storing annotation with custom metadata"""
         annotation = fake_annotation(
-            target=Annotation.Target(completion_id=str(uuid7(ms=lambda: 0, rand=lambda: 6))),
+            target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 6)),
             metadata={"user_id": "analyst_123", "tags": "review", "priority": "high"},
         )
 
@@ -115,7 +126,7 @@ class TestStoreAnnotation:
     async def test_store_annotation_with_no_context(self, client: ClickhouseClient):
         """Test storing annotation without context"""
         annotation = fake_annotation(
-            target=Annotation.Target(completion_id=str(uuid7(ms=lambda: 0, rand=lambda: 7))),
+            target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 7)),
             context=None,
         )
 
@@ -124,7 +135,7 @@ class TestStoreAnnotation:
     async def test_store_annotation_with_no_metadata(self, client: ClickhouseClient):
         """Test storing annotation with None metadata"""
         annotation = fake_annotation(
-            target=Annotation.Target(completion_id=str(uuid7(ms=lambda: 0, rand=lambda: 8))),
+            target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 8)),
             metadata=None,
         )
 
@@ -181,12 +192,12 @@ class TestStoreExperiment:
             fake_annotation(
                 id="ann-1",
                 text="First annotation",
-                target=Annotation.Target(completion_id=str(uuid7(ms=lambda: 0, rand=lambda: 11))),
+                target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 11)),
             ),
             fake_annotation(
                 id="ann-2",
                 text="Second annotation",
-                target=Annotation.Target(completion_id=str(uuid7(ms=lambda: 0, rand=lambda: 12))),
+                target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 12)),
             ),
         ]
         experiment = fake_experiment(annotations=annotations)
@@ -241,25 +252,10 @@ class TestCompletionsByIds:
 
     async def test_completions_by_ids_nonexistent_id(self, client: ClickhouseClient):
         # Use a valid UUID that doesn't exist in the database
-        nonexistent_id = str(UUID(int=12345))
+        nonexistent_id = UUID(int=12345)
         result = await client.completions_by_ids([nonexistent_id])
 
         assert result == []
-
-    async def test_completions_by_ids_invalid_uuid(self, client: ClickhouseClient):
-        # Test with invalid UUID
-        with pytest.raises(BadRequestError, match="Invalid UUIDs"):
-            _ = await client.completions_by_ids(["invalid-uuid"])
-
-    async def test_completions_by_ids_mixed_valid_invalid(self, client: ClickhouseClient):
-        completion = fake_completion()
-
-        # Store one completion
-        _ = await client.store_completion(completion, _insert_settings)
-
-        # Test with mix of valid and invalid UUIDs
-        with pytest.raises(BadRequestError, match="Invalid UUIDs"):
-            _ = await client.completions_by_ids([completion.id, "invalid-uuid"])
 
 
 class TestCompletionById:
@@ -294,15 +290,10 @@ class TestCompletionById:
 
     async def test_completions_by_id_nonexistent_id(self, client: ClickhouseClient):
         # Use a valid UUID that doesn't exist in the database
-        nonexistent_id = str(UUID(int=12345))
+        nonexistent_id = UUID(int=12345)
 
         with pytest.raises(ObjectNotFoundError):
             _ = await client.completions_by_id(nonexistent_id)
-
-    async def test_completions_by_id_invalid_uuid(self, client: ClickhouseClient):
-        # Test with invalid UUID
-        with pytest.raises(BadRequestError, match="Invalid UUID"):
-            _ = await client.completions_by_id("invalid-uuid")
 
     async def test_completions_by_id_with_agent_id_included(self, client: ClickhouseClient):
         completion = fake_completion()
@@ -417,7 +408,7 @@ class TestRawQuery:
         query_fn: Callable[[str], Awaitable[list[dict[str, Any]]]],
     ):
         """Check that the agent_id is mapped to the agent_uid both ways"""
-        query_str = "SELECT id, agent_id FROM completions LIMIT 10"
+        query_str = "SELECT id, agent_id FROM completions ORDER BY id DESC LIMIT 10"
 
         result = await query_fn(query_str)
         assert result == [
@@ -450,7 +441,7 @@ class TestRawQuery:
         ]
 
     async def test_select_star(self, query_fn: Callable[[str], Awaitable[list[dict[str, Any]]]]):
-        query_str = "SELECT * FROM completions LIMIT 10"
+        query_str = "SELECT * FROM completions ORDER BY id DESC LIMIT 10"
         result = await query_fn(query_str)
         assert len(result) == 3
         assert [r["id"] for r in result] == [
@@ -725,6 +716,30 @@ LIMIT 1 BY input_id
             },
         ]
 
+    @pytest.mark.parametrize(
+        ("query", "code", "error_type"),
+        [
+            pytest.param(
+                "SELECT * FROM non_existent_table",
+                "60",
+                "UNKNOWN_TABLE",
+                id="non_existent_table",
+            ),
+            pytest.param(
+                "SELECT * FROM completions WHERE id = 'invalid-uuid'",
+                "376",
+                "CANNOT_PARSE_UUID",
+                id="invalid_uuid",
+            ),
+        ],
+    )
+    async def test_invalid_query(self, client: ClickhouseClient, query: str, code: str, error_type: str):
+        """Test that an invalid query raises InvalidQueryError."""
+        with pytest.raises(InvalidQueryError) as e:
+            await client.raw_query(query)
+        assert e.value.details["code"] == code
+        assert e.value.details["error_type"] == error_type
+
 
 class TestAddCompletionToExperiment:
     async def test_add_completion_to_experiment_basic(self, client: ClickhouseClient):
@@ -740,7 +755,7 @@ class TestAddCompletionToExperiment:
         await client.store_experiment(experiment, _insert_settings)
 
         # Generate a completion ID
-        completion_id = str(uuid7(ms=lambda: 0, rand=lambda: 1))
+        completion_id = uuid7(ms=lambda: 0, rand=lambda: 1)
 
         # Add completion to experiment
         await client.add_completion_to_experiment("test-experiment-123", completion_id, {"mutations_sync": 1})
@@ -759,17 +774,17 @@ class TestAddCompletionToExperiment:
 
         assert len(result.result_rows) == 1
         completion_ids = result.result_rows[0][0]  # First row, first column
-        assert completion_id in [str(cid) for cid in completion_ids]
+        assert completion_id in completion_ids
 
     async def test_add_completion_to_experiment_duplicate_ignored(self, client: ClickhouseClient):
         """Test that adding the same completion ID twice doesn't create duplicates."""
-        completion_id = str(uuid7(ms=lambda: 0, rand=lambda: 2))
+        completion_id = uuid7(ms=lambda: 0, rand=lambda: 2)
 
         # Create a test experiment with an existing completion ID
         experiment = fake_experiment(
             id="test-experiment-456",
             agent_id="test-agent",
-            run_ids=[completion_id],  # Start with one completion
+            run_ids=[str(completion_id)],  # Start with one completion
         )
 
         # Store the experiment first
@@ -793,10 +808,290 @@ class TestAddCompletionToExperiment:
 
         assert len(result.result_rows) == 1
         completion_ids = result.result_rows[0][0]  # First row, first column
-        completion_id_strings = [str(cid) for cid in completion_ids]
-        assert completion_id_strings.count(completion_id) == 1
+        assert completion_ids.count(completion_id) == 1
 
-    async def test_add_completion_to_experiment_invalid_uuid(self, client: ClickhouseClient):
-        """Test that providing an invalid UUID raises BadRequestError."""
-        with pytest.raises(BadRequestError, match="Invalid completion UUID"):
-            await client.add_completion_to_experiment("test-experiment", "invalid-uuid")
+
+class TestGetVersionById:
+    async def test_get_version_by_id_success(self, client: ClickhouseClient):
+        """Test successful retrieval of version by ID"""
+        # Create and store a completion with a version
+        completion = fake_completion(id_rand=1)
+        await client.store_completion(completion, _insert_settings)
+
+        # Retrieve the version by completion ID and agent ID
+        result_version, completion_id = await client.get_version_by_id(completion.agent.id, completion.version.id)
+
+        # Verify the returned version matches the original
+        assert completion_id == completion.id
+        assert result_version.model == completion.version.model
+        assert result_version.provider == completion.version.provider
+        assert result_version.temperature == completion.version.temperature
+        assert result_version.max_output_tokens == completion.version.max_output_tokens
+        assert result_version.use_structured_generation == completion.version.use_structured_generation
+        assert result_version.tool_choice == completion.version.tool_choice
+        assert result_version.prompt == completion.version.prompt
+
+    async def test_get_version_by_id_not_found(self, client: ClickhouseClient):
+        """Test ObjectNotFoundError when version/completion doesn't exist"""
+        # Use a valid UUID that doesn't exist in the database
+        nonexistent_id = str(UUID(int=12345))
+        agent_id = "test-agent"
+
+        with pytest.raises(ObjectNotFoundError, match="version"):
+            await client.get_version_by_id(agent_id, nonexistent_id)
+
+    async def test_get_version_by_id_with_complex_version(self, client: ClickhouseClient):
+        """Test retrieval with complex version object (tools, output schema, etc.)"""
+        from core.domain.tool import Tool
+
+        # Create a completion with a more complex version
+        complex_version = Version(
+            model="gpt-4",
+            provider="openai",
+            temperature=0.8,
+            max_output_tokens=2000,
+            use_structured_generation=True,
+            tool_choice="auto",
+            enabled_tools=[
+                Tool(
+                    name="calculator",
+                    description="A calculator tool",
+                    input_schema={"type": "object", "properties": {"expression": {"type": "string"}}},
+                    output_schema={"type": "object", "properties": {"result": {"type": "number"}}},
+                ),
+            ],
+            top_p=0.9,
+            presence_penalty=0.1,
+            frequency_penalty=0.2,
+            parallel_tool_calls=True,
+            prompt=[
+                Message.with_text("You are an assistant", role="system"),
+                Message.with_text("Calculate 2+2", role="user"),
+            ],
+            output_schema=Version.OutputSchema(
+                json_schema={
+                    "type": "object",
+                    "properties": {
+                        "result": {"type": "number"},
+                    },
+                    "required": ["result"],
+                },
+            ),
+        )
+
+        completion = fake_completion(id_rand=2)
+        # Replace the version with our complex version
+        completion = completion.model_copy(update={"version": complex_version})
+        await client.store_completion(completion, _insert_settings)
+
+        # Retrieve the version
+        result_version, completion_id = await client.get_version_by_id(completion.agent.id, completion.version.id)
+        assert completion_id == completion.id
+
+        # Verify all complex fields are preserved
+        assert result_version.model == complex_version.model
+        assert result_version.provider == complex_version.provider
+        assert result_version.temperature == complex_version.temperature
+        assert result_version.max_output_tokens == complex_version.max_output_tokens
+        assert result_version.use_structured_generation == complex_version.use_structured_generation
+        assert result_version.tool_choice == complex_version.tool_choice
+        assert result_version.enabled_tools == complex_version.enabled_tools
+        assert result_version.top_p == complex_version.top_p
+        assert result_version.presence_penalty == complex_version.presence_penalty
+        assert result_version.frequency_penalty == complex_version.frequency_penalty
+        assert result_version.parallel_tool_calls == complex_version.parallel_tool_calls
+        assert result_version.prompt == complex_version.prompt
+        assert result_version.output_schema == complex_version.output_schema
+
+    async def test_get_version_by_id_different_agent(self, client: ClickhouseClient):
+        """Test filtering by agent_id - ensure can't access other agent's versions"""
+        # Create completion for agent1
+        agent1 = Agent(uid=1, id="agent-1", name="Agent 1", created_at=datetime(2025, 1, 1, 1, 1, 1, tzinfo=UTC))
+        completion1 = fake_completion(agent=agent1, id_rand=1)
+        await client.store_completion(completion1, _insert_settings)
+
+        # Try to access agent1's version with a different agent ID
+        wrong_agent_id = "agent-2"
+
+        with pytest.raises(ObjectNotFoundError, match="version"):
+            await client.get_version_by_id(wrong_agent_id, "bla")
+
+
+class TestCachedOutput:
+    async def test_cached_output_basic(self, client: ClickhouseClient):
+        """Test basic retrieval of cached output"""
+        # Create a completion with a version and input
+        completion = fake_completion()
+        await client.store_completion(completion, _insert_settings)
+
+        # Retrieve the cached output
+        output = await client.cached_completion(version_id=completion.version.id, input_id=completion.agent_input.id)
+        assert output
+        assert output.id == completion.id
+        assert output.agent_output.model_dump(exclude={"preview"}) == completion.agent_output.model_dump(
+            exclude={"preview"},
+        )
+        assert output.duration_seconds == completion.duration_seconds
+        assert output.cost_usd == completion.cost_usd
+
+    async def test_cached_output_none(self, client: ClickhouseClient):
+        """Test that None is returned when there is no cached output"""
+        # Create a completion with a version and input
+        completion = fake_completion()
+        await client.store_completion(completion, _insert_settings)
+
+        # Retrieve the cached output
+        output = await client.cached_completion(version_id="invalid-version-id", input_id=completion.agent_input.id)
+        assert output is None
+
+    async def test_error_output_is_not_returned(self, client: ClickhouseClient):
+        """Test that error output is not returned"""
+        # Create a completion with a version and input
+        completion = fake_completion(
+            agent_output=AgentOutput(messages=[Message.with_text("whatever")], error=Error(message="error")),
+        )
+        await client.store_completion(completion, _insert_settings)
+
+        # Retrieve the cached output
+        output = await client.cached_completion(version_id=completion.version.id, input_id=completion.agent_input.id)
+        assert output is None
+
+    async def test_skipping_indices(self, client: ClickhouseClient):
+        """Test that the bloom filter is used"""
+
+        await client.store_completion(fake_completion(), _insert_settings)
+        completion = fake_completion(agent_input=AgentInput(variables={"name": "James"}))
+        await client.store_completion(completion, _insert_settings)
+
+        clt = await client._readonly_client()
+        res = await clt.query(
+            f"EXPLAIN indexes=1 {_CACHED_OUTPUT_QUERY}",
+            {"input_id": completion.agent_input.id, "version_id": completion.version.id},
+        )
+        explain_res = " ".join(r[0].strip() for r in res.result_rows)
+        assert "Skip Name: input_id_index Description: bloom_filter GRANULARITY 1 Parts: 1/2" in explain_res
+
+
+class TestExtractClickhouseError:
+    def test_extract_main_regex_match_example(self):
+        """Test the main regex pattern with the provided example string"""
+        error_string = "HTTPDriver for http://localhost:8123 received Clickhouse error code 60\n Code: 60. DB::Exception: Unknown table expression identifier 'non_existent_table' in scope SELECT * FROM non_existent_table. (UNKNOWN_TABLE) (version 25.3.2.39 (official build))"
+
+        result = _extract_clickhouse_error(error_string)
+
+        assert result.code == "60"
+        assert (
+            result.message
+            == "Unknown table expression identifier 'non_existent_table' in scope SELECT * FROM non_existent_table."
+        )
+        assert result.error_type == "UNKNOWN_TABLE"
+
+    def test_extract_main_regex_match_different_error(self):
+        """Test the main regex pattern with a different error format"""
+        error_string = """HTTPDriver for http://clickhouse:8123 received Clickhouse error code 47\n Code: 47. DB::Exception: Missing columns: 'invalid_column' while processing query. (UNKNOWN_IDENTIFIER) (version 23.1.1.1 (official build))"""
+
+        result = _extract_clickhouse_error(error_string)
+
+        assert result.code == "47"
+        assert result.message == "Missing columns: 'invalid_column' while processing query."
+        assert result.error_type == "UNKNOWN_IDENTIFIER"
+
+    def test_extract_main_regex_match_syntax_error(self):
+        """Test the main regex pattern with a syntax error"""
+        error_string = (
+            "HTTPDriver for https://clickhouse.company.com:8443 received ClickHouse error code 62\n "
+            "Code: 62. DB::Exception: Syntax error: failed at position 15: SELECT * FRON completions. "
+            "Expected one of: FROM, FROM INFILE, FROM INPUT (SYNTAX_ERROR) (version 24.8.5.115 (official build))\n"
+        )
+
+        result = _extract_clickhouse_error(error_string)
+
+        assert result.code == "62"
+        assert (
+            result.message
+            == "Syntax error: failed at position 15: SELECT * FRON completions. Expected one of: FROM, FROM INFILE, FROM INPUT"
+        )
+        assert result.error_type == "SYNTAX_ERROR"
+
+    def test_extract_fallback_with_code_match(self):
+        """Test fallback parsing when main regex fails but code regex succeeds"""
+        error_string = "Some malformed error message Code: 123 but without the expected format"
+
+        result = _extract_clickhouse_error(error_string)
+
+        assert result.code == "123"
+        assert result.message == error_string  # Should use the whole string
+        assert result.error_type == "UNKNOWN"
+
+    def test_extract_fallback_with_url_removal(self):
+        """Test fallback parsing removes URLs from the message"""
+        error_string = "https://dangerous-url.com/secret Code: 456 some error with embedded URL"
+
+        result = _extract_clickhouse_error(error_string)
+
+        assert result.code == "456"
+        assert result.message == "https://*** Code: 456 some error with embedded URL"  # URL should be obfuscated
+        assert result.error_type == "UNKNOWN"
+
+    def test_extract_complete_fallback_no_code(self):
+        """Test complete fallback when both regexes fail (no code found)"""
+        error_string = "This is a completely unrecognized error format with no code"
+
+        result = _extract_clickhouse_error(error_string)
+
+        assert result.code == "0"  # Default when no code is found
+        assert result.message == error_string
+        assert result.error_type == "UNKNOWN"
+
+    def test_extract_empty_string(self):
+        """Test with empty string"""
+        error_string = ""
+
+        result = _extract_clickhouse_error(error_string)
+
+        assert result.code == "0"
+        assert result.message == ""
+        assert result.error_type == "UNKNOWN"
+
+    def test_extract_code_at_beginning(self):
+        """Test fallback when code appears at the beginning of the string"""
+        error_string = "Code: 999 at the beginning of error message"
+
+        result = _extract_clickhouse_error(error_string)
+
+        assert result.code == "999"
+        assert result.message == error_string
+        assert result.error_type == "UNKNOWN"
+
+    def test_extract_multiple_codes_uses_first(self):
+        """Test that when multiple codes exist, the first one is used"""
+        error_string = "Code: 111 first code and then Code: 222 second code"
+
+        result = _extract_clickhouse_error(error_string)
+
+        assert result.code == "111"  # Should use the first match
+        assert result.message == error_string
+        assert result.error_type == "UNKNOWN"
+
+    @pytest.mark.parametrize(
+        ("error_code", "error_message", "error_type"),
+        [
+            pytest.param("60", "Table not found", "UNKNOWN_TABLE", id="table_not_found"),
+            pytest.param("47", "Column missing", "UNKNOWN_IDENTIFIER", id="column_missing"),
+            pytest.param("62", "Syntax error in query", "SYNTAX_ERROR", id="syntax_error"),
+            pytest.param("81", "Database connection failed", "NETWORK_ERROR", id="network_error"),
+        ],
+    )
+    def test_extract_main_regex_parametrized(self, error_code: str, error_message: str, error_type: str):
+        """Test main regex with various error codes and types"""
+        error_string = (
+            f"HTTPDriver for http://localhost:8123 received ClickHouse error code {error_code}\n "
+            f"Code: {error_code}. DB::Exception: {error_message} ({error_type}) "
+            f"(version 25.3.2.39 (official build))"
+        )
+
+        result = _extract_clickhouse_error(error_string)
+
+        assert result.code == error_code
+        assert result.message == error_message
+        assert result.error_type == error_type

@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Any, Literal, Self
+from typing import Annotated, Any, Literal, Self
 
 from pydantic import BaseModel, Field
 
@@ -75,7 +75,7 @@ class QualityData(SourcedBaseModel):
 
 
 class SpeedIndex(BaseModel):
-    value: float
+    value: Annotated[float, Field(description="The number of tokens per second")]
 
     @classmethod
     def from_experiment(cls, output_tokens: int, duration_seconds: float) -> Self:
@@ -87,6 +87,10 @@ class SpeedIndex(BaseModel):
         if duration_seconds == 0:
             raise ValueError("duration_seconds is 0")
         return cls(value=output_tokens / duration_seconds)
+
+    @classmethod
+    def from_tpm(cls, tpm: int) -> Self:
+        return cls(value=tpm / 60)
 
 
 class SpeedData(BaseModel):

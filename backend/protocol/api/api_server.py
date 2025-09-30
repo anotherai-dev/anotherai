@@ -6,27 +6,35 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from structlog import get_logger
 
+import core.logs.global_setup  # setup logs globally
 from core.domain.exceptions import DefaultError
-from core.logs.setup_logs import setup_logs
+from core.domain.models.models import Model
 from core.providers._base.provider_error import ProviderError
 from protocol._common import probes_router
+from protocol._common.broker_utils import use_in_memory_broker
 from protocol._common.lifecycle import shutdown, startup
-from protocol.api import api_router, run_router
+from protocol.api import _api_router, _run_router, _well_known_router
 from protocol.api._api_utils import convert_error_response
 from protocol.api._dependencies._misc import set_start_time
 from protocol.api._mcp import mcp
 
-setup_logs()
-
 _log = get_logger(__name__)
 
-# TODO: investigate why stateless_http is needed
-_mcp_app = mcp.http_app(transport="streamable-http", path="/mcp", stateless_http=True)
+_INCLUDED_ROUTES = set(os.environ["INCLUDED_ROUTES"].split(",")) if os.environ.get("INCLUDED_ROUTES") else set()
+
+_MCP_ENABLED = not _INCLUDED_ROUTES or "mcp" in _INCLUDED_ROUTES
+
+# Server is going to run in multiple, possibly short lived containers so turning on stateless_http
+_mcp_app = mcp.http_app(transport="streamable-http", path="/mcp", stateless_http=True) if _MCP_ENABLED else None
 
 
 # Separate function to allow patching in tests
 @asynccontextmanager
 async def _mcp_lifespan(app: FastAPI):
+    if not _mcp_app:
+        yield
+        return
+
     async with _mcp_app.lifespan(app):
         yield
 
@@ -36,6 +44,13 @@ async def _lifespan(app: FastAPI):
     dependencies = await startup()
     app.state.dependencies = dependencies
 
+    in_memory_broker = use_in_memory_broker(os.environ.get("JOBS_BROKER_URL"))
+    # Need to manually call the lifecycle hooks for the in memory broker
+    if in_memory_broker:
+        from protocol.worker.worker import broker
+
+        await broker.startup()
+
     if os.getenv("MIGRATE_STORAGE_ON_STARTUP") == "1":
         _log.info("Migrating storage on startup")
         await dependencies.storage_builder.migrate()
@@ -43,6 +58,11 @@ async def _lifespan(app: FastAPI):
 
     async with _mcp_lifespan(app):
         yield
+
+    if in_memory_broker:
+        from protocol.worker.worker import broker
+
+        await broker.shutdown()
 
     await shutdown(dependencies)
 
@@ -80,14 +100,26 @@ async def default_error_handler(request: Request, exc: DefaultError):
     return convert_error_response(exc.serialized())
 
 
+@api.get("/v1/models/ids")
+async def get_model_ids() -> list[str]:
+    return list(Model)
+
+
 api.include_router(probes_router.router)
 
-# TODO: split when we have separate containers
-api.include_router(api_router.router)
-api.include_router(run_router.router)
+if not _INCLUDED_ROUTES or "api" in _INCLUDED_ROUTES:
+    api.include_router(_api_router.router)
 
+if not _INCLUDED_ROUTES or "run" in _INCLUDED_ROUTES:
+    api.include_router(_run_router.router)
 
-api.mount("/", _mcp_app)
+if _mcp_app:
+    # Well known router is used for oauth
+    # Some MCP clients look for the .well-known after the /mcp prefix
+    api.include_router(_well_known_router.router)
+    api.include_router(_well_known_router.router, prefix="/mcp")
+
+    api.mount("/", _mcp_app)
 
 if __name__ == "__main__":
     import uvicorn

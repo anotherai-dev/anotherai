@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CustomTooltip } from "./CustomTooltip";
-import { SeriesConfig, autoDetectSeries } from "./utils";
+import { useTooltipFormatterWithUnit } from "./useTooltipFormatterWithUnit";
+import { SeriesConfig, autoDetectSeries, ensureXFieldForChart } from "./utils";
 
 interface ChartData {
   x: string;
@@ -54,23 +55,38 @@ export function UniversalLineChart({
   const [containerWidth, setContainerWidth] = useState(800);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-detect series from data if not provided
+  // Transform data to ensure it has 'x' field (skip if already transformed by CompletionsGraph)
+  const transformedData = useMemo(() => {
+    // Check if data is already transformed by CompletionsGraph (has x field and is properly structured)
+    if (data.length > 0 && data[0] && typeof data[0] === "object" && "x" in data[0]) {
+      return data;
+    }
+    return ensureXFieldForChart(data);
+  }, [data]);
+
+  // Auto-detect series from transformed data if not provided (skip if already have series)
   const autoDetectedSeries = useMemo(() => {
-    return autoDetectSeries(data, series);
-  }, [data, series]);
+    if (series && series.length > 0) {
+      return series;
+    }
+    return autoDetectSeries(transformedData, series);
+  }, [transformedData, series]);
   const isMultiSeries = series && series.length > 0;
-  const finalSeries = isMultiSeries ? series : autoDetectedSeries;
+
+  const finalSeries = useMemo(() => {
+    return isMultiSeries ? series : autoDetectedSeries || [];
+  }, [isMultiSeries, series, autoDetectedSeries]);
+
   const isActuallyMultiSeries = finalSeries.length > 0;
 
   // Y-axis tick formatter (no units on axis ticks)
   const yAxisTickFormatter = yAxisFormatter;
 
-  const tooltipFormatterWithUnit = useCallback(
-    (value: number) => {
-      const formattedValue = tooltipFormatter(value);
-      return yAxisUnit ? `${formattedValue} ${yAxisUnit}` : formattedValue;
-    },
-    [tooltipFormatter, yAxisUnit]
+  const tooltipFormatterWithUnit = useTooltipFormatterWithUnit(
+    tooltipFormatter,
+    yAxisUnit,
+    isActuallyMultiSeries,
+    finalSeries
   );
 
   // Create axis labels with units
@@ -90,15 +106,19 @@ export function UniversalLineChart({
 
   // Get all series that have at least one defined value (including zero)
   const filteredSeries = useMemo(() => {
-    if (!isActuallyMultiSeries) return finalSeries;
+    if (!isActuallyMultiSeries) return (finalSeries || []).filter(Boolean);
+    if (!finalSeries || !Array.isArray(finalSeries)) return [];
 
-    return finalSeries.filter((seriesItem) => {
-      return data.some((dataPoint) => {
-        const value = dataPoint[seriesItem.key];
-        return value !== undefined && value !== null;
+    return finalSeries
+      .filter(Boolean) // Remove any undefined/null items
+      .filter((seriesItem) => {
+        if (!seriesItem || !seriesItem.key) return false;
+        return transformedData.some((dataPoint) => {
+          const value = dataPoint[seriesItem.key];
+          return value !== undefined && value !== null;
+        });
       });
-    });
-  }, [finalSeries, isActuallyMultiSeries, data]);
+  }, [finalSeries, isActuallyMultiSeries, transformedData]);
 
   // Transform data to include zero values and truncate long labels
   const processedData = useMemo(() => {
@@ -128,8 +148,8 @@ export function UniversalLineChart({
       });
     };
 
-    return processData(data);
-  }, [data, isActuallyMultiSeries, filteredSeries]);
+    return processData(transformedData as ChartData[]);
+  }, [transformedData, isActuallyMultiSeries, filteredSeries]);
 
   // Measure actual container width with debouncing
   useEffect(() => {
@@ -160,7 +180,7 @@ export function UniversalLineChart({
 
   // Initialize global canvas on first use
   useEffect(() => {
-    if (!globalCanvas) {
+    if (!globalCanvas && typeof document !== "undefined") {
       globalCanvas = document.createElement("canvas");
     }
   }, []);
@@ -217,7 +237,7 @@ export function UniversalLineChart({
     tickLineStyle,
     chartHeight,
   } = useMemo(() => {
-    if (data.length <= 1)
+    if (transformedData.length <= 1)
       return {
         shouldRotate: false,
         interval: 0,
@@ -231,11 +251,11 @@ export function UniversalLineChart({
       };
 
     // For line charts, we need extra space to account for labels at the edges
-    const availableWidthPerPoint = containerWidth / data.length;
+    const availableWidthPerPoint = containerWidth / transformedData.length;
 
     // Measure the widest label using truncated labels
     const maxLabelWidth = Math.max(
-      ...data.map((item) => {
+      ...transformedData.map((item) => {
         const originalLabel = String(item.x);
         const truncatedLabel = originalLabel.length > 20 ? originalLabel.substring(0, 20) + "..." : originalLabel;
         return measureTextWidth(truncatedLabel, fontSize);
@@ -296,7 +316,7 @@ export function UniversalLineChart({
 
     if (maxLabelsRotated > maxLabelsHorizontal) {
       // Use rotation with interval
-      const interval = Math.max(0, Math.ceil(data.length / maxLabelsRotated) - 1);
+      const interval = Math.max(0, Math.ceil(transformedData.length / maxLabelsRotated) - 1);
       const textVertical = maxLabelWidth * 0.707;
       const fontVertical = fontSize * 0.707;
       const totalVertical = textVertical + fontVertical + 25;
@@ -316,7 +336,7 @@ export function UniversalLineChart({
       };
     } else {
       // Use horizontal with interval
-      const interval = Math.max(0, Math.ceil(data.length / maxLabelsHorizontal) - 1);
+      const interval = Math.max(0, Math.ceil(transformedData.length / maxLabelsHorizontal) - 1);
       return {
         shouldRotate: false,
         interval,
@@ -329,7 +349,7 @@ export function UniversalLineChart({
         chartHeight: parseInt(height.replace("px", "")) || 200,
       };
     }
-  }, [data, containerWidth, fontSize, measureTextWidth, height]);
+  }, [transformedData, containerWidth, fontSize, measureTextWidth, height]);
 
   // Use a ref to track mouse position without causing re-renders
   const mousePosRef = useRef({ x: 0, y: 0 });
@@ -373,7 +393,7 @@ export function UniversalLineChart({
     mousePosRef.current = { x: e.clientX, y: e.clientY };
   }, []);
 
-  if (data.length === 0) {
+  if (transformedData.length === 0) {
     return <p className="text-gray-500 text-sm">{emptyMessage}</p>;
   }
 
@@ -441,25 +461,27 @@ export function UniversalLineChart({
               isAnimationActive={false}
             />
             {filteredSeries.length > 0 ? (
-              filteredSeries.map((seriesItem) => (
-                <Line
-                  key={seriesItem.key}
-                  type="monotone"
-                  dataKey={seriesItem.key}
-                  name={seriesItem.name || seriesItem.key}
-                  stroke={seriesItem.color}
-                  strokeWidth={2}
-                  dot={{ fill: seriesItem.color, strokeWidth: 2, r: 4 }}
-                  activeDot={{
-                    r: 6,
-                    stroke: seriesItem.color,
-                    strokeWidth: 2,
-                    fill: "#fff",
-                  }}
-                  isAnimationActive={!disableAnimation}
-                  animationDuration={disableAnimation ? 0 : 400}
-                />
-              ))
+              filteredSeries
+                .filter((seriesItem) => seriesItem && seriesItem.key) // Extra safety check
+                .map((seriesItem) => (
+                  <Line
+                    key={seriesItem.key}
+                    type="monotone"
+                    dataKey={seriesItem.key}
+                    name={seriesItem.name || seriesItem.key}
+                    stroke={seriesItem.color}
+                    strokeWidth={2}
+                    dot={{ fill: seriesItem.color, strokeWidth: 2, r: 4 }}
+                    activeDot={{
+                      r: 6,
+                      stroke: seriesItem.color,
+                      strokeWidth: 2,
+                      fill: "#fff",
+                    }}
+                    isAnimationActive={!disableAnimation}
+                    animationDuration={disableAnimation ? 0 : 400}
+                  />
+                ))
             ) : (
               <Line
                 type="monotone"

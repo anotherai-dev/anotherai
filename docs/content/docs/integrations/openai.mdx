@@ -1,0 +1,163 @@
+---
+title: OpenAI SDK
+description: Using AnotherAI with OpenAI SDK
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+
+## Building an Agent
+
+If you prefer to build manually or want to understand the configuration details, follow the guide below.
+
+<Steps>
+
+<Step>
+
+### Base URL and AnotherAI API Key Setup
+
+AnotherAI provides a unified API that routes requests to various AI providers. To use AnotherAI instead of calling OpenAI directly, you need to:
+
+1. **Change the base URL** - This redirects API calls from OpenAI's servers to AnotherAI, which then routes them to the appropriate provider while adding observability features
+2. **Configure your AnotherAI API key** - This enables access to AnotherAI's features
+
+<Tabs defaultValue="cloud-hosted" items={['Cloud-Hosted', 'Self-Hosted']}>
+
+<Tab value="cloud-hosted">
+
+For cloud-hosted AnotherAI, use your AnotherAI API key:
+
+```python
+import openai
+
+client = openai.OpenAI(
+    base_url="{{API_URL}}/v1",  # AnotherAI cloud endpoint
+    api_key="aai-***",  # Your AnotherAI API key
+)
+```
+
+</Tab>
+
+<Tab value="self-hosted">
+
+For self-hosted AnotherAI, point to your local instance with your AnotherAI API key:
+
+```python
+import openai
+
+client = openai.OpenAI(
+    base_url="http://localhost:8000/v1",  # Local AnotherAI instance
+    api_key="aai-***",  # Your AnotherAI API key
+)
+```
+
+</Tab>
+
+</Tabs>
+
+</Step>
+
+<Step>
+
+### Metadata
+
+1. **Agent Identification**
+In order to distinguish between different agents in AnotherAI's web view, include an `agent_id` in your agent's metadata.
+
+```python
+completion = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Analyze the sentiment of this product review"}],
+    metadata={
+        "agent_id": "product-review-sentiment", # recommended for observability
+    }
+)
+```
+2. **Workflow Identification**
+
+If your agent is part of a workflow, it's recommended to include a `trace_id` and `workflow_name` in your metadata. You can read more about workflow set up [here](/use-cases/connecting-agents).
+
+```python
+completion = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Analyze the sentiment of this product review"}],
+    metadata={
+        "agent_id": "product-review-sentiment",
+        "workflow_name": "review-analysis-pipeline",
+        "trace_id": "trace-123e4567-e89b",  # Unique ID for this workflow instance
+    }
+)
+```
+
+</Step>
+
+<Step>
+
+### Input and Output Design
+
+#### 1. Input Variables
+
+If there is variable content in your prompts, use Jinja2 templates to separate static prompts from dynamic content:
+
+```python
+completion = client.chat.completions.create(
+    model="claude-3-5-sonnet-20241022",
+    messages=[{
+        "role": "user", 
+        "content": "Analyze the sentiment of this product review: {{review_text}}"
+    }],
+    extra_body={
+        "input": {
+            "review_text": "This product exceeded my expectations! The quality is amazing..."
+        }
+    },
+    metadata={
+        "agent_id": "product-review-sentiment",
+        "workflow_name": "review-analysis-pipeline",
+        "trace_id": "trace-123e4567-e89b",
+    }
+)
+```
+
+#### 2. Structured Outputs
+
+Structured outputs aren't required, but they're highly recommended, especially for agents that have multiple output fields.
+
+```python
+from pydantic import BaseModel
+from enum import Enum
+
+class Sentiment(str, Enum):
+    positive = "positive"
+    negative = "negative"
+    mixed = "mixed"
+
+class SentimentAnalysis(BaseModel):
+    sentiment: Sentiment
+    explanation: str  # Why this sentiment was determined
+
+completion = client.beta.chat.completions.parse(
+    model="gpt-4o",
+    messages=[{
+        "role": "user", 
+        "content": "Analyze the sentiment of this product review: {{review_text}}"
+    }],
+    response_format=SentimentAnalysis,
+    extra_body={
+        "input": {
+            "review_text": "This product exceeded my expectations! The quality is amazing..."
+        }
+    },
+    metadata={
+        "agent_id": "product-review-sentiment",
+        "workflow_name": "review-analysis-pipeline",
+        "trace_id": "trace-123e4567-e89b",
+    }
+)
+
+result = completion.choices[0].message.parsed
+```
+
+</Step>
+
+</Steps>

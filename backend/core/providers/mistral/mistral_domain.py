@@ -7,15 +7,19 @@ from pydantic import AliasChoices, BaseModel, BeforeValidator, ConfigDict, Field
 
 from core.domain.exceptions import UnpriceableRunError
 from core.domain.file import File
+from core.domain.finish_reason import FinishReason
 from core.domain.message import MessageDeprecated
 from core.domain.models import Model
 from core.domain.tool import Tool
 from core.domain.tool_call import ToolCallRequest
 from core.domain.tool_choice import ToolChoice, ToolChoiceFunction
 from core.providers._base.llm_usage import LLMUsage
+from core.providers._base.streaming_context import ParsedResponse
 from core.providers.google.google_provider_domain import (
     internal_tool_name_to_native_tool_call,
+    native_tool_name_to_internal,
 )
+from core.runners.runner_output import ToolCallRequestDelta
 from core.utils.json_utils import safe_extract_dict_from_json
 from core.utils.token_utils import tokens_from_string
 
@@ -111,6 +115,16 @@ class MistralToolCall(BaseModel):
             ),
         )
 
+    def to_delta(self) -> ToolCallRequestDelta:
+        return ToolCallRequestDelta(
+            id=self.id or "",
+            idx=self.index or 0,
+            tool_name=native_tool_name_to_internal(self.function.name) if self.function.name else "",
+            arguments=self.function.arguments
+            if isinstance(self.function.arguments, str)
+            else json.dumps(self.function.arguments),
+        )
+
 
 class MistralAIMessage(BaseModel):
     role: Literal["user", "assistant", "system"]
@@ -125,7 +139,7 @@ class MistralAIMessage(BaseModel):
         if not message.files:
             content: str | list[TextChunk | ImageURLChunk | DocumentURLChunk] = message.content
         else:
-            content: str | list[TextChunk | ImageURLChunk | DocumentURLChunk] = []
+            content = []
             if message.content:
                 content.append(TextChunk(text=message.content))
             for file in message.files or []:
@@ -230,8 +244,47 @@ class CompletionRequest(BaseModel):
         return tool_choice
 
 
-class AssistantMessage(BaseModel):
-    content: str | None = None
+class _ThinkingContent(BaseModel):
+    text: str | None = None
+
+
+class _AssistantMessageContent(BaseModel):
+    thinking: list[_ThinkingContent] | None = None
+    text: str | None = None
+
+
+class _WithContentMixin(BaseModel):
+    content: str | list[_AssistantMessageContent] | None = None
+
+    def thinking_iter(self):
+        if not isinstance(self.content, list):
+            return
+        for c in self.content:
+            if c.thinking:
+                for t in c.thinking:
+                    if t.text:
+                        yield t.text
+
+    def text_iter(self):
+        if not self.content:
+            return
+        if isinstance(self.content, str):
+            yield self.content
+            return
+        for c in self.content:
+            if c.text:
+                yield c.text
+
+    def text_joined(self):
+        val = list(self.text_iter())
+        return "\n".join(val) if val else None
+
+    def thinking_joined(self):
+        val = list(self.thinking_iter())
+        return "\n".join(val) if val else None
+
+
+class AssistantMessage(_WithContentMixin):
     tool_calls: list[MistralToolCall] | None = None
     # prefix: bool = False
     # role: Literal["assistant"] = "assistant"
@@ -299,9 +352,9 @@ class MistralError(BaseModel):
         return self.message
 
 
-class DeltaMessage(BaseModel):
+class DeltaMessage(_WithContentMixin):
     role: str | None = None
-    content: str | None = None
+
     tool_calls: list[MistralToolCall] | None = None
 
 
@@ -309,6 +362,11 @@ class CompletionResponseStreamChoice(BaseModel):
     # index: int
     delta: DeltaMessage | None = None
     finish_reason: FinishReasonEnum | str | None = None
+
+    def parsed_finish_reason(self) -> FinishReason | None:
+        if self.finish_reason == "length":
+            return "max_context"
+        return None
 
 
 class CompletionChunk(BaseModel):
@@ -318,3 +376,22 @@ class CompletionChunk(BaseModel):
     # model: str
     usage: Usage | None = None
     choices: list[CompletionResponseStreamChoice] | None = None
+
+    def to_parsed_response(self) -> ParsedResponse:
+        usage = self.usage.to_domain() if self.usage else None
+        if not self.choices:
+            return ParsedResponse(usage=usage)
+
+        choice = self.choices[0]
+        if not choice.delta:
+            return ParsedResponse(usage=usage)
+
+        return ParsedResponse(
+            delta=choice.delta.text_joined(),
+            tool_call_requests=[tool_call.to_delta() for tool_call in choice.delta.tool_calls]
+            if choice.delta.tool_calls
+            else None,
+            usage=usage,
+            finish_reason=choice.parsed_finish_reason(),
+            reasoning=choice.delta.thinking_joined(),
+        )

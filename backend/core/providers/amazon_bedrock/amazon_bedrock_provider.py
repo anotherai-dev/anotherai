@@ -1,4 +1,3 @@
-import json
 import re
 from collections.abc import AsyncIterator
 from typing import Any, cast, override
@@ -13,7 +12,6 @@ from core.domain.models import Model, Provider
 from core.domain.models.utils import get_model_data
 from core.domain.tool import Tool
 from core.domain.tool_call import ToolCallRequest
-from core.providers._base.abstract_provider import RawCompletion
 from core.providers._base.httpx_provider import HTTPXProvider
 from core.providers._base.llm_usage import LLMUsage
 from core.providers._base.provider_error import (
@@ -24,7 +22,7 @@ from core.providers._base.provider_error import (
     UnknownProviderError,
 )
 from core.providers._base.provider_options import ProviderOptions
-from core.providers._base.streaming_context import ParsedResponse, ToolCallRequestBuffer
+from core.providers._base.streaming_context import ParsedResponse
 from core.providers.amazon_bedrock.amazon_bedrock_config import AmazonBedrockConfig
 from core.providers.amazon_bedrock.amazon_bedrock_domain import (
     AmazonBedrockMessage,
@@ -242,73 +240,9 @@ class AmazonBedrockProvider(HTTPXProvider[AmazonBedrockConfig, CompletionRespons
                 yield payload
 
     @override
-    def _extract_stream_delta(
-        self,
-        sse_event: bytes,
-        raw_completion: RawCompletion,
-        tool_call_request_buffer: dict[int, ToolCallRequestBuffer],
-    ) -> ParsedResponse:
+    def _extract_stream_delta(self, sse_event: bytes) -> ParsedResponse:
         raw = StreamedResponse.model_validate_json(sse_event)
-        completion_text = raw.delta.text if (raw.delta and raw.delta.text) else ""
-        reasoning_steps: str | None = None
-
-        if raw.usage:
-            raw_completion.usage = raw.usage.to_domain()
-
-        if raw.start and raw.start.toolUse:
-            if raw.contentBlockIndex is None:
-                raise ValueError("Can't parse tool call input without a content block index")
-            self._handle_tool_start(raw.start.toolUse, raw.contentBlockIndex, tool_call_request_buffer)
-
-        # Handle reasoning content deltas for reasoning steps
-        if raw.delta and raw.delta.reasoningContent:
-            reasoning_steps = raw.delta.reasoningContent.text
-
-        tool_calls: list[ToolCallRequest] = []
-        if raw.delta and raw.delta.toolUse:
-            if raw.contentBlockIndex is None:
-                raise ValueError("Can't parse tool call input without a content block index")
-            tool_calls = self._handle_tool_input(raw.delta.toolUse, raw.contentBlockIndex, tool_call_request_buffer)
-
-        return ParsedResponse(completion_text, reasoning=reasoning_steps, tool_calls=tool_calls)
-
-    def _handle_tool_start(
-        self,
-        tool_use: StreamedResponse.Start.ToolUse,
-        content_block_index: int,
-        tool_call_request_buffer: dict[int, ToolCallRequestBuffer],
-    ) -> None:
-        tool_call_request_buffer[content_block_index] = ToolCallRequestBuffer(
-            id=tool_use.toolUseId,
-            tool_name=tool_use.name,
-            tool_input="",
-        )
-
-    def _handle_tool_input(
-        self,
-        tool_use: StreamedResponse.Delta.ToolUseBlockDelta,
-        content_block_index: int,
-        tool_call_request_buffer: dict[int, ToolCallRequestBuffer],
-    ) -> list[ToolCallRequest]:
-        if content_block_index not in tool_call_request_buffer:
-            raise ValueError(f"Can't find tool call request buffer for content block index {content_block_index}")
-        tool_call_request_buffer[content_block_index].tool_input += tool_use.input
-        candidate_tool_call = tool_call_request_buffer[content_block_index]
-        tool_calls: list[ToolCallRequest] = []
-        if candidate_tool_call.id and candidate_tool_call.tool_name:
-            try:
-                tool_input_dict = json.loads(candidate_tool_call.tool_input)
-                tool_calls.append(
-                    ToolCallRequest(
-                        id=candidate_tool_call.id,
-                        tool_name=native_tool_name_to_internal(candidate_tool_call.tool_name),
-                        tool_input_dict=tool_input_dict,
-                    ),
-                )
-            except json.JSONDecodeError:
-                # That means the tool call is not fully streamed yet
-                pass
-        return tool_calls
+        return raw.to_parsed_response()
 
     def supports_model(self, model: Model) -> bool:
         try:

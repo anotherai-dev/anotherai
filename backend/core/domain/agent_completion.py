@@ -1,20 +1,20 @@
 from datetime import datetime
 from typing import Any, Literal
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 from core.domain.agent import Agent
 from core.domain.agent_input import AgentInput
 from core.domain.agent_output import AgentOutput
-from core.domain.inference import LLMTrace, Trace
 from core.domain.message import Message
+from core.domain.trace import LLMTrace, Trace
 from core.domain.version import Version
-from core.utils.fields import datetime_zero
+from core.utils.uuid import uuid7_generation_time
 
 
 class AgentCompletion(BaseModel):
-    id: str = Field(
-        ...,
+    id: UUID = Field(
         description="the id of the task run. If not provided a uuid will be generated",
     )
 
@@ -35,8 +35,6 @@ class AgentCompletion(BaseModel):
     duration_seconds: float | None = None
     cost_usd: float | None = None
 
-    created_at: datetime = Field(default_factory=datetime_zero)
-
     traces: list[Trace]
 
     from_cache: bool = False
@@ -51,3 +49,7 @@ class AgentCompletion(BaseModel):
             if isinstance(t, LLMTrace):
                 return t.model
         return None
+
+    @property
+    def created_at(self) -> datetime:
+        return uuid7_generation_time(self.id)

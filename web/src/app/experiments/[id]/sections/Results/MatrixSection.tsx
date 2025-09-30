@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { TableComponent } from "@/components/TableComponent";
 import {
   findCompletionForInputAndVersion,
@@ -7,12 +7,22 @@ import {
   getPriceAndLatencyPerVersion,
   getSharedKeypathsOfSchemas,
   getSharedPartsOfPrompts,
+  getValidCosts,
+  getValidDurations,
 } from "@/components/utils/utils";
+import { useVersionHiding } from "@/hooks/useVersionHiding";
 import { Annotation, ExperimentWithLookups } from "@/types/models";
-import { getAllMetricsPerKey, getAllMetricsPerKeyForRow, getMetricsPerVersion } from "../../utils";
-import { InputHeaderCell } from "./InputHeaderCell";
-import { CompletionCell } from "./completion/CompletionCell";
-import { VersionHeader } from "./version/VersionHeader";
+import {
+  getAllMetricsPerKey,
+  getAllMetricsPerKeyForRow,
+  getAveragedMetricsPerVersion,
+  getRawMetricsForSingleVersion,
+  getRawMetricsPerVersionPerKey,
+  sortVersionsByPromptAndSchema,
+} from "../../utils";
+import InputHeaderCell from "./InputHeaderCell";
+import CompletionCell from "./completion/CompletionCell";
+import VersionHeader from "./version/VersionHeader";
 
 type Props = {
   experiment: ExperimentWithLookups;
@@ -22,66 +32,143 @@ type Props = {
 export function MatrixSection(props: Props) {
   const { experiment, annotations } = props;
 
-  const completionsPerVersion = useMemo(() => {
-    return getCompletionsPerVersion(experiment);
-  }, [experiment]);
+  // Sort versions to show ones with prompt or output schema first
+  const sortedVersions = useMemo(() => {
+    return sortVersionsByPromptAndSchema(experiment.versions);
+  }, [experiment.versions]);
 
-  const priceAndLatencyPerVersion = useMemo(() => {
-    return getPriceAndLatencyPerVersion(completionsPerVersion);
-  }, [completionsPerVersion]);
+  // State for column order - initially ordered by sorted version index
+  const [columnOrder, setColumnOrder] = useState<string[]>([]);
 
-  const metricsPerVersion = useMemo(() => {
-    return getMetricsPerVersion(experiment, annotations);
+  // Version hiding hook
+  const { hiddenVersionIds, hideVersion, showAllHiddenVersions, hasHiddenVersions } = useVersionHiding(experiment.id);
+
+  // Update column order when sorted versions change
+  useEffect(() => {
+    setColumnOrder(sortedVersions.map((version) => version.id));
+  }, [sortedVersions]);
+
+  // Function to reorder columns
+  const reorderColumns = useCallback(
+    (fromIndex: number, toIndex: number) => {
+      const newOrder = [...columnOrder];
+      const [movedItem] = newOrder.splice(fromIndex, 1);
+      newOrder.splice(toIndex, 0, movedItem);
+      setColumnOrder(newOrder);
+    },
+    [columnOrder]
+  );
+
+  // Get versions in the current column order, excluding hidden versions
+  const orderedVersions = useMemo(() => {
+    return columnOrder
+      .filter((versionId) => !hiddenVersionIds.includes(versionId))
+      .map((versionId) => sortedVersions.find((v) => v.id === versionId))
+      .filter(Boolean) as typeof sortedVersions;
+  }, [columnOrder, sortedVersions, hiddenVersionIds]);
+
+  const { averagedMetricsPerVersion, allMetricsPerKey } = useMemo(() => {
+    const averagedMetrics = getAveragedMetricsPerVersion(experiment, annotations);
+    const allMetrics = getAllMetricsPerKey(averagedMetrics);
+
+    return {
+      averagedMetricsPerVersion: averagedMetrics,
+      allMetricsPerKey: allMetrics,
+    };
   }, [experiment, annotations]);
 
-  const allMetricsPerKey = useMemo(() => {
-    return getAllMetricsPerKey(metricsPerVersion);
-  }, [metricsPerVersion]);
-
-  const optionalKeysToShow = useMemo(() => {
-    return getDifferingVersionKeys(experiment.versions);
-  }, [experiment.versions]);
-
-  const sharedPartsOfPrompts = useMemo(() => {
-    return getSharedPartsOfPrompts(experiment.versions);
-  }, [experiment.versions]);
-
-  const sharedKeypathsOfSchemas = useMemo(() => {
-    return getSharedKeypathsOfSchemas(experiment.versions);
-  }, [experiment.versions]);
+  const stickyHeaderData = useMemo(() => {
+    return orderedVersions.map((version) => {
+      const originalIndex = sortedVersions.findIndex((v) => v.id === version.id);
+      return {
+        versionNumber: originalIndex + 1,
+        modelId: version.model,
+        reasoningEffort: version.reasoning_effort,
+        reasoningBudget: version.reasoning_budget,
+      };
+    });
+  }, [orderedVersions, sortedVersions]);
 
   const tableData = useMemo(() => {
-    // Get arrays of average metrics per version for badge coloring
-    const allAvgCosts = priceAndLatencyPerVersion.map(({ metrics }) => metrics.avgCost);
-    const allAvgDurations = priceAndLatencyPerVersion.map(({ metrics }) => metrics.avgDuration);
+    // Calculate values that are only used within this tableData
+    const optionalKeysToShow = getDifferingVersionKeys(orderedVersions);
+    const sharedPartsOfPrompts = getSharedPartsOfPrompts(orderedVersions);
+    const sharedKeypathsOfSchemas = getSharedKeypathsOfSchemas(orderedVersions);
+    const completionsPerVersion = getCompletionsPerVersion(experiment);
+    const priceAndLatencyPerVersion = getPriceAndLatencyPerVersion(completionsPerVersion);
+    // Get arrays of average metrics per version for badge coloring (filter out undefined values)
+    const allAvgCosts = priceAndLatencyPerVersion
+      .map(({ metrics }) => metrics.avgCost)
+      .filter((cost): cost is number => cost !== undefined);
+    const allAvgDurations = priceAndLatencyPerVersion
+      .map(({ metrics }) => metrics.avgDuration)
+      .filter((duration): duration is number => duration !== undefined);
+
+    // Calculate raw metrics lookup for percentile data
+    const rawMetricsPerVersionPerKey = getRawMetricsPerVersionPerKey(experiment, annotations);
+    const rawMetricsLookupByVersion: Record<string, Record<string, number[]> | undefined> = {};
+    orderedVersions.forEach((version) => {
+      rawMetricsLookupByVersion[version.id] = getRawMetricsForSingleVersion(rawMetricsPerVersionPerKey, version.id);
+    });
 
     // Column headers with version info
-    const columnHeaders = experiment.versions.map((version, index) => {
+    const columnHeaders = orderedVersions.map((version, dragIndex) => {
       const priceAndLatency = priceAndLatencyPerVersion.find(({ versionId }) => versionId === version.id);
-      const metrics = metricsPerVersion?.[version.id];
+      const metrics = averagedMetricsPerVersion?.[version.id] || [];
+      const rawMetricsForVersion = rawMetricsLookupByVersion[version.id] || {};
+
+      // Combine regular metrics with price and latency metrics
+      const allMetrics = [...metrics];
+      if (priceAndLatency?.metrics) {
+        // Only add cost metric if it has a valid value
+        if (priceAndLatency.metrics.avgCost !== undefined) {
+          allMetrics.unshift({ key: "cost", average: priceAndLatency.metrics.avgCost });
+        }
+        // Only add duration metric if it has a valid value
+        if (priceAndLatency.metrics.avgDuration !== undefined) {
+          allMetrics.unshift({ key: "duration", average: priceAndLatency.metrics.avgDuration });
+        }
+      }
+
+      // Combine allMetricsPerKey with price and latency data
+      const allMetricsPerKeyForVersion = { ...allMetricsPerKey };
+      if (priceAndLatency?.metrics) {
+        if (allAvgCosts.length > 0) {
+          allMetricsPerKeyForVersion.cost = allAvgCosts;
+        }
+        if (allAvgDurations.length > 0) {
+          allMetricsPerKeyForVersion.duration = allAvgDurations;
+        }
+      }
+
+      // Combine rawMetricsPerKey with price and latency data
+      const versionMetricsPerKeyForVersion = { ...rawMetricsForVersion };
+      if (priceAndLatency?.metrics) {
+        versionMetricsPerKeyForVersion.cost = priceAndLatency.metrics.costs;
+        versionMetricsPerKeyForVersion.duration = priceAndLatency.metrics.durations;
+      }
+
+      // Find the original index of this version in the sorted versions array
+      const originalIndex = sortedVersions.findIndex((v) => v.id === version.id);
       return (
         <VersionHeader
           key={version.id}
           version={version}
           optionalKeysToShow={optionalKeysToShow}
-          index={index}
-          priceAndLatency={
-            priceAndLatency?.metrics
-              ? {
-                  ...priceAndLatency.metrics,
-                  allCosts: allAvgCosts,
-                  allDurations: allAvgDurations,
-                }
-              : undefined
-          }
-          versions={experiment.versions}
+          index={originalIndex}
+          versions={orderedVersions}
           sharedPartsOfPrompts={sharedPartsOfPrompts}
           sharedKeypathsOfSchemas={sharedKeypathsOfSchemas}
           annotations={annotations}
           experimentId={experiment.id}
-          metrics={metrics}
-          allMetricsPerKey={allMetricsPerKey}
+          metrics={allMetrics}
+          allMetricsPerKey={allMetricsPerKeyForVersion}
+          versionMetricsPerKey={versionMetricsPerKeyForVersion}
           agentId={experiment.agent_id}
+          experiment={experiment}
+          onReorderColumns={reorderColumns}
+          dragIndex={dragIndex}
+          onHideVersion={hideVersion}
         />
       );
     });
@@ -94,29 +181,40 @@ export function MatrixSection(props: Props) {
     const data =
       experiment.inputs?.map((input) => {
         // Get all completions for this input (row) to calculate comparison arrays
-        const completionsForInput = experiment.versions
+        const completionsForInput = orderedVersions
           .map((version) => findCompletionForInputAndVersion(experiment.completions || [], input.id, version.id))
           .filter(Boolean); // Remove undefined completions
 
-        // Calculate cost and duration arrays for this row
-        const allCostsForRow = completionsForInput.map((completion) => completion!.cost_usd || 0);
-        const allDurationsForRow = completionsForInput.map((completion) => completion!.duration_seconds || 0);
+        // Calculate cost and duration arrays for this row using centralized utility functions
+        const allCostsForRow = getValidCosts(completionsForInput);
+        const allDurationsForRow = getValidDurations(completionsForInput);
 
         // Calculate metrics per key for this row (for row-based comparison coloring)
-        const allMetricsPerKeyForRow = getAllMetricsPerKeyForRow(experiment, annotations, input.id);
+        const allMetricsPerKeyForRowData = getAllMetricsPerKeyForRow(experiment, annotations, input.id);
 
-        return experiment.versions.map((version) => {
+        // Combine all metrics per key for this row
+        const allMetricsPerKeyForRow: Record<string, number[]> = {
+          ...allMetricsPerKeyForRowData,
+        };
+
+        // Add cost and duration arrays if they have data
+        if (allCostsForRow.length > 0) {
+          allMetricsPerKeyForRow.cost = allCostsForRow;
+        }
+        if (allDurationsForRow.length > 0) {
+          allMetricsPerKeyForRow.duration = allDurationsForRow;
+        }
+
+        return orderedVersions.map((version) => {
           const completion = findCompletionForInputAndVersion(experiment.completions || [], input.id, version.id);
 
           return (
             <CompletionCell
               key={`${input.id}-${version.id}`}
               completion={completion}
-              allCosts={allCostsForRow}
-              allDurations={allDurationsForRow}
               annotations={annotations}
               experimentId={experiment.id}
-              allMetricsPerKeyForRow={allMetricsPerKeyForRow}
+              allMetricsPerKey={allMetricsPerKeyForRow}
               agentId={experiment.agent_id}
             />
           );
@@ -125,24 +223,39 @@ export function MatrixSection(props: Props) {
 
     return { columnHeaders, rowHeaders, data };
   }, [
-    priceAndLatencyPerVersion,
     experiment,
-    optionalKeysToShow,
-    sharedPartsOfPrompts,
-    sharedKeypathsOfSchemas,
+    orderedVersions,
     annotations,
-    metricsPerVersion,
+    averagedMetricsPerVersion,
     allMetricsPerKey,
+    reorderColumns,
+    sortedVersions,
+    hideVersion,
   ]);
 
   return (
     <div className="mb-8">
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">Experiment outputs</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold text-gray-900">Experiment outputs</h2>
+        {hasHiddenVersions && (
+          <button
+            onClick={showAllHiddenVersions}
+            className="bg-white border border-gray-200 text-gray-900 hover:bg-gray-100 cursor-pointer px-2 py-1 rounded-[2px] h-8 flex items-center justify-center shadow-sm shadow-black/5"
+            title={`Show ${hiddenVersionIds.length} hidden version${hiddenVersionIds.length === 1 ? "" : "s"}`}
+          >
+            <span className="text-xs font-medium">
+              Show {hiddenVersionIds.length} hidden version{hiddenVersionIds.length === 1 ? "" : "s"}
+            </span>
+          </button>
+        )}
+      </div>
       <TableComponent
         columnHeaders={tableData.columnHeaders}
         rowHeaders={tableData.rowHeaders}
         data={tableData.data}
         minColumnWidth={400}
+        hideScrollbar={false}
+        stickyHeaderData={stickyHeaderData}
       />
     </div>
   );

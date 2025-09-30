@@ -7,11 +7,11 @@ alwaysApply: true
 # Python
 
 Rules apply to all python files. Whenever editing a file, check that the 
-file meets both ruff (`poetry run ruff check --fix <file>`) and pyright (`poetry run pyright <file>`).
+file meets both ruff (`uv run ruff check --fix <file>`) and pyright (`uv run pyright <file>`).
 
 # Code style
 
-Use ruff to validate `poetry run ruff check <file>` or fix `poetry run ruff format <file>`
+Use ruff to validate `uv run ruff check <file>` or fix `uv run ruff format <file>`
 
 ## Comments and docstring
 - Avoid comments or docstrings that are too trivial and just describe what is written in the code. Only add docstrings and comments in cases when there is really something to explain or something to warn the reader about.
@@ -19,14 +19,14 @@ Use ruff to validate `poetry run ruff check <file>` or fix `poetry run ruff form
 # Typing
 
 - Use the latest typing fetures of Python ('dict' instead of 'Dict', 'list' instead of 'List', ' | None' instead of 'Optional', etc.)
-- Use pyright to check for typing `poetry run pyright <file>`
+- Use pyright to check for typing `uv run pyright <file>`
 
 # Tests
 
 Make sure there is a unit test that covers your change.
 A unit test should be in the same directory as the file that is tested (e-g `my_file_test.py` should have unit test `my_file.py`)
 
-Pytest is used for testing. You can run a test using `poetry run pytest <my_file>::<my_function>`
+Pytest is used for testing. You can run a test using `uv run pytest <my_file>::<my_function>`
 
 - do not create subclasses of `TestCase` from the unittest package. You can use mocks from unittest though.
 - do notadd @pytest.mark.asyncio since asyncio is in auto mode

@@ -54,6 +54,20 @@ class _Agg:
             self.append(value)
 
     @classmethod
+    def url_preview(cls, content_type: str, url: str):
+        if len(url) > 100:
+            return url[:20] + "..."
+        match content_type.split("/")[0]:
+            case "image":
+                prefix = "img"
+            case "audio":
+                prefix = "audio"
+            case _:
+                prefix = "file"
+        return f"[[{prefix}:{url}]]"
+
+    # TODO: this really should not be here
+    @classmethod
     def _file_preview(cls, d: dict[str, Any]):
         content_type = d.get("content_type")
         if not content_type or not isinstance(content_type, str):
@@ -69,15 +83,7 @@ class _Agg:
         else:
             return None
 
-        match content_type.split("/")[0]:
-            case "image":
-                prefix = "img"
-            case "audio":
-                prefix = "audio"
-            case _:
-                prefix = "file"
-
-        return f"[[{prefix}:{url}]]"
+        return cls.url_preview(content_type.split("/")[0], url)
 
     def _append_dict(self, d: dict[str, Any], brackets: bool):
         # For simplification, we consider that any dict

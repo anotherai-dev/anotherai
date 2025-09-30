@@ -9,6 +9,20 @@ const compat = new FlatCompat({
   baseDirectory: __dirname,
 });
 
-const eslintConfig = [...compat.extends("next/core-web-vitals", "next/typescript")];
+const eslintConfig = [
+  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  {
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        // Import should be next/navigation
+        "next/router",
+        // Clerk should not be imported unless explicitly needed
+        "@clerk/nextjs",
+        "@clerk/nextjs/server",
+      ],
+    },
+  },
+];
 
 export default eslintConfig;

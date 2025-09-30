@@ -1,0 +1,431 @@
+---
+title: Update Models and Prompts Without Code Changes
+description: This guide walks you through the process of setting up and using deployments. Deploying a version of an agent allows you to make subsequent updates to that agent without changing code for most common changes.
+summary: A practical guide to deploying versions from experiments in AnotherAI
+---
+
+import { Accordion, Accordions } from "fumadocs-ui/components/accordion";
+import { Callout } from "fumadocs-ui/components/callout";
+import { Step, Steps } from "fumadocs-ui/components/steps";
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+## Why Use Deployments?
+
+At heart, deployments are simply a way to manage some completion parameters (usually prompt and model) that would traditionally be committed and deployed with the codebase. With the speed at which LLMs are evolving, re-deploying code any time a prompt needs to be adjusted or a model needs to be changed prevents non-engineers from making updates and slows down iteration cycles.
+
+<Accordions>
+<Accordion title="Understanding versions and input in the context of deployments">
+
+To understand deployments, it is important to understand how AnotherAI separates the static (_Version_) and dynamic (_Input_) portions of the completion call, and how AnotherAI re-creates the completion call from a _Version_ and _Input_.
+
+**Separating version and input**
+
+The rules for separating the _Version_ and _Input_ are simple:
+
+- All completion parameters (model, temperature, etc.) besides `messages` are part of the _Version_
+- All messages up to the last message containing a templated content is part of the _Version_ (`version.prompt`)
+- If no message contains a templated content and if the first message is a system message, the first system message is part of the _Version_
+
+The input contains the rest:
+
+- the input variables
+- the messages that are not part of the _Version_
+
+For example, in the following code:
+
+- The version contains the first system message but not the user message since the user message does not contain a templated content.
+- The input contains the user message and the input variables.
+
+<Tabs items={["OpenAI SDK (JS)"]}>
+<Tab>
+```js
+const completion = await openai.chat.completions.create({
+  model: "gpt-4o",
+  messages: [
+        {
+            "role": "system",
+            // Using a template here instead of a string format to allow separating a static system message template and 
+            // input variables.
+            "content": `You are an expert on {{ country }}. You are helping a customer traveling to {{ country }}. Answer questions in {{ language }}.`
+        },
+        { role: "user", content: "Any customs I should be mindful about at the dinner table ?" },
+    ],
+    temperature: 0.5,
+    //   Input variables
+    input: {
+        country: "France",
+        language: "English",
+    }
+    agent_id: "travel-assistant"
+});
+```
+</Tab>
+</Tabs>
+
+**Compiling a completion call from a version and input**
+
+Most providers API only accept a list of messages as input so AnotherAI needs to compile the completion call from the _Version_ and _Input_.
+
+Building the message list is done in two steps:
+
+- 1. The message templates that belong to the _Version_ are rendered using the input variables.
+- 2. The messages that belong to the _Input_ are added to the message list.
+
+**Response format and variables schema**
+
+A Version also refers to a specific response format and set of variables. That's because both are usually tightly linked to the prompt itself:
+
+- the system message often refers to specific fields in the response format
+- if the prompt is templated, it directly refers to a set of input variables
+
+</Accordion>
+</Accordions>
+
+**There are three parts to the deployment process:**
+
+1. **Initial Deployment Creation** (requires engineering): Set up your code to use deployments instead of hardcoded parameters and deploy a first version of your agent.
+2. **Non-breaking Deployment Updates (Ongoing)** (no code changes needed): Non-breaking changes to the agent's prompts, models, and parameters can be made through updating deployments, no code changes required.
+3. **Breaking Deployment Updates (Possible, periodic)** (requires engineering): If the changes made are considered breaking changes, a new deployment will need to be created and your code will need to be updated to point to the new deployment.
+
+## Initial Deployment Setup (Requires Engineering)
+
+This initial setup requires an AI coding agent with access to your codebase to modify your agent code.
+
+<Tabs items={["From Your Code", "From a Completion", "From An Experiment"]}>
+<Tab>
+If the version of your agent you want to deploy is already in your IDE, you can also just request to have a deployment created directly, without opening the web app.
+
+1. Ensure your code is already using AnotherAI's base_url and API key.
+2. Tell your AI assistant to deploy your agent:
+
+```
+Deploy the version of anotherai/agent/travel-assistant in my code to production. 
+Create a deployment for this version and update to my code to match this version 
+and reference the deployment_id.
+```
+
+Your AI assistant will create a version ID for you and deploy it.
+
+</Tab>
+
+<Tab>
+If you find the version you want to deploy is in a completion view on the web app, you can also get the version ID from there.
+
+1. Open the detail view of the completion using the version you want to deploy
+2. Copy the version ID (located on the right side of the modal)
+
+![Completion Version Details](/images/completion-version-details.png)
+
+3. Paste the version ID into your preferred AI assistant and ask it to deploy:
+
+```
+Deploy anotherai/version/acf2635be31cbd89f9363bfd3b2c6abc to production. 
+Create a deployment for this version and update to my code to match this version 
+and reference the deployment_id.
+```
+
+</Tab>
+
+<Tab>
+If there is a version of the agent in an experimentyou want to deploy, you can get the version of your agent from the experiments web view.
+
+1. Locate the experiment that has the version of the agent you want to deploy.
+2. Hover over the version number to copy the version ID
+
+![Deploy Version](/images/deploy-version-popup.png)
+
+3. Open your preferred AI assistant
+4. Request deployment to your preferred environment:
+
+```
+Deploy anotherai/version/acf2635be31cbd89f9363bfd3b2c6abc to production. 
+Create a deployment for this version and update to my code to match this version 
+and reference the deployment_id.
+```
+
+![Deployment Individual View](/images/deployment-individual-view.png)
+</Tab>
+</Tabs>
+
+<Accordions>
+<Accordion title="Code Before and After Using Deployments" id="deployment-example">
+
+**Before:**
+
+<Tabs items={["OpenAI SDK (JS)", "OpenAI SDK (Python)"]}>
+<Tab>
+```js
+const completion = await openai.chat.completions.create({
+  model: "gpt-4o",
+  messages: [
+    {
+      role: "system",
+      content: `You are an expert travel assistant specializing in {{ country }}.
+
+Key responsibilities:
+
+- Provide accurate information about {{ country }} including culture, customs, and travel tips
+- Consider the traveler's budget level: {{ budget_level }}
+- Recommend activities and restaurants appropriate for their interests and budget
+
+Always be helpful, accurate, and culturally sensitive.`
+}
+],
+temperature: 0.7,
+// Input variables
+input: {
+country: destination,
+budget_level: travelerBudget
+},
+agent_id: "travel-assistant"
+});
+
+````
+</Tab>
+<Tab>
+```python
+completion = await openai.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {
+            "role": "system",
+            "content": """You are an expert travel assistant specializing in {{ country }}.
+
+Key responsibilities:
+- Provide accurate information about {{ country }} including culture, customs, and travel tips
+- Consider the traveler's budget level: {{ budget_level }}
+- Recommend activities and restaurants appropriate for their interests and budget
+
+Always be helpful, accurate, and culturally sensitive."""
+        }
+    ],
+    temperature=0.7,
+    extra_body={
+        "input": {
+            "country": destination,
+            "budget_level": traveler_budget
+        },
+        "agent_id": "travel-assistant"
+    }
+)
+````
+
+</Tab>
+</Tabs>
+
+**After:**
+
+<Tabs items={["OpenAI SDK (JS)", "OpenAI SDK (Python)"]}>
+<Tab>
+```js
+const completion = await openai.chat.completions.create({
+  // Static components are now stored in the deployment
+  model: "anotherai/deployment/travel-assistant:production#1",
+  messages: [],
+  input: {
+    country: destination,
+    budget_level: travelerBudget
+  }
+});
+```
+</Tab>
+<Tab>
+```python
+completion = await openai.chat.completions.create(
+    # Model, temperature, system message, and agent_id are now in the deployment
+    model="anotherai/deployment/travel-assistant:production#1",
+    messages=[],
+    extra_body={
+        "input": {
+            "country": destination,
+            "budget_level": traveler_budget
+        }
+    }
+)
+```
+</Tab>
+</Tabs>
+
+</Accordion>
+</Accordions>
+
+<Accordions>
+<Accordion title="Reconciling Code and Deployments" id="reconciling-code-and-deployments">
+
+**Reconciling Code and Deployments**
+
+The code allows targeting a deployment but still provide completion parameters. For example, one could write:
+
+<Tabs items={["OpenAI SDK (JS)"]}>
+<Tab>
+```js
+const completion = await openai.chat.completions.create({
+    model: "anotherai/deployment/travel-assistant:production#1",
+    input: {
+        country: "France"
+    }
+    temperature: 0.5, // temperature might be different from the deployment
+});
+
+````
+
+</Tab>
+</Tabs>
+
+In the above example, we need to decide which temperature should be used, the one from the deployment or the one from the code.
+
+We believe that code should be the source of truth which means that in the above case the temperature should be the one from the code. The reconciliation between code and deployments follows the following rules:
+
+- any provided completion parameter can override the corresponding deployment parameter
+- if the override creates a version that is incompatible with the deployment an error is raised.
+
+Consider a deployment `travel-assistant/production#1` created with:
+
+- model: "gpt-4o"
+- temperature: 0.5
+- variables: `country: string`
+
+<Tabs items={["OpenAI SDK (JS)"]}>
+<Tab>
+```js
+// Accepted since the version is compatible with the deployment
+const completion = await openai.chat.completions.create({
+    model: "anotherai/deployment/travel-assistant:production#1",
+    input: {
+        country: "France"
+    }
+    temperature: 1, // temperature 1 is used
+    tools: [...] // tools are used
+});
+
+// Rejected since the version is incompatible with the deployment
+const completion = await openai.chat.completions.create({
+model: "anotherai/deployment/travel-assistant:production#1",
+input: {
+country: "France"
+}
+response_format: {
+type: "json_schema",
+json_schema: ... // response format is incompatible with the deployment
+}
+});
+
+```
+</Tab>
+</Tabs>
+
+</Accordion>
+</Accordions>
+
+When a new deployment is created, it is given a unique deployment_id that can be used to reference the deployment in your code. Optionally, you can request a specific deployment_id be set when creating the deployment. Otherwise, your AI coding agent will pick one for you automatically.
+## Non-breaking Deployment Updates (Ongoing)
+
+Once your code is set up to use deployments, in many cases you can update your agent's behavior without any engineering involvement or changes to your code.
+### Benefits of Deployment Updates
+
+Updating an existing deployment does not require any code changes. Because no code changes are required, updating an existing deployment is generally much faster than creating and releasing a new deployment.
+
+<Callout type="info">
+  To prevent unwanted deployments that could negatively impact your production environment, your coding agent will
+  require you to confirm all deployment updates using the web app.
+
+  ![Deployment Update Terminal Output](/images/deployment-update-terminal.png)
+
+  ![Deployment Update Confirmation](/images/deployment-update-confirmation.png)
+</Callout>
+
+### What updates can be made to an existing deployment?
+
+You can update an existing deployment if the new version is considered a non-breaking change.
+
+**Non-breaking Changes Examples**
+- Changing the model
+- Adjusting temperature or other generation parameters
+- Editing prompt wording while keeping the same variables
+
+### How to update an existing deployment
+
+When your changes don't affect the input variables or output schema, you can update the existing deployment:
+
+<Steps>
+<Step>
+Copy the new version ID you want to deploy from [AnotherAI](https://anotherai.dev).
+
+![Version ID location in the AnotherAI web app](/images/version-id-location.png)
+</Step>
+
+<Step>
+  Ask your preferred AI assistant to update the existing deployment: 
+
+  ``` 
+  Update deployment anotherai/deployment/question-answering-agent:production#1 to use
+  anotherai/version/a9f1fc5ab11299a9fee5604e51fe7b6e 
+  ```
+</Step>
+
+<Step>
+Confirm the update in the AnotherAI web app when prompted.
+
+![Deployment Update Confirmation](/images/deployment-update-confirmation.png)
+</Step>
+
+<Step>
+That's it! **No code changes needed** - your agent automatically uses the updated version.
+</Step>
+</Steps>
+## Breaking Deployment Updates (Possible, periodic)
+
+In some cases, the difference between two versions of your agent will require a new deployment to be created instead of simply updating the version connected to an existing deployment_id. In these cases, engineering involvement is required to update the code to point to the new deployment.
+
+### When do I _have to_ create a new deployment instead of updating an existing one?
+
+Creating a new deployment is required when the changes you are making are considered breaking changes.
+
+**Breaking Changes Examples**
+- Editing the input variables
+  - Adding a new variable
+  - Removing a variable
+  - Changing the name or the type of an existing variable
+- Editing the output schema
+  - Adding a new field
+  - Removing a field
+  - Changing the name or the type of an existing field
+
+Creating a new deployment_id for an already-deployed agent is the same process as creating that initial deployment. You can refer to the [initial deployment setup](#initial-deployment-setup-requires-engineering) section for the process.
+
+<Accordions>
+<Accordion title="Code Before and After Updating to a New Deployment ID" id="deployment-example">
+
+When a new deployment is created, you will need to update your code to point to the new deployment.
+
+**Example: Updating code for a new deployment**
+
+<Tabs items={["OpenAI SDK (JS)"]}>
+<Tab>
+```js
+// Before - using old deployment
+const completion = await openai.chat.completions.create({
+    model: "anotherai/deployment/travel-assistant:production#1",
+    input: {
+        country: "France"
+    }
+});
+
+// After - using new deployment with breaking changes
+const completion = await openai.chat.completions.create({
+model: "anotherai/deployment/travel-assistant:production#2", // new deployment
+input: {
+destination: "France", // variable renamed: country -> destination
+traveler_type: "business" // new required variable added
+}
+});
+
+````
+</Tab>
+</Tabs>
+</Accordion>
+</Accordions>
+
+<Callout type="success">
+Don't worry if you're unsure if an update version is a breaking change or not: if you ask your AI assistant to update an existing deployment and it cannot because the new version is incompatible, oyur AI assistant will automatically create a new deployment for you. You can create as many deployments as you need.
+</Callout>

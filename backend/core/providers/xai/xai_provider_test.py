@@ -26,7 +26,6 @@ from core.providers._base.provider_error import (
     UnknownProviderError,
 )
 from core.providers._base.provider_options import ProviderOptions
-from core.providers._base.provider_output import ProviderOutput
 from core.providers.xai.xai_domain import CompletionRequest
 from core.providers.xai.xai_provider import XAIConfig, XAIProvider
 from tests import fake_models as test_models
@@ -40,6 +39,10 @@ def xai_provider():
     )
 
 
+def _output_factory(x: str) -> Any:
+    return json.loads(x)
+
+
 class TestBuildRequest:
     def test_build_request(self, xai_provider: XAIProvider):
         request = xai_provider._build_request(  # pyright: ignore [reportPrivateUsage]
@@ -47,7 +50,7 @@ class TestBuildRequest:
                 MessageDeprecated(role=MessageDeprecated.Role.SYSTEM, content="Hello 1"),
                 MessageDeprecated(role=MessageDeprecated.Role.USER, content="Hello"),
             ],
-            options=ProviderOptions(model=Model.GPT_4O_2024_11_20, max_tokens=10, temperature=0),
+            options=ProviderOptions(model=Model.GROK_4_0709, max_tokens=10, temperature=0),
             stream=False,
         )
         assert isinstance(request, CompletionRequest)
@@ -71,7 +74,7 @@ class TestBuildRequest:
                 MessageDeprecated(role=MessageDeprecated.Role.SYSTEM, content="Hello 1"),
                 MessageDeprecated(role=MessageDeprecated.Role.USER, content="Hello"),
             ],
-            options=ProviderOptions(model=Model.GPT_4O_2024_11_20, temperature=0),
+            options=ProviderOptions(model=Model.GROK_4_0709, temperature=0),
             stream=False,
         )
         assert isinstance(request, CompletionRequest)
@@ -88,7 +91,7 @@ class TestBuildRequest:
         ]
         assert request.temperature == 0
         assert request.max_tokens is None
-        # model_data = get_model_data(Model.GPT_4O_2024_11_20)
+        # model_data = get_model_data(Model.GROK_4_0709)
         # if model_data.max_tokens_data.max_output_tokens:
         #     assert request.max_tokens == model_data.max_tokens_data.max_output_tokens
         # else:
@@ -151,7 +154,7 @@ class TestBuildRequest:
             xai_provider._build_request(  # pyright: ignore [reportPrivateUsage]
                 messages=[MessageDeprecated(role=MessageDeprecated.Role.USER, content="Hello")],
                 options=ProviderOptions(
-                    model=Model.GPT_4O_2024_11_20,
+                    model=Model.GROK_4_0709,
                     tool_choice="auto",
                 ),
                 stream=False,
@@ -159,7 +162,7 @@ class TestBuildRequest:
         )
         # We can exclude None values because the HTTPxProvider does the same
         assert request.model_dump(include={"messages", "tool_choice", "model"}, exclude_none=True) == {
-            "model": "gpt-4o-2024-11-20",
+            "model": "grok-4-0709",
             "messages": [
                 {
                     "role": "user",
@@ -169,15 +172,47 @@ class TestBuildRequest:
             "tool_choice": "auto",
         }
 
+    @pytest.mark.parametrize(
+        ("reasoning", "expected_model", "expected_reasoning_effort"),
+        [
+            (ReasoningEffort.DISABLED, "grok-4-fast-non-reasoning", None),
+            (0, "grok-4-fast-non-reasoning", None),
+            (ReasoningEffort.LOW, "grok-4-fast-reasoning", "low"),
+            (ReasoningEffort.MEDIUM, "grok-4-fast-reasoning", None),
+        ],
+    )
+    def test_build_request_grok_4_fast_non_reasoning(
+        self,
+        xai_provider: XAIProvider,
+        reasoning: ReasoningEffort | int | None,
+        expected_model: str,
+        expected_reasoning_effort: str | None,
+    ):
+        options = ProviderOptions(model=Model.GROK_4_FAST)
+        if isinstance(reasoning, int):
+            options.reasoning_budget = reasoning
+        elif isinstance(reasoning, ReasoningEffort):
+            options.reasoning_effort = reasoning
+        request = cast(
+            CompletionRequest,
+            xai_provider._build_request(  # pyright: ignore [reportPrivateUsage]
+                messages=[MessageDeprecated(role=MessageDeprecated.Role.USER, content="Hello")],
+                options=options,
+                stream=False,
+            ),
+        )
+        assert request.model == expected_model
+        assert request.reasoning_effort == expected_reasoning_effort
+
 
 def mock_xai_stream(httpx_mock: HTTPXMock):
     httpx_mock.add_response(
         url="https://api.x.ai/v1/chat/completions",
         stream=IteratorStream(
             [
-                b'data: {"id":"1","object":"chat.completion.chunk","created":1720404416,"model":"gpt-3.5-turbo-1106","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,',
-                b'"finish_reason":null}]}\n\ndata: {"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"gpt-3.5-turbo-1106","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"content":"{\\n"},"logprobs":null,"finish_reason":null}]}\n\n',
-                b'data: {"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"gpt-3.5-turbo-1106","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"content":"\\"greeting\\": \\"Hello James!\\"\\n}"},"logprobs":null,"finish_reason":null}]}\n\n',
+                b'data: {"id":"1","object":"chat.completion.chunk","created":1720404416,"model":"grok-4-fast-reasoning","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,',
+                b'"finish_reason":null}]}\n\ndata: {"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"grok-4-fast-reasoning","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"content":"{\\n"},"logprobs":null,"finish_reason":null}]}\n\n',
+                b'data: {"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"grok-4-fast-reasoning","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"content":"\\"greeting\\": \\"Hello James!\\"\\n}"},"logprobs":null,"finish_reason":null}]}\n\n',
                 b"data: [DONE]\n\n",
             ],
         ),
@@ -190,9 +225,9 @@ class TestSingleStream:
             url="https://api.x.ai/v1/chat/completions",
             stream=IteratorStream(
                 [
-                    b'data: {"id":"1","object":"chat.completion.chunk","created":1720404416,"model":"gpt-3.5-turbo-1106","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,',
-                    b'"finish_reason":null}]}\n\ndata: {"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"gpt-3.5-turbo-1106","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"content":"{\\n"},"logprobs":null,"finish_reason":null}]}\n\n',
-                    b'data: {"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"gpt-3.5-turbo-1106","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"content":"\\"greeting\\": \\"Hello James!\\"\\n}"},"logprobs":null,"finish_reason":null}]}\n\n',
+                    b'data: {"id":"1","object":"chat.completion.chunk","created":1720404416,"model":"grok-4-fast-reasoning","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,',
+                    b'"finish_reason":null}]}\n\ndata: {"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"grok-4-fast-reasoning","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"content":"{\\n"},"logprobs":null,"finish_reason":null}]}\n\n',
+                    b'data: {"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"grok-4-fast-reasoning","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"content":"\\"greeting\\": \\"Hello James!\\"\\n}"},"logprobs":null,"finish_reason":null}]}\n\n',
                     b"data: [DONE]\n\n",
                 ],
             ),
@@ -203,17 +238,17 @@ class TestSingleStream:
 
         raw_chunks = provider._single_stream(  # pyright: ignore [reportPrivateUsage]
             request={"messages": [{"role": "user", "content": "Hello"}]},
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
-            partial_output_factory=lambda x: ProviderOutput(x),
+            output_factory=_output_factory,
             raw_completion=raw,
             options=ProviderOptions(model=Model.GPT_3_5_TURBO_1106, max_tokens=10, temperature=0, output_schema={}),
         )
 
         parsed_chunks = [o async for o in raw_chunks]
 
-        assert len(parsed_chunks) == 2
-        assert parsed_chunks[0][0] == {"greeting": "Hello James!"}
-        assert parsed_chunks[1][0] == {"greeting": "Hello James!"}
+        assert len(parsed_chunks) == 4
+        final_chunk = parsed_chunks[-1].final_chunk
+        assert final_chunk is not None
+        assert final_chunk.agent_output == {"greeting": "Hello James!"}
 
         assert len(httpx_mock.get_requests()) == 1
 
@@ -247,8 +282,7 @@ class TestSingleStream:
                     },
                 ],
             },
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
-            partial_output_factory=lambda x: ProviderOutput(x),
+            output_factory=_output_factory,
             raw_completion=raw,
             options=ProviderOptions(
                 model=Model.GROK_3_MINI_BETA,
@@ -260,9 +294,10 @@ class TestSingleStream:
 
         parsed_chunks = [o async for o in raw_chunks]
 
-        assert len(parsed_chunks) == 2
-        assert parsed_chunks[0][0] == {"answer": "Oh it has 30 words!"}
-        assert parsed_chunks[1][0] == {"answer": "Oh it has 30 words!"}
+        assert len(parsed_chunks) == 4
+        final_chunk = parsed_chunks[-1].final_chunk
+        assert final_chunk is not None
+        assert final_chunk.agent_output == {"answer": "Oh it has 30 words!"}
 
         assert len(httpx_mock.get_requests()) == 1
 
@@ -274,8 +309,7 @@ class TestSingleStream:
         streamer = xai_provider.stream(
             [Message.with_text("Hello")],
             options=ProviderOptions(model=Model.GROK_3_MINI_BETA),
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
-            partial_output_factory=lambda x: ProviderOutput(x),
+            output_factory=_output_factory,
         )
 
         chunks = [copy.deepcopy(o) async for o in streamer]
@@ -283,7 +317,7 @@ class TestSingleStream:
 
         reasoning = [c.reasoning for c in chunks]
         assert reasoning[0] == "First"
-        assert reasoning[1] == "First response"
+        assert reasoning[1] == " response"
 
 
 class TestStream:
@@ -293,9 +327,9 @@ class TestStream:
             url="https://api.x.ai/v1/chat/completions",
             stream=IteratorStream(
                 [
-                    b'data: {"id":"1","object":"chat.completion.chunk","created":1720404416,"model":"gpt-3.5-turbo-1106","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,',
-                    b'"finish_reason":null}]}\n\ndata: {"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"gpt-3.5-turbo-1106","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"content":"{\\n"},"logprobs":null,"finish_reason":null}]}\n\n',
-                    b'data: {"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"gpt-3.5-turbo-1106","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"content":"\\"greeting\\": \\"Hello James!\\"\\n}"},"logprobs":null,"finish_reason":null}]}\n\n',
+                    b'data: {"id":"1","object":"chat.completion.chunk","created":1720404416,"model":"grok-4-fast-reasoning","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,',
+                    b'"finish_reason":null}]}\n\ndata: {"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"grok-4-fast-reasoning","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"content":"{\\n"},"logprobs":null,"finish_reason":null}]}\n\n',
+                    b'data: {"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"grok-4-fast-reasoning","system_fingerprint":"fp_44132a4de3","choices":[{"index":0,"delta":{"content":"\\"greeting\\": \\"Hello James!\\"\\n}"},"logprobs":null,"finish_reason":null}]}\n\n',
                     b"data: [DONE]\n\n",
                 ],
             ),
@@ -306,16 +340,15 @@ class TestStream:
         streamer = provider.stream(
             [Message.with_text("Hello")],
             options=ProviderOptions(
-                model=Model.GPT_3_5_TURBO_1106,
+                model=Model.GROK_4_FAST,
                 max_tokens=10,
                 temperature=0,
                 output_schema={"type": "object"},
             ),
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
-            partial_output_factory=lambda x: ProviderOutput(x),
+            output_factory=_output_factory,
         )
         chunks = [o async for o in streamer]
-        assert len(chunks) == 2
+        assert len(chunks) == 4
 
         # Not sure why the pyright in the CI reports an error here
         request = httpx_mock.get_requests()[0]
@@ -323,7 +356,7 @@ class TestStream:
         body = json.loads(request.read().decode())
         assert body == {
             "max_tokens": 10,
-            "model": "gpt-3.5-turbo-1106",
+            "model": "grok-4-fast-reasoning",
             "messages": [
                 {
                     "content": "Hello",
@@ -353,8 +386,7 @@ class TestStream:
         streamer = provider.stream(
             [Message.with_text("Hello")],
             options=ProviderOptions(model=Model.GPT_3_5_TURBO_1106, max_tokens=10, temperature=0),
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
-            partial_output_factory=lambda x: ProviderOutput(x),
+            output_factory=_output_factory,
         )
         # TODO: be stricter about what error is returned here
         with pytest.raises(UnknownProviderError) as e:
@@ -385,22 +417,22 @@ class TestComplete:
                 ),
             ],
             options=ProviderOptions(
-                model=Model.GPT_3_5_TURBO_1106,
+                model=Model.GROK_4_FAST,
                 max_tokens=10,
                 temperature=0,
                 output_schema={"type": "object"},
             ),
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+            output_factory=_output_factory,
         )
-        assert o.output
-        assert o.tool_calls is None
+        assert o.agent_output
+        assert o.tool_call_requests is None
         # Not sure why the pyright in the CI reports an error here
         request = httpx_mock.get_requests()[0]
         assert request.method == "POST"  # pyright: ignore reportUnknownMemberType
         body = json.loads(request.read().decode())
         assert body == {
             "max_tokens": 10,
-            "model": "gpt-3.5-turbo-1106",
+            "model": "grok-4-fast-reasoning",
             "messages": [
                 {
                     "content": [
@@ -450,10 +482,10 @@ class TestComplete:
                 # No output schema means the model will return a string
                 output_schema=None,
             ),
-            output_factory=lambda x, _: ProviderOutput(x),
+            output_factory=lambda x: x,
         )
-        assert o.output
-        assert o.tool_calls is None
+        assert o.agent_output
+        assert o.tool_call_requests is None
         # Not sure why the pyright in the CI reports an error here
         request = httpx_mock.get_requests()[0]
         assert request.method == "POST"  # pyright: ignore reportUnknownMemberType
@@ -473,7 +505,7 @@ class TestComplete:
             await provider.complete(
                 [Message.with_text("Hello")],
                 options=ProviderOptions(model=Model.GPT_3_5_TURBO_1106, max_tokens=10, temperature=0),
-                output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+                output_factory=_output_factory,
             )
 
         details = e.value.serialized().details
@@ -498,17 +530,17 @@ class TestComplete:
                 ),
             ],
             options=ProviderOptions(
-                model=Model.GPT_4O_MINI_2024_07_18,
+                model=Model.GROK_CODE_FAST_1,
                 max_tokens=10,
                 temperature=0,
                 task_name="hello",
                 structured_generation=True,
                 output_schema={"type": "object"},
             ),
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+            output_factory=_output_factory,
         )
-        assert o.output
-        assert o.tool_calls is None
+        assert o.agent_output
+        assert o.tool_call_requests is None
 
         # Not sure why the pyright in the CI reports an error here
         request = httpx_mock.get_requests()[0]
@@ -516,7 +548,7 @@ class TestComplete:
         body = json.loads(request.read().decode())
         assert body == {
             "max_tokens": 10,
-            "model": "gpt-4o-mini-2024-07-18",
+            "model": "grok-code-fast-1",
             "messages": [
                 {
                     "content": [
@@ -556,7 +588,7 @@ class TestComplete:
             await provider.complete(
                 [Message.with_text("Hello")],
                 options=ProviderOptions(model=Model.GPT_4O_2024_08_06, max_tokens=10, temperature=0),
-                output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+                output_factory=_output_factory,
             )
 
         response = e.value.serialized()
@@ -579,7 +611,7 @@ class TestComplete:
             await provider.complete(
                 [Message.with_text("Hello")],
                 options=ProviderOptions(model=Model.GPT_4O_2024_08_06, max_tokens=10, temperature=0),
-                output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+                output_factory=_output_factory,
             )
 
         response = e.value.serialized()
@@ -599,7 +631,7 @@ class TestComplete:
             await xai_provider.complete(
                 [Message.with_text("Hello")],
                 options=ProviderOptions(model=Model.GPT_4O_2024_08_06, max_tokens=10, temperature=0),
-                output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+                output_factory=_output_factory,
             )
 
         assert e.value.store_task_run is False
@@ -613,7 +645,7 @@ class TestComplete:
         completion = await xai_provider.complete(
             [Message.with_text("Hello")],
             options=ProviderOptions(model=Model.GPT_4O_2024_08_06, max_tokens=10, temperature=0),
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+            output_factory=_output_factory,
         )
 
         assert completion.reasoning
@@ -651,19 +683,15 @@ class TestCheckValid:
 
 class TestExtractStreamDelta:
     def test_extract_stream_delta(self, xai_provider: XAIProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
         delta = xai_provider._extract_stream_delta(  # pyright: ignore[reportPrivateUsage]
-            b'{"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"gpt-3.5-turbo-1106","system_fingerprint":"fp_44132a4de3","usage": {"prompt_tokens": 35, "completion_tokens": 109, "total_tokens": 144},"choices":[{"index":0,"delta":{"content":"\\"greeting\\": \\"Hello James!\\"\\n}"},"logprobs":null,"finish_reason":null}]}',
-            raw_completion,
-            {},
+            b'{"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"grok-4-fast-reasoning","system_fingerprint":"fp_44132a4de3","usage": {"prompt_tokens": 35, "completion_tokens": 109, "total_tokens": 144},"choices":[{"index":0,"delta":{"content":"\\"greeting\\": \\"Hello James!\\"\\n}"},"logprobs":null,"finish_reason":null}]}',
         )
-        assert delta.content == '"greeting": "Hello James!"\n}'
-        assert raw_completion.usage == LLMUsage(prompt_token_count=35, completion_token_count=109)
+        assert delta.delta == '"greeting": "Hello James!"\n}'
+        assert delta.usage == LLMUsage(prompt_token_count=35, completion_token_count=109)
 
     def test_done(self, xai_provider: XAIProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-        delta = xai_provider._extract_stream_delta(b"[DONE]", raw_completion, {})  # pyright: ignore[reportPrivateUsage]
-        assert delta.content == ""
+        delta = xai_provider._extract_stream_delta(b"[DONE]")  # pyright: ignore[reportPrivateUsage]
+        assert delta.is_empty()
 
 
 class TestMaxTokensExceededError:
@@ -678,7 +706,7 @@ class TestMaxTokensExceededError:
             await provider.complete(
                 [Message.with_text("Hello")],
                 options=ProviderOptions(model=Model.GPT_4O_2024_08_06, max_tokens=10, temperature=0),
-                output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+                output_factory=_output_factory,
             )
         assert (
             e.value.args[0]
@@ -701,8 +729,7 @@ class TestMaxTokensExceededError:
             async for _ in provider._single_stream(  # pyright: ignore reportPrivateUsage
                 {"messages": [{"role": "user", "content": "Hello"}]},
                 options=ProviderOptions(model=Model.GPT_4O_2024_08_06, max_tokens=10, temperature=0),
-                output_factory=lambda x, _: ProviderOutput(json.loads(x)),
-                partial_output_factory=lambda x: ProviderOutput(x),
+                output_factory=_output_factory,
                 raw_completion=RawCompletion(response="", usage=LLMUsage()),
             ):
                 pass

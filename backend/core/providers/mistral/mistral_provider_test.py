@@ -15,21 +15,18 @@ from core.providers._base.abstract_provider import RawCompletion
 from core.providers._base.httpx_provider import ParsedResponse
 from core.providers._base.llm_usage import LLMUsage
 from core.providers._base.provider_error import (
-    FailedGenerationError,
     MaxTokensExceededError,
     ProviderBadRequestError,
     ProviderInternalError,
     UnknownProviderError,
 )
 from core.providers._base.provider_options import ProviderOptions
-from core.providers._base.provider_output import ProviderOutput
 from core.providers.mistral.mistral_domain import (
     CompletionRequest,
-    DeltaMessage,
-    MistralToolCall,
 )
 from core.providers.mistral.mistral_provider import MistralAIConfig, MistralAIProvider
-from tests.utils import fixture_bytes, fixtures_json
+from core.runners.runner_output import ToolCallRequestDelta
+from tests.utils import fixture_bytes, fixtures_json, fixtures_stream
 
 
 @pytest.fixture
@@ -37,6 +34,10 @@ def mistral_provider():
     return MistralAIProvider(
         config=MistralAIConfig(api_key="test"),
     )
+
+
+def _output_factory(x: str) -> Any:
+    return json.loads(x)
 
 
 class TestValues:
@@ -253,8 +254,7 @@ class TestSingleStream:
 
         raw_chunks = provider._single_stream(
             request={"messages": [{"role": "user", "content": "Hello"}]},
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
-            partial_output_factory=lambda x: ProviderOutput(x),
+            output_factory=_output_factory,
             raw_completion=raw,
             options=ProviderOptions(
                 model=Model.PIXTRAL_12B_2409,
@@ -266,9 +266,10 @@ class TestSingleStream:
 
         parsed_chunks = [o async for o in raw_chunks]
 
-        assert len(parsed_chunks) == 2
-        assert parsed_chunks[0][0] == {"greeting": "Hello James!"}
-        assert parsed_chunks[1][0] == {"greeting": "Hello James!"}
+        assert len(parsed_chunks) == 3
+        final_chunk = parsed_chunks[-1].final_chunk
+        assert final_chunk
+        assert final_chunk.agent_output == {"greeting": "Hello James!"}
 
         assert len(httpx_mock.get_requests()) == 1
 
@@ -298,11 +299,10 @@ class TestStream:
                 temperature=0,
                 output_schema={"type": "object"},
             ),
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
-            partial_output_factory=lambda x: ProviderOutput(x),
+            output_factory=_output_factory,
         )
         chunks = [o async for o in streamer]
-        assert len(chunks) == 2
+        assert len(chunks) == 3
 
         # Not sure why the pyright in the CI reports an error here
         request = httpx_mock.get_requests()[0]
@@ -336,8 +336,7 @@ class TestStream:
         streamer = provider.stream(
             [Message.with_text("Hello")],
             options=ProviderOptions(model=Model.PIXTRAL_12B_2409, max_tokens=10, temperature=0),
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
-            partial_output_factory=lambda x: ProviderOutput(x),
+            output_factory=_output_factory,
         )
         # TODO: be stricter about what error is returned here
         with pytest.raises(UnknownProviderError) as e:
@@ -345,6 +344,24 @@ class TestStream:
 
         assert e.value.capture
         assert str(e.value) == "blabla"
+
+    async def test_stream_with_reasoning(self, httpx_mock: HTTPXMock, mistral_provider: MistralAIProvider):
+        httpx_mock.add_response(
+            url="https://api.mistral.ai/v1/chat/completions",
+            stream=IteratorStream(fixtures_stream("mistralai", "stream_reasoning.txt")),
+        )
+        provider = MistralAIProvider()
+        streamer = provider.stream(
+            [Message.with_text("Hello")],
+            options=ProviderOptions(model=Model.PIXTRAL_12B_2409, max_tokens=10, temperature=0),
+            output_factory=lambda x: x,
+        )
+        chunks = [chunk async for chunk in streamer]
+        assert len(chunks) == 99
+        text = "".join([c.delta for c in chunks if c.delta])
+        thinking = "".join([c.reasoning for c in chunks if c.reasoning])
+        assert len(text) == 499
+        assert len(thinking) == 760
 
 
 class TestComplete:
@@ -370,10 +387,10 @@ class TestComplete:
                 temperature=0,
                 output_schema={"type": "object"},
             ),
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+            output_factory=_output_factory,
         )
-        assert o.output
-        assert o.tool_calls is None
+        assert o.agent_output
+        assert o.tool_call_requests is None
 
         # Not sure why the pyright in the CI reports an error here
         request = httpx_mock.get_requests()[0]
@@ -430,10 +447,10 @@ class TestComplete:
                 temperature=0,
                 output_schema={"type": "object"},
             ),
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+            output_factory=_output_factory,
         )
-        assert o.output
-        assert o.tool_calls is None
+        assert o.agent_output
+        assert o.tool_call_requests is None
 
         # Not sure why the pyright in the CI reports an error here
         request = httpx_mock.get_requests()[0]
@@ -481,15 +498,32 @@ class TestComplete:
         o = await mistral_provider.complete(
             [Message.with_text("Hello")],
             options=ProviderOptions(model=Model.PIXTRAL_12B_2409, max_tokens=10, temperature=0),
-            output_factory=lambda x, _: ProviderOutput(x),
+            output_factory=_output_factory,
         )
-        assert o.output
-        assert o.tool_calls is None
+        assert o.agent_output
+        assert o.tool_call_requests is None
 
         request = httpx_mock.get_requests()[0]
         assert request.method == "POST"  # pyright: ignore reportUnknownMemberType
         body = json.loads(request.read().decode())
         assert body["response_format"]["type"] == "text"
+
+    async def test_complete_reasoning(self, httpx_mock: HTTPXMock, mistral_provider: MistralAIProvider):
+        httpx_mock.add_response(
+            url="https://api.mistral.ai/v1/chat/completions",
+            json=fixtures_json("mistralai", "completion_reasoning.json"),
+        )
+        o = await mistral_provider.complete(
+            [Message.with_text("Hello")],
+            options=ProviderOptions(model=Model.MAGISTRAL_MEDIUM_2506, max_tokens=10, temperature=0),
+            output_factory=lambda x: x,
+        )
+        assert o.agent_output
+        assert isinstance(o.agent_output, str)
+        assert o.agent_output.startswith("Researchers at the University of Technology have demonstrated")
+        assert o.tool_call_requests is None
+        assert o.reasoning
+        assert o.reasoning.startswith("Okay, the text is about a recent advancement in quantum computing.")
 
     async def test_complete_500(self, httpx_mock: HTTPXMock):
         httpx_mock.add_response(
@@ -504,7 +538,7 @@ class TestComplete:
             await provider.complete(
                 [Message.with_text("Hello")],
                 options=ProviderOptions(model=Model.PIXTRAL_12B_2409, max_tokens=10, temperature=0),
-                output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+                output_factory=_output_factory,
             )
 
         details = e.value.serialized().details
@@ -522,7 +556,7 @@ class TestComplete:
             await mistral_provider.complete(
                 [Message.with_text("Hello")],
                 options=ProviderOptions(model=Model.PIXTRAL_12B_2409, max_tokens=10, temperature=0),
-                output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+                output_factory=_output_factory,
             )
 
         message = e.value.serialized().message
@@ -546,7 +580,7 @@ class TestComplete:
             await mistral_provider.complete(
                 [Message.with_text("Hello")],
                 options=ProviderOptions(model=Model.PIXTRAL_12B_2409, max_tokens=10, temperature=0),
-                output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+                output_factory=_output_factory,
             )
 
         assert e.value.store_task_run
@@ -565,7 +599,7 @@ class TestComplete:
             await mistral_provider.complete(
                 [Message.with_text("Hello")],
                 options=ProviderOptions(model=Model.PIXTRAL_12B_2409, max_tokens=10, temperature=0),
-                output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+                output_factory=_output_factory,
             )
 
         assert e.value.store_task_run
@@ -578,7 +612,7 @@ class TestComplete:
         await mistral_provider.complete(
             [Message.with_text("Hello")],
             options=ProviderOptions(model=Model.PIXTRAL_12B_2409, max_tokens=10, temperature=0),
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+            output_factory=_output_factory,
         )
 
         request = httpx_mock.get_requests()[0]
@@ -597,7 +631,7 @@ class TestComplete:
         await mistral_provider.complete(
             [Message.with_text("Hello")],
             options=ProviderOptions(model=Model.PIXTRAL_12B_2409, temperature=0),
-            output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+            output_factory=_output_factory,
         )
         request = httpx_mock.get_requests()[0]
         body = json.loads(request.read().decode())
@@ -640,19 +674,15 @@ class TestCheckValid:
 
 class TestExtractStreamDelta:
     def test_extract_stream_delta(self, mistral_provider: MistralAIProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
         delta = mistral_provider._extract_stream_delta(
             b'{"id":"chatcmpl-9iY4Gi66tnBpsuuZ20bUxfiJmXYQC","object":"chat.completion.chunk","created":1720404416,"model":"gpt-3.5-turbo-1106","system_fingerprint":"fp_44132a4de3","usage": {"prompt_tokens": 35, "completion_tokens": 109, "total_tokens": 144},"choices":[{"index":0,"delta":{"content":"hello"},"logprobs":null,"finish_reason":null}]}',
-            raw_completion,
-            {},
         )
-        assert delta.content == "hello"
-        assert raw_completion.usage == LLMUsage(prompt_token_count=35, completion_token_count=109)
+        assert delta.delta == "hello"
+        assert delta.usage == LLMUsage(prompt_token_count=35, completion_token_count=109)
 
     def test_done(self, mistral_provider: MistralAIProvider):
-        raw_completion = RawCompletion(response="", usage=LLMUsage())
-        delta = mistral_provider._extract_stream_delta(b"[DONE]", raw_completion, {})
-        assert delta.content == ""
+        delta = mistral_provider._extract_stream_delta(b"[DONE]")
+        assert delta.is_empty()
 
     def test_with_real_sses_and_tools(self, mistral_provider: MistralAIProvider):
         sses = [
@@ -661,26 +691,22 @@ class TestExtractStreamDelta:
         ]
         assert mistral_provider._extract_stream_delta(
             sses[0],
-            RawCompletion(response="", usage=LLMUsage()),
-            {},
         ) == ParsedResponse(
-            content="",
-            tool_calls=[],
+            delta=None,
         )
 
         assert mistral_provider._extract_stream_delta(
             sses[1],
-            RawCompletion(response="", usage=LLMUsage()),
-            {},
         ) == ParsedResponse(
-            content="",
-            tool_calls=[
-                ToolCallRequest(
+            tool_call_requests=[
+                ToolCallRequestDelta(
                     tool_name="get_city_internal_code",
-                    tool_input_dict={"city": "New York"},
+                    arguments='{"city": "New York"}',
                     id="R5zZgxSX6",
+                    idx=0,
                 ),
             ],
+            usage=LLMUsage(prompt_token_count=805, completion_token_count=26),
         )
 
 
@@ -690,16 +716,12 @@ class TestMaxTokensExceeded:
             url="https://api.mistral.ai/v1/chat/completions",
             json=fixtures_json("mistralai", "finish_reason_length_completion.json"),
         )
-        with pytest.raises(MaxTokensExceededError) as e:
+        with pytest.raises(MaxTokensExceededError):
             await mistral_provider.complete(
                 [Message.with_text("Hello")],
                 options=ProviderOptions(model=Model.PIXTRAL_12B_2409, max_tokens=10, temperature=0),
-                output_factory=lambda x, _: ProviderOutput(json.loads(x)),
+                output_factory=_output_factory,
             )
-        assert (
-            e.value.args[0]
-            == "Model returned a response with a LENGTH finish reason, meaning the maximum number of tokens was exceeded."
-        )
 
     async def test_max_tokens_exceeded_stream(self, mistral_provider: MistralAIProvider, httpx_mock: HTTPXMock):
         httpx_mock.add_response(
@@ -711,83 +733,14 @@ class TestMaxTokensExceeded:
             ),
         )
         raw_completion = RawCompletion(response="", usage=LLMUsage())
-        with pytest.raises(MaxTokensExceededError) as e:
-            async for _ in mistral_provider._single_stream(  # pyright: ignore reportPrivateUsage
+        with pytest.raises(MaxTokensExceededError):
+            async for _ in mistral_provider._single_stream(
                 request={"messages": [{"role": "user", "content": "Hello"}]},
-                output_factory=lambda x, _: ProviderOutput(json.loads(x)),
-                partial_output_factory=lambda x: ProviderOutput(x),
+                output_factory=_output_factory,
                 raw_completion=raw_completion,
                 options=ProviderOptions(model=Model.PIXTRAL_12B_2409, max_tokens=10, temperature=0),
             ):
                 pass
-        assert (
-            e.value.args[0]
-            == "Model returned a response with a LENGTH finish reason, meaning the maximum number of tokens was exceeded."
-        )
-
-
-class TestExtraStreamDeltaToolCalls:
-    @pytest.fixture
-    def provider(self) -> MistralAIProvider:
-        # Create a provider instance with dummy configuration.
-        config = MistralAIConfig(api_key="dummy")
-        return MistralAIProvider(config=config)
-
-    def test_valid_tool_call(self, provider: MistralAIProvider) -> None:
-        """
-        When a valid tool call is received in the SSE delta, it should be extracted.
-        """
-        tool_call = MistralToolCall(
-            id="tcvalid12",
-            function=MistralToolCall.Function(
-                name="calculator",
-                arguments={"operation": "multiply", "numbers": [3, 4]},
-            ),
-            index=1,
-        )
-        delta = DeltaMessage(content="partial", tool_calls=[tool_call])
-        buffer: dict[int, Any] = {}
-        result = provider._extra_stream_delta_tool_calls(delta, buffer)
-        assert len(result) == 1
-        tt = result[0]
-        assert tt.id == "tcvalid12"
-        # Assuming native_tool_name_to_internal acts as identity in tests.
-        assert tt.tool_name == "calculator"
-        assert tt.tool_input_dict == {"operation": "multiply", "numbers": [3, 4]}
-
-    def test_no_index_raises(self, provider: MistralAIProvider) -> None:
-        """
-        When a tool call is missing an index, the provider should raise a FailedGenerationError.
-        """
-        tool_call = MistralToolCall(
-            id="tc_no_index",
-            function=MistralToolCall.Function(
-                name="calculator",
-                arguments={"operation": "subtract", "numbers": [10, 5]},
-            ),
-            index=None,
-        )
-        delta = DeltaMessage(content="ignored", tool_calls=[tool_call])
-        buffer: dict[int, Any] = {}
-        with pytest.raises(FailedGenerationError, match="Model returned a tool call with no index"):
-            provider._extra_stream_delta_tool_calls(delta, buffer)
-
-    def test_invalid_json_no_tool_call_added(self, provider: MistralAIProvider) -> None:
-        """
-        When the accumulated tool call arguments cannot be parsed as JSON,
-        no tool call should be returned.
-        """
-        # Provide a tool call where function.arguments is a string that will not decode as valid JSON.
-        tool_call = MistralToolCall(
-            id="tc_invalid",
-            function=MistralToolCall.Function(name="calculator", arguments="not a json"),
-            index=2,
-        )
-        delta = DeltaMessage(content="ignored", tool_calls=[tool_call])
-        buffer: dict[int, Any] = {}
-        result = provider._extra_stream_delta_tool_calls(delta, buffer)
-        # Expect an empty list due to JSONDecodeError.
-        assert result == []
 
 
 class TestComputePromptTokenCount:

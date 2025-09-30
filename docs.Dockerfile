@@ -4,31 +4,37 @@ FROM node:22.8.0-alpine3.20 AS base
 RUN apk upgrade libssl3 libcrypto3 libxml2
 RUN npm install -g npm@10.9.2 && npm cache clean --force
 
+RUN corepack enable
+RUN corepack prepare yarn@stable --activate
+
 FROM base AS sources
 
 WORKDIR /app
-COPY package.json package-lock.json ./
-# We could optimze here but fumadocs needs the config file and all
+COPY .yarnrc.yml ./
+COPY .yarn ./.yarn
+COPY package.json yarn.lock ./
+COPY web/package.json ./web/
+# We could optimize here but fumadocs needs the config file and all
 # plugins to be loaded during npm ci since it looks for stuff
 # in the post install script
 COPY docs /app/docs
 
-# Install all dependencies
-# Next JS needs dev dependencies 
-RUN npm ci --include=dev --include=prod 
+# Check if lockfile is up to date
+RUN yarn install --mode=skip-build --immutable
+RUN yarn workspaces focus docs
 
 FROM sources AS dev
 
 EXPOSE 3000
 WORKDIR /app/docs
 
-CMD ["npx", "next", "dev"]
+CMD ["yarn", "dev"]
 
 FROM sources AS builder
 
 WORKDIR /app/docs
 
-RUN npm run build
+RUN yarn build
 
 FROM base AS prod
 

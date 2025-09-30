@@ -2,23 +2,9 @@ import { AnnotationsView } from "@/components/annotations/AnnotationsView";
 import { VersionDetailsView } from "@/components/version-details/VersionDetailsView";
 import { Annotation, Completion } from "@/types/models";
 import { AnnotationsPromptLabel } from "../annotations/AnnotationsPromptLabel";
-import { MetadataView } from "./MetadataView";
-
-type InfoRowProps = {
-  title: string;
-  value: string;
-};
-
-function InfoRow({ title, value }: InfoRowProps) {
-  return (
-    <div className="bg-white border border-gray-200 rounded-[2px] p-2">
-      <div className="flex justify-between items-center">
-        <span className="text-xs font-medium text-gray-700">{title}</span>
-        <span className="text-xs text-gray-900">{value}</span>
-      </div>
-    </div>
-  );
-}
+import InfoRow from "./InfoRow";
+import MetadataView from "./MetadataView";
+import { TracesView } from "./TracesView";
 
 type Props = {
   completion: Completion;
@@ -54,9 +40,25 @@ export function CompletionDetailsView(props: Props) {
 
         <div className="space-y-2 px-4">
           <InfoRow title="Agent ID" value={completion.agent_id} />
+          {completion.created_at && (
+            <InfoRow title="Created" value={new Date(completion.created_at).toLocaleString()} />
+          )}
+          <InfoRow
+            title="Version ID"
+            value={completion.version.id}
+            copyValue={`anotherai/version/${completion.version.id}`}
+            copyable={true}
+          />
 
-          <VersionDetailsView version={completion.version} showPrompt={true} showOutputSchema={true} />
+          <VersionDetailsView
+            version={completion.version}
+            showPrompt={true}
+            showOutputSchema={true}
+            showExamples={true}
+          />
         </div>
+
+        <TracesView traces={completion.traces} />
 
         <MetadataView metadata={completion.metadata} />
       </div>

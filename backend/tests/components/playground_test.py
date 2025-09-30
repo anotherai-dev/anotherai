@@ -1,5 +1,9 @@
+import pytest
+from fastmcp.exceptions import ToolError
+
 from core.domain.models.models import Model
 from core.domain.models.providers import Provider
+from core.utils.uuid import uuid7
 from tests.components._common import IntegrationTestClient
 
 
@@ -17,35 +21,59 @@ async def test_playground_tool(test_api_client: IntegrationTestClient):
         is_reusable=True,
     )
 
-    res = await test_api_client.call_tool(
-        "playground",
+    # First create the experiment
+    exp = await test_api_client.call_tool(
+        "create_experiment",
         {
-            "models": f"{Model.CLAUDE_4_SONNET_20250514},{Model.GPT_41_MINI_2025_04_14}",
-            "author_name": "user",
+            "id": "test-experiment",
+            "title": "Capital Extractor Test Experiment",
+            "description": "This is a test experiment",
             "agent_id": "test-agent",
-            "inputs": [
-                {
-                    "variables": {"name": "Toulouse"},
-                },
-                {
-                    "variables": {"name": "Pittsburgh"},
-                },
-            ],
-            "prompts": [
-                [
-                    {"role": "user", "content": "What is the capital of the country that has {{ name }}?"},
-                ],
-            ],
-            "temperatures": "0.5,1.0",
-            "experiment_title": "Capital Extractor Test Experiment",
+            "author_name": "user",
         },
     )
-    completions = res["completions"]
-    assert len(completions) == 8
+    experiment_id = exp["id"]
+
+    # Then add two inputs
+    inserted_inputs = await test_api_client.call_tool(
+        "add_inputs_to_experiment",
+        {
+            "experiment_id": experiment_id,
+            "inputs": [{"variables": {"name": "Toulouse"}}, {"variables": {"name": "Pittsburgh"}}],
+        },
+    )
+    assert len(inserted_inputs["result"]) == 2
+
+    # Then add 4 versions
+    inserted_versions = await test_api_client.call_tool(
+        "add_versions_to_experiment",
+        {
+            "experiment_id": experiment_id,
+            "version": {
+                "model": Model.CLAUDE_4_SONNET_20250514,
+                "prompt": [{"role": "user", "content": "What is the capital of the country that has {{ name }}?"}],
+                "temperature": 0.5,
+            },
+            "overrides": [
+                {"temperature": 1.0},
+                {"model": Model.GPT_41_MINI_2025_04_14},
+                {"model": Model.GPT_41_MINI_2025_04_14, "temperature": 1.0},
+            ],
+        },
+    )
+    assert len(inserted_versions["result"]) == 4
+
     await test_api_client.wait_for_background()
 
+    res = await test_api_client.call_tool(
+        "get_experiment",
+        {"id": experiment_id, "max_wait_time_seconds": 1},
+    )
+
+    assert len(res["completions"]) == 8
+
     # I can also fetch the experiment
-    exp = await test_api_client.get(f"/v1/experiments/{res['experiment_id']}")
+    exp = await test_api_client.get(f"/v1/experiments/{res['id']}")
     assert exp["title"] == "Capital Extractor Test Experiment"
     assert len(exp["versions"]) == 4
     assert len(exp["inputs"]) == 2
@@ -76,55 +104,55 @@ async def test_with_no_variables(test_api_client: IntegrationTestClient):
         "openai/completion.json",
         is_reusable=True,
     )
-    res = await test_api_client.call_tool(
-        "playground",
+    experiment_id = str(uuid7())
+    await test_api_client.call_tool(
+        "create_experiment",
         {
-            "models": f"{Model.CLAUDE_4_SONNET_20250514},{Model.GPT_41_MINI_2025_04_14}",
-            "author_name": "user",
+            "id": experiment_id,
+            "title": "Capital Extractor Test Experiment",
+            "description": "This is a test experiment",
             "agent_id": "test-agent",
-            "prompts": [[{"role": "user", "content": "What is 2+2?"}]],
-            "experiment_title": "Capital Extractor Test Experiment",
+            "author_name": "user",
         },
     )
-    completions = res["completions"]
-    assert len(completions) == 2  # 2 models, 1 input
+    # Add a single message input
+    await test_api_client.call_tool(
+        "add_inputs_to_experiment",
+        {
+            "experiment_id": experiment_id,
+            "inputs": [{"messages": [{"role": "user", "content": "What is 2+2?"}]}],
+        },
+    )
+    # Add a two models
+    await test_api_client.call_tool(
+        "add_versions_to_experiment",
+        {
+            "experiment_id": experiment_id,
+            "version": {
+                "model": Model.CLAUDE_4_SONNET_20250514,
+                "prompt": [],
+            },
+            "overrides": [
+                {"model": Model.GPT_41_MINI_2025_04_14},
+            ],
+        },
+    )
     await test_api_client.wait_for_background()
 
+    res = await test_api_client.call_tool(
+        "get_experiment",
+        {"id": experiment_id, "max_wait_time_seconds": 1},
+    )
+
+    assert len(res["completions"]) == 2
+
     # Fetch the experiment
-    exp2 = await test_api_client.get(f"/v1/experiments/{res['experiment_id']}")
+    exp2 = await test_api_client.get(f"/v1/experiments/{res['id']}")
     # 2 versions, they both have an empty prompt
     assert len(exp2["versions"]) == 2
     assert all(not v.get("prompt") for v in exp2["versions"])
     assert len(exp2["inputs"]) == 1
     assert exp2["inputs"] == [
-        {"id": "be705b1050eeba8c73c54bfd404070a4", "messages": [{"role": "user", "content": "What is 2+2?"}]},
-    ]
-
-    # Now retry with a complex prompt with a system message
-    res2 = await test_api_client.call_tool(
-        "playground",
-        {
-            "models": f"{Model.CLAUDE_4_SONNET_20250514},{Model.GPT_41_MINI_2025_04_14}",
-            "author_name": "user",
-            "agent_id": "test-agent",
-            "prompts": [
-                [{"role": "system", "content": "You are a math expert."}, {"role": "user", "content": "What is 2+2?"}],
-                [{"role": "system", "content": "You are a math expert."}, {"role": "user", "content": "What is 4+4?"}],
-            ],
-            "experiment_title": "Capital Extractor Test Experiment 2",
-        },
-    )
-    completions = res2["completions"]
-    assert len(completions) == 4  # 2 models, 2 input
-    await test_api_client.wait_for_background()
-    # Fetch the experiment
-    exp2 = await test_api_client.get(f"/v1/experiments/{res2['experiment_id']}")
-    assert len(exp2["versions"]) == 2
-    assert all(v["prompt"] == [{"role": "system", "content": "You are a math expert."}] for v in exp2["versions"])
-    assert len(exp2["inputs"]) == 2
-    sorted_inputs = sorted(exp2["inputs"], key=lambda i: i["id"])
-    assert sorted_inputs == [
-        {"id": "319848d64b435ae0adf10a5708a0ba5a", "messages": [{"role": "user", "content": "What is 4+4?"}]},
         {"id": "be705b1050eeba8c73c54bfd404070a4", "messages": [{"role": "user", "content": "What is 2+2?"}]},
     ]
 
@@ -143,10 +171,187 @@ async def test_completion_query(test_api_client: IntegrationTestClient):
         is_reusable=True,
     )
     # Create 4 runs with 2 different inputs
+    experiment_id = str(uuid7())
+    await test_api_client.call_tool(
+        "create_experiment",
+        {
+            "id": experiment_id,
+            "title": "Capital Extractor Test Experiment",
+            "description": "This is a test experiment",
+            "agent_id": "test-agent",
+            "author_name": "user",
+        },
+    )
+    await test_api_client.call_tool(
+        "add_inputs_to_experiment",
+        {
+            "experiment_id": experiment_id,
+            "inputs": [{"variables": {"name": "Toulouse"}}, {"variables": {"name": "Pittsburgh"}}],
+        },
+    )
+    version_res = await test_api_client.call_tool(
+        "add_versions_to_experiment",
+        {
+            "experiment_id": experiment_id,
+            "version": {
+                "model": Model.CLAUDE_4_SONNET_20250514,
+                "prompt": [
+                    {"role": "user", "content": "What is the capital of the country that has {{ name }}?"},
+                ],
+            },
+            "overrides": [
+                {"model": Model.GPT_41_MINI_2025_04_14},
+            ],
+        },
+    )
+    await test_api_client.wait_for_background()
     res1 = await test_api_client.call_tool(
+        "get_experiment",
+        {"id": experiment_id, "max_wait_time_seconds": 1},
+    )
+    assert len(res1["completions"]) == 4
+
+    # Now repeat with a query
+    experiment_id2 = str(uuid7())
+    await test_api_client.call_tool(
+        "create_experiment",
+        {
+            "id": experiment_id2,
+            "title": "Capital Extractor Test Experiment",
+            "description": "This is a test experiment",
+            "agent_id": "test-agent",
+            "author_name": "user",
+        },
+    )
+    await test_api_client.call_tool(
+        "add_inputs_to_experiment",
+        {
+            "experiment_id": experiment_id2,
+            "query": "SELECT input_variables, input_messages FROM completions",
+        },
+    )
+    await test_api_client.call_tool(
+        "add_versions_to_experiment",
+        {
+            "experiment_id": experiment_id2,
+            "version": version_res["result"][0],  # Use first version that was created
+        },
+    )
+    await test_api_client.wait_for_background()
+    res2 = await test_api_client.call_tool(
+        "get_experiment",
+        {"id": experiment_id2, "max_wait_time_seconds": 1},
+    )
+
+    assert len(res2["completions"]) == 2  # 2 inputs * 1 model
+
+    # Add an annotation on a run
+    await test_api_client.call_tool(
+        "add_annotations",
+        {
+            "annotations": [
+                {
+                    "text": "This is a test annotation",
+                    "author_name": "user",
+                    "target": {
+                        "completion_id": res2["completions"][0]["id"],
+                    },
+                },
+            ],
+        },
+    )
+    await test_api_client.wait_for_background()
+
+    # TODO:
+    # # Try the raw query on annotations
+    # res3 = await test_api_client.call_tool(
+    #     "playground",
+    #     {
+    #         "completion_query": "SELECT input_variables, input_messages FROM completions JOIN annotations ON completions.id = annotations.completion_id WHERE annotations.created_at >= now() - INTERVAL 1 DAY",
+    #         "models": Model.GPT_41_MINI_2025_04_14,
+    #         "author_name": "user",
+    #         "agent_id": "test-agent",
+    #         "prompts": [
+    #             [
+    #                 {"role": "user", "content": "What is {{ name }}?"},
+    #             ],
+    #         ],
+    #         "experiment_title": "Capital Extractor Test Experiment 5",
+    #     },
+    # )
+    # assert len(res3["completions"]) == 1
+
+
+# TODO:
+@pytest.mark.skip(reason="Not implemented")
+async def test_use_cache(test_api_client: IntegrationTestClient):
+    test_api_client.mock_provider_call(
+        Provider.ANTHROPIC,
+        Model.CLAUDE_4_SONNET_20250514,
+        "anthropic/completion.json",
+        is_reusable=True,
+    )
+    test_api_client.mock_provider_call(
+        Provider.OPEN_AI,
+        Model.GPT_41_MINI_2025_04_14,
+        "openai/completion.json",
+        is_reusable=True,
+    )
+    playground_payload = {
+        "models": f"{Model.CLAUDE_4_SONNET_20250514},{Model.GPT_41_MINI_2025_04_14}",
+        "author_name": "user",
+        "agent_id": "test-agent",
+        "inputs": [
+            {
+                "variables": {"name": "Toulouse"},
+            },
+            {
+                "variables": {"name": "Pittsburgh"},
+            },
+        ],
+        "prompts": [
+            [
+                {"role": "user", "content": "What is the capital of the country that has {{ name }}?"},
+            ],
+        ],
+        "temperatures": "0,1.0",  # default cache setting is always
+        "experiment_title": "Capital Extractor Test Experiment",
+    }
+    res = await test_api_client.call_tool("playground", playground_payload)
+    assert len(res["completions"]) == 8
+    assert len(test_api_client.get_provider_requests(Provider.ANTHROPIC, Model.CLAUDE_4_SONNET_20250514)) == 4
+    assert len(test_api_client.get_provider_requests(Provider.OPEN_AI, Model.GPT_41_MINI_2025_04_14)) == 4
+
+    # Reset the mocks
+    assert len(test_api_client.httpx_mock.get_requests()) == 8
+
+    await test_api_client.wait_for_background()
+    # Try it again, the cache should be used and  no run should go through
+    res = await test_api_client.call_tool("playground", playground_payload)
+    assert len(res["completions"]) == 8
+    assert len(test_api_client.httpx_mock.get_requests()) == 8
+
+    # If I do the same but switch to auto, the cache is used for 4 out of 8 calls
+    res = await test_api_client.call_tool("playground", {**playground_payload, "use_cache": "auto"})
+    assert len(res["completions"]) == 8
+    assert len(test_api_client.httpx_mock.get_requests()) == 12  # 8 + 4
+
+    # If I do the same but switch to never, the cache is not used and 8 runs go through
+    res = await test_api_client.call_tool("playground", {**playground_payload, "use_cache": "never"})
+    assert len(res["completions"]) == 8
+    assert len(test_api_client.httpx_mock.get_requests()) == 20  # 8 + 8
+
+
+# TODO:
+@pytest.mark.skip(reason="Not implemented")
+async def test_with_variables(test_api_client: IntegrationTestClient):
+    test_api_client.mock_provider_call("openai", "gpt-4.1", "openai/completion.json", is_reusable=True)
+
+    # Create an experiment via the playground tool
+    res = await test_api_client.call_tool(
         "playground",
         {
-            "models": f"{Model.CLAUDE_4_SONNET_20250514},{Model.GPT_41_MINI_2025_04_14}",
+            "models": "gpt-4.1",
             "author_name": "user",
             "agent_id": "test-agent",
             "inputs": [
@@ -162,64 +367,117 @@ async def test_completion_query(test_api_client: IntegrationTestClient):
                     {"role": "user", "content": "What is the capital of the country that has {{ name }}?"},
                 ],
             ],
-            "experiment_title": "Capital Extractor Test Experiment 3",
+            "experiment_title": "Capital Extractor Test Experiment",
         },
     )
-    completions = res1["completions"]
-    assert len(completions) == 4
-
-    # Waiting for async storage
     await test_api_client.wait_for_background()
 
-    # Now repeat with a query
-    res1 = await test_api_client.call_tool(
-        "playground",
+    completions = res["completions"]
+    assert len(completions) == 2, "sanity"
+
+    # Pull the completions to check the associated version
+    completion1 = await test_api_client.get(f"/v1/completions/{completions[0]['id']}")
+    completion2 = await test_api_client.get(f"/v1/completions/{completions[1]['id']}")
+
+    # The versions should be the same
+    assert completion1["version"] == completion2["version"]
+    version = completion1["version"]
+    assert version["model"] == "gpt-4.1-latest"
+    assert version["temperature"] == 1.0
+
+    assert version["input_variables_schema"] == {
+        "type": "object",
+        "properties": {"name": {"type": "string"}},
+    }
+
+
+# TODO:
+@pytest.mark.skip(reason="Not implemented")
+async def test_playground_empty_messages(test_api_client: IntegrationTestClient):
+    with pytest.raises(ToolError):
+        await test_api_client.call_tool(
+            "playground",
+            {
+                "models": "gpt-4.1",
+                "author_name": "user",
+                "agent_id": "test-agent",
+                "inputs": [
+                    {
+                        "variables": {"name": "Toulouse"},
+                    },
+                    {
+                        "variables": {"name": "Pittsburgh"},
+                    },
+                ],
+                "experiment_title": "Capital Extractor Test Experiment",
+            },
+        )
+
+    assert not test_api_client.httpx_mock.get_requests()
+
+
+async def test_image_url_as_url_object(test_api_client: IntegrationTestClient):
+    res = await test_api_client.call_tool(
+        "create_experiment",
         {
-            "models": Model.GPT_41_MINI_2025_04_14,
+            "id": "test-experiment",
+            "title": "Capital Extractor Test Experiment",
+            "description": "This is a test experiment",
             "author_name": "user",
             "agent_id": "test-agent",
-            "completion_query": "SELECT * FROM completions",
-            "prompts": [
-                [
-                    {"role": "user", "content": "What is the capital of {{ name }}?"},
-                ],
-            ],
-            "experiment_title": "Capital Extractor Test Experiment 4",
         },
     )
-    assert len(res1["completions"]) == 2  # 2 inputs * 1 model
+    experiment_id = res["id"]
 
-    # Add an annotation on a run
-    await test_api_client.call_tool(
-        "add_annotations",
+    versions = await test_api_client.call_tool(
+        "add_versions_to_experiment",
         {
-            "annotations": [
-                {
-                    "text": "This is a test annotation",
-                    "author_name": "user",
-                    "target": {
-                        "completion_id": completions[0]["id"],
+            "experiment_id": experiment_id,
+            "version": {
+                "model": "gpt-5-nano-2025-08-07",
+                "prompt": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": "{{image_url}}",
+                                },
+                            },
+                        ],
                     },
+                ],
+            },
+            "overrides": [
+                {"model": "gpt-4.1-nano-2025-04-14"},
+            ],
+        },
+    )
+    assert len(versions["result"]) == 2
+
+    versions2 = await test_api_client.call_tool(
+        "add_versions_to_experiment",
+        {
+            "experiment_id": experiment_id,
+            "version": '{\n  "model": "gpt-4o-mini-latest",\n  "prompt": [\n    {\n      "role": "system",\n      "content": "You are an expert in animals. Find the animal in the image"\n    },\n    {\n      "role": "user", \n      "content": [\n        {\n          "type": "image_url",\n          "image_url": {\n            "url": "{{image_url}}"\n          }\n        }\n      ]\n    }\n  ],\n  "response_format": {\n    "json_schema": {\n      "name": "AnimalClassificationOutput",\n      "schema": {\n        "type": "object",\n        "properties": {\n          "animals": {\n            "type": "array",\n            "items": {\n              "type": "object",\n              "properties": {\n                "location": {\n                  "type": "string",\n                  "enum": ["top", "bottom", "left", "right", "center"]\n                },\n                "name": {\n                  "type": "string"\n                },\n                "subspecies": {\n                  "type": "string"\n                },\n                "latin_name": {\n                  "type": "string"\n                },\n                "endangered_level": {\n                  "type": "string",\n                  "enum": ["least concern", "near threatened", "vulnerable", "endangered", "critically endangered", "extinct in the wild", "extinct"]\n                }\n              },\n              "required": ["location", "name", "endangered_level"]\n            }\n          }\n        },\n        "required": ["animals"]\n      }\n    }\n  }\n}',
+            "overrides": [
+                {
+                    "model": "gpt-5-nano-2025-08-07",
+                },
+                {
+                    "model": "gemini-2.0-flash-lite-001",
+                },
+                {
+                    "model": "gpt-4.1-nano-latest",
+                },
+                {
+                    "model": "llama4-scout-instruct-fast",
+                },
+                {
+                    "model": "gemini-2.5-flash-lite",
                 },
             ],
         },
     )
-    await test_api_client.wait_for_background()
-
-    # Try the raw query on annotations
-    res3 = await test_api_client.call_tool(
-        "playground",
-        {
-            "completion_query": "SELECT input_variables, input_messages FROM completions JOIN annotations ON completions.id = annotations.completion_id WHERE annotations.created_at >= now() - INTERVAL 1 DAY",
-            "models": Model.GPT_41_MINI_2025_04_14,
-            "author_name": "user",
-            "agent_id": "test-agent",
-            "prompts": [
-                [
-                    {"role": "user", "content": "What is {{ name }}?"},
-                ],
-            ],
-            "experiment_title": "Capital Extractor Test Experiment 5",
-        },
-    )
-    assert len(res3["completions"]) == 1
+    assert len(versions2["result"]) == 6

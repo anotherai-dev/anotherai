@@ -73,11 +73,20 @@ export interface ToolCallResult {
   error?: string;
 }
 
+export interface File {
+  content_type?: string;
+  data?: string;
+  url?: string;
+  format?: string;
+  storage_url?: string;
+}
+
 export interface MessageContent {
   text?: string;
   object?: Record<string, unknown> | unknown[];
   image_url?: string;
   audio_url?: string;
+  file?: File;
   tool_call_request?: ToolCallRequest;
   tool_call_result?: ToolCallResult;
   reasoning?: string;
@@ -105,6 +114,8 @@ export interface Version {
   prompt?: Message[];
   input_variables_schema?: Record<string, unknown>;
   output_schema?: OutputSchema;
+  reasoning_effort?: "disabled" | "low" | "medium" | "high";
+  reasoning_budget?: number;
 }
 
 // Extended version type to include optional properties with defaults
@@ -133,6 +144,32 @@ export interface Output {
   messages?: Message[];
   error?: Error;
 }
+
+export interface InferenceUsage {
+  input_tokens: number;
+  output_tokens: number;
+  total_tokens: number;
+}
+
+export interface LLMTrace {
+  kind: "llm";
+  duration_seconds: number;
+  cost_usd: number;
+  model: string;
+  provider: string;
+  usage?: InferenceUsage;
+}
+
+export interface ToolTrace {
+  kind: "tool";
+  duration_seconds: number;
+  cost_usd: number;
+  name: string;
+  tool_input_preview: string;
+  tool_output_preview: string;
+}
+
+export type Trace = LLMTrace | ToolTrace;
 
 export interface Annotation {
   id: string;
@@ -167,6 +204,7 @@ export interface ExperimentCompletion {
 export interface Completion {
   id: string;
   agent_id: string;
+  created_at?: string;
   version: Version;
   conversation_id?: string;
   input: Input;
@@ -176,11 +214,13 @@ export interface Completion {
   metadata: Record<string, unknown>;
   cost_usd: number;
   duration_seconds?: number;
+  traces?: Trace[];
 }
 
 export interface Experiment {
   id: string;
   created_at: string;
+  updated_at?: string;
   author_name: string;
   title: string;
   description: string;
@@ -326,6 +366,7 @@ export interface PatchViewFolderRequest {
 export interface ExperimentListItem {
   id: string;
   created_at: string;
+  updated_at?: string;
   author_name: string;
   title: string;
   description: string;
@@ -379,4 +420,84 @@ export interface APIKeyListResponse {
   total: number;
   next_page_token?: string;
   previous_page_token?: string;
+}
+
+// Deployments
+export interface Deployment {
+  id: string;
+  agent_id: string;
+  version: Version;
+  created_at: string;
+  created_by: string;
+  updated_at?: string;
+  metadata?: Record<string, unknown>;
+  url: string;
+}
+
+export interface DeploymentCreate {
+  id: string;
+  agent_id: string;
+  version: Version;
+  created_by: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface DeploymentUpdate {
+  version?: Version;
+  metadata?: Record<string, unknown>;
+}
+
+export interface DeploymentListResponse {
+  items: Deployment[];
+  total: number;
+  next_page_token?: string;
+  previous_page_token?: string;
+}
+
+// Models
+export interface SupportsModality {
+  image: boolean;
+  audio: boolean;
+  pdf: boolean;
+  text: boolean;
+}
+
+export interface ModelSupports {
+  input: SupportsModality;
+  output: SupportsModality;
+  parallel_tool_calls: boolean;
+  tools: boolean;
+  top_p: boolean;
+  temperature: boolean;
+}
+
+export interface ModelReasoning {
+  can_be_disabled: boolean;
+  low_effort_reasoning_budget: number;
+  medium_effort_reasoning_budget: number;
+  high_effort_reasoning_budget: number;
+  min_reasoning_budget: number;
+  max_reasoning_budget: number;
+}
+
+export interface ModelPricing {
+  input_token_usd: number;
+  output_token_usd: number;
+}
+
+export interface ModelContextWindow {
+  max_tokens: number;
+  max_output_tokens: number;
+}
+
+export interface Model {
+  id: string;
+  display_name: string;
+  icon_url: string;
+  supports: ModelSupports;
+  pricing: ModelPricing;
+  release_date: string;
+  reasoning?: ModelReasoning;
+  context_window: ModelContextWindow;
+  speed_index: number;
 }

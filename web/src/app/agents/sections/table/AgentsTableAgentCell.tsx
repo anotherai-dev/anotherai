@@ -1,8 +1,9 @@
-import { AgentActivityIndicator } from "@/components/AgentActivityIndicator";
+import { ActivityIndicator } from "@/components/ActivityIndicator";
+import { TextBreak } from "@/components/utils/TextBreak";
 
 interface AgentCellData {
   name: string;
-  active: boolean | null;
+  completionsLast3Days: number;
 }
 
 interface AgentsTableAgentCellProps {
@@ -11,9 +12,9 @@ interface AgentsTableAgentCellProps {
 
 export function AgentsTableAgentCell({ value }: AgentsTableAgentCellProps) {
   return (
-    <div className="flex items-center gap-2 text-xs text-gray-900 min-w-0 break-words font-semibold">
-      {value.active !== null && <AgentActivityIndicator isActive={value.active} />}
-      <span>{value.name}</span>
+    <div className="flex items-center gap-2 text-xs text-gray-900 min-w-0 font-semibold">
+      <ActivityIndicator completionsLast3Days={value.completionsLast3Days} />
+      <TextBreak>{value.name}</TextBreak>
     </div>
   );
 }

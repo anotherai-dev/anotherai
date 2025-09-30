@@ -3,7 +3,7 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import React, { useState } from "react";
 import { Annotation } from "../../types/models";
 import { HoverContainer } from "./HoverContainer";
-import { ValueDisplay } from "./ValueDisplay";
+import ValueDisplay from "./ValueDisplay";
 
 export type VariablesViewerProps = {
   variables: Record<string, unknown>;
@@ -212,7 +212,11 @@ function CollapsibleArray({
         )}
       </div>
 
-      {isExpanded && (
+      {isExpanded && arrayValue.length === 0 ? (
+        <span className={cx("text-gray-500 italic font-normal pl-4", textSizeClass)} style={textSizeStyle}>
+          empty
+        </span>
+      ) : isExpanded ? (
         <div className="ml-1 mt-2 relative">
           <div className="ml-3 mt-2">
             {arrayValue.map((item, index) => {
@@ -274,7 +278,7 @@ function CollapsibleArray({
             })}
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

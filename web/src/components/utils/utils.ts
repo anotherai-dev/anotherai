@@ -5,6 +5,7 @@ import {
   ExperimentWithLookups,
   ExtendedVersion,
   Message,
+  OutputSchema,
   Version,
 } from "@/types/models";
 import { findCommonSubstrings } from "./stringMatchingUtils";
@@ -27,10 +28,130 @@ export function getMetricBadgeColor(value: number, values: number[], isHigherBet
   return "bg-transparent border border-gray-200 text-gray-700";
 }
 
+export function getMetricBadgeWithRelative(
+  value: number,
+  values: number[],
+  isHigherBetter: boolean = false,
+  metricType?: "cost" | "duration"
+) {
+  if (!values || values.length === 0) {
+    return {
+      color: "bg-transparent border border-gray-200 text-gray-700",
+      relativeText: undefined,
+      isBest: false,
+      isWorst: false,
+    };
+  }
+
+  const sortedValues = [...values].sort((a, b) => a - b);
+  const min = sortedValues[0];
+  const max = sortedValues[sortedValues.length - 1];
+
+  // If all values are the same, no relative comparison needed
+  if (min === max) {
+    return {
+      color: "bg-transparent border border-gray-200 text-gray-700",
+      relativeText: undefined,
+      isBest: false,
+      isWorst: false,
+    };
+  }
+
+  let color: string;
+  let isBest = false;
+  let isWorst = false;
+  let relativeText: string | undefined;
+
+  // Determine comparison text based on metric type and whether this value is better or worse
+  const getComparisonText = (isBetterValue: boolean) => {
+    if (metricType === "cost") {
+      return isBetterValue ? "cheaper" : "more expensive";
+    }
+    if (metricType === "duration") {
+      return isBetterValue ? "faster" : "slower";
+    }
+    return ""; // Don't show any descriptor for unknown metric types
+  };
+
+  if (isHigherBetter) {
+    isBest = value === max;
+    isWorst = value === min;
+
+    if (isBest) {
+      color =
+        metricType === "cost" || metricType === "duration"
+          ? "bg-green-200 border border-green-400 text-green-900"
+          : "bg-transparent border border-gray-200 text-gray-700";
+      const comparisonText = getComparisonText(true);
+      relativeText = comparisonText ? `${(max / min).toFixed(1)}x ${comparisonText}` : `${(max / min).toFixed(1)}x`;
+    } else if (isWorst) {
+      color =
+        metricType === "cost" || metricType === "duration"
+          ? "bg-red-200 border border-red-300 text-red-900"
+          : "bg-transparent border border-gray-200 text-gray-700";
+      const comparisonText = getComparisonText(false);
+      relativeText = comparisonText ? `${(value / min).toFixed(1)}x ${comparisonText}` : `${(value / min).toFixed(1)}x`;
+    } else {
+      color = "bg-transparent border border-gray-200 text-gray-700";
+    }
+
+    // For non-best values, show how much worse they are
+    if (!isBest && max > 0) {
+      if (metricType === "cost" || metricType === "duration") {
+        relativeText = `${(max / value).toFixed(1)}x ${getComparisonText(false)}`;
+      } else {
+        relativeText = `${(max / value).toFixed(1)}x`;
+      }
+    }
+  } else {
+    isBest = value === min;
+    isWorst = value === max;
+
+    if (isBest) {
+      color =
+        metricType === "cost" || metricType === "duration"
+          ? "bg-green-200 border border-green-400 text-green-900"
+          : "bg-transparent border border-gray-200 text-gray-700";
+      const comparisonText = getComparisonText(true);
+      relativeText = comparisonText ? `${(max / min).toFixed(1)}x ${comparisonText}` : `${(max / min).toFixed(1)}x`;
+    } else if (isWorst) {
+      color =
+        metricType === "cost" || metricType === "duration"
+          ? "bg-red-200 border border-red-300 text-red-900"
+          : "bg-transparent border border-gray-200 text-gray-700";
+      const comparisonText = getComparisonText(false);
+      relativeText = comparisonText ? `${(value / min).toFixed(1)}x ${comparisonText}` : `${(value / min).toFixed(1)}x`;
+    } else {
+      color = "bg-transparent border border-gray-200 text-gray-700";
+    }
+
+    // For non-best values, show how much worse they are
+    if (!isBest && min > 0) {
+      if (metricType === "cost" || metricType === "duration") {
+        relativeText = `${(value / min).toFixed(1)}x ${getComparisonText(false)}`;
+      } else {
+        relativeText = `${(value / min).toFixed(1)}x`;
+      }
+    }
+  }
+
+  return {
+    color,
+    relativeText,
+    isBest,
+    isWorst,
+    showArrow: !metricType, // Only show arrows for non-cost/duration metrics
+  };
+}
+
 export function formatCurrency(value: number, multiplier: number = 1000): string {
   // Convert using multiplier for better readability
   const adjustedValue = value * multiplier;
   return `$${adjustedValue.toFixed(2)}`;
+}
+
+export function formatTotalCost(value: unknown): string {
+  return value ? `$${Math.max(Number(value), 0.01).toFixed(2)}` : "-";
 }
 
 export function formatDuration(seconds: number): string {
@@ -56,18 +177,117 @@ export function formatRelativeDate(value: unknown): string {
   return date.toLocaleDateString();
 }
 
-export function calculateAverageMetrics(completions: ExperimentCompletion[]): {
-  avgCost: number;
-  avgDuration: number;
-} {
-  if (completions.length === 0) return { avgCost: 0, avgDuration: 0 };
+export function formatRelativeDateWithTime(value: unknown): string {
+  if (value === null || value === undefined) return "N/A";
 
-  const totalCost = completions.reduce((sum, completion) => sum + (completion.cost_usd || 0), 0);
-  const totalDuration = completions.reduce((sum, completion) => sum + (completion.duration_seconds || 0), 0);
+  const date = new Date(String(value));
+  if (isNaN(date.getTime())) return "Invalid Date";
+
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+
+  // For older dates, show both date and time
+  return `${date.toLocaleDateString()}, ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+}
+
+export function formatDate(
+  value: unknown,
+  format: "date" | "datetime" | "time" | "relative" | "relative_with_time"
+): string {
+  if (value === null || value === undefined) return "N/A";
+
+  // Only add 'Z' suffix for dates that contain time information and don't already have timezone info
+  const dateString = String(value);
+  const hasTimeComponent = /T\d{2}:\d{2}|[ ]\d{2}:\d{2}/.test(dateString);
+  const hasTimezone = /[Z+\-]\d{2}:?\d{2}?$/.test(dateString);
+  const utcDateString = hasTimeComponent && !hasTimezone ? dateString + "Z" : dateString;
+
+  // Try UTC date first, fallback to original if parsing fails
+  let date = new Date(utcDateString);
+  let finalDateString = utcDateString;
+
+  if (isNaN(date.getTime())) {
+    date = new Date(dateString);
+    finalDateString = dateString;
+    if (isNaN(date.getTime())) return dateString;
+  }
+
+  // If there's no time component, always format as date-only regardless of the format parameter
+  if (!hasTimeComponent) {
+    return date.toLocaleDateString();
+  }
+
+  switch (format) {
+    case "datetime":
+      return date.toLocaleString();
+    case "time":
+      return date.toLocaleTimeString();
+    case "relative":
+      return formatRelativeDate(finalDateString);
+    case "relative_with_time":
+      return formatRelativeDateWithTime(finalDateString);
+    default:
+      return date.toLocaleDateString();
+  }
+}
+
+// Utility functions for error-based filtering
+export function shouldIncludeCostMetric(
+  completion: ExperimentCompletion | undefined
+): completion is ExperimentCompletion {
+  return completion != null && completion.cost_usd != null && !(completion.cost_usd === 0 && completion.output?.error);
+}
+
+export function shouldIncludeDurationMetric(
+  completion: ExperimentCompletion | undefined
+): completion is ExperimentCompletion {
+  return (
+    completion != null &&
+    completion.duration_seconds != null &&
+    !(completion.duration_seconds === 0 && completion.output?.error)
+  );
+}
+
+export function getValidCosts(completions: (ExperimentCompletion | undefined)[]): number[] {
+  return completions
+    .filter((completion): completion is ExperimentCompletion => shouldIncludeCostMetric(completion))
+    .map((completion) => completion.cost_usd);
+}
+
+export function getValidDurations(completions: (ExperimentCompletion | undefined)[]): number[] {
+  return completions
+    .filter((completion): completion is ExperimentCompletion => shouldIncludeDurationMetric(completion))
+    .map((completion) => completion.duration_seconds);
+}
+
+export function calculateAverageMetrics(completions: ExperimentCompletion[]): {
+  avgCost: number | undefined;
+  avgDuration: number | undefined;
+  costs: number[];
+  durations: number[];
+} {
+  if (completions.length === 0) return { avgCost: undefined, avgDuration: undefined, costs: [], durations: [] };
+
+  // Use centralized filtering logic
+  const costs = getValidCosts(completions);
+  const durations = getValidDurations(completions);
+
+  const totalCost = costs.reduce((sum, cost) => sum + cost, 0);
+  const totalDuration = durations.reduce((sum, duration) => sum + duration, 0);
 
   return {
-    avgCost: totalCost / completions.length,
-    avgDuration: totalDuration / completions.length,
+    avgCost: costs.length > 0 ? totalCost / costs.length : undefined,
+    avgDuration: durations.length > 0 ? totalDuration / durations.length : undefined,
+    costs,
+    durations,
   };
 }
 
@@ -105,7 +325,7 @@ export function getPriceAndLatencyPerVersion(
   }>
 ): Array<{
   versionId: string;
-  metrics: { avgCost: number; avgDuration: number };
+  metrics: { avgCost: number | undefined; avgDuration: number | undefined; costs: number[]; durations: number[] };
 }> {
   return completionsPerVersion.map(({ versionId, completions }) => ({
     versionId,
@@ -257,18 +477,68 @@ export function getVersionKeys(versions: Version[]): string[] {
   return Array.from(allKeys).filter((key) => !blackListedKeys.includes(key));
 }
 
-export function getMatchingVersionKeys(versions: Version[]): string[] {
+// Helper function to normalize objects and arrays for order-independent comparison
+export function normalizeForComparison(value: unknown): string {
+  if (value === null || value === undefined) {
+    return "null";
+  }
+
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  if (Array.isArray(value)) {
+    // Sort array elements for consistent ordering
+    const sortedArray = [...value].sort((a, b) => {
+      const normalizedA = normalizeForComparison(a);
+      const normalizedB = normalizeForComparison(b);
+      return normalizedA.localeCompare(normalizedB);
+    });
+    return JSON.stringify(sortedArray);
+  }
+
+  if (typeof value === "object") {
+    // Sort object keys and recursively normalize values
+    const sortedKeys = Object.keys(value as Record<string, unknown>).sort();
+    const normalizedObj: Record<string, unknown> = {};
+
+    for (const key of sortedKeys) {
+      const objValue = (value as Record<string, unknown>)[key];
+      // For primitive values, store them directly
+      if (
+        objValue === null ||
+        objValue === undefined ||
+        typeof objValue === "string" ||
+        typeof objValue === "number" ||
+        typeof objValue === "boolean"
+      ) {
+        normalizedObj[key] = objValue;
+      } else {
+        // For complex values, parse the normalized string back to object/array
+        try {
+          normalizedObj[key] = JSON.parse(normalizeForComparison(objValue));
+        } catch {
+          // If parsing fails, fall back to string representation
+          normalizedObj[key] = String(objValue);
+        }
+      }
+    }
+
+    return JSON.stringify(normalizedObj);
+  }
+
+  return String(value);
+}
+
+export function getMatchingVersionKeys(versions: Version[], blackListedKeys: string[] = ["id"]): string[] {
   // For single version, return all keys (including defaults) except blacklisted ones
   if (versions.length === 1) {
-    const blackListedKeys: string[] = ["id"];
     const versionWithDefaults = getVersionWithDefaults(versions[0]);
     const allKeys = Object.keys(versionWithDefaults as unknown as Record<string, unknown>);
     return allKeys.filter((key) => !blackListedKeys.includes(key));
   }
 
   if (versions.length === 0) return [];
-
-  const blackListedKeys: string[] = ["id", "model"];
 
   // Apply defaults to all versions
   const versionsWithDefaults = versions.map(getVersionWithDefaults);
@@ -287,25 +557,7 @@ export function getMatchingVersionKeys(versions: Version[]): string[] {
   for (const key of filteredKeys) {
     const values = versionsWithDefaults.map((version) => {
       const value = (version as unknown as Record<string, unknown>)[key];
-
-      // Convert all values to strings for consistent comparison
-      if (value === null || value === undefined) {
-        return "null";
-      }
-
-      if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-        return String(value);
-      }
-
-      if (Array.isArray(value)) {
-        return JSON.stringify(value);
-      }
-
-      if (typeof value === "object") {
-        return JSON.stringify(value);
-      }
-
-      return String(value);
+      return normalizeForComparison(value);
     });
 
     // Check if all values are the same
@@ -613,6 +865,35 @@ export function parseJSONValue(value: unknown): unknown | null {
   return null;
 }
 
+export function isJSONSchema(parsedJSON: unknown): boolean {
+  if (!parsedJSON || typeof parsedJSON !== "object") return false;
+  const obj = parsedJSON as Record<string, unknown>;
+
+  // Check if it has the structure of an OutputSchema (id + json_schema)
+  if (obj.id && obj.json_schema) return true;
+
+  // Check if it looks like a raw JSON schema (has typical schema properties)
+  const schemaIndicators = ["type", "$schema", "properties", "required", "definitions", "$defs"];
+  return schemaIndicators.some((indicator) => indicator in obj);
+}
+
+export function createOutputSchemaFromJSON(parsedJSON: unknown, fallbackId: string): OutputSchema | null {
+  if (!parsedJSON || typeof parsedJSON !== "object") return null;
+
+  const obj = parsedJSON as Record<string, unknown>;
+
+  // If it already has the OutputSchema structure
+  if (obj.id && obj.json_schema && typeof obj.id === "string" && typeof obj.json_schema === "object") {
+    return { id: obj.id as string, json_schema: obj.json_schema as Record<string, unknown> };
+  }
+
+  // If it's a raw JSON schema, wrap it in OutputSchema format
+  return {
+    id: fallbackId || "detected-schema",
+    json_schema: obj,
+  };
+}
+
 export function isDateValue(value: unknown): boolean {
   if (typeof value === "string") {
     // Check for ISO date format or other common date formats
@@ -795,6 +1076,7 @@ export type JsonSchemaNode = {
   description?: string;
   enum?: unknown[];
   default?: unknown;
+  examples?: unknown[];
   $ref?: string;
   $defs?: Record<string, JsonSchemaNode>;
 };
@@ -829,4 +1111,21 @@ export function resolveRef(node: JsonSchemaNode, rootSchema: JsonSchemaNode): Js
   // Handle other types of references if needed in the future
   console.warn(`Unsupported $ref format: ${node.$ref}`);
   return node;
+}
+
+/**
+ * Simple function to strip markdown formatting
+ */
+export function stripMarkdown(markdown: string): string {
+  return markdown
+    .replace(/#{1,6}\s/g, "") // Remove headers
+    .replace(/\*\*(.*?)\*\*/g, "$1") // Remove bold
+    .replace(/\*(.*?)\*/g, "$1") // Remove italic
+    .replace(/`(.*?)`/g, "$1") // Remove inline code
+    .replace(/\[(.*?)\]\(.*?\)/g, "$1") // Remove links, keep text
+    .replace(/>\s/g, "") // Remove blockquotes
+    .replace(/^\s*[-*+]\s/gm, "") // Remove list markers
+    .replace(/^\s*\d+\.\s/gm, "") // Remove numbered list markers
+    .replace(/\n+/g, " ") // Replace newlines with spaces
+    .trim();
 }

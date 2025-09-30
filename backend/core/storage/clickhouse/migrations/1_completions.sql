@@ -36,11 +36,11 @@ CREATE TABLE completions (
     -- and should be ignored in aggregations
     -- Maxes out at 65535 = 6555.35 seconds = 100.92 minutes
     duration_ds UInt16,
-    duration_seconds Float64 ALIAS duration_ds / 10,
+    duration_seconds Nullable(Float64) ALIAS NULLIF(duration_ds / 10, 0),
     -- Cost stored in millionths of a USD, 0 is used as a default value
     -- and should be ignored in aggregations
     cost_millionth_usd UInt32,
-    cost_usd Float64 ALIAS cost_millionth_usd / 1000000,
+    cost_usd Nullable(Float64) ALIAS NULLIF(cost_millionth_usd / 1000000, 0),
     -- Metadata. Non scalars are stored as stringified JSON
     metadata Map(String, String),
     -- The origin of the run
@@ -65,11 +65,19 @@ ENGINE = ReplacingMergeTree(updated_at) --
 PARTITION BY toDate(UUIDv7ToDateTime(id)) -- Composite primary key, needs to be sparse
 PRIMARY KEY (tenant_uid, toDate(UUIDv7ToDateTime(id)))
 ORDER BY (
-        tenant_uid DESC,
-        toDate(UUIDv7ToDateTime(id)) DESC,
-        toUInt128(id) DESC -- Order by run uuid converted to UInt128 to avoid sorting error
-    ) SETTINGS allow_experimental_reverse_key = 1;
--- Add a bloom filter index on the cache_hash, eval_hash and input_hash columns
+        tenant_uid,
+        toDate(UUIDv7ToDateTime(id)),
+        -- We should probably have order by UUIDv7ToDateTime(id) here to be consistent with the previous
+        -- value. However from testing, it seems that clickhouse is capable of understanding 
+        -- perfectly that UUIDv7ToDateTime(id) and toUInt128(id) are in the same order
+        -- so changing this would not improve performance
+        -- When https://clickhouse.com/docs/operations/settings/merge-tree-settings#allow_experimental_reverse_key
+        -- is supported, we should change this to a reverse order so that completions are naturally ordered
+        -- "most recent first" and so we can remove the "replace ORDER BY created_at DESC" hack
+        toUInt128(id) -- Order by run uuid converted to datetime to avoid sorting error
+    );
+-- Using experimental reverse would be good here but it's not supported by clickhouse cloud yet
+-- Add a bloom filters
 -- For somewhat efficient retrieval
 ALTER TABLE completions
 ADD INDEX input_id_index input_id TYPE bloom_filter(0.01);

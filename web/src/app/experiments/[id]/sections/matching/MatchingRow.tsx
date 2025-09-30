@@ -1,9 +1,16 @@
-import { getVersionKeyDisplayName } from "@/components/utils/utils";
+import { memo, useMemo } from "react";
+import {
+  createOutputSchemaFromJSON,
+  getVersionKeyDisplayName,
+  isJSONSchema,
+  parseJSONValue,
+} from "@/components/utils/utils";
 import { Annotation, ExtendedVersion, Message, OutputSchema, Tool } from "@/types/models";
 import { VersionPromptSection } from "../Results/version/VersionPromptSection";
 import { VersionSchemaSection } from "../Results/version/VersionSchemaSection";
-import { MatchingBaseValue } from "./MatchingBaseValue";
-import { MatchingToolValue } from "./MatchingToolValue";
+import MatchingBaseValue from "./MatchingBaseValue";
+import MatchingJSONValue from "./MatchingJSONValue";
+import MatchingToolValue from "./MatchingToolValue";
 
 type MatchingRowProps = {
   keyName: string;
@@ -14,7 +21,7 @@ type MatchingRowProps = {
   agentId?: string;
 };
 
-export function MatchingRow({
+function MatchingRow({
   keyName,
   versionWithDefaults,
   annotations,
@@ -26,6 +33,13 @@ export function MatchingRow({
   const displayName = getVersionKeyDisplayName(keyName);
   // Extract the raw value
   const rawValue = (versionWithDefaults as unknown as Record<string, unknown>)[keyName];
+  const parsedJSON = parseJSONValue(rawValue);
+  const isSchemaDetected = useMemo(() => isJSONSchema(parsedJSON), [parsedJSON]);
+
+  // Memoized OutputSchema creation for JSON schemas
+  const outputSchema = useMemo(() => {
+    return isSchemaDetected ? createOutputSchemaFromJSON(parsedJSON, keyName || "detected-schema") : null;
+  }, [isSchemaDetected, parsedJSON, keyName]);
 
   // Render appropriate component based on key type
   const renderValue = () => {
@@ -64,17 +78,46 @@ export function MatchingRow({
             keyPath={keyName}
           />
         );
-      default:
-        return (
-          <MatchingBaseValue
-            value={rawValue}
-            annotations={annotations}
-            experimentId={experimentId}
-            completionId={completionId}
-            keyPath={keyName}
-          />
-        );
     }
+
+    // Handle JSON schema detection outside the switch
+    if (outputSchema) {
+      return (
+        <VersionSchemaSection
+          outputSchema={outputSchema}
+          annotations={annotations}
+          experimentId={experimentId}
+          completionId={completionId}
+          prefix={keyName}
+          className="mt-2 space-y-3 px-2"
+          agentId={agentId}
+        />
+      );
+    }
+
+    // Default case - Use MatchingJSONValue if JSON is detected, otherwise use MatchingBaseValue
+    if (parsedJSON !== null) {
+      return (
+        <MatchingJSONValue
+          value={rawValue}
+          parsedJSON={parsedJSON}
+          annotations={annotations}
+          experimentId={experimentId}
+          completionId={completionId}
+          keyPath={keyName}
+          containerPadding="px-2 py-2"
+        />
+      );
+    }
+    return (
+      <MatchingBaseValue
+        value={rawValue}
+        annotations={annotations}
+        experimentId={experimentId}
+        completionId={completionId}
+        keyPath={keyName}
+      />
+    );
   };
 
   return (
@@ -84,3 +127,41 @@ export function MatchingRow({
     </div>
   );
 }
+
+// Helper function to compare ExtendedVersion objects
+function areExtendedVersionsEqual(prev: ExtendedVersion, next: ExtendedVersion): boolean {
+  return (
+    prev.id === next.id &&
+    prev.model === next.model &&
+    prev.prompt === next.prompt &&
+    prev.output_schema === next.output_schema &&
+    prev.tools === next.tools &&
+    prev.reasoning_effort === next.reasoning_effort &&
+    prev.reasoning_budget === next.reasoning_budget
+  );
+}
+
+// Helper function to compare Annotation arrays
+function areAnnotationsEqual(prev?: Annotation[], next?: Annotation[]): boolean {
+  if (prev === next) return true;
+  if (!prev || !next) return false;
+  if (prev.length !== next.length) return false;
+
+  for (let i = 0; i < prev.length; i++) {
+    if (prev[i].id !== next[i].id || prev[i].text !== next[i].text) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export default memo(MatchingRow, (prevProps, nextProps) => {
+  return (
+    prevProps.keyName === nextProps.keyName &&
+    areExtendedVersionsEqual(prevProps.versionWithDefaults, nextProps.versionWithDefaults) &&
+    prevProps.experimentId === nextProps.experimentId &&
+    prevProps.completionId === nextProps.completionId &&
+    prevProps.agentId === nextProps.agentId &&
+    areAnnotationsEqual(prevProps.annotations, nextProps.annotations)
+  );
+});

@@ -1,7 +1,5 @@
-"use client";
-
 import Image from "next/image";
-import { SignUp } from "@/components/auth/SignUp";
+import { SignUp } from "@/auth/components";
 import { useParsedSearchParams } from "@/lib/queryString";
 
 export default function Page() {

@@ -77,7 +77,7 @@ class Model(StrEnum):
 
     GEMINI_2_5_PRO = "gemini-2.5-pro"
     # GEMINI_2_5_FLASH = "gemini-2.5-flash"
-    GEMINI_2_5_FLASH_LITE_PREVIEW_0617 = "gemini-2.5-flash-lite-preview-06-17"
+    GEMINI_2_5_FLASH_LITE = "gemini-2.5-flash-lite"
 
     GEMINI_2_5_PRO_PREVIEW_0605 = "gemini-2.5-pro-preview-06-05"
     GEMINI_2_5_FLASH_PREVIEW_0520 = "gemini-2.5-flash-preview-05-20"
@@ -87,6 +87,7 @@ class Model(StrEnum):
     GEMINI_2_5_FLASH_THINKING_PREVIEW_0417 = "gemini-2.5-flash-thinking-preview-04-17"
     GEMINI_2_5_PRO_PREVIEW_0325 = "gemini-2.5-pro-preview-03-25"
     GEMINI_2_5_PRO_EXP_0325 = "gemini-2.5-pro-exp-03-25"
+    GEMINI_2_5_FLASH_LITE_PREVIEW_0617 = "gemini-2.5-flash-lite-preview-06-17"
     GEMINI_2_0_FLASH_LATEST = "gemini-2.0-flash-latest"
     GEMINI_2_0_FLASH_001 = "gemini-2.0-flash-001"
     GEMINI_2_0_FLASH_LITE_001 = "gemini-2.0-flash-lite-001"
@@ -163,19 +164,26 @@ class Model(StrEnum):
     MISTRAL_LARGE_LATEST = "mistral-large-latest"
     MISTRAL_LARGE_2411 = "mistral-large-2411"
     MISTRAL_MEDIUM_2505 = "mistral-medium-2505"
+    MISTRAL_MEDIUM_2508 = "mistral-medium-2508"
     PIXTRAL_LARGE_LATEST = "pixtral-large-latest"
     PIXTRAL_LARGE_2411 = "pixtral-large-2411"
     PIXTRAL_12B_2409 = "pixtral-12b-2409"
     MINISTRAL_3B_2410 = "ministral-3b-2410"
     MINISTRAL_8B_2410 = "ministral-8b-2410"
     MISTRAL_SMALL_LATEST = "mistral-small-latest"
+    MISTRAL_SMALL_2506 = "mistral-small-2506"
     MISTRAL_SMALL_2503 = "mistral-small-2503"
     MISTRAL_SMALL_2501 = "mistral-small-2501"
     MISTRAL_SMALL_2409 = "mistral-small-2409"
     MISTRAL_SABA_2502 = "mistral-saba-2502"
     MAGISTRAL_SMALL_2506 = "magistral-small-2506"
+    MAGISTRAL_SMALL_2507 = "magistral-small-2507"
+    MAGISTRAL_SMALL_2509 = "magistral-small-2509"
     MAGISTRAL_MEDIUM_2506 = "magistral-medium-2506"
+    MAGISTRAL_MEDIUM_2507 = "magistral-medium-2507"
+    MAGISTRAL_MEDIUM_2509 = "magistral-medium-2509"
     CODESTRAL_2501 = "codestral-2501"
+    CODESTRAL_2508 = "codestral-2508"
     CODESTRAL_MAMBA_2407 = "codestral-mamba-2407"
 
     # --------------------------------------------------------------------------
@@ -190,6 +198,7 @@ class Model(StrEnum):
     # --------------------------------------------------------------------------
     # DeepSeek Models
     # --------------------------------------------------------------------------
+    DEEPSEEK_V3_1_TERMINUS = "deepseek-v3.1-terminus"
     DEEPSEEK_V3_2412 = "deepseek-v3-2412"
     DEEPSEEK_V3_0324 = "deepseek-v3-0324"
     DEEPSEEK_V3_LATEST = "deepseek-v3-latest"
@@ -200,6 +209,8 @@ class Model(StrEnum):
     # --------------------------------------------------------------------------
     # XAI Models
     # --------------------------------------------------------------------------
+    GROK_CODE_FAST_1 = "grok-code-fast-1"
+    GROK_4_FAST = "grok-4-fast"
     GROK_4_0709 = "grok-4-0709"
 
     GROK_3_BETA = "grok-3-beta"
@@ -211,4 +222,5 @@ class Model(StrEnum):
     # --------------------------------------------------------------------------
     # MOONSHOT Models
     # --------------------------------------------------------------------------
+    KIMI_K2_INSTRUCT_0905 = "kimi-k2-instruct-0905"
     KIMI_K2_INSTRUCT = "kimi-k2-instruct"

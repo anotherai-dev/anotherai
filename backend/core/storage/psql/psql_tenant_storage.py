@@ -3,6 +3,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any, override
 
+import asyncpg
 from asyncpg import UniqueViolationError
 from pydantic import BaseModel, Field
 
@@ -27,6 +28,10 @@ class PsqlTenantStorage(PsqlBaseStorage, TenantStorage):
     def table(cls) -> str:
         return "tenants"
 
+    @classmethod
+    def validate_row(cls, row: asyncpg.Record) -> TenantData:
+        return cls._validate(_TenantRow, row).to_domain()
+
     async def _tenant_where(self, where: str, *args: Any) -> TenantData:
         async with self._pool.acquire() as connection:
             row = await connection.fetchrow(
@@ -38,7 +43,11 @@ class PsqlTenantStorage(PsqlBaseStorage, TenantStorage):
             )
             if not row:
                 raise ObjectNotFoundError(f"Tenant with {where} not found")
-            return self._validate(_TenantRow, row).to_domain()
+            return self.validate_row(row)
+
+    @override
+    async def tenant_by_uid(self, tenant_uid: int) -> TenantData:
+        return await self._tenant_where("uid = $1", tenant_uid)
 
     @override
     async def tenant_by_org_id(self, org_id: str) -> TenantData:
@@ -196,6 +205,20 @@ class PsqlTenantStorage(PsqlBaseStorage, TenantStorage):
             )
             return [self._validate(_APIKeyRow, row).to_domain() for row in rows]
 
+    @override
+    async def decrement_credits(self, credits: float):
+        async with self._pool.acquire() as connection:
+            row = await connection.fetchrow(
+                """
+                UPDATE tenants SET current_credits_usd = current_credits_usd - $1 WHERE uid = $2 RETURNING *
+                """,
+                credits,
+                self._tenant_uid,
+            )
+            if not row:
+                raise ObjectNotFoundError(f"Tenant with uid {self._tenant_uid} not found")
+            return self._validate(_TenantRow, row).to_domain()
+
 
 class _TenantRow(BaseModel):
     uid: int = 0
@@ -227,6 +250,7 @@ class _TenantRow(BaseModel):
             slug=self.slug,
             org_id=self.org_id,
             owner_id=self.owner_id,
+            current_credits_usd=self.current_credits_usd,
         )
 
 

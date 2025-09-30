@@ -12,11 +12,21 @@ type VersionSchemaSectionProps = {
   prefix?: string;
   className?: string;
   agentId?: string;
+  showAnnotations?: boolean;
 };
 
 export function VersionSchemaSection(props: VersionSchemaSectionProps) {
-  const { outputSchema, sharedKeypathsOfSchemas, annotations, experimentId, completionId, prefix, className, agentId } =
-    props;
+  const {
+    outputSchema,
+    sharedKeypathsOfSchemas,
+    annotations,
+    experimentId,
+    completionId,
+    prefix,
+    className,
+    agentId,
+    showAnnotations = true,
+  } = props;
   const [keypathSelected, setKeypathSelected] = useState<string | null>(null);
 
   const handleKeypathSelect = (keyPath: string) => {
@@ -31,17 +41,21 @@ export function VersionSchemaSection(props: VersionSchemaSectionProps) {
         annotations={annotations}
         annotationPrefix={prefix}
         onKeypathSelect={handleKeypathSelect}
+        showDescriptions={true}
+        showExamples={true}
       />
-      <AnnotationsView
-        annotations={annotations}
-        keyPathPrefix={prefix}
-        experimentId={experimentId}
-        completionId={completionId}
-        showAddButton={true}
-        keypathSelected={keypathSelected}
-        setKeypathSelected={setKeypathSelected}
-        agentId={agentId}
-      />
+      {showAnnotations && (
+        <AnnotationsView
+          annotations={annotations}
+          keyPathPrefix={prefix}
+          experimentId={experimentId}
+          completionId={completionId}
+          showAddButton={true}
+          keypathSelected={keypathSelected}
+          setKeypathSelected={setKeypathSelected}
+          agentId={agentId}
+        />
+      )}
     </div>
   );
 }

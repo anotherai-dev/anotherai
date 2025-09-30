@@ -1,11 +1,15 @@
 # ruff: noqa: B008
 # pyright: reportCallInDefaultInitializer=false
 
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
+from mcp.types import ToolAnnotations
 from pydantic import Field
 
-from core.services.documentation_search import DocumentationSearch
+from core.consts import ANOTHERAI_API_URL
+from core.domain.cache_usage import CacheUsage
+from core.services.documentation.documentation_search import DocumentationSearch
+from core.storage.experiment_storage import ExperimentFields
 from protocol.api import _mcp_utils
 from protocol.api._api_models import (
     Agent,
@@ -13,15 +17,14 @@ from protocol.api._api_models import (
     CompleteAPIKey,
     CreateAPIKeyRequest,
     CreateViewResponse,
+    Deployment,
     Experiment,
     Input,
-    Message,
     Model,
     Page,
-    PlaygroundOutput,
     QueryCompletionResponse,
     SearchDocumentationResponse,
-    Tool,
+    VersionRequest,
     View,
 )
 from protocol.api._services import models_service
@@ -30,137 +33,178 @@ mcp = _mcp_utils.CustomFastMCP(
     "Another AI",
     middleware=[_mcp_utils.BaseMiddleware()],
     tool_serializer=_mcp_utils.tool_serializer,
+    auth=_mcp_utils.build_auth_provider(),
 )
 
+type AuthorName = Annotated[
+    str,
+    Field(description="The name of the user executing the tool. Can be `user` to target the authenticated user."),
+]
 
-@mcp.tool()
-async def playground(
-    models: str = Field(
-        description="A comma separated list of models to use for the playground. Use list_models first to see available model IDs before selecting models",
-    ),
-    author_name: str = Field(
-        description="The author of the experiment. E-g: 'Claude Code', 'user', 'my_script.py',etc.",
-    ),
-    agent_id: str = Field(
-        description="The agent id to use for the playground. When a new experiment is requested, unless the user explicitly requests a new agent, reuse an existing agent if one exists that already performs the requested action. First call list_agents to see available agents and use an existing ID. Only create a new agent if none match or if the user explicitly requests it.",
-    ),
-    inputs: list[Input] | None = Field(
-        default=None,
-        description="""The inputs to use for the playground. A completion will be generated per input per version.
-        An input can include a set of variables used in the templated prompt or a list of messages to be appended
-        to the prompt. Either inputs or completion_query must
-        be provided.""",
-    ),
-    completion_query: str | None = Field(
-        None,
-        description="🔄 PREFERRED for re-running experiments: SQL query to fetch completions and use the associated inputs. Must yield the input_variables and input_messages columns. Use this instead of query_completions() + inputs parameter when retrying existing completions.",
-    ),
-    prompts: list[list[Message]] | None = Field(
-        default=None,
-        description=f"""A list of prompt variations, where each prompt is a list of messages that will begin the message
-        list sent to the model. The content of messages can be a Jinja2 template, in which case the input.variables
-        will be used to render the message. The message json schema is {Message.model_json_schema()}""",
-    ),
-    temperatures: str = Field(
-        default="1.0",
-        description="A comma separated list of temperatures to use for the playground.",
-    ),
-    tool_lists: list[list[Tool]] | None = Field(
-        default=None,
-        description=f"""A list of tool lists to use for the playground. Each tool list will generate separate versions.
-        Cannot be used with 'tools' parameter. The tool json schema is {Tool.model_json_schema()}""",
-    ),
-    output_schemas: list[dict[str, Any]] | None = Field(
-        default=None,
-        description="""A list of JSON schemas for structured output. Each schema will generate separate versions.
-        Cannot be used with 'output_schema' parameter.""",
-    ),
-    metadata: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Optional metadata to attach to all completion requests",
-    ),
-    experiment_id: str | None = Field(
-        None,
-        description="Optional experiment ID to store the completions in. If not provided, a new experiment is created",
-    ),
-    experiment_description: str | None = Field(
-        None,
-        description="Description of the experiment. Required if experiment_id is not provided",
-    ),
-    experiment_title: str | None = Field(
-        None,
-        description="Title of the experiment. Required if experiment_id is not provided",
-    ),
-) -> PlaygroundOutput:
+# ------------------------------------------------------------
+# Playground
+
+
+@mcp.tool(annotations=ToolAnnotations(idempotentHint=True))
+async def create_experiment(
+    title: str,
+    agent_id: str,
+    id: Annotated[str | None, Field(description="The id of the experiment. Auto generated if not provided.")] = None,
+    description: str | None = None,
+    author_name: AuthorName = "user",
+    use_cache: Annotated[
+        CacheUsage,
+        Field(
+            description="Whether to use cache when creating completions for the experiment."
+            " By default the cache is always used.",
+        ),
+    ] = CacheUsage.ALWAYS,
+    metadata: Annotated[
+        dict[str, Any] | None,
+        Field(
+            description="Metadata associated with the experiment. Can be used to store additional "
+            "information about the experiment. If provided, will be added to all completions created for the "
+            "experiment.",
+        ),
+    ] = None,
+) -> Experiment:
+    """Creates a new experiment and returns the experiment id. If an experiment id is provided and an experiment exists
+    with the same id and for the same agent, the existing experiment is updated and returned.
+
+    An experiment allows trying out versions (completion parameters) of an agent against different inputs.
+    - Use the add_versions_to_experiment tool to add versions to the experiment.
+    - Use the add_inputs_to_experiment tool to add inputs to the experiment.
+
+    Note: Experiment tools work independently of the AnotherAI inference endpoint. You can create and manage
+    experiments without changing your existing code or base_url.
     """
-    Agent Reuse Policy:
-    -------------------
-    When creating a new experiment, always check for existing agents that perform similar tasks or have matching functionality.
-    - Step 1: Use the list_agents tool to retrieve all available agents.
-    - Step 2: If an agent exists whose purpose, configuration, or name matches the requested task, reuse that agent by specifying its agent_id in the experiment.
-    - Step 3: Only create a new agent if:
-        - No existing agent matches the requested action, or
-        - The user explicitly requests a new, isolated agent for this experiment.
-    - Step 4: If uncertain about agent compatibility, create a new agent to ensure proper functionality and avoid potential compatibility issues.
-
-    Rationale:
-    Reusing agents ensures experiment continuity, avoids unnecessary duplication, and makes it easier to compare results across runs.
-
-    You have access to a playground to create a matrix of completions. A completion will be executed per:
-    - input (variables and messages)
-    - model
-    - temperature
-    - prompt variation
-    - tool list (if tool_lists provided)
-    - output schema (if output_schemas provided)
-    All completions will be executed in parallel.
-    For example if you supply:
-    - 2 models
-    - 2 temperatures
-    - 2 prompt variations
-    - 2 sets of input variables
-    - 2 tool lists
-    - 2 output schemas
-    You will get 2x2x2x2x2x2=64 completions.
-
-    Supports structured output via response_format parameter.
-    Supports metadata attachment for tracking and observability.
-
-    For providing inputs, you have two options:
-    - inputs parameter: provide a list of inputs directly (for new experiments with custom data)
-    - completion_query parameter: 🔄 PREFERRED for re-running experiments - provide a SQL query to fetch inputs from existing completions
-
-    ✅ USE the completion_query parameter when:
-    - "retry the last 50 completions"
-    - "repeat the last 50 completions with positive user feedback"
-    - Re-running any existing completions with different models/settings
-    - Comparing performance across different model versions
-
-    ❌ AVOID using the query_completions() tool to fetch data and then passing it to inputs parameter
-
-    Examples:
-    - Repeat the last 50 unique inputs completions:
-    SELECT * FROM completions LIMIT 50 ORDER BY created_at DESC LIMIT 1 BY input_id LIMIT 50
-    - Use all the runs from a specific experiment:
-    SELECT * FROM completions WHERE id IN (SELECT arrayJoin(completion_ids) FROM experiments WHERE id = 'exp-billing-analysis')
-    - Use all the runs that have been annotated today
-    SELECT input_variables, input_messages FROM completions JOIN annotations ON completions.id = annotations.completion_id WHERE annotations.created_at >= now() - INTERVAL 1 DAY
-    """
-
-    return await (await _mcp_utils.playground_service()).run(
+    return await (await _mcp_utils.experiment_service()).create_experiment_mcp(
+        experiment_id=id,
+        title=title,
+        description=description,
         agent_id=agent_id,
-        inputs=inputs,
-        completion_query=completion_query,
-        models=models,
-        prompts=prompts,
-        temperatures=temperatures,
-        tool_lists=tool_lists,
-        output_schemas=output_schemas,
         metadata=metadata,
         author_name=author_name,
-        experiment_id=experiment_id,
-        experiment_description=experiment_description,
-        experiment_title=experiment_title,
+        use_cache=use_cache,
+    )
+
+
+@mcp.tool(annotations=ToolAnnotations(idempotentHint=True))
+async def add_experiment_result(
+    id: str,
+    result: Annotated[
+        str,
+        Field(
+            description="Comprehensive analysis summary including: model quality comparison, cost analysis, performance metrics, and clear recommendations. Use markdown formatting for readability. This becomes the permanent record of experiment conclusions.",
+        ),
+    ],
+):
+    """Complete an experiment by adding analysis results and recommendations.
+
+    This should be the FINAL step after analyzing all experiment outputs. Use this to
+    summarize findings, compare model performance, and provide actionable recommendations
+    based on the experiment data. The experiment is not considered complete until results are added.
+    """
+    await (await _mcp_utils.experiment_service()).set_experiment_result(id, result)
+    return "success"
+
+
+@mcp.tool(annotations=ToolAnnotations(idempotentHint=True))
+async def add_versions_to_experiment(
+    experiment_id: _mcp_utils.ExperimentID,
+    version: Annotated[
+        str | VersionRequest,
+        Field(
+            description="The base version to use for the experiment."
+            " Can either be a full version object or the id of a version or a deployment. The version will be added to the "
+            "experiment as is.",
+        ),
+    ],
+    overrides: Annotated[
+        list[dict[str, Any]] | None,
+        Field(
+            description="Overrides to apply to the base version. "
+            "Use the overrides to create variations of the base version. The payload must respect the same json schema as the version.",
+        ),
+    ] = None,
+) -> list[str]:
+    """Adds versions to an existing experiment if they are not already present, and creates the completions for the added
+    versions based on the experiment's inputs.
+    - the version is added as is
+    - a version is added per provided override
+
+    Returns the ids of the added versions.
+    """
+    return await (await _mcp_utils.playground_service()).add_versions_to_experiment(experiment_id, version, overrides)
+
+
+@mcp.tool(
+    annotations=ToolAnnotations(idempotentHint=True),
+    description=f"""Adds inputs to an existing experiment if they are not already present, and creates the completions for the added
+inputs based on the experiment's versions.
+
+When dealing with local images or audio files, instead of attempting to pass base64 data:
+- upload the file using `curl -X POST "{ANOTHERAI_API_URL}/v1/files" -F "file=@example.txt"` -H "Authorization: Bearer ..."
+- use the returned URL in the input
+
+Returns the ids of the added inputs.""",
+)
+async def add_inputs_to_experiment(
+    experiment_id: _mcp_utils.ExperimentID,
+    inputs: Annotated[
+        list[Input] | None,
+        Field(
+            description="""The inputs to use for the playground. A completion will be generated per input per version.
+            An input can include a set of variables used in the templated prompt or a list of messages to be appended
+            to the prompt. Either inputs or query must be provided.""",
+        ),
+    ] = None,
+    query: Annotated[
+        str | None,
+        Field(
+            description="""🔄 PREFERRED when using existing inputs: SQL query to fetch and use
+            inputs present in the database. Always provide the agent_id in the WHERE clause.
+            Must yield the input_variables and input_messages columns. Use
+            instead of calling query_completions() when the user refers to existing inputs or completions, e-g
+            "retry the last 10 completions", "try the model against the completions in the evaluation dataset""",
+            examples=[
+                "SELECT input_variables, input_messages FROM completions WHERE agent_id = 'email-summarizer'",
+                "SELECT input_variables, input_messages FROM completions WHERE agent_id = 'email-summarizer' AND metadata['dataset'] = 'evaluation'",
+            ],
+        ),
+    ] = None,
+) -> list[str]:
+    return await (await _mcp_utils.playground_service()).add_inputs_to_experiment(experiment_id, inputs, query)
+
+
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
+async def get_experiment(
+    id: _mcp_utils.ExperimentID,
+    version_ids: Annotated[list[str] | None, Field(description="version ids to filter the experiment outputs")] = None,
+    input_ids: Annotated[list[str] | None, Field(description="input ids to filter the experiment outputs")] = None,
+    include: Annotated[
+        set[ExperimentFields | Literal["annotations"]] | None,
+        Field(description="fields to include in the experiment"),
+    ] = None,
+    max_wait_time_seconds: Annotated[
+        float,
+        Field(
+            description="the maximum amount of time to wait for the experiment's completions to be ready. "
+            "At the end of the time, the experiment is returned even if the completions are not ready.",
+        ),
+    ] = 30,
+) -> Experiment:
+    """Waits for the experiment's completions to be ready and returns the experiment,
+    including the associated versions and inputs and outputs.
+
+    Note: If the experiment shows empty 'result' field, you should analyze the completion
+    data and call add_experiment_result to complete the experiment with your findings."""
+    return await (await _mcp_utils.experiment_service()).wait_for_experiment(
+        id,
+        version_ids=version_ids,
+        input_ids=input_ids,
+        max_wait_time_seconds=max_wait_time_seconds,
+        include=include,
     )
 
 
@@ -168,8 +212,26 @@ async def playground(
 # Models
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def list_models() -> list[Model]:
+    """List all available AI models with their capabilities, pricing, and metadata.
+
+    Returns a list of Model objects containing:
+    - id: Model identifier to use in the 'models' parameter of playground/API calls (corresponds to version_model in query_completions)
+    - display_name: Human-readable name of the model
+    - icon_url: URL to the model's icon image
+    - supports: Capabilities including:
+      - input/output modalities (text, image, audio, pdf support)
+      - parallel_tool_calls: Whether model can make multiple tool calls in one inference
+      - response_format: JSON schema support
+      - tools: Function calling support
+      - temperature: Whether temperature parameter is supported
+    - pricing: Cost information per token (input_token_usd, output_token_usd)
+    - release_date: When the model was released on the platform
+    - reasoning: Optional reasoning configuration with token budgets for different effort levels
+
+    Use this tool before calling playground() to see available model IDs and their capabilities.
+    """
     return await models_service.list_models()
 
 
@@ -177,35 +239,20 @@ async def list_models() -> list[Model]:
 # Agents
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def list_agents() -> Page[Agent]:
     return await (await _mcp_utils.agent_service()).list_agents()
-
-
-# ------------------------------------------------------------
-# Experiments
-
-
-@mcp.tool()
-async def get_experiment(id: str) -> Experiment:
-    return await (await _mcp_utils.experiment_service()).get_experiment(id)
-
-
-@mcp.tool()
-async def add_experiment_result(id: str, result: str):
-    await (await _mcp_utils.experiment_service()).set_experiment_result(id, result)
-    return "success"
 
 
 # ------------------------------------------------------------
 # Annotations
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def get_annotations(
-    experiment_id: str | None = None,
-    completion_id: str | None = None,
-    agent_id: str | None = None,
+    experiment_id: _mcp_utils.ExperimentID | None = None,
+    completion_id: _mcp_utils.CompletionID | None = None,
+    agent_id: _mcp_utils.AgentID | None = None,
     since: str | None = None,
 ) -> Page[Annotation]:
     """
@@ -243,7 +290,7 @@ async def get_annotations(
     )
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(idempotentHint=True))
 async def add_annotations(
     annotations: list[Annotation] = Field(
         description="List of Annotation objects to add.",
@@ -334,7 +381,7 @@ Search AnotherAI documentation OR fetch a specific documentation page.
 
 
 # TODO: generate the tool description dynamically
-@mcp.tool(description=_get_description_search_documentation_tool())
+@mcp.tool(description=_get_description_search_documentation_tool(), annotations=ToolAnnotations(readOnlyHint=True))
 async def search_documentation(
     query: str | None = Field(
         default=None,
@@ -361,7 +408,7 @@ async def search_documentation(
 
 
 # TODO: we should add comments to fields so that they show when describing the table
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def query_completions(
     query: str = Field(
         description="SQL query to execute. Must use ClickHouse SQL syntax.",
@@ -383,6 +430,8 @@ async def query_completions(
     agent_id String,
     -- Version ID
     version_id FixedString(32),
+    -- Model ID that generated this completion (matches the 'id' field from list_models())
+    -- Use list_models() to see available model IDs and their capabilities/pricing
     version_model LowCardinality(String),
     -- Full version object, serialized as a json string
     version String,
@@ -483,28 +532,34 @@ async def query_completions(
 
 
 # TODO: add pagination and limit
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def list_views() -> Page[View]:
     """List all views"""
     return await (await _mcp_utils.view_service()).list_views()
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def get_view(id: str) -> View:
     """Get a view by id"""
     return await (await _mcp_utils.view_service()).get_view(id)
 
 
 @mcp.tool(
+    annotations=ToolAnnotations(idempotentHint=True),
     description=f"""Create a new view or update an existing view. If no dashboard id is provided, the "default" dashboard is used.  # nosec B608
 If a dashboard with the provided id does not exist, it will be created.
+
+**IMPORTANT: Only use this tool when the user explicitly asks to create or update a view. Do not proactively create views without user request.**
 
 **Best Practice**: Avoid using `SELECT *` in your queries as it returns all 40+ columns. Instead:
 1. First use `query_completions('DESCRIBE TABLE completions')` to see all available fields
 2. Select only the fields relevant to your use case
 3. This creates cleaner, more performant views
 
-**Important for Table Views**: When creating table views, include the 'id' column in your SELECT statement if you want rows to be clickable for viewing completion details. Without the 'id' column, rows will display data but won't be interactive.
+**Important for Table Views**:
+- When creating table views, include the 'id' column in your SELECT statement if you want rows to be clickable for viewing completion details. Without the 'id' column, rows will display data but won't be interactive.
+- use template parameters for pagination (`LIMIT {{limit}} OFFSET {{offset}}`)
+- run the query using the query_completions tool first on a small dataset to make sure it yield the results you would expect
 
 **Sort Order Best Practices:**
 - Time series graphs (line/bar): Use `ORDER BY date ASC` to display chronologically from past to present
@@ -547,3 +602,66 @@ async def create_or_update_view(
 async def create_api_key(name: str) -> CompleteAPIKey:
     """Create a new API key that can be used to authenticate with the Another AI MCP and API"""
     return await (await _mcp_utils.organization_service()).create_api_key(CreateAPIKeyRequest(name=name))
+
+
+# ------------------------------------------------------------
+# Deployments
+
+
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
+async def list_deployments(
+    agent_id: str | None = Field(
+        default=None,
+        description="The agent id to filter deployments by",
+    ),
+    limit: int = Field(
+        default=10,
+        description="The number of deployments to return",
+    ),
+    page_token: str | None = Field(
+        default=None,
+        description="The page token to use for pagination",
+    ),
+) -> Page[Deployment]:
+    """List all deployments"""
+    return await (await _mcp_utils.deployment_service()).list_deployments(
+        agent_id=agent_id,
+        limit=limit,
+        page_token=page_token,
+        include_archived=False,
+    )
+
+
+@mcp.tool(annotations=ToolAnnotations(idempotentHint=True))
+async def create_or_update_deployment(
+    agent_id: str = Field(
+        description="The agent id to deploy the version to",
+    ),
+    version_id: str = Field(
+        description="The version id to deploy. Can be found in an experiment or a completion.",
+    ),
+    deployment_id: str = Field(
+        # TODO: update description and examples based on tests. Make sure field in _api_models.py is updated too.
+        description="The id of the deployment",
+        examples=["my-agent-id:production#1"],
+    ),
+    author_name: str = Field(
+        description="The name of the author of the deployment",
+    ),
+) -> Deployment | str:
+    """Create a new deployment or update an existing deployment if id matches.
+
+    Note that overriding a deployment with a new id is only possible if the variable
+    (aka version.input_variables_schema) and response formats (version.output_schema) are compatible
+    between the deployments. Schemas are considered compatible if all their fields have the same name, type
+    and properties.
+
+    Updating an existing deployment needs user confirmation. You will be provided the URL where a user can
+    confirm the update.
+    """
+    return await (await _mcp_utils.deployment_service()).upsert_deployment(
+        agent_id=agent_id,
+        version_id=version_id,
+        deployment_id=deployment_id,
+        author_name=author_name,
+    )

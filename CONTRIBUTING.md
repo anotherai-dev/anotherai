@@ -11,8 +11,10 @@ cd anotherai
 # Copy the default environment variables
 cp .env.example .env
 # It is a good idea to provide some Provider API Keys at this step
-docker-compose build
-docker-compose up
+# By default, the docker-compose exposes "dev" target
+# That only contain the dependencies and use volumes for the source code
+# In rare cases, using the `--no-cache` can help fix build errors
+docker-compose up --build -d
 # MCP server is available at http://localhost:8000/mcp/
 # API is available at http://localhost:8000
 # Web app is available at http://localhost:3000

@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { LoadingIndicator } from "@/components/LoadingIndicator";
 import { PageError } from "@/components/PageError";
 import { PageHeader } from "@/components/PageHeader";
+import { ExperimentInstructions } from "@/components/experiment/ExperimentInstructions";
 import { useOrFetchAgentDetails } from "@/store/agent_stats";
 import { buildQuery } from "@/utils/queries";
 import { CompletionsTable } from "../../completions/sections/table/CompletionsTable";
@@ -29,9 +30,10 @@ export default function AgentDetailPage() {
         title="Agent Details"
         description="View agent performance metrics and completions"
         copyablePrefixAndId={`anotherai/agent/${agentId}`}
+        descriptionRightContent={<ExperimentInstructions agentName={agentId} />}
       />
 
-      {error && <PageError error={error.message} />}
+      {error && <PageError error={error} />}
 
       {isLoading && (
         <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
@@ -56,7 +58,7 @@ export default function AgentDetailPage() {
             <CompletionsTable data={details.last_completions} isLoading={isLoading} error={error} maxHeight="800px" />
             <div className="mt-4 text-left">
               <Link
-                href={`/completions?query=${encodeURIComponent(defaultQueryWithAgentFilter)}`}
+                href={`/completions?newQuery=${encodeURIComponent(defaultQueryWithAgentFilter)}`}
                 className="bg-white border border-gray-200 text-gray-900 hover:bg-gray-100 cursor-pointer px-3 py-2 rounded-[2px] text-sm shadow-sm shadow-black/5"
               >
                 View all completions

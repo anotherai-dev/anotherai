@@ -1,4 +1,6 @@
 import { cx } from "class-variance-authority";
+import { memo } from "react";
+import { JSONDisplay } from "@/components/JSONDisplay";
 import { PageError } from "@/components/PageError";
 import { VariablesViewer } from "@/components/VariablesViewer/VariablesViewer";
 import { MessagesViewer } from "@/components/messages/MessagesViewer";
@@ -10,7 +12,7 @@ interface CompletionTableInputOutputCellProps {
   sharedPartsOfPrompts?: Message[];
 }
 
-export function CompletionTableInputOutputCell({
+function CompletionTableInputOutputCell({
   value,
   maxWidth = "max-w-xs",
   sharedPartsOfPrompts,
@@ -80,6 +82,7 @@ export function CompletionTableInputOutputCell({
     // Output: has messages property only
     if (hasMessages || hasInternalMessages) {
       const messages = hasMessages ? obj.messages : obj.internal_anotherai_messages;
+
       return (
         <div className={cx("max-h-full overflow-y-auto", maxWidth)}>
           <MessagesViewer
@@ -93,11 +96,33 @@ export function CompletionTableInputOutputCell({
 
     // Fallback: show raw object structure for debugging
     return (
-      <div className={cx("text-xs text-gray-600 overflow-hidden", maxWidth)}>
-        <pre className="whitespace-pre-wrap">{JSON.stringify(obj, null, 2).substring(0, 200)}...</pre>
+      <div className={cx("overflow-hidden", maxWidth)}>
+        <JSONDisplay value={obj} variant="minimal" maxLength={200} />
       </div>
     );
   }
 
   return <span className="text-xs text-gray-400">N/A</span>;
 }
+
+// Helper function to compare Message arrays for memoization
+function areMessageArraysEqual(prev?: Message[], next?: Message[]): boolean {
+  if (prev === next) return true;
+  if (!prev || !next) return false;
+  if (prev.length !== next.length) return false;
+
+  for (let i = 0; i < prev.length; i++) {
+    if (prev[i].role !== next[i].role || prev[i].content !== next[i].content) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export default memo(CompletionTableInputOutputCell, (prevProps, nextProps) => {
+  return (
+    prevProps.value === nextProps.value &&
+    prevProps.maxWidth === nextProps.maxWidth &&
+    areMessageArraysEqual(prevProps.sharedPartsOfPrompts, nextProps.sharedPartsOfPrompts)
+  );
+});

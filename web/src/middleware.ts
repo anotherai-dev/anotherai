@@ -1,20 +1,9 @@
-import { NextFetchEvent, NextRequest, NextResponse } from "next/server";
-import { isClerkEnabled } from "@/lib/utils";
+import { NextFetchEvent, NextRequest } from "next/server";
+import { middleware as authMiddleware } from "@/auth/server";
 
-export default function middleware(request: NextRequest, event: NextFetchEvent) {
+export default async function middleware(request: NextRequest, event: NextFetchEvent) {
   // Only apply Clerk middleware if the publishable key is set
-  if (isClerkEnabled()) {
-    try {
-      // Import Clerk middleware conditionally
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { clerkMiddleware } = require("@clerk/nextjs/server");
-      return clerkMiddleware()(request, event);
-    } catch {
-      // Clerk not available, fall through to default behavior
-    }
-  }
-
-  return NextResponse.next();
+  return await authMiddleware(request, event);
 }
 
 export const config = {

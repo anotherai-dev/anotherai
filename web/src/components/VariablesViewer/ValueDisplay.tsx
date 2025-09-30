@@ -1,6 +1,7 @@
 import { cx } from "class-variance-authority";
 import { Copy } from "lucide-react";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { memo, useCallback, useEffect, useRef, useState } from "react";
+import { TextBreak } from "@/components/utils/TextBreak";
 import { useToast } from "../ToastProvider";
 import { ImageViewer } from "../messages/ImageViewer";
 
@@ -10,6 +11,21 @@ const MAX_HEIGHT_PX = 150;
 // Helper function to detect image data URIs
 const isImageDataUri = (value: string): boolean => {
   return typeof value === "string" && value.startsWith("data:image/");
+};
+
+// Helper function to detect image URLs
+const isImageUrl = (value: string): boolean => {
+  if (typeof value !== "string") return false;
+
+  const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".bmp", ".ico", ".tiff"];
+  const lowercaseValue = value.toLowerCase();
+
+  // Check if it's a URL and ends with an image extension
+  if (value.startsWith("http://") || value.startsWith("https://")) {
+    return imageExtensions.some((ext) => lowercaseValue.includes(ext));
+  }
+
+  return false;
 };
 
 const getTextSizeStyle = (textSize: "xs" | "sm" | "base" | string = "xs") => {
@@ -28,7 +44,7 @@ export type ValueDisplayProps = {
   showSeeMore: boolean;
 };
 
-export function ValueDisplay({ value, textSize, showSeeMore }: ValueDisplayProps) {
+function ValueDisplay({ value, textSize, showSeeMore }: ValueDisplayProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldTruncateByHeight, setShouldTruncateByHeight] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -91,6 +107,32 @@ export function ValueDisplay({ value, textSize, showSeeMore }: ValueDisplayProps
       );
     }
 
+    // Special handling for image URLs
+    if (isImageUrl(value)) {
+      return (
+        <div
+          className={cx("inline-block relative", textSizeClass)}
+          style={textSizeStyle}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          <ImageViewer imageUrl={value} alt="Variable image" />
+          {isHovered && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                copyToClipboard();
+              }}
+              className="absolute top-1 right-1 p-1 bg-white border border-gray-200 rounded-[2px] hover:bg-gray-100 transition-colors cursor-pointer"
+              title="Copy image URL to clipboard"
+            >
+              <Copy size={12} />
+            </button>
+          )}
+        </div>
+      );
+    }
+
     // Regular string handling
     const shouldTruncateByLength = showSeeMore && value.length > MAX_VALUE_LENGTH;
     const shouldTruncate = shouldTruncateByLength || shouldTruncateByHeight;
@@ -100,7 +142,7 @@ export function ValueDisplay({ value, textSize, showSeeMore }: ValueDisplayProps
       <span
         ref={contentRef}
         className={cx(
-          "inline-block px-3 py-1.5 font-medium bg-white border border-gray-200 text-gray-800 rounded-[2px] relative break-all",
+          "inline-block px-3 py-1.5 font-medium bg-white border border-gray-200 text-gray-800 rounded-[2px] relative break-all hyphens-auto",
           textSizeClass
         )}
         style={textSizeStyle}
@@ -108,7 +150,7 @@ export function ValueDisplay({ value, textSize, showSeeMore }: ValueDisplayProps
         onMouseLeave={() => setIsHovered(false)}
       >
         <div
-          className={cx("py-1 break-all", shouldTruncateByHeight && !isExpanded ? "overflow-hidden" : "")}
+          className={cx("py-1 break-all hyphens-auto", shouldTruncateByHeight && !isExpanded ? "overflow-hidden" : "")}
           style={shouldTruncateByHeight && !isExpanded ? { maxHeight: `${MAX_HEIGHT_PX - 30}px` } : {}}
         >
           {'"'}
@@ -158,14 +200,14 @@ export function ValueDisplay({ value, textSize, showSeeMore }: ValueDisplayProps
   return (
     <span
       className={cx(
-        "inline-block px-3 py-1.5 font-medium bg-white border border-gray-200 text-gray-800 rounded-[2px] relative break-all",
+        "inline-block px-3 py-1.5 font-medium bg-white border border-gray-200 text-gray-800 rounded-[2px] relative",
         textSizeClass
       )}
       style={textSizeStyle}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {displayValue}
+      <TextBreak>{displayValue}</TextBreak>
       {isHovered && (
         <button
           onClick={(e) => {
@@ -181,3 +223,11 @@ export function ValueDisplay({ value, textSize, showSeeMore }: ValueDisplayProps
     </span>
   );
 }
+
+export default memo(ValueDisplay, (prevProps, nextProps) => {
+  return (
+    prevProps.value === nextProps.value &&
+    prevProps.textSize === nextProps.textSize &&
+    prevProps.showSeeMore === nextProps.showSeeMore
+  );
+});

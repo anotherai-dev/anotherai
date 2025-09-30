@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Any, override
+from uuid import UUID
 
 import structlog
 from asyncpg.pool import PoolConnectionProxy
@@ -7,7 +8,7 @@ from asyncpg.pool import PoolConnectionProxy
 from core.domain.annotation import Annotation
 from core.domain.exceptions import ObjectNotFoundError
 from core.storage.annotation_storage import AnnotationStorage, ContextFilter, TargetFilter
-from core.storage.psql._psql_base_storage import JSONDict, PsqlBaseRow, PsqlBaseStorage
+from core.storage.psql._psql_base_storage import JSONDict, PsqlBaseRow, PsqlBaseStorage, WithUpdatedAtRow
 from core.utils.fields import datetime_zero
 from core.utils.uuid import uuid7
 
@@ -91,7 +92,7 @@ class PsqlAnnotationStorage(PsqlBaseStorage, AnnotationStorage):
                 arguments.append(target_experiment_uids)
             if target.completion_id:
                 target_filter.append(f"target_completion_id = ANY(${len(arguments) + 1})")
-                arguments.append(target.completion_id)
+                arguments.append([str(c) for c in target.completion_id])
             if len(target_filter) == 1:
                 where.append(target_filter[0])
             elif target_filter:
@@ -172,7 +173,7 @@ class PsqlAnnotationStorage(PsqlBaseStorage, AnnotationStorage):
             )
 
 
-class _AnnotationRow(PsqlBaseRow):
+class _AnnotationRow(PsqlBaseRow, WithUpdatedAtRow):
     """A representation of an annotation row"""
 
     slug: str = ""
@@ -201,7 +202,7 @@ class _AnnotationRow(PsqlBaseRow):
         return cls(
             slug=ann.id,
             author_name=ann.author_name,
-            target_completion_id=ann.target.completion_id if ann.target else None,
+            target_completion_id=str(ann.target.completion_id) if ann.target and ann.target.completion_id else None,
             target_experiment_uid=target_experiment_uid,
             target_key_path=ann.target.key_path if ann.target else None,
             context_experiment_uid=context_experiment_uid,
@@ -233,7 +234,7 @@ class _AnnotationRow(PsqlBaseRow):
             return None
         target = Annotation.Target(
             experiment_id=experiment_ids.get(self.target_experiment_uid, "") if self.target_experiment_uid else None,
-            completion_id=self.target_completion_id,
+            completion_id=UUID(self.target_completion_id) if self.target_completion_id else None,
             key_path=self.target_key_path,
         )
         if not target.model_dump(exclude_none=True):

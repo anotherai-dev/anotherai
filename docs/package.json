@@ -30,8 +30,14 @@
     "@types/node": "22.15.21",
     "@types/react": "^19.1.5",
     "@types/react-dom": "^19.1.5",
+    "eslint": "*",
+    "eslint-config-next": "*",
+    "eslint-config-prettier": "*",
+    "eslint-plugin-import": "*",
     "postcss": "^8.5.3",
+    "prettier": "^3.6.2",
     "tailwindcss": "^4.1.7",
-    "typescript": "^5.8.3"
+    "typescript": "*",
+    "unist-util-visit": "^5.0.0"
   }
 }

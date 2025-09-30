@@ -1,5 +1,5 @@
 import { Plus } from "lucide-react";
-import { useState } from "react";
+import { memo, useState } from "react";
 import { HoverPopover } from "@/components/HoverPopover";
 import { AnnotationsView } from "@/components/annotations/AnnotationsView";
 import { Annotation, Tool } from "@/types/models";
@@ -10,9 +10,27 @@ type MatchingToolValueProps = {
   experimentId?: string;
   completionId?: string;
   keyPath?: string;
+  position?:
+    | "bottom"
+    | "top"
+    | "left"
+    | "right"
+    | "topRight"
+    | "topRightAligned"
+    | "topLeftAligned"
+    | "topRightAlignedNew"
+    | "rightOverlap"
+    | "bottomLeft";
 };
 
-export function MatchingToolValue({ tools, annotations, experimentId, completionId, keyPath }: MatchingToolValueProps) {
+function MatchingToolValue({
+  tools,
+  annotations,
+  experimentId,
+  completionId,
+  keyPath,
+  position = "topRightAligned",
+}: MatchingToolValueProps) {
   const [showAddForm, setShowAddForm] = useState(false);
 
   const handleAddAnnotation = (e?: React.MouseEvent) => {
@@ -52,8 +70,7 @@ export function MatchingToolValue({ tools, annotations, experimentId, completion
               Add annotation
             </span>
           }
-          position="topRightAligned"
-          delay={0}
+          position={position}
           popoverClassName="bg-white border border-gray-200"
           className="w-full block"
         >
@@ -86,3 +103,41 @@ export function MatchingToolValue({ tools, annotations, experimentId, completion
     </>
   );
 }
+
+// Helper function to compare Tool arrays
+function areToolsEqual(prev: Tool[], next: Tool[]): boolean {
+  if (prev === next) return true;
+  if (prev.length !== next.length) return false;
+
+  for (let i = 0; i < prev.length; i++) {
+    if (prev[i].name !== next[i].name || prev[i].description !== next[i].description) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// Helper function to compare Annotation arrays
+function areAnnotationsEqual(prev?: Annotation[], next?: Annotation[]): boolean {
+  if (prev === next) return true;
+  if (!prev || !next) return false;
+  if (prev.length !== next.length) return false;
+
+  for (let i = 0; i < prev.length; i++) {
+    if (prev[i].id !== next[i].id || prev[i].text !== next[i].text) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export default memo(MatchingToolValue, (prevProps, nextProps) => {
+  return (
+    areToolsEqual(prevProps.tools, nextProps.tools) &&
+    prevProps.experimentId === nextProps.experimentId &&
+    prevProps.completionId === nextProps.completionId &&
+    prevProps.keyPath === nextProps.keyPath &&
+    prevProps.position === nextProps.position &&
+    areAnnotationsEqual(prevProps.annotations, nextProps.annotations)
+  );
+});

@@ -21,6 +21,7 @@ from core.providers.anthropic.anthropic_domain import (
     ThinkingDelta,
     ToolResultContent,
     ToolUseContent,
+    Usage,
 )
 
 
@@ -187,69 +188,6 @@ class TestCompletionRequestThinking:
         assert request_dict["thinking"] is None
 
 
-class TestThinkingDeltas:
-    def test_thinking_delta_creation(self) -> None:
-        """Test ThinkingDelta creation and attributes."""
-        delta = ThinkingDelta(
-            type="thinking_delta",
-            thinking="First, I need to understand...",
-        )
-
-        assert delta.type == "thinking_delta"
-        assert delta.thinking == "First, I need to understand..."
-
-    def test_signature_delta_creation(self) -> None:
-        """Test SignatureDelta creation and attributes."""
-        delta = SignatureDelta(
-            type="signature_delta",
-            signature="signature_abc123",
-        )
-
-        assert delta.type == "signature_delta"
-        assert delta.signature == "signature_abc123"
-
-    def test_completion_chunk_extract_delta_with_thinking(self) -> None:
-        """Test CompletionChunk.extract_delta with thinking delta."""
-        chunk = CompletionChunk(
-            type="content_block_delta",
-            delta=ThinkingDelta(
-                type="thinking_delta",
-                thinking="Let me consider this approach...",
-            ),
-        )
-
-        delta_text = chunk.extract_delta()
-        assert delta_text == "Let me consider this approach..."
-
-    def test_completion_chunk_extract_delta_with_signature(self) -> None:
-        """Test CompletionChunk.extract_delta with signature delta."""
-        chunk = CompletionChunk(
-            type="content_block_delta",
-            delta=SignatureDelta(
-                type="signature_delta",
-                signature="sig_456",
-            ),
-        )
-
-        delta_text = chunk.extract_delta()
-        assert delta_text == ""  # Signature deltas don't contribute to text output
-
-    def test_completion_chunk_extract_delta_with_text(self) -> None:
-        """Test CompletionChunk.extract_delta with text delta (existing behavior)."""
-        from core.providers.anthropic.anthropic_domain import TextDelta
-
-        chunk = CompletionChunk(
-            type="content_block_delta",
-            delta=TextDelta(
-                type="text_delta",
-                text="This is regular text content.",
-            ),
-        )
-
-        delta_text = chunk.extract_delta()
-        assert delta_text == "This is regular text content."
-
-
 class TestErrorDetails:
     @pytest.mark.parametrize(
         ("message", "expected_error_cls", "expected_capture"),
@@ -283,3 +221,61 @@ class TestErrorDetails:
         error = error_details.to_domain(None)
         assert isinstance(error, expected_error_cls)
         assert error.capture == expected_capture
+
+
+class TestCompletionChunk:
+    def test_message_start(self) -> None:
+        val = CompletionChunk.model_validate(
+            {
+                "type": "message_start",
+                "message": {
+                    "id": "msg_01LfyeXJLvnwgEW9d9G6QF6D",
+                    "type": "message",
+                    "role": "assistant",
+                    "model": "claude-3-5-sonnet-20241022",
+                    "content": [],
+                    "stop_reason": None,
+                    "stop_sequence": None,
+                    "usage": {
+                        "input_tokens": 717,
+                        "cache_creation_input_tokens": 0,
+                        "cache_read_input_tokens": 0,
+                        "output_tokens": 1,
+                    },
+                },
+            },
+        )
+        assert val.message
+        assert val.message.usage == Usage(
+            input_tokens=717,
+            output_tokens=1,
+            cache_creation_input_tokens=0,
+            cache_read_input_tokens=0,
+        )
+
+
+class TestCompletionChunkToParsedResponse:
+    def test_thinking(self):
+        chunk = CompletionChunk(
+            type="content_block_delta",
+            index=0,
+            delta=ThinkingDelta(
+                type="thinking_delta",
+                thinking="I need to analyze this request...",
+            ),
+        )
+        parsed_response = chunk.to_parsed_response()
+        assert parsed_response.reasoning == "I need to analyze this request..."
+
+    def test_signature(self):
+        # Create a chunk with signature delta
+        chunk = CompletionChunk(
+            type="content_block_delta",
+            index=0,
+            delta=SignatureDelta(
+                type="signature_delta",
+                signature="sig_456",
+            ),
+        )
+        parsed_response = chunk.to_parsed_response()
+        assert parsed_response.reasoning is None

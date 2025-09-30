@@ -1,30 +1,27 @@
-import { useMemo } from "react";
+import { Copy, EyeOff } from "lucide-react";
+import { memo, useMemo, useState } from "react";
 import { HoverPopover } from "@/components/HoverPopover";
+import MetricsDisplay from "@/components/MetricsDisplay";
+import { useToast } from "@/components/ToastProvider";
+import { DeployVersionInstructions } from "@/components/experiment/DeployVersionInstructions";
 import {
   findIndexOfVersionThatFirstUsedThosePrompt,
   findIndexOfVersionThatFirstUsedThosePromptAndSchema,
   findIndexOfVersionThatFirstUsedThoseSchema,
 } from "@/components/utils/utils";
-import { VersionDetailsView } from "@/components/version-details/VersionDetailsView";
-import { Annotation, Message, Version } from "@/types/models";
-import { VersionHeaderMetrics } from "./VersionHeaderMetrics";
-import { VersionHeaderModel } from "./VersionHeaderModel";
-import { VersionHeaderPriceAndLatency } from "./VersionHeaderPriceAndLatency";
+import { Annotation, ExperimentWithLookups, Message, Version } from "@/types/models";
+import { HeaderMatchingSection } from "../../matching/HeaderMatchingSection";
+import { DraggableColumnWrapper } from "./DraggableColumnWrapper";
+import { VersionDifferencesView } from "./VersionDifferencesView";
+import VersionHeaderModel from "./VersionHeaderModel";
 import { VersionHeaderPrompt } from "./VersionHeaderPrompt";
 import { VersionHeaderSchema } from "./VersionHeaderSchema";
 import { VersionHeaderSharedPromptAndSchema } from "./VersionHeaderSharedPromptAndSchema";
-import { VersionOptionalKeysView } from "./VersionOptionalKeysView";
 
 type VersionHeaderProps = {
   version: Version;
   optionalKeysToShow: string[];
   index: number;
-  priceAndLatency?: {
-    avgCost: number;
-    avgDuration: number;
-    allCosts: number[];
-    allDurations: number[];
-  };
   versions?: Version[];
   sharedPartsOfPrompts?: Message[];
   sharedKeypathsOfSchemas?: string[];
@@ -33,16 +30,22 @@ type VersionHeaderProps = {
   completionId?: string;
   metrics?: { key: string; average: number }[];
   allMetricsPerKey?: Record<string, number[]>;
+  versionMetricsPerKey?: Record<string, number[]>;
   showAvgPrefix?: boolean;
   agentId?: string;
+  experiment?: ExperimentWithLookups;
+  // Drag and drop props
+  onReorderColumns?: (fromIndex: number, toIndex: number) => void;
+  dragIndex?: number;
+  // Hide version functionality
+  onHideVersion?: (versionId: string) => void;
 };
 
-export function VersionHeader(props: VersionHeaderProps) {
+function VersionHeader(props: VersionHeaderProps) {
   const {
     version,
     optionalKeysToShow,
     index,
-    priceAndLatency,
     versions,
     sharedPartsOfPrompts,
     sharedKeypathsOfSchemas,
@@ -51,9 +54,35 @@ export function VersionHeader(props: VersionHeaderProps) {
     completionId,
     metrics,
     allMetricsPerKey,
+    versionMetricsPerKey,
     showAvgPrefix = true,
     agentId,
+    experiment,
+    onReorderColumns,
+    dragIndex,
+    onHideVersion,
   } = props;
+
+  const [isHovered, setIsHovered] = useState(false);
+  const { showToast } = useToast();
+
+  const handleCopyVersion = async () => {
+    const versionPath = `anotherai/version/${version.id}`;
+    try {
+      await navigator.clipboard.writeText(versionPath);
+      showToast("Copied to clipboard");
+    } catch (err) {
+      console.error("Failed to copy: ", err);
+      showToast("Failed to copy");
+    }
+  };
+
+  const handleHideVersion = () => {
+    if (onHideVersion) {
+      onHideVersion(version.id);
+      showToast("Version hidden");
+    }
+  };
 
   const optionalKeysToShowWithoutPromptAndOutputSchema = useMemo(() => {
     return optionalKeysToShow.filter((key) => key !== "prompt" && key !== "output_schema");
@@ -100,18 +129,45 @@ export function VersionHeader(props: VersionHeaderProps) {
   }, [versions, version, optionalKeysToShow, index]);
 
   return (
-    <div className="flex flex-col h-full text-xs">
-      <div className="flex-1 space-y-2">
-        <div>
-          <HoverPopover
-            content={<VersionDetailsView version={version} showPrompt={false} />}
-            position="bottomLeft"
-            popoverClassName="rounded bg-white border border-gray-200 w-80"
-          >
-            <div className="text-gray-800 font-semibold mb-2 text-sm cursor-pointer hover:text-gray-600">
-              Version {index + 1}
-            </div>
-          </HoverPopover>
+    <DraggableColumnWrapper
+      onReorderColumns={onReorderColumns}
+      dragIndex={dragIndex}
+      versionId={version.id}
+      className="firefox-version-header"
+    >
+      <div className="firefox-version-content">
+        <div onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="text-gray-800 font-semibold text-sm">Version {index + 1}</div>
+            {isHovered && (
+              <div className="flex items-center gap-1">
+                <HoverPopover
+                  content={<div className="text-xs">Copy Version ID</div>}
+                  position="top"
+                  popoverClassName="bg-gray-800 text-white rounded-[4px] px-2 py-1"
+                >
+                  <button
+                    onClick={handleCopyVersion}
+                    className="bg-white border border-gray-200 text-gray-900 hover:bg-gray-100 cursor-pointer h-5 w-5 rounded-[2px] flex items-center justify-center"
+                  >
+                    <Copy size={12} />
+                  </button>
+                </HoverPopover>
+                <HoverPopover
+                  content={<div className="text-xs">Hide Version</div>}
+                  position="top"
+                  popoverClassName="bg-gray-800 text-white rounded-[4px] px-2 py-1"
+                >
+                  <button
+                    onClick={handleHideVersion}
+                    className="bg-white border border-gray-200 text-gray-900 hover:bg-gray-100 cursor-pointer h-5 w-5 rounded-[2px] flex items-center justify-center"
+                  >
+                    <EyeOff size={12} />
+                  </button>
+                </HoverPopover>
+              </div>
+            )}
+          </div>
           <VersionHeaderModel
             version={version}
             annotations={annotations}
@@ -121,9 +177,9 @@ export function VersionHeader(props: VersionHeaderProps) {
           />
         </div>
 
-        <VersionOptionalKeysView
+        <VersionDifferencesView
           version={version}
-          optionalKeysToShow={optionalKeysToShowWithoutPromptAndOutputSchema}
+          differingKeys={optionalKeysToShowWithoutPromptAndOutputSchema}
           annotations={annotations}
           experimentId={experimentId}
           completionId={completionId}
@@ -174,15 +230,131 @@ export function VersionHeader(props: VersionHeaderProps) {
             agentId={agentId}
           />
         )}
+
+        <div className="mt-3">
+          <DeployVersionInstructions versionId={version.id} agentId={agentId} />
+        </div>
+
+        {experiment && (
+          <div className="mt-3">
+            <HeaderMatchingSection experiment={experiment} annotations={annotations} experimentId={experimentId} />
+          </div>
+        )}
       </div>
 
-      {(priceAndLatency || metrics) && (
-        <div className="mt-auto">
-          <div className="mt-3 pt-2 border-t border-gray-200" />
-          <VersionHeaderPriceAndLatency priceAndLatency={priceAndLatency} showAvgPrefix={showAvgPrefix} />
-          <VersionHeaderMetrics metrics={metrics} allMetricsPerKey={allMetricsPerKey} showAvgPrefix={showAvgPrefix} />
-        </div>
-      )}
-    </div>
+      <div className="firefox-version-metrics">
+        {metrics && metrics.length > 0 && (
+          <>
+            <div className="pt-2 mt-3 border-t border-gray-200" />
+            <MetricsDisplay
+              metrics={metrics}
+              allMetricsPerKey={allMetricsPerKey}
+              versionMetricsPerKey={versionMetricsPerKey}
+              showAvgPrefix={showAvgPrefix}
+              className="space-y-1 mt-1"
+            />
+          </>
+        )}
+      </div>
+    </DraggableColumnWrapper>
   );
 }
+
+// Helper function to compare Version objects
+function areVersionsEqual(prev: Version, next: Version): boolean {
+  return (
+    prev.id === next.id &&
+    prev.model === next.model &&
+    prev.reasoning_effort === next.reasoning_effort &&
+    prev.reasoning_budget === next.reasoning_budget &&
+    prev.prompt === next.prompt &&
+    prev.output_schema === next.output_schema
+  );
+}
+
+// Helper function to compare string arrays
+function areStringArraysEqual(prev: string[], next: string[]): boolean {
+  if (prev === next) return true;
+  if (prev.length !== next.length) return false;
+
+  for (let i = 0; i < prev.length; i++) {
+    if (prev[i] !== next[i]) return false;
+  }
+  return true;
+}
+
+// Helper function to compare Version arrays
+function areVersionArraysEqual(prev?: Version[], next?: Version[]): boolean {
+  if (prev === next) return true;
+  if (!prev || !next) return false;
+  if (prev.length !== next.length) return false;
+
+  for (let i = 0; i < prev.length; i++) {
+    if (!areVersionsEqual(prev[i], next[i])) return false;
+  }
+  return true;
+}
+
+// Helper function to compare Message arrays
+function areMessageArraysEqual(prev?: Message[], next?: Message[]): boolean {
+  if (prev === next) return true;
+  if (!prev || !next) return false;
+  if (prev.length !== next.length) return false;
+
+  for (let i = 0; i < prev.length; i++) {
+    if (prev[i].role !== next[i].role || prev[i].content !== next[i].content) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// Helper function to compare metrics arrays
+function areMetricsEqual(
+  prev?: { key: string; average: number }[],
+  next?: { key: string; average: number }[]
+): boolean {
+  if (prev === next) return true;
+  if (!prev || !next) return false;
+  if (prev.length !== next.length) return false;
+
+  for (let i = 0; i < prev.length; i++) {
+    if (prev[i].key !== next[i].key || prev[i].average !== next[i].average) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// Helper function to compare Annotation arrays
+function areAnnotationsEqual(prev?: Annotation[], next?: Annotation[]): boolean {
+  if (prev === next) return true;
+  if (!prev || !next) return false;
+  if (prev.length !== next.length) return false;
+
+  for (let i = 0; i < prev.length; i++) {
+    if (prev[i].id !== next[i].id || prev[i].text !== next[i].text) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export default memo(VersionHeader, (prevProps, nextProps) => {
+  return (
+    areVersionsEqual(prevProps.version, nextProps.version) &&
+    areStringArraysEqual(prevProps.optionalKeysToShow, nextProps.optionalKeysToShow) &&
+    prevProps.index === nextProps.index &&
+    areVersionArraysEqual(prevProps.versions, nextProps.versions) &&
+    areMessageArraysEqual(prevProps.sharedPartsOfPrompts, nextProps.sharedPartsOfPrompts) &&
+    areStringArraysEqual(prevProps.sharedKeypathsOfSchemas || [], nextProps.sharedKeypathsOfSchemas || []) &&
+    prevProps.experimentId === nextProps.experimentId &&
+    prevProps.completionId === nextProps.completionId &&
+    prevProps.showAvgPrefix === nextProps.showAvgPrefix &&
+    prevProps.agentId === nextProps.agentId &&
+    prevProps.dragIndex === nextProps.dragIndex &&
+    areAnnotationsEqual(prevProps.annotations, nextProps.annotations) &&
+    areMetricsEqual(prevProps.metrics, nextProps.metrics)
+    // Note: onReorderColumns, onHideVersion, allMetricsPerKey, versionMetricsPerKey, and experiment are not compared as they should be stable or are complex objects
+  );
+});

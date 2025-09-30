@@ -10,9 +10,9 @@ from core.domain.agent import Agent
 from core.domain.agent_completion import AgentCompletion
 from core.domain.agent_input import AgentInput
 from core.domain.agent_output import AgentOutput
-from core.domain.inference import LLMTrace, ToolTrace, Trace
 from core.domain.inference_usage import InferenceUsage
 from core.domain.message import Message
+from core.domain.trace import LLMTrace, ToolTrace, Trace
 from core.domain.version import Version
 from core.storage.clickhouse._models._ch_field_utils import (
     MAX_UINT_16,
@@ -67,6 +67,7 @@ class _Trace(BaseModel):
                 cost_usd=cost_usd,
                 model=self.model,
                 provider=self.provider,
+                # TODO: make completion more accessible
                 usage=InferenceUsage.model_validate_json(self.usage) if self.usage else None,
             )
         if self.kind == "tool":
@@ -138,13 +139,12 @@ class ClickhouseCompletion(BaseModel):
 
     @classmethod
     def from_domain(cls, tenant: int, completion: AgentCompletion):
-        id = UUID(completion.id)
         return cls(
             # Core identifiers
             tenant_uid=tenant,
             agent_id=completion.agent.id,
-            id=id,
-            updated_at=uuid7_generation_time(id),
+            id=completion.id,
+            updated_at=uuid7_generation_time(completion.id),
             # Version
             version_id=completion.version.id,
             version_model=completion.version.model or "",
@@ -182,8 +182,7 @@ class ClickhouseCompletion(BaseModel):
         agent = agent or Agent(id=self.agent_id, uid=0)
 
         return AgentCompletion(
-            id=str(self.id),
-            created_at=uuid7_generation_time(self.id),
+            id=self.id,
             agent=agent,
             agent_input=_input_to_domain(self.input_variables, self.input_messages, self.input_preview, self.input_id),
             agent_output=_output_to_domain(
@@ -192,7 +191,7 @@ class ClickhouseCompletion(BaseModel):
                 self.output_preview,
                 self.output_id,
             ),
-            messages=_parse_messages(self.messages) or [],
+            messages=parse_messages(self.messages) or [],
             version=self._domain_version(),
             status="success" if not self.output_error else "failure",
             duration_seconds=_from_duration_ds(self.duration_ds),
@@ -327,7 +326,7 @@ def _dump_messages(messages: list[Message] | None) -> str:
     return _Messages.dump_json(messages, exclude_none=True).decode()
 
 
-def _parse_messages(messages: str) -> list[Message] | None:
+def parse_messages(messages: str) -> list[Message] | None:
     if not messages:
         return None
     return _Messages.validate_json(messages)
@@ -339,7 +338,7 @@ def _input_to_domain(input_variables: str, input_messages: str, preview: str, id
         "preview": preview,
     }
     payload["variables"] = _from_stringified_json(input_variables)
-    payload["messages"] = _parse_messages(input_messages)
+    payload["messages"] = parse_messages(input_messages)
     return AgentInput.model_validate(payload)
 
 
@@ -348,6 +347,6 @@ def _output_to_domain(output_messages: str, output_error: str, preview: str, id:
         "id": id,
         "preview": preview,
     }
-    payload["messages"] = _parse_messages(output_messages)
+    payload["messages"] = parse_messages(output_messages)
     payload["error"] = _from_stringified_json(output_error)
     return AgentOutput.model_validate(payload)

@@ -9,7 +9,7 @@ export interface CustomTooltipProps {
     color?: string;
   }>;
   mousePos: { x: number; y: number };
-  formatter: (value: number) => string;
+  formatter: (value: number, seriesKey?: string) => string;
   iconBorderRadius?: string; // '1px' for bars, '50%' for lines/dots
   isChartMultiSeries?: boolean; // Whether the chart itself is multi-series (not just current payload)
 }
@@ -109,12 +109,12 @@ export const CustomTooltip = ({
                 }}
               />
               <span style={{ fontSize: "12px" }}>
-                {entry.dataKey || "Unknown"}: {formatter(entry.value)}
+                {entry.dataKey || "Unknown"}: {formatter(entry.value, entry.dataKey)}
               </span>
             </div>
           ))
         ) : (
-          <div>{formatter(payload[0].value)}</div>
+          <div>{formatter(payload[0].value, payload[0].dataKey)}</div>
         )}
       </div>
     );

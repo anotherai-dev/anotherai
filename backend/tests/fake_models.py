@@ -7,14 +7,15 @@ from core.domain.agent_completion import AgentCompletion
 from core.domain.agent_input import AgentInput
 from core.domain.agent_output import AgentOutput
 from core.domain.annotation import Annotation
+from core.domain.deployment import Deployment
 from core.domain.experiment import Experiment
-from core.domain.inference import LLMTrace
-from core.domain.inference_usage import InferenceUsage, PromptUsage, Usage
+from core.domain.inference_usage import CompletionUsage, InferenceUsage, TokenUsage
 from core.domain.message import Message
 from core.domain.models._displayed_provider import DisplayedProvider
 from core.domain.models.model_data import MaxTokensData, ModelData, QualityData, SpeedData, SpeedIndex
 from core.domain.models.models import Model
 from core.domain.models.providers import Provider
+from core.domain.trace import LLMTrace
 from core.domain.version import Version
 from core.domain.view import Graph, View, ViewFolder
 from core.providers._base.llm_completion import LLMCompletion
@@ -22,10 +23,43 @@ from core.providers._base.llm_usage import LLMUsage
 from core.utils.uuid import uuid7
 
 
+def fake_version(**kwargs: Any):
+    version = Version(
+        model="gpt-4o-mini",
+        provider="openai",
+        temperature=0.5,
+        max_output_tokens=100,
+        use_structured_generation=False,
+        tool_choice=None,
+        prompt=[Message.with_text("Your name is {{name}}", role="system")],
+    )
+    # Using model_validate to force validation and recompute the id
+    return version.model_validate(
+        {
+            **version.model_dump(exclude={"id"}),
+            **kwargs,
+        },
+    )
+
+
+def fake_input(**kwargs: Any):
+    base = AgentInput(
+        variables={
+            "name": "John",
+        },
+    )
+    return base.model_validate(
+        {
+            **base.model_dump(exclude={"id"}),
+            **kwargs,
+        },
+    )
+
+
 def fake_completion(agent: Agent | None = None, id_rand: int = 1, **kwargs: Any):
     base = AgentCompletion(
         agent=agent or Agent(uid=1, id="hello", name="hello", created_at=datetime(2025, 1, 1, 1, 1, 1, tzinfo=UTC)),
-        id=str(uuid7(ms=lambda: 0, rand=lambda: id_rand)),
+        id=uuid7(ms=lambda: 0, rand=lambda: id_rand),
         duration_seconds=1.0,
         cost_usd=1.0,
         traces=[
@@ -35,12 +69,12 @@ def fake_completion(agent: Agent | None = None, id_rand: int = 1, **kwargs: Any)
                 duration_seconds=1.0,
                 cost_usd=3.0,
                 usage=InferenceUsage(
-                    prompt=PromptUsage(
-                        cached_token_count=100,
-                        reasoning_token_count=100,
+                    prompt=TokenUsage(
                         cost_usd=1.0,
                     ),
-                    completion=Usage(
+                    completion=CompletionUsage(
+                        cached_token_count=100,
+                        reasoning_token_count=100,
                         text_token_count=100,
                         cost_usd=2.0,
                     ),
@@ -74,15 +108,7 @@ def fake_completion(agent: Agent | None = None, id_rand: int = 1, **kwargs: Any)
             Message.with_text("Your name is John", role="system"),
             Message.with_text("hello, who are you?", role="user"),
         ],
-        version=Version(
-            model="gpt-4o-mini",
-            provider="openai",
-            temperature=0.5,
-            max_output_tokens=100,
-            use_structured_generation=False,
-            tool_choice=None,
-            prompt=[Message.with_text("Your name is {{name}}", role="system")],
-        ),
+        version=fake_version(),
     )
 
     return base.model_copy(update=kwargs)
@@ -127,7 +153,7 @@ def fake_tool():
 
 
 def fake_experiment(**kwargs: Any):
-    return Experiment(
+    base = Experiment(
         id="test-experiment",
         author_name="Test Author",
         title="Test Experiment",
@@ -136,7 +162,13 @@ def fake_experiment(**kwargs: Any):
         agent_id="test-agent",
         run_ids=[],
         metadata={"key": "value"},
-    ).model_copy(update=kwargs)
+    )
+    return Experiment.model_validate(
+        {
+            **base.model_dump(),
+            **kwargs,
+        },
+    )
 
 
 def fake_annotation(**kwargs: Any):
@@ -144,7 +176,7 @@ def fake_annotation(**kwargs: Any):
         id="test-annotation",
         author_name="Test Author",
         target=Annotation.Target(
-            completion_id="test-completion",
+            completion_id=uuid7(ms=lambda: 0, rand=lambda: 1),
             experiment_id="test-experiment",
             key_path="response.message",
         ),
@@ -176,3 +208,15 @@ def fake_view_folder(**kwargs: Any):
         name="Test View Folder",
         views=[fake_view()],
     )
+
+
+def fake_deployment(**kwargs: Any):
+    base = Deployment(
+        id="test-deployment",
+        agent_id="test-agent",
+        version=fake_version(),
+        created_by="test-user",
+        created_at=datetime.now(UTC),
+        metadata=None,
+    )
+    return base.model_copy(update=kwargs)

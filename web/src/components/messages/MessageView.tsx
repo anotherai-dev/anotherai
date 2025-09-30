@@ -1,9 +1,10 @@
 import { Copy } from "lucide-react";
 import React, { useCallback, useState } from "react";
 import { MessageContentView } from "@/components/messages/MessageContentView";
-import { formatDuration, getRoleDisplay } from "@/components/utils/utils";
+import { getRoleDisplay } from "@/components/utils/utils";
 import { Annotation, Message } from "@/types/models";
 import { useToast } from "../ToastProvider";
+import { MessageMetricsDisplay } from "./MessageMetricsDisplay";
 
 type MessageViewProps = {
   message: Message;
@@ -18,9 +19,6 @@ export function MessageView(props: MessageViewProps) {
   const { message, index, sharedPartsOfPrompts, annotations, onKeypathSelect, maxVariablesHeight } = props;
   const [isHovered, setIsHovered] = useState(false);
   const { showToast } = useToast();
-
-  const hasCostOrDuration = message.cost_usd || message.duration_seconds;
-  const hasMetrics = message.metrics && message.metrics.length > 0;
 
   const copyMessageContent = useCallback(async () => {
     let textToCopy = "";
@@ -59,7 +57,7 @@ export function MessageView(props: MessageViewProps) {
 
   return (
     <div
-      className="border border-gray-200 rounded-[2px] bg-white relative"
+      className="border border-gray-200 rounded-[2px] bg-white relative mb-3"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -78,35 +76,7 @@ export function MessageView(props: MessageViewProps) {
           maxVariablesHeight={maxVariablesHeight}
         />
       </div>
-      {(hasCostOrDuration || hasMetrics) && (
-        <div className="border-t border-gray-200">
-          {hasCostOrDuration && (
-            <div className="grid grid-cols-2 gap-0">
-              <div className="px-3 py-3 text-xs bg-gray-50 flex justify-between items-center">
-                <span className="font-medium text-gray-600">Cost</span>
-                <span className="text-gray-800">${(message.cost_usd || 0).toFixed(5)}</span>
-              </div>
-              <div className="px-3 py-3 text-xs bg-gray-50 border-l border-gray-200 flex justify-between items-center">
-                <span className="font-medium text-gray-600">Duration</span>
-                <span className="text-gray-800">{formatDuration(message.duration_seconds || 0)}</span>
-              </div>
-            </div>
-          )}
-          {hasMetrics && (
-            <div className={`${hasCostOrDuration ? "border-t border-gray-200" : ""}`}>
-              {message.metrics?.map(({ key, average }) => (
-                <div
-                  key={key}
-                  className="px-3 py-3 text-xs bg-gray-50 flex justify-between items-center border-b border-gray-200 last:border-b-0"
-                >
-                  <span className="font-medium text-gray-600 capitalize">{key.replace(/_/g, " ")}</span>
-                  <span className="text-gray-800">{average.toFixed(2)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      <MessageMetricsDisplay message={message} />
       {isHovered && (
         <button
           onClick={(e) => {

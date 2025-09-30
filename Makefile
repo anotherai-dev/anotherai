@@ -2,7 +2,6 @@
 api:
 	cd backend && PYTHONPATH=. uv run dotenv -f ../.env run -- uv run python protocol/api/api_server.py
 
-
 .PHONY: migrate.clickhouse
 migrate.clickhouse:
 	PYTHONPATH=backend:scripts uv run scripts/clickhouse_migrate.py --env $${ENV:-local}
@@ -20,3 +19,17 @@ local_reset:
 
 .PHONY: local_setup
 local_setup: local_reset migrate
+
+.PHONY: web
+web:
+	cd web && PYTHONPATH=. uv run dotenv -f ../.env run -- npm run dev
+
+
+# make check_models PROVIDER=mistral
+.PHONY: check_models
+check_models:
+	PYTHONPATH=backend:scripts uv run scripts/check_${PROVIDER}_models.py
+
+.PHONY: add_mcp_claude
+add_mcp_claude:
+	claude mcp add --scope user --transport http anotherai http://localhost:8000/mcp --header "Authorization: Bearer $${ANOTHERAI_API_KEY}"

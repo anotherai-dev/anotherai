@@ -2,6 +2,7 @@ from typing import Any, Literal
 
 from httpx import Response
 from pydantic import BaseModel
+from structlog import get_logger
 
 from core.domain.exceptions import InternalError
 from core.domain.file import File
@@ -16,15 +17,20 @@ from core.providers._base.provider_error import (
     ServerOverloadedError,
     UnknownProviderError,
 )
+from core.providers._base.streaming_context import ParsedResponse
 from core.providers.google.google_provider_domain import (
     internal_tool_name_to_native_tool_call,
+    native_tool_name_to_internal,
 )
+from core.runners.runner_output import ToolCallRequestDelta
 
 _role_to_map: dict[MessageDeprecated.Role, Literal["user", "assistant"]] = {
     MessageDeprecated.Role.SYSTEM: "user",
     MessageDeprecated.Role.USER: "user",
     MessageDeprecated.Role.ASSISTANT: "assistant",
 }
+
+_log = get_logger(__name__)
 
 
 class TextContent(BaseModel):
@@ -253,6 +259,8 @@ class CompletionRequest(BaseModel):
 
 
 class Usage(BaseModel):
+    cache_creation_input_tokens: int | None = None
+    cache_read_input_tokens: int | None = None
     input_tokens: int | None = None
     output_tokens: int | None = None
 
@@ -260,6 +268,7 @@ class Usage(BaseModel):
         return LLMUsage(
             prompt_token_count=self.input_tokens,
             completion_token_count=self.output_tokens,
+            prompt_token_count_cached=self.cache_read_input_tokens,
         )
 
 
@@ -345,6 +354,10 @@ class InputJsonDelta(BaseModel):
     partial_json: str
 
 
+class _CompletionChunkMessage(BaseModel):
+    usage: Usage
+
+
 class CompletionChunk(BaseModel):
     """Represents a streaming chunk response from Anthropic"""
 
@@ -359,7 +372,7 @@ class CompletionChunk(BaseModel):
         "error",
     ]
     # For message_start
-    message: dict[str, Any] | None = None
+    message: _CompletionChunkMessage | None = None
     # For content_block_start
     content_block: ContentBlock | ToolUse | ThinkingBlock | None = None
     # For content_block_delta
@@ -370,18 +383,76 @@ class CompletionChunk(BaseModel):
 
     error: ErrorDetails | None = None
 
-    def extract_delta(self) -> str:
-        """Extract the text delta from the chunk"""
-        if self.type == "content_block_delta":
-            if isinstance(self.delta, TextDelta):
-                return self.delta.text
-            if isinstance(self.delta, ThinkingDelta):
-                return self.delta.thinking
-            if isinstance(self.delta, SignatureDelta):
-                return ""  # Signature deltas don't contribute to text output
-        if self.type == "message_delta" and isinstance(self.delta, StopReasonDelta):
-            return self.delta.stop_reason or self.delta.stop_sequence or ""
-        return ""
+    def _parsed_content_block(self) -> ParsedResponse | None:
+        match self.content_block:
+            case ToolUse():
+                return ParsedResponse(
+                    tool_call_requests=[
+                        ToolCallRequestDelta(
+                            id=self.content_block.id,
+                            idx=self.index or 0,
+                            tool_name=native_tool_name_to_internal(self.content_block.name),
+                            arguments="",
+                        ),
+                    ],
+                )
+            case ThinkingBlock():
+                return ParsedResponse(
+                    reasoning=self.content_block.thinking,
+                )
+            case ContentBlock():
+                return ParsedResponse(
+                    delta=self.content_block.text,
+                )
+            case _:
+                return None
+
+    def _parsed_delta(self) -> ParsedResponse | None:
+        match self.delta:
+            case TextDelta():
+                return ParsedResponse(
+                    delta=self.delta.text,
+                )
+            case ThinkingDelta():
+                return ParsedResponse(
+                    reasoning=self.delta.thinking,
+                )
+            case SignatureDelta():
+                return None
+            case InputJsonDelta():
+                if self.index is None:
+                    _log.warning("Received input_json_delta without an index", chunk=self)
+                    return None
+                return ParsedResponse(
+                    tool_call_requests=[
+                        ToolCallRequestDelta(
+                            id="",
+                            idx=self.index,
+                            tool_name="",
+                            arguments=self.delta.partial_json,
+                        ),
+                    ],
+                )
+
+            case StopReasonDelta():
+                if self.delta.stop_reason == "max_tokens":
+                    return ParsedResponse(finish_reason="max_context")
+                return None
+            case None:
+                return None
+
+    def to_parsed_response(self) -> ParsedResponse:
+        if self.error:
+            raise self.error.to_domain(response=None)
+
+        res = self._parsed_content_block()
+        if not res:
+            res = self._parsed_delta()
+        raw_usage = self.message.usage if self.message else self.usage
+        usage = raw_usage.to_domain() if raw_usage else None
+        if not res:
+            return ParsedResponse(usage=usage)
+        return res._replace(usage=usage)
 
 
 class AnthropicErrorResponse(BaseModel):

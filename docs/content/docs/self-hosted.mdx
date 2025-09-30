@@ -1,0 +1,167 @@
+---
+title: Self-Hosted Setup Guide
+summary: Guide for setting up and using AnotherAI on your own infrastructure
+---
+
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Code2, BookOpen, Wand2, Eye, Network, FileCode, Shield } from 'lucide-react';
+
+### Self Host Set Up
+
+To self-host your own instance of AnotherAI, ask Claude Code to do the setup for you by sending the following prompt:
+
+```
+claude "Please follow instructions in https://raw.githubusercontent.com/anotherai-dev/anotherai/refs/heads/main/examples/quickstart/INSTRUCTIONS.md"
+```
+
+### MCP Configuration
+
+AnotherAI is available as an MCP server in the IDEs below.
+
+<Tabs items={['Cursor', 'Claude Code', 'Windsurf', 'Cursor CLI']}>
+
+<Tab value="Cursor">
+
+Quick setup (recommended):
+1. Complete the [Self Host Set Up](#self-host-set-up) steps above.
+2. Tap on this button below
+
+<a href="cursor://anysphere.cursor-deeplink/mcp/install?name=anotherai&config=eyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjgwMDAvbWNwLyJ9"><img src="https://cursor.com/deeplink/mcp-install-dark.svg" alt="Add anotherai MCP server to Cursor" height="32" /></a>
+
+Manual installation:
+
+1. Open Cursor
+2. Go to `Settings...`
+3. Navigate to `Cursor Settings`
+4. Select `Tools and Integrations`
+5. Select `+ New MCP Server`
+
+Add the following configuration to your MCP servers config:
+
+```json
+{
+  "mcpServers": {
+    "anotherai": {
+      "url": "http://127.0.0.1:8000/mcp/"
+    }
+  }
+}
+```
+
+Cursor UI should now look like this (note the green indicator and the number of tools enabled displayed):
+
+![Successful Cursor MCP Server Setup](/images/mcp/cursor-setup-ok.png)
+
+</Tab>
+
+<Tab value="Claude Code">
+
+  1. Open Claude Code in your preferred terminal (standalone or within your IDE).
+  2. Type the following to install:
+
+  ```bash
+  claude mcp add --scope user --transport http anotherai http://127.0.0.1:8000/mcp/
+  ```
+
+  <Callout type="info">
+  **Installation Scopes**: The `--scope user` flag installs AnotherAI for your personal use across all projects. For team projects, you can use `--scope project` instead to create a shared `.mcp.json` file that can be committed to version control and shared with your team members. Learn more about MCP scopes in the [Anthropic documentation](https://docs.anthropic.com/en/docs/claude-code/mcp#user-scope).
+  </Callout>
+
+  3. Type the following to verify the server is properly connected:
+
+  ```bash
+claude
+```
+
+Then type:
+```bash
+/mcp 
+```
+
+You should see the AnotherAI server listed as "connected".
+
+</Tab>
+
+<Tab value="Windsurf">
+
+1. Open Windsurf
+2. Go to `Settings...`
+3. Select `Windsurf Settings`
+4. Navigate to `Cascade`
+5. Select `Manage MCPs`
+6. Select `View Raw Config`
+
+Add the following configuration to your MCP servers config:
+
+```json
+{
+  "mcpServers": {
+    "anotherai": {
+      "url": "http://127.0.0.1:8000/mcp/"
+    }
+  }
+}
+```
+
+Navigate back to Manage MCPs and refresh the page. The AnotherAI MCP should appear and show as enabled.
+</Tab>
+
+<Tab value="Cursor CLI">
+
+Cursor CLI can access MCPs configured in your IDE's  `mcp.json` configuration file, enabling the same MCP servers and tools that you've configured for the IDE.
+
+Setup steps:
+
+1. Complete the [Self Host Set Up](#self-host-set-up) steps above and ensure the AnotherAI MCP server is running
+2. Configure the AnotherAI MCP in your IDE's `mcp.json` file, as described in the `Cursor` tab
+3. Once the MCP is enabled and active, you can ask the Cursor CLI to interact with it
+
+<Callout type="info">
+**Additional Configuration**: If you find that the CLI claims it can't find or use the AnotherAI MCP, you may need to give it the specific file path to use to look for the mcp.json file.
+</Callout>
+
+</Tab>
+
+</Tabs>
+
+### Configuring Authentication
+
+The default configuration disables authentication all together using `NO_AUTHORIZATION_ALLOWED=true` in the `.env` file.
+
+If that variable is not present, the backend expects means to validate a JWT token in environment variables, either:
+- `JWKS_URL`: the URL to a valid JSON Web Key Set
+- `JWK`: a stringified JSON of a valid JSON Web Key
+
+> You can check [signature_verifier](/backend//core/utils/signature_verifier.py) for the implementation of the signature verification and the [lifecycle.py](/backend/protocol/_common/lifecycle.py) for how the verifier is selected.
+
+The Web Client currently only supports Clerk based authentication, which is also disabled by default. It can be activated by providing the `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` environment variables (note that the `NEXT_PUBLIC_...` key must be available at build time).
+
+### Setting up Provider Keys
+
+Provider keys determine which AI provider credentials AnotherAI uses to make requests to models.
+
+**For self-hosted users**: Provider keys are required and must be configured via environment variables:
+
+```bash
+# .env file
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+GOOGLE_API_KEY=...
+```
+
+**For cloud users**: AnotherAI provides provider access automatically.
+
+### Try it out
+
+After you have the above set up completed, AnotherAI is ready to use!
+
+- If you have agents already created, check out how to [migrate them to AnotherAI](/use-cases/fundamentals/migrating).
+
+- If you don't have any agents built yet, check out [building a new agent](/use-cases/fundamentals/building) to learn about building a new AnotherAI-compatible agent.
+
+Once you have an agent built or migrated, here are some examples of prompts you can send to your AI assistant to test how AnotherAI works:
+
+## Join the community
+
+If you have questions about AnotherAI, reach out to our team and community on our community [Slack](https://join.slack.com/t/anotherai-dev/shared_invite/zt-3av2prezr-Lz10~8o~rSRQE72m_PyIJA).

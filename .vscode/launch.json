@@ -9,7 +9,10 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${file}",
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/backend:${workspaceFolder}/scripts"
+      }
     },
     {
       "name": "Python: Debug Tests",
@@ -36,6 +39,22 @@
       ],
       "justMyCode": false,
       "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "name": "Worker",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "taskiq",
+      "cwd": "${workspaceFolder}/backend",
+      "args": [
+        "worker",
+        "protocol.worker.worker:broker",
+        "--fs-discover",
+        "--tasks-pattern",
+        "protocol/worker/tasks/*_tasks.py",
+        "--workers",
+        "1"
+      ]
     }
   ]
 }

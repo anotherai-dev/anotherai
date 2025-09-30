@@ -9,7 +9,11 @@ from core.domain.models.model_data import DeprecatedModel, FinalModelData, Lates
 from core.domain.models.model_data_mapping import MODEL_DATAS
 from core.domain.models.model_data_supports import ModelDataSupports
 from core.domain.models.model_provider_data import ModelProviderData
-from core.domain.models.model_provider_data_mapping import MODEL_PROVIDER_DATAS, OPENAI_PROVIDER_DATA
+from core.domain.models.model_provider_data_mapping import (
+    AZURE_PROVIDER_DATA,
+    MODEL_PROVIDER_DATAS,
+    OPENAI_PROVIDER_DATA,
+)
 from core.domain.models.utils import get_model_data
 from core.domain.typology import IOTypology, Typology
 
@@ -119,7 +123,8 @@ def test_openai_supported_models_use_openai_as_primary():
         if not isinstance(model_data, FinalModelData):
             continue
         found = True
-        assert model_data.providers[0][0] == Provider.OPEN_AI, f"Model {model} should use OpenAI as primary provider"
+        provider = Provider.AZURE_OPEN_AI if model_data.model in AZURE_PROVIDER_DATA else Provider.OPEN_AI
+        assert model_data.providers[0][0] == provider, f"Model {model} should use {provider} as primary provider"
     assert found
 
 
@@ -441,7 +446,8 @@ class TestReasoningModel:
 
     @pytest.mark.parametrize(("model_data", "reasoning"), _reasoning_model_data(Provider.X_AI))
     def test_no_xai_model_supports_medium_reasoning(self, model_data: FinalModelData, reasoning: ModelReasoningBudget):
-        assert reasoning.disabled is None, f"Model {model_data.model} has none reasoning"
+        if model_data.model != Model.GROK_4_FAST:
+            assert reasoning.disabled is None, f"Model {model_data.model} does not have none reasoning"
         assert reasoning.medium is None, f"Model {model_data.model} has no medium reasoning"
 
         assert reasoning.min == reasoning.low, (

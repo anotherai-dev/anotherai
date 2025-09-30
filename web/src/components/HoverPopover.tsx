@@ -8,15 +8,25 @@ type HoverPopoverProps = {
   className?: string;
   popoverClassName?: string;
   delay?: number;
-  position?: "top" | "bottom" | "left" | "right" | "topRight" | "topRightAligned" | "rightOverlap" | "bottomLeft";
+  position?:
+    | "top"
+    | "bottom"
+    | "left"
+    | "right"
+    | "topRight"
+    | "topRightAligned"
+    | "topLeftAligned"
+    | "topRightAlignedNew"
+    | "rightOverlap"
+    | "bottomLeft";
 };
 
 export function HoverPopover({
   children,
   content,
-  className = "",
+  className = "inline-block",
   popoverClassName = "",
-  delay = 0,
+  delay = 50,
   position = "top",
 }: HoverPopoverProps) {
   const [isVisible, setIsVisible] = useState(false);
@@ -35,8 +45,18 @@ export function HoverPopover({
 
     switch (position) {
       case "top":
-        top = rect.top - 8;
+        top = rect.top - 8; // Initial offset, will be adjusted after popover is rendered
         left = rect.left + rect.width / 2;
+        // Adjust after popover is rendered to position above the trigger
+        setTimeout(() => {
+          if (popoverRef.current) {
+            const popoverRect = popoverRef.current.getBoundingClientRect();
+            setPopoverPosition((prev) => ({
+              ...prev,
+              top: rect.top - popoverRect.height - 8,
+            }));
+          }
+        }, 0);
         break;
       case "bottom":
         top = rect.bottom + 4;
@@ -83,6 +103,35 @@ export function HoverPopover({
             const popoverRect = popoverRef.current.getBoundingClientRect();
             setPopoverPosition(() => ({
               top: rect.top - popoverRect.height + 8,
+              left: rect.right - popoverRect.width,
+            }));
+          }
+        }, 0);
+        break;
+      case "topLeftAligned":
+        top = rect.top - 8; // Initial offset, will be adjusted after popover is rendered
+        left = rect.left;
+        // Adjust after popover is rendered to position above the trigger
+        setTimeout(() => {
+          if (popoverRef.current) {
+            const popoverRect = popoverRef.current.getBoundingClientRect();
+            setPopoverPosition((prev) => ({
+              ...prev,
+              top: rect.top - popoverRect.height - 8,
+            }));
+          }
+        }, 0);
+        break;
+      case "topRightAlignedNew":
+        top = rect.top - 8; // Initial offset, will be adjusted after popover is rendered
+        left = rect.right;
+        // Adjust after popover is rendered to position above the trigger
+        setTimeout(() => {
+          if (popoverRef.current) {
+            const popoverRect = popoverRef.current.getBoundingClientRect();
+            setPopoverPosition((prev) => ({
+              ...prev,
+              top: rect.top - popoverRect.height - 8,
               left: rect.right - popoverRect.width,
             }));
           }
@@ -160,15 +209,15 @@ export function HoverPopover({
         top: popoverPosition.top,
         left: popoverPosition.left,
         transform:
-          position === "top"
-            ? "translateX(-50%) translateY(-100%)"
-            : position === "bottom"
-              ? "translateX(-50%)"
-              : position === "left" || position === "right"
-                ? "translateY(-50%)"
-                : position === "topRight"
-                  ? "translateX(-50%) translateY(-100%)"
-                  : position === "bottomLeft"
+          position === "top" || position === "bottom"
+            ? "translateX(-50%)"
+            : position === "left" || position === "right"
+              ? "translateY(-50%)"
+              : position === "topRight"
+                ? "translateX(-50%) translateY(-100%)"
+                : position === "bottomLeft" || position === "topLeftAligned"
+                  ? "translateX(0)"
+                  : position === "topRightAlignedNew"
                     ? "translateX(0)"
                     : "translateX(-50%)",
       }}

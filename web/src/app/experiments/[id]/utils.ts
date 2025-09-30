@@ -1,5 +1,25 @@
 import { getCompletionsPerVersion } from "@/components/utils/utils";
-import { Annotation, ExperimentCompletion, ExperimentWithLookups } from "@/types/models";
+import { Annotation, ExperimentCompletion, ExperimentWithLookups, Version } from "@/types/models";
+
+/**
+ * Sorts versions to prioritize those with prompt or output schema first.
+ *
+ * @param versions - Array of versions to sort
+ * @returns Array of versions with prompt/schema versions first, maintaining original order within each group
+ */
+export function sortVersionsByPromptAndSchema(versions: Version[]): Version[] {
+  return [...versions].sort((a, b) => {
+    const aHasPromptOrSchema = Boolean(a.prompt || a.output_schema);
+    const bHasPromptOrSchema = Boolean(b.prompt || b.output_schema);
+
+    // If one has prompt/schema and the other doesn't, prioritize the one that has it
+    if (aHasPromptOrSchema && !bHasPromptOrSchema) return -1;
+    if (!aHasPromptOrSchema && bHasPromptOrSchema) return 1;
+
+    // If both have or both don't have, maintain original order
+    return 0;
+  });
+}
 
 /**
  * Finds all unique metric keys and their average values from a collection of annotations.
@@ -40,7 +60,7 @@ export function findAllMetricKeysAndAverages(annotations: Annotation[]): Array<{
  * @param annotations - Array of annotations to analyze (optional)
  * @returns Object where key is version ID and value is array of metric key/average pairs, or undefined if no annotations
  */
-export function getMetricsPerVersion(
+export function getAveragedMetricsPerVersion(
   experiment: ExperimentWithLookups,
   annotations?: Annotation[]
 ): Record<string, Array<{ key: string; average: number }>> | undefined {
@@ -69,6 +89,76 @@ export function getMetricsPerVersion(
   });
 
   return metricsPerVersion;
+}
+
+/**
+ * Gets raw metric values (not averages) per version for percentile calculations.
+ *
+ * @param experiment - The experiment with completions and versions
+ * @param annotations - Array of annotations containing metric data
+ * @returns Object mapping version ID to object mapping metric keys to arrays of raw values
+ */
+export function getRawMetricsPerVersionPerKey(
+  experiment: ExperimentWithLookups,
+  annotations?: Annotation[]
+): Record<string, Record<string, number[]>> | undefined {
+  if (!annotations) {
+    return undefined;
+  }
+
+  const versionMetricsPerKey: Record<string, Record<string, number[]>> = {};
+
+  // Use existing utility to get completions grouped by version
+  const completionsPerVersion = getCompletionsPerVersion(experiment);
+
+  completionsPerVersion.forEach(({ versionId, completions }) => {
+    // Get completion IDs for this version
+    const completionIds = completions.map((completion) => completion.id);
+
+    // Filter annotations that belong to completions of this version
+    const annotationsForVersion = annotations.filter(
+      (annotation) => annotation.target?.completion_id && completionIds.includes(annotation.target.completion_id)
+    );
+
+    // Group raw metric values by key
+    const metricsMap = new Map<string, number[]>();
+    annotationsForVersion.forEach((annotation) => {
+      if (annotation.metric?.name && typeof annotation.metric.value === "number") {
+        const key = annotation.metric.name;
+        const value = annotation.metric.value;
+
+        if (metricsMap.has(key)) {
+          metricsMap.get(key)!.push(value);
+        } else {
+          metricsMap.set(key, [value]);
+        }
+      }
+    });
+
+    // Convert Map to object
+    const metricsForVersion: Record<string, number[]> = {};
+    metricsMap.forEach((values, key) => {
+      metricsForVersion[key] = values;
+    });
+
+    versionMetricsPerKey[versionId] = metricsForVersion;
+  });
+
+  return versionMetricsPerKey;
+}
+
+/**
+ * Extracts metric values for a specific version from the version metrics data.
+ *
+ * @param versionMetricsData - The complete version metrics data from getRawMetricsPerVersionPerKey
+ * @param versionId - The ID of the version to extract metrics for
+ * @returns Object mapping metric keys to arrays of raw values for the specified version
+ */
+export function getRawMetricsForSingleVersion(
+  versionMetricsData: Record<string, Record<string, number[]>> | undefined,
+  versionId: string
+): Record<string, number[]> | undefined {
+  return versionMetricsData?.[versionId];
 }
 
 /**

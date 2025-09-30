@@ -8,7 +8,12 @@ from clickhouse_connect.driver import create_async_client
 from clickhouse_connect.driver.asyncclient import AsyncClient
 from clickhouse_connect.driver.exceptions import DatabaseError
 
-from core.storage.clickhouse._utils import build_tenant_uid_password, clone_client, sanitize_readonly_privileges
+from core.storage.clickhouse._utils import (
+    build_tenant_uid_password,
+    clone_client,
+    sanitize_query,
+    sanitize_readonly_privileges,
+)
 from core.utils import uuid
 
 
@@ -223,6 +228,7 @@ class TestSanitizeReadonlyPrivileges:
                     column_names=["id", "tenant_uid"],
                     data=[[uuid.uuid7(), tenant_uid]],
                 )
+
         finally:
             # Cleanup
             await user_client_after.close()
@@ -239,3 +245,43 @@ def test_build_tenant_uid_password():
     assert any(c.isdigit() for c in pwd)
 
     assert "!" in pwd
+
+
+class TestSanitizeQuery:
+    # It's unfortunate but it looks like we cannot test the effect by using EXPLAIN PIPELINE
+    # Best guess is that because of the low amount of data, both queries remain the same
+
+    @pytest.mark.parametrize(
+        ("input_query", "expected_output"),
+        [
+            # Basic case - simple ORDER BY created_at DESC
+            (
+                "SELECT * FROM completions WHERE tenant_uid = 9 ORDER BY created_at DESC LIMIT 10",
+                "SELECT * FROM completions WHERE tenant_uid = 9 ORDER BY toDate(UUIDv7ToDateTime(id)) DESC, toUInt128(id) DESC LIMIT 10",
+            ),
+            # No ORDER BY clause - should remain unchanged
+            (
+                "SELECT * FROM completions WHERE tenant_uid = 9 LIMIT 10",
+                "SELECT * FROM completions WHERE tenant_uid = 9 LIMIT 10",
+            ),
+            # ORDER BY different column - should remain unchanged
+            (
+                "SELECT * FROM completions ORDER BY agent_id DESC",
+                "SELECT * FROM completions ORDER BY agent_id DESC",
+            ),
+            # ORDER BY with table alias
+            (
+                "SELECT * FROM completions c ORDER BY c.created_at DESC",
+                "SELECT * FROM completions c ORDER BY c.created_at DESC",  # Only exact match is replaced
+            ),
+            # ORDER BY created_at DESC with window functions - note that sanitize_query replaces ALL occurrences
+            (
+                "SELECT *, ROW_NUMBER() OVER (PARTITION BY agent_id ORDER BY created_at DESC) as rn FROM completions ORDER BY created_at DESC",
+                "SELECT *, ROW_NUMBER() OVER (PARTITION BY agent_id ORDER BY toDate(UUIDv7ToDateTime(id)) DESC, toUInt128(id) DESC) as rn FROM completions ORDER BY toDate(UUIDv7ToDateTime(id)) DESC, toUInt128(id) DESC",
+            ),
+        ],
+    )
+    def test_sanitize_query_parametrized(self, input_query: str, expected_output: str):
+        """Test sanitize_query with various query patterns and edge cases."""
+        result = sanitize_query(input_query)
+        assert result == expected_output

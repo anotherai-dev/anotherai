@@ -166,3 +166,13 @@ node_modules/
 .next
 
 docs/.source
+
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+.pnp.*
+install-state.gz
+.mcp.json

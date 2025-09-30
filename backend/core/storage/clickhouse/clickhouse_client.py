@@ -1,5 +1,6 @@
+import re
 from collections.abc import Iterable, Iterator, Sequence
-from typing import Any, cast, final, override
+from typing import Any, NamedTuple, cast, final, override
 from uuid import UUID
 
 import structlog
@@ -10,20 +11,28 @@ from pydantic.main import BaseModel
 
 from core.domain.agent_completion import AgentCompletion
 from core.domain.annotation import Annotation
-from core.domain.exceptions import BadRequestError, ObjectNotFoundError
+from core.domain.exceptions import InvalidQueryError, ObjectNotFoundError
 from core.domain.experiment import Experiment
+from core.domain.version import Version
 from core.storage.clickhouse._models._ch_annotation import ClickhouseAnnotation
 from core.storage.clickhouse._models._ch_completion import ClickhouseCompletion
 from core.storage.clickhouse._models._ch_experiment import ClickhouseExperiment
 from core.storage.clickhouse._models._ch_field_utils import data_and_columns, zip_columns
-from core.storage.clickhouse._utils import clone_client, sanitize_readonly_privileges
+from core.storage.clickhouse._utils import clone_client, sanitize_query, sanitize_readonly_privileges
 from core.storage.completion_storage import CompletionField, CompletionStorage
 from core.utils.iter_utils import safe_map
+from core.utils.strings import remove_urls
 
 _log = structlog.get_logger(__name__)
 
-_MAX_MEMORY_USAGE = 1024 * 1024 * 1024  # 1GB
+_MAX_MEMORY_USAGE = 3 * 1024 * 1024 * 1024  # 3GB
 _MAX_EXECUTION_TIME = 60  # 60 seconds
+
+
+class ParsedClickhouseError(NamedTuple):
+    code: str
+    message: str
+    error_type: str
 
 
 @final
@@ -57,15 +66,10 @@ class ClickhouseClient(CompletionStorage):
     async def add_completion_to_experiment(
         self,
         experiment_id: str,
-        completion_id: str,
+        completion_id: UUID,
         settings: dict[str, Any] | None = None,
     ):
-        try:
-            completion_uuid = UUID(completion_id)
-        except ValueError as e:
-            raise BadRequestError("Invalid completion UUID") from e
-
-            # Use ALTER TABLE to update the completion_ids array
+        # Use ALTER TABLE to update the completion_ids array
         # Since we're using ReplacingMergeTree, we need to update the updated_at as well
         await self._client.command(
             """
@@ -74,8 +78,7 @@ class ClickhouseClient(CompletionStorage):
             WHERE id = {experiment_id:String}
             """,
             parameters={
-                "completion_id": completion_uuid,
-                "tenant_uid": self.tenant_uid,
+                "completion_id": completion_id,
                 "experiment_id": experiment_id,
             },
             settings=settings or {},
@@ -105,16 +108,13 @@ class ClickhouseClient(CompletionStorage):
     @override
     async def completions_by_ids(
         self,
-        completions_ids: list[str],
+        completions_ids: list[UUID],
         exclude: set[CompletionField] | None = None,
     ) -> list[AgentCompletion]:
         if not completions_ids:
             return []
 
-        try:
-            uuids = {f"v{i}": UUID(uuid) for i, uuid in enumerate(completions_ids)}
-        except ValueError as e:
-            raise BadRequestError("Invalid UUIDs") from e
+        uuids = {f"v{i}": uuid for i, uuid in enumerate(completions_ids)}
 
         raw_exclude: set[str] = (
             {"input_variables", "input_messages", "output_messages", "traces"}
@@ -134,21 +134,16 @@ class ClickhouseClient(CompletionStorage):
     @override
     async def completions_by_id(
         self,
-        completion_id: str,
+        completion_id: UUID,
         include: set[CompletionField] | None = None,
     ) -> AgentCompletion:
-        try:
-            uuid = UUID(completion_id)
-        except ValueError as e:
-            raise BadRequestError("Invalid UUID") from e
-
         included = ", ".join(include) if include else "*"
 
         result = await self._client.query(
             f"""
             SELECT {included} FROM completions WHERE id = {{uuid:UUID}} and created_at = UUIDv7ToDateTime({{uuid:UUID}})
             """,  # noqa: S608
-            parameters={"uuid": uuid},
+            parameters={"uuid": completion_id},
         )
         if not result.result_rows:
             raise ObjectNotFoundError(object_type="completion")
@@ -161,7 +156,7 @@ class ClickhouseClient(CompletionStorage):
     async def raw_query(self, query: str) -> list[dict[str, Any]]:
         # We are safe to use a raw query from the client here since the query is executed with a client
         # that is restricted to read only operations and a specific tenant_uid filter
-
+        query = sanitize_query(query)
         readonly_client = await self._readonly_client()
         # We could also set these restrictions at the user level
         query_settings: dict[str, Any] = {
@@ -170,18 +165,66 @@ class ClickhouseClient(CompletionStorage):
             "max_execution_time": _MAX_EXECUTION_TIME,
         }
 
-        # TODO: likely need to wrap the error in a more specific one in case the clickhouse exceptions
-        # is not descriptive enough
+        async def _perform_query():
+            try:
+                return await readonly_client.query(query, settings=query_settings)
+            except DatabaseError as e:
+                err = _extract_clickhouse_error(str(e))
+                if err.code in {"497"}:
+                    # Not enough privileges, we should santitize and retry once
+                    raise e
+                raise InvalidQueryError(
+                    f"{err.error_type}: {err.message}",
+                    details={"code": err.code, "error_type": err.error_type},
+                ) from None
+
         try:
-            result = await readonly_client.query(query, settings=query_settings)
+            result = await _perform_query()
         except DatabaseError:
             # Can happen after a new table was created, in which case we try sanitizing the privileges again
             await sanitize_readonly_privileges(self._client, self.tenant_uid, user=None)  # using default tenant user
-            result = await readonly_client.query(query, settings=query_settings)
+            result = await _perform_query()
 
         column_names = cast(tuple[str, ...], result.column_names)
 
         return [dict(zip(column_names, row, strict=False)) for row in result.result_rows]
+
+    @override
+    async def get_version_by_id(self, agent_id: str, version_id: str) -> tuple[Version, UUID]:
+        result = await self._client.query(
+            """
+            SELECT id, version FROM completions WHERE version_id = {version_id:String} and agent_id = {agent_id:String} LIMIT 1
+            """,
+            parameters={"version_id": version_id, "agent_id": agent_id},
+        )
+        if not result.result_rows:
+            raise ObjectNotFoundError(object_type="version")
+        return Version.model_validate_json(result.result_rows[0][1]), result.result_rows[0][0]
+
+    @override
+    async def cached_completion(
+        self,
+        version_id: str,
+        input_id: str,
+        timeout_seconds: float = 0.1,  # 100ms
+        max_memory_usage: int = 1024 * 1024 * 200,  # 200MB
+    ):
+        result = await self._client.query(
+            _CACHED_OUTPUT_QUERY,
+            parameters={"version_id": version_id, "input_id": input_id},
+            settings={
+                "max_memory_usage": max_memory_usage,
+                "max_execution_time": timeout_seconds,
+            },
+        )
+        if not result.result_rows:
+            return None
+        return self._map_completion(result, result.result_rows[0])
+
+
+_CACHED_OUTPUT_QUERY = """
+SELECT id, cost_millionth_usd, duration_ds, output_messages FROM completions PREWHERE input_id = {input_id:FixedString(32)} WHERE version_id = {version_id:FixedString(32)} and output_error = '' LIMIT 1
+"""
 
 
 def _map_field(field: CompletionField) -> str:
@@ -192,3 +235,24 @@ def _map_field(field: CompletionField) -> str:
 def _map_fields(fields: Iterable[CompletionField]) -> Iterator[str]:
     for f in fields:
         yield _map_field(f)
+
+
+_CK_ERROR_REGEXP = re.compile(
+    r"HTTPDriver for .* received Click[hH]ouse error code \d+ +Code: (\d+)\. DB::Exception: (.*) \(([A-Z_0-9]+)\) \(version \d+\.\d+\.\d+\.\d+ \(official build\)\)",
+)
+_CK_ERROR_CODE_REGEXP = re.compile(r"Code: (\d+)")
+
+
+def _extract_clickhouse_error(e: str):
+    e = e.replace("\n", " ")
+    match = _CK_ERROR_REGEXP.match(e)
+    if not match:
+        _log.error("Failed to extract clickhouse error", error=str(e))
+        code_match = _CK_ERROR_CODE_REGEXP.search(e)
+        message = remove_urls(e)
+        return ParsedClickhouseError(code_match.group(1) if code_match else "0", message, "UNKNOWN")
+    code = match.group(1)
+    message = match.group(2)
+    error_type = match.group(3)
+
+    return ParsedClickhouseError(code, message, error_type)

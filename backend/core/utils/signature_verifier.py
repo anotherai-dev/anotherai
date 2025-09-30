@@ -19,11 +19,13 @@ class _Header(TypedDict):
 
 
 def headers(token: str) -> _Header:
+    splits = token.split(".")
+    if len(splits) != 3:
+        raise InvalidTokenError("Invalid bearer token. Provide either an API key (aai-***) or a JWT", capture=True)
     try:
-        splits = token.split(".")
         return json.loads(b64_urldecode(splits[0]))
     except (IndexError, ValueError, binascii.Error, json.JSONDecodeError) as e:
-        raise InvalidTokenError("Token does not have a valid header", capture=True) from e
+        raise InvalidTokenError("Token does not have a valid header") from e
 
 
 class JWKSetSignatureVerifier(SignatureVerifier):

@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { getMatchingVersionKeys, getVersionWithDefaults, sortVersionKeys } from "@/components/utils/utils";
 import { Annotation, ExperimentWithLookups } from "@/types/models";
-import { MatchingRow } from "./MatchingRow";
+import MatchingRow from "./MatchingRow";
 
 type Props = {
   experiment: ExperimentWithLookups;
@@ -14,7 +14,7 @@ export function MatchingSection(props: Props) {
   const { experiment, annotations, experimentId, completionId } = props;
 
   const matchingContentKeys = useMemo(() => {
-    const keys = getMatchingVersionKeys(experiment.versions);
+    const keys = getMatchingVersionKeys(experiment.versions, ["id", "model"]);
     return sortVersionKeys(keys);
   }, [experiment.versions]);
 
@@ -25,7 +25,7 @@ export function MatchingSection(props: Props) {
 
   return (
     <div className="mb-8">
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">Matching Content</h2>
+      <h2 className="text-xl font-semibold text-gray-900 mb-4">Similar Parameters</h2>
       <div className="bg-gray-50 border border-gray-200 rounded-[10px]">
         {matchingContentKeys.length > 0 && versionWithDefaults ? (
           matchingContentKeys.map((key) => (

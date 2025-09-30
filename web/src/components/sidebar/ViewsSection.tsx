@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { HoverPopover } from "@/components/HoverPopover";
 import { useOrFetchViewFolders, useViews } from "@/store/views";
 import { View } from "@/types/models";
+import { CreateViewInstructions } from "./CreateViewInstructions";
 import { EditableFolderNameRef } from "./EditableFolderName";
 import FolderCell from "./FolderCell";
 
@@ -243,78 +244,75 @@ export default function ViewsSection() {
   }, [viewFolders]);
 
   return (
-    <div className="flex flex-col flex-1 py-2 min-h-0">
-      <div className="flex flex-col flex-1 px-2 min-h-0">
-        {/* Views Header */}
-        <div className="flex items-center justify-between pl-3 pr-[9px] py-2 mb-1 text-[11px] font-medium text-gray-500 uppercase tracking-wider">
-          <span>Views</span>
+    <div className="flex flex-col flex-1 p-2 min-h-0">
+      {/* Views Header */}
+      <div className="flex items-center justify-between pl-3 pr-0.5 py-2 mb-1 text-[11px] font-medium text-gray-500 uppercase tracking-wider">
+        <span>Views</span>
+        <div className="flex items-center gap-1">
+          <CreateViewInstructions />
           <HoverPopover content="Create new folder" position="top" popoverClassName="bg-gray-800 rounded-[2px]">
             <button
               onClick={handleCreateFolder}
               disabled={isCreatingFolder}
-              className="p-1 rounded hover:bg-gray-200 hover:text-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="p-1 rounded hover:bg-gray-200 hover:text-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-0.5"
             >
               <Plus className="w-3 h-3" />
+              Folder
             </button>
           </HoverPopover>
         </div>
-
-        {/* Main content area with flex-1 to take remaining space */}
-        <div className="flex-1 overflow-y-auto min-h-0">
-          {error ? (
-            <div className="px-3">
-              <p className="text-xs text-red-600">{error.message}</p>
-              <button onClick={debouncedUpdate} className="mt-2 text-xs text-blue-600 hover:text-blue-800">
-                Try again
-              </button>
-            </div>
-          ) : Object.keys(viewsByFolder).length === 0 ? (
-            <div className="px-3 text-center">
-              <p className="text-xs text-gray-500">No saved views yet</p>
-            </div>
-          ) : (
-            <>
-              {/* Render all view folders */}
-              {Object.entries(viewsByFolder).map(([folderId, folderData]) => {
-                // Auto-collapse folders with no views by default
-                const hasViews = folderData.views.length > 0;
-                const isCollapsed = hasViews ? collapsedFolders.has(folderId) : !collapsedFolders.has(folderId);
-                const isMenuOpen = openFolderMenus.has(folderId);
-                const isDragOver = dragOverFolder === folderId;
-
-                return (
-                  <FolderCell
-                    key={folderId}
-                    folderId={folderId}
-                    folderName={folderData.name}
-                    views={folderData.views}
-                    isCollapsed={isCollapsed}
-                    isMenuOpen={isMenuOpen}
-                    isDragOver={isDragOver}
-                    isDragActive={isDragActive}
-                    onToggleCollapse={() => toggleFolderCollapse(folderId)}
-                    onMenuOpenChange={(isOpen) => handleFolderMenuOpenChange(folderId, isOpen)}
-                    onDragOver={(e) => handleDragOver(e, folderId)}
-                    onDragLeave={handleDragLeave}
-                    onDrop={(e) => handleDrop(e, folderId)}
-                    onRefChange={(ref) => {
-                      if (ref) {
-                        folderRefs.current.set(folderId, ref);
-                      } else {
-                        folderRefs.current.delete(folderId);
-                      }
-                    }}
-                  />
-                );
-              })}
-            </>
-          )}
-        </div>
       </div>
 
-      {/* Auto-refresh indicator */}
-      <div className="px-3 pt-3 pb-1 border-t border-gray-200 mt-3">
-        <p className="text-xs text-gray-400 text-center">Views update automatically</p>
+      {/* Main content area with flex-1 to take remaining space */}
+      <div className="flex-1 overflow-y-auto min-h-0">
+        {error ? (
+          <div className="px-3">
+            <p className="text-xs text-red-600">{error.message}</p>
+            <button onClick={debouncedUpdate} className="mt-2 text-xs text-blue-600 hover:text-blue-800">
+              Try again
+            </button>
+          </div>
+        ) : Object.keys(viewsByFolder).length === 0 ? (
+          <div className="px-3 text-center">
+            <p className="text-xs text-gray-500">No saved views yet</p>
+          </div>
+        ) : (
+          <>
+            {/* Render all view folders */}
+            {Object.entries(viewsByFolder).map(([folderId, folderData]) => {
+              // Auto-collapse folders with no views by default
+              const hasViews = folderData.views.length > 0;
+              const isCollapsed = hasViews ? collapsedFolders.has(folderId) : !collapsedFolders.has(folderId);
+              const isMenuOpen = openFolderMenus.has(folderId);
+              const isDragOver = dragOverFolder === folderId;
+
+              return (
+                <FolderCell
+                  key={folderId}
+                  folderId={folderId}
+                  folderName={folderData.name}
+                  views={folderData.views}
+                  isCollapsed={isCollapsed}
+                  isMenuOpen={isMenuOpen}
+                  isDragOver={isDragOver}
+                  isDragActive={isDragActive}
+                  onToggleCollapse={() => toggleFolderCollapse(folderId)}
+                  onMenuOpenChange={(isOpen) => handleFolderMenuOpenChange(folderId, isOpen)}
+                  onDragOver={(e) => handleDragOver(e, folderId)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, folderId)}
+                  onRefChange={(ref) => {
+                    if (ref) {
+                      folderRefs.current.set(folderId, ref);
+                    } else {
+                      folderRefs.current.delete(folderId);
+                    }
+                  }}
+                />
+              );
+            })}
+          </>
+        )}
       </div>
     </div>
   );

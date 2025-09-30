@@ -6,15 +6,19 @@ import { useStoredCompletionsList } from "@/store/stored_completions";
 
 interface CompletionNavigationButtonsProps {
   completionId: string;
+  onNavigateToCompletion?: (targetId: string) => void;
 }
 
-export function CompletionNavigationButtons({ completionId }: CompletionNavigationButtonsProps) {
+export function CompletionNavigationButtons({
+  completionId,
+  onNavigateToCompletion,
+}: CompletionNavigationButtonsProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const storedCompletionsList = useStoredCompletionsList();
 
-  // Navigation logic
-  const navigateToCompletion = useCallback(
+  // Default navigation logic for backward compatibility
+  const defaultNavigateToCompletion = useCallback(
     (targetId: string) => {
       const params = new URLSearchParams(searchParams);
       params.set("showCompletionModal", targetId);
@@ -23,6 +27,8 @@ export function CompletionNavigationButtons({ completionId }: CompletionNavigati
     },
     [searchParams, router]
   );
+
+  const navigateToCompletion = onNavigateToCompletion ?? defaultNavigateToCompletion;
 
   const navigateUp = useCallback(() => {
     if (!storedCompletionsList || !completionId) return;

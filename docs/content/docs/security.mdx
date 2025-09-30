@@ -1,0 +1,41 @@
+---
+title: Security
+summary: Security measures for the SQL query tool
+description: Learn about the security measures implemented in AnotherAI's SQL query tool
+---
+
+## SQL Query Tool Security
+
+The SQL query tool in AnotherAI provides powerful observability capabilities while maintaining strict security boundaries to protect your data.
+
+### Technical Implementation
+
+Our SQL query security is built on [ClickHouse's robust access control system](https://clickhouse.com/docs/operations/access-rights):
+
+- **Read-only access**: All SQL queries are executed with [read-only permissions](https://clickhouse.com/docs/operations/settings/permissions-for-queries), preventing any data modification, deletion, or schema changes
+- **Tenant Isolation**: Each customer operates within isolated security contexts using a dedicated ClickHouse's user with strict role-based permissions
+- **Resource limitations**: Each query is limited in CPU and memory usage to prevent starvation of resources
+- **Query validation**: All queries are validated before execution to ensure they comply with security policies
+
+### Security Guarantees
+
+**What you CAN do:**
+- Execute SELECT queries to analyze your completions data
+- Use aggregations, filters, and joins within your data scope
+- Export query results for further analysis
+- Create complex analytical queries for insights
+
+**What you CANNOT do:**
+- Modify, delete, or insert data
+- Access other customers' data
+- Alter database schemas or tables
+- Execute system-level commands
+- Bypass row-level security policies
+- Execute queries that would require too much resources
+
+### Data Isolation
+
+- **Customer segregation**: Each customer's data is logically isolated using row-level security
+- **Query scope**: Queries are automatically scoped to your organization's data only
+
+For security concerns or questions, contact team@workflowai.support

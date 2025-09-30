@@ -225,3 +225,12 @@ def delete_at_keypath[T](d: T, keys: Sequence[int | str]) -> T:
 def exclude_keys(d: dict[str, Any], keys: set[str]) -> dict[str, Any]:
     """Returns a copy of the dictionary without the keys in the set."""
     return {k: v for k, v in d.items() if k not in keys}
+
+
+def remove_nulls(d: Any) -> Any:
+    """Returns a copy of the dictionary without the keys in the set."""
+    if isinstance(d, dict):
+        return {k: remove_nulls(v) for k, v in d.items() if v is not None}
+    if isinstance(d, list):
+        return [remove_nulls(v) for v in d]
+    return d

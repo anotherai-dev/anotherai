@@ -2,26 +2,43 @@
 
 import { Info } from "lucide-react";
 import { useParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { SearchSection } from "@/app/completions/sections/SearchSection";
 import { CompletionsTable } from "@/app/completions/sections/table/CompletionsTable";
 import ErrorState from "@/components/ErrorState";
 import { HoverPopover } from "@/components/HoverPopover";
-import LoadingState from "@/components/LoadingState";
+import { LoadingState } from "@/components/LoadingState";
 import { PageHeader } from "@/components/PageHeader";
 import { CompletionsGraph } from "@/components/universal-charts/CompletionsGraph";
 import { useCompletionsListSync } from "@/hooks/useCompletionsListSync";
 import { useCompletionsQuery } from "@/store/completions";
 import { useOrFetchView } from "@/store/views";
+import { processPaginationQuery } from "@/utils/pagination";
 import { EditViewTooltip } from "./components/EditViewTooltip";
 
 export default function ViewPage() {
   const params = useParams();
   const viewId = params.id as string;
+  const [currentPage, setCurrentPage] = useState(1);
 
   const { view, isLoading, error, update } = useOrFetchView(viewId);
 
+  const query = view?.query;
+
+  // Process the view query to handle pagination variables before sending to API
+  const processedQuery = useMemo(() => {
+    if (!query) return "";
+    const { processedQuery } = processPaginationQuery(query, currentPage, 20);
+    return processedQuery;
+  }, [query, currentPage]);
+
+  // Reset to page 1 when view changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [view?.query]);
+
   // Use completions query for table views
-  const { data, isLoading: isQueryLoading, error: queryError } = useCompletionsQuery(view?.query || "");
+  const { data, isLoading: isQueryLoading, error: queryError } = useCompletionsQuery(processedQuery);
 
   // Sync completions data with stored completions list for modal navigation
   useCompletionsListSync(data);
@@ -68,17 +85,26 @@ export default function ViewPage() {
         />
       </HoverPopover>
 
-      {view.graph && ["bar", "line", "pie", "scatter"].includes(view.graph.type) ? (
-        <CompletionsGraph
-          data={data ?? []}
-          isLoading={isQueryLoading}
-          error={queryError ? { error: queryError.message } : null}
-          graph={view.graph}
-          title={view.title}
-        />
-      ) : (
-        <CompletionsTable data={data ?? []} isLoading={isQueryLoading} error={queryError} />
-      )}
+      <div className="flex-1 min-h-0">
+        {view.graph && ["bar", "line", "pie", "scatter"].includes(view.graph.type) ? (
+          <CompletionsGraph
+            data={data ?? []}
+            isLoading={isQueryLoading}
+            error={queryError ? { error: queryError.message } : null}
+            graph={view.graph}
+            title={view.title}
+          />
+        ) : (
+          <CompletionsTable
+            data={data ?? []}
+            isLoading={isQueryLoading}
+            error={queryError}
+            currentQuery={query}
+            onPageChange={setCurrentPage}
+            currentPage={currentPage}
+          />
+        )}
+      </div>
     </div>
   );
 }

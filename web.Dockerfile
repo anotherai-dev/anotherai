@@ -4,48 +4,48 @@ FROM node:22.8.0-alpine3.20 AS base
 RUN apk upgrade libssl3 libcrypto3 libxml2
 RUN npm install -g npm@10.9.2 && npm cache clean --force
 
+RUN corepack enable
+RUN corepack prepare yarn@stable --activate
+
 # Accept build arguments
-ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=''
 ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
 
 FROM base AS deps
 
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY .yarnrc.yml ./
+COPY .yarn ./.yarn
+COPY package.json yarn.lock ./
 COPY web/package.json ./web/
+COPY docs/package.json ./docs/
 
-# Install all dependencies
-# Next JS needs dev dependencies 
-RUN npm ci --include=dev --include=prod 
+# Check if locfile is up to date
+RUN yarn install --mode=skip-build --immutable
+# Install only the web dependencies
+RUN yarn workspaces focus web
 
 FROM deps AS sources
 
 WORKDIR /app
 
 COPY web /app/web
-COPY --from=deps /app/package.json /app/package-lock.json ./
+COPY --from=deps /app/package.json /app/yarn.lock ./
 COPY --from=deps /app/web/package.json ./web
 
 FROM sources AS dev
 
-# Copy node_modules from deps stage
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/web/node_modules ./web/node_modules
-
 EXPOSE 3000
 WORKDIR /app/web
 
-CMD ["npx", "next", "dev"]
+CMD ["yarn", "run", "next", "dev"]
+
 
 FROM sources AS builder
 
-# Copy node_modules from deps stage for build
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/web/node_modules ./web/node_modules
-
 WORKDIR /app/web
 
-RUN npm run build
+RUN yarn build
 
 FROM base AS prod
 
