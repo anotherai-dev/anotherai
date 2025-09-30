@@ -1,8 +1,9 @@
 import { useStripe } from "@stripe/react-stripe-js";
 import { StripeElements } from "@stripe/stripe-js";
 import { useCallback } from "react";
-import { STRIPE_PUBLISHABLE_KEY } from "@/lib/constants";
-import { usePayments } from "@/store/mocked_payments";
+import { useBillingStore } from "@/store/billing";
+
+const STRIPE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 
 function errorMessage(error: unknown, defaultPrefix?: string): string {
   if (error && typeof error === "object" && "message" in error) {
@@ -19,9 +20,7 @@ function errorMessage(error: unknown, defaultPrefix?: string): string {
 export function useStripePayments() {
   const stripe = useStripe();
 
-  const createPaymentIntent = usePayments((state) => state.createPaymentIntent);
-  const addPaymentMethod = usePayments((state) => state.addPaymentMethod);
-  const fetchOrganizationSettings = usePayments((state) => state.fetchOrganizationSettings);
+  const { createPaymentIntent, addPaymentMethod, fetchOrganizationSettings } = useBillingStore();
 
   const handlePaymentStatus = useCallback(
     async (clientSecret: string, amount: number) => {

@@ -6,7 +6,7 @@ import { useCallback, useMemo, useState } from "react";
 import { CircularProgress } from "@/components/CircularProgress";
 import { HoverPopover } from "@/components/HoverPopover";
 import { PaymentModal } from "@/components/payment-modal/PaymentModal";
-import { useOrFetchOrganizationSettings, useOrFetchPaymentMethod } from "@/store/mocked_payments";
+import { useOrFetchOrganizationSettings, useOrFetchPaymentMethod } from "@/store/billing";
 
 interface CreditsSectionProps {
   className?: string;

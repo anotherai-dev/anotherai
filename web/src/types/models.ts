@@ -5,6 +5,7 @@ export interface ModelWithID {
 // Payment-related types
 export interface PaymentMethodResponse {
   payment_method_id: string;
+  payment_method_currency?: string;
   last4: string;
   brand: string;
   exp_month: number;

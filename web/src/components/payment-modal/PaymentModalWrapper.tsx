@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useOrFetchOrganizationSettings, useOrFetchPaymentMethod, usePayments } from "@/store/mocked_payments";
+import { useBillingStore, useOrFetchOrganizationSettings, useOrFetchPaymentMethod } from "@/store/billing";
 import { PaymentModalContent } from "./PaymentModalContent";
 import { useStripePayments } from "./hooks/useStripePayments";
 
@@ -12,7 +12,7 @@ interface PaymentModalWrapperProps {
 export function PaymentModalWrapper({ onClose }: PaymentModalWrapperProps) {
   const { organizationSettings } = useOrFetchOrganizationSettings();
   const { paymentMethod } = useOrFetchPaymentMethod();
-  const deletePaymentMethod = usePayments((state) => state.deletePaymentMethod);
+  const deletePaymentMethod = useBillingStore((state) => state.deletePaymentMethod);
 
   const { addCredits } = useStripePayments();
 
