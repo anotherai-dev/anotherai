@@ -129,6 +129,7 @@ function CompletionCell(props: CompletionCellProps) {
             allMetricsPerKey={allMetricsPerKeyForCompletion}
             showAvgPrefix={false}
             className="space-y-1"
+            usePer1kMultiplier={false}
           />
         </div>
       )}

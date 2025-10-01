@@ -123,8 +123,8 @@ describe("Metric Badge Functions", () => {
 
 describe("Formatting Functions", () => {
   describe("formatCurrency", () => {
-    it("formats currency with default multiplier", () => {
-      expect(formatCurrency(0.001)).toBe("$1.00");
+    it("formats currency with 1000 multiplier", () => {
+      expect(formatCurrency(0.001, 1000)).toBe("$1.00");
     });
 
     it("formats currency with custom multiplier", () => {
@@ -132,7 +132,7 @@ describe("Formatting Functions", () => {
     });
 
     it("handles zero value", () => {
-      expect(formatCurrency(0)).toBe("$0.00");
+      expect(formatCurrency(0, 1000)).toBe("$0.00");
     });
   });
 
