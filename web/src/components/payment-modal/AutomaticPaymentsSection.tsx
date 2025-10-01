@@ -82,7 +82,7 @@ export function AutomaticPaymentsSection({
 
           <div className="pt-2">
             <button
-              className={`px-3 py-2 text-[13px] font-medium rounded-[2px] transition-colors ${
+              className={`px-3 py-2 text-[13px] font-medium rounded-[2px] transition-colors cursor-pointer ${
                 hasPaymentMethod
                   ? "bg-indigo-600 text-white hover:bg-indigo-700"
                   : "bg-gray-200 text-gray-400 cursor-not-allowed"
