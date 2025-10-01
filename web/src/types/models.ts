@@ -2,6 +2,60 @@ export interface ModelWithID {
   id: string;
 }
 
+// Payment-related types
+export interface PaymentMethodResponse {
+  payment_method_id: string;
+  payment_method_currency?: string;
+  last4: string;
+  brand: string;
+  exp_month: number;
+  exp_year: number;
+}
+
+export interface PaymentMethodRequest {
+  payment_method_id: string;
+  payment_method_currency?: string;
+}
+
+export interface PaymentMethodIdResponse {
+  payment_method_id: string;
+}
+
+export interface CreatePaymentIntentRequest {
+  amount: number;
+}
+
+export interface PaymentIntentCreatedResponse {
+  client_secret: string;
+  payment_intent_id: string;
+}
+
+export interface AutomaticPaymentRequest {
+  opt_in: boolean;
+  threshold?: number | null;
+  balance_to_maintain?: number | null;
+}
+
+export interface PaymentFailure {
+  failure_date: string;
+  failure_code: "payment_failed" | "internal";
+  failure_reason: string;
+}
+
+export interface OrganizationSettings {
+  id: string;
+  name?: string;
+  slug?: string;
+  current_credits_usd?: number;
+  added_credits_usd?: number;
+  automatic_payment_enabled?: boolean;
+  automatic_payment_threshold?: number | null;
+  automatic_payment_balance_to_maintain?: number | null;
+  payment_failure?: PaymentFailure | null;
+  locked_for_payment?: boolean | null;
+  stripe_customer_id?: string | null;
+}
+
 export interface Tool {
   name: string;
   description?: string;
