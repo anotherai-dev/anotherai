@@ -59,28 +59,9 @@ class TenantData(PublicOrganizationData):
         failure_reason: str
 
     payment_failure: PaymentFailure | None = None
-    # Credits are expressed in cts to avoid floating point precision issues
-    low_credits_email_sent_by_threshold: dict[int, datetime] | None = Field(
-        default=None,
-        description="A dictionary of low credits emails sent by threshold that triggered the email",
-    )
 
     # Set by the security service
     user: User | None = None
-
-    def should_send_low_credits_email(self, threshold_usd: float) -> bool:
-        if self.current_credits_usd >= threshold_usd:
-            return False
-        if not self.low_credits_email_sent_by_threshold:
-            return True
-
-        cts = round(threshold_usd * 100)
-        # If there is a low_credits_email_sent_by_threshold entry for this threshold or any threshold below it
-        # Then we should not send the email
-        if any(k <= cts for k in self.low_credits_email_sent_by_threshold):  # noqa: SIM103
-            return False
-
-        return True
 
     def autocharge_amount(self, min_amount: float) -> float:
         """Returns the amount to charge or `min_amount` if no amount is needed"""

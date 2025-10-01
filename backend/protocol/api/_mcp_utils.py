@@ -175,6 +175,8 @@ async def _authenticated_tenant() -> TenantData:
 async def playground_service() -> PlaygroundService:
     deps = lifecycle_dependencies()
     tenant = await _authenticated_tenant()
+    # Raise for negative credits if payment is enabled
+    deps.check_credits(tenant)
     return PlaygroundService(
         completion_runner(tenant, deps),
         deps.storage_builder.agents(tenant.uid),

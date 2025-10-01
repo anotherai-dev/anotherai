@@ -293,6 +293,21 @@ class PsqlTenantStorage(PsqlBaseStorage, TenantStorage):
                 raise self._tenant_not_found_error()
 
     @override
+    async def attempt_lock_for_payment(self) -> TenantData | None:
+        async with self._pool.acquire() as connection:
+            row = await connection.fetchrow(
+                """
+                UPDATE tenants SET locked_for_payment = TRUE
+                WHERE uid = $1 AND locked_for_payment = FALSE
+                RETURNING *
+                """,
+                self._tenant_uid,
+            )
+            if not row:
+                return None
+            return self._validate(_TenantRow, row).to_domain()
+
+    @override
     async def add_credits(self, credits: float) -> TenantData:
         async with self._pool.acquire() as connection:
             row = await connection.fetchrow(
@@ -378,10 +393,13 @@ class PsqlTenantStorage(PsqlBaseStorage, TenantStorage):
                 failure_reason=row["payment_failure_reason"],
             )
 
+    @override
+    async def lock_for_low_credits_email(self, threshold: float) -> bool:
+        return False
 
-class _LowCreditsEmailSentByThreshold(BaseModel):
-    threshold: int
-    sent_at: datetime
+    @override
+    async def clear_low_credits_email(self, threshold: float) -> None:
+        pass
 
 
 class _TenantRow(BaseModel):
@@ -405,7 +423,6 @@ class _TenantRow(BaseModel):
     payment_failure_date: datetime | None = None
     payment_failure_code: str | None = None
     payment_failure_reason: str | None = None
-    low_credits_email_sent_by_threshold: JSONList | None = None
 
     def _payment_failure(self) -> TenantData.PaymentFailure | None:
         if self.payment_failure_date is None:
@@ -416,13 +433,7 @@ class _TenantRow(BaseModel):
             failure_reason=self.payment_failure_reason or "Unknown reason",
         )
 
-    def _low_credits_email_sent_by_threshold(self) -> dict[int, datetime] | None:
-        if not self.low_credits_email_sent_by_threshold:
-            return None
-        return {item.threshold: item.sent_at for item in self.low_credits_email_sent_by_threshold}
-
     def to_domain(self) -> TenantData:
-        # TODO: other fields
         return TenantData(
             uid=self.uid,
             slug=self.slug,
@@ -434,7 +445,6 @@ class _TenantRow(BaseModel):
             automatic_payment_threshold=self.automatic_payment_threshold,
             automatic_payment_balance_to_maintain=self.automatic_payment_balance_to_maintain,
             payment_failure=self._payment_failure(),
-            low_credits_email_sent_by_threshold=self._low_credits_email_sent_by_threshold(),
         )
 
 

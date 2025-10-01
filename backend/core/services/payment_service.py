@@ -9,7 +9,6 @@ _log = structlog.get_logger(__name__)
 
 
 class PaymentHandler(Protocol):
-    async def raise_for_negative_credits(self) -> None: ...
     async def handle_credit_decrement(self, tenant: TenantData) -> None: ...
 
 

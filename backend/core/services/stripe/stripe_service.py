@@ -2,7 +2,7 @@ import math
 import os
 from collections.abc import Awaitable, Callable
 from curses import ALL_MOUSE_EVENTS
-from typing import Any, Literal, NamedTuple, Self
+from typing import Any, Literal, NamedTuple, Self, override
 
 import stripe
 from fastapi import Request
@@ -15,10 +15,10 @@ from core.domain.exceptions import (
     InternalError,
     MissingPaymentMethodError,
     ObjectNotFoundError,
-    PaymentRequiredError,
 )
 from core.domain.tenant_data import TenantData
 from core.services.email_service import EmailService
+from core.services.payment_service import PaymentHandler
 from core.storage.tenant_storage import AutomaticPayment, TenantStorage
 from core.utils.background import add_background_task
 from core.utils.fields import datetime_factory
@@ -38,7 +38,7 @@ stripe.api_key = os.environ.get("STRIPE_API_KEY")
 
 
 # TODO: a lot of logic should be moved to the payment service
-class StripeService:
+class StripeService(PaymentHandler):
     def __init__(self, tenant_storage: TenantStorage, email_service: EmailService, event_router: EventRouter):
         self._tenant_storage = tenant_storage
         self._event_router = event_router
@@ -266,13 +266,12 @@ class StripeService:
         # For now only a single email at $5
         threshold = 5
 
-        if not tenant.should_send_low_credits_email(threshold_usd=threshold):
+        if not tenant.current_credits_usd >= threshold:
             return
 
-        try:
-            await self._tenant_storage.add_low_credits_email_sent(threshold)
-        except ObjectNotFoundError:
-            # The email was already sent so we can just ignore
+        locked = await self._tenant_storage.lock_for_low_credits_email(threshold)
+        if not locked:
+            # Skipping, there is already a lock for this threshold
             return
 
         try:
@@ -280,6 +279,7 @@ class StripeService:
         except Exception:  # noqa: BLE001
             _log.exception("Failed to send low credits email", tenant=tenant)
 
+    @override
     async def handle_credit_decrement(self, tenant: TenantData):
         if tenant.should_trigger_automatic_payment(min_amount=0):
             await self.trigger_automatic_payment_if_needed(min_amount=2)
@@ -427,11 +427,6 @@ class StripeService:
             return False
 
         return True
-
-    async def raise_for_negative_credits(self):
-        raise PaymentRequiredError(
-            "Your credits are depleted. Please add more credits to continue using AnotherAI.",
-        )
 
 
 def _customer_id_or_raise(data: TenantData, capture: bool = True) -> str:

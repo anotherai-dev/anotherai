@@ -47,5 +47,11 @@ class TenantStorage(Protocol):
     # or raise an error if the organization is locked
     async def check_unlocked_payment_failure(self) -> TenantData.PaymentFailure | None: ...
 
-    # TODO: low credits email
-    async def add_low_credits_email_sent(self, threshold: float) -> None: ...
+    async def lock_for_low_credits_email(self, threshold: float) -> bool:
+        """Locks for sending a low credits email for a given threshold, or any threshold below it.
+        Returns True if the lock was successful, False otherwise."""
+        ...
+
+    async def clear_low_credits_email(self, threshold: float) -> None:
+        """Removes locks for sending a low credits email below a given threshold"""
+        ...

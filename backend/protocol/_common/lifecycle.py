@@ -5,6 +5,7 @@ from typing import Any, Protocol, final
 from structlog import get_logger
 
 from core.domain.events import EventRouter
+from core.domain.exceptions import PaymentRequiredError
 from core.domain.tenant_data import TenantData
 from core.providers._base.httpx_provider_base import HTTPXProviderBase
 from core.providers.factory.abstract_provider_factory import AbstractProviderFactory
@@ -52,7 +53,10 @@ class LifecycleDependencies:
 
         remote_cached.shared_cache = self._kv_storage
         self._email_service_builder = _default_email_service_builder()
-        self._payment_handler_builder = _payment_handler_builder()
+        should_raise_for_negative_credits, self._payment_handler_builder = _payment_handler_builder()
+        self.check_credits = (
+            _raise_for_negative_credits if should_raise_for_negative_credits else _ignore_negative_credits
+        )
 
     async def close(self):
         # TODO: not great ownership here, the objects are passed as parameters but we are closing them here
@@ -77,6 +81,15 @@ class LifecycleDependencies:
         )
 
     shared: "LifecycleDependencies | None" = None
+
+
+def _raise_for_negative_credits(tenant: TenantData) -> None:
+    if tenant.current_credits_usd < 0:
+        raise PaymentRequiredError("Current credits are negative")
+
+
+def _ignore_negative_credits(tenant: TenantData) -> None:
+    pass
 
 
 async def startup() -> LifecycleDependencies:
@@ -180,25 +193,22 @@ def _default_email_service_builder():
     return NoopEmailService.build
 
 
-def _payment_handler_builder() -> Callable[[TenantStorage, EventRouter, EmailService], PaymentHandler]:
+def _payment_handler_builder() -> tuple[bool, Callable[[TenantStorage, EventRouter, EmailService], PaymentHandler]]:
     if "STRIPE_API_KEY" in os.environ:
         from core.services.stripe.stripe_service import StripeService
 
         def _build_stripe(tenant_storage: TenantStorage, event_router: EventRouter, email_service: EmailService):
             return StripeService(tenant_storage, event_router=event_router, email_service=email_service)
 
-        return _build_stripe
+        return True, _build_stripe
 
     _log.warning("No payment handler configured, using noop")
 
     class NoopPaymentHandler(PaymentHandler):
-        async def raise_for_negative_credits(self) -> None:
-            _log.warning("NoopPaymentHandler does not support raise_for_negative_credits")
-
         async def handle_credit_decrement(self, tenant: TenantData) -> None:
             _log.warning("NoopPaymentHandler does not support handle_credit_decrement")
 
     def _build_noop(*args: Any, **kwargs: Any):
         return NoopPaymentHandler()
 
-    return _build_noop
+    return False, _build_noop
