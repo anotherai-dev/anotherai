@@ -201,9 +201,9 @@ export type ExperimentWithLookups = Experiment & {
 
 // Helper function to create lookup maps for efficient access
 export function createExperimentWithLookups(experiment: Experiment): ExperimentWithLookups {
-  const versionMap = new Map(experiment.versions.map((v) => [v.id, v]));
-  const inputMap = new Map(experiment.inputs.map((i) => [i.id, i]));
-  const completionMap = new Map(experiment.completions.map((c) => [c.id, c]));
+  const versionMap = new Map((experiment.versions || []).map((v) => [v.id, v]));
+  const inputMap = new Map((experiment.inputs || []).map((i) => [i.id, i]));
+  const completionMap = new Map((experiment.completions || []).map((c) => [c.id, c]));
 
   return {
     ...experiment,
