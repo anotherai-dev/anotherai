@@ -615,9 +615,6 @@ class Model(BaseModel):
     display_name: str = Field(
         description="Human-readable name for the model.",
     )
-    icon_url: str = Field(
-        description="URL to the model's icon image.",
-    )
 
     supports: ModelSupports = Field(
         description="Detailed information about what the model supports.",

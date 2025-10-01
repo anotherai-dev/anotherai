@@ -576,7 +576,6 @@ def model_response_from_domain(model_id: str, model: FinalModelData) -> Model:
     return Model(
         id=model_id,
         display_name=model.display_name,
-        icon_url=model.icon_url,
         supports=model_supports_from_domain(model),
         pricing=model_pricing(provider_data),
         release_date=model.release_date,

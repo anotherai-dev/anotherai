@@ -7,6 +7,10 @@ from uuid import UUID
 import pytest
 
 from core.domain.exceptions import BadRequestError
+from core.domain.models.model_data import FinalModelData
+from core.domain.models.model_provider_data import ModelProviderData
+from core.domain.models.models import Model as DomainModelID
+from core.domain.models.providers import Provider
 from core.domain.inference_usage import CompletionUsage as DomainCompletionUsage
 from core.domain.inference_usage import InferenceUsage as DomainInferenceUsage
 from core.domain.inference_usage import TokenUsage as DomainTokenUsage
@@ -30,6 +34,7 @@ from protocol.api._services.conversions import (
     graph_from_domain,
     graph_to_domain,
     message_to_domain,
+    model_response_from_domain,
     tool_to_domain,
     trace_from_domain,
     trace_to_domain,
@@ -41,7 +46,7 @@ from protocol.api._services.conversions import (
     view_to_domain,
     view_url,
 )
-from tests.fake_models import fake_completion, fake_graph, fake_version, fake_view
+from tests.fake_models import fake_completion, fake_graph, fake_model_data, fake_version, fake_view
 
 
 @pytest.fixture(autouse=True)
@@ -770,3 +775,45 @@ class TestAnnotationToDomainConversion:
 
         assert domain_annotation.context is not None
         assert domain_annotation.context.agent_id == expected_id
+
+
+class TestModelConversion:
+    """Test the model_response_from_domain conversion function."""
+
+    def test_model_response_excludes_icon_url(self):
+        """Test that model_response_from_domain does not include icon_url in the response."""
+        # Create a fake model data with an icon_url
+        fake_model = fake_model_data(
+            icon_url="https://example.com/test-icon.svg"
+        )
+        
+        # Create a fake provider data (needed for the conversion)
+        fake_provider_data = ModelProviderData(
+            text_price=ModelProviderData.TextPrice(
+                prompt_cost_per_token=0.0001,
+                completion_cost_per_token=0.0002,
+            ),
+        )
+        
+        # Create FinalModelData with the fake data
+        final_model_data = FinalModelData(
+            model=DomainModelID.GPT_4O_MINI,
+            providers=[(Provider.OPENAI, fake_provider_data)],
+            quality_index=100,
+            speed_index=500,
+            **fake_model.model_dump()
+        )
+        
+        # Convert to API model
+        api_model = model_response_from_domain("test-model-id", final_model_data)
+        
+        # Verify icon_url is not in the model fields
+        model_dict = api_model.model_dump()
+        assert "icon_url" not in model_dict
+        
+        # Verify other expected fields are present
+        assert model_dict["id"] == "test-model-id"
+        assert model_dict["display_name"] == fake_model.display_name
+        assert "supports" in model_dict
+        assert "pricing" in model_dict
+        assert "release_date" in model_dict
