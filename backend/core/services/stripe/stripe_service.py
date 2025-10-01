@@ -1,7 +1,6 @@
 import math
 import os
 from collections.abc import Awaitable, Callable
-from curses import ALL_MOUSE_EVENTS
 from typing import Any, Literal, NamedTuple, Self, override
 
 import stripe
@@ -339,7 +338,7 @@ class StripeService(PaymentHandler):
         It does not add credits or unlock the organization for intents since
         we need to wait for the webhook."""
 
-        payment_intent = await self.create_payment_intent(org_settings, ALL_MOUSE_EVENTS, trigger="automatic")
+        payment_intent = await self.create_payment_intent(org_settings, amount, trigger="automatic")
 
         default_payment_method = await self.get_payment_method(org_settings)
         if default_payment_method is None:

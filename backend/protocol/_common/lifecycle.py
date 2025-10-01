@@ -85,7 +85,7 @@ class LifecycleDependencies:
 
 def _raise_for_negative_credits(tenant: TenantData) -> None:
     if tenant.current_credits_usd < 0:
-        raise PaymentRequiredError("Current credits are negative")
+        raise PaymentRequiredError("Insufficient credits.")
 
 
 def _ignore_negative_credits(tenant: TenantData) -> None:

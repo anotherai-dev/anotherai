@@ -81,12 +81,13 @@ class IntegrationTestClient:
         fixture_name: str,
         status_code: int = 200,
         is_reusable: bool = False,
+        payload_override: dict[str, Any] | None = None,
         **kwargs: Any,
     ):
         matchers = provider_matchers(provider, model)
         self.httpx_mock.add_response(
             status_code=status_code,
-            json=fixtures_json(fixture_name),
+            json={**fixtures_json(fixture_name), **(payload_override or {})},
             **matchers,
             is_reusable=is_reusable,
             **kwargs,

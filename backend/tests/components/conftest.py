@@ -84,7 +84,7 @@ def test_jwk(test_private_key: RSAPrivateKey) -> dict[str, Any]:
 @pytest.fixture
 def test_jwt(test_private_key: RSAPrivateKey) -> str:
     return jwt.encode(
-        {"sub": "1234567890", "org_id": "org_123", "org_slug": "org-123"},
+        {"sub": "1234567890", "org_id": "org_123", "org_slug": "org-123", "email": "test@test.com"},
         test_private_key,
         algorithm="RS256",
         headers={"kid": "1"},
