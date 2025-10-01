@@ -19,7 +19,7 @@ from protocol.api._services.conversions import (
     page_token_to_datetime,
     version_to_domain,
 )
-from protocol.api._services.utils_service import IDType, sanitize_id
+from protocol.api._services.ids_service import IDType, sanitize_id
 
 _log = get_logger(__name__)
 
