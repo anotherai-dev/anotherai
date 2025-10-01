@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useBillingStore } from "@/store/billing";
 import { AutomaticPayment } from "@/types/models";
 
 interface CurrencyInputProps {
@@ -54,10 +55,32 @@ interface EnableAutoRechargeContentProps {
 export function EnableAutoRechargeContent({ automaticPayment, onClose }: EnableAutoRechargeContentProps) {
   const [triggerThreshold, setTriggerThreshold] = useState<number | undefined>(automaticPayment?.threshold ?? 10);
   const [targetBalance, setTargetBalance] = useState<number | undefined>(automaticPayment?.balance_to_maintain ?? 50);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const { updateAutomaticPayments } = useBillingStore();
+
+  const handleSave = async () => {
+    if (isSaving) return;
+
+    setIsSaving(true);
+    try {
+      await updateAutomaticPayments({
+        opt_in: true,
+        threshold: triggerThreshold,
+        balance_to_maintain: targetBalance,
+      });
+      onClose();
+    } catch (error) {
+      console.error("Failed to save auto-recharge settings:", error);
+      // TODO: Show error toast/notification
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="flex flex-col h-full w-full">
-      <div className="text-[15px] font-semibold text-gray-900 mb-4 border-b border-gray-200 border-dashed px-4 py-3">
+      <div className="text-[15px] font-semibold text-gray-900 mb-4 border-b border-gray-200 border-dashed px-4 py-3 cursor-pointer">
         Enable Auto-Recharge
       </div>
 
@@ -93,14 +116,11 @@ export function EnableAutoRechargeContent({ automaticPayment, onClose }: EnableA
           Cancel
         </button>
         <button
-          className="px-4 py-2 bg-indigo-600 text-white text-[13px] font-semibold rounded-[2px] hover:bg-indigo-700 transition-colors cursor-pointer"
-          onClick={() => {
-            // TODO: Implement save logic
-            console.log("Saving auto-recharge settings");
-            onClose();
-          }}
+          className="px-4 py-2 bg-indigo-600 text-white text-[13px] font-semibold rounded-[2px] hover:bg-indigo-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={handleSave}
+          disabled={isSaving}
         >
-          Save Settings
+          {isSaving ? "Saving..." : "Save Settings"}
         </button>
       </div>
     </div>

@@ -167,7 +167,12 @@ export const useBillingStore = create<BillingState>((set, get) => ({
         throw await createErrorFromResponse(response);
       }
 
-      // Refresh payment method after adding
+      // Force refresh payment method after adding by resetting initialized flag
+      set(
+        produce((state: BillingState) => {
+          state.isPaymentMethodInitialized = false;
+        })
+      );
       await get().fetchPaymentMethod();
     } catch (error) {
       throw error;
