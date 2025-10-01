@@ -98,11 +98,7 @@ export function MessageContentView(props: MessageContentViewProps) {
                 )}
               </div>
             )}
-            {item.image_url && (
-              <div className="mt-2">
-                <UniversalFileViewer url={item.image_url} />
-              </div>
-            )}
+            {item.image_url && <UniversalFileViewer url={item.image_url} addMargin={true} />}
             {item.file && (item.file.url || item.file.storage_url) && (
               <UniversalFileViewer url={item.file.storage_url || item.file.url || ""} />
             )}
