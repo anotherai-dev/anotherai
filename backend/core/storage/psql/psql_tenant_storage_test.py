@@ -636,6 +636,75 @@ class TestAddCredits:
         assert result.current_credits_usd == 125.0
 
 
+class TestAttemptLockForPayment:
+    async def test_success_when_unlocked(
+        self,
+        inserted_tenant: TenantData,
+        tenant_storage: PsqlTenantStorage,
+        purged_psql: asyncpg.Pool,
+    ):
+        # Ensure tenant is unlocked
+        async with purged_psql.acquire() as conn:
+            await conn.execute("UPDATE tenants SET locked_for_payment = FALSE WHERE uid = $1", inserted_tenant.uid)
+
+        result = await tenant_storage.attempt_lock_for_payment()
+
+        # Should return tenant data
+        assert result is not None
+        assert result.uid == inserted_tenant.uid
+
+        # Verify tenant is now locked
+        async with purged_psql.acquire() as conn:
+            row = await conn.fetchrow("SELECT locked_for_payment FROM tenants WHERE uid = $1", inserted_tenant.uid)
+            assert row is not None
+            assert row["locked_for_payment"] is True
+
+    async def test_returns_none_when_already_locked(
+        self,
+        inserted_tenant: TenantData,
+        tenant_storage: PsqlTenantStorage,
+        purged_psql: asyncpg.Pool,
+    ):
+        # Lock the tenant first
+        async with purged_psql.acquire() as conn:
+            await conn.execute("UPDATE tenants SET locked_for_payment = TRUE WHERE uid = $1", inserted_tenant.uid)
+
+        result = await tenant_storage.attempt_lock_for_payment()
+
+        # Should return None since already locked
+        assert result is None
+
+        # Verify tenant is still locked
+        async with purged_psql.acquire() as conn:
+            row = await conn.fetchrow("SELECT locked_for_payment FROM tenants WHERE uid = $1", inserted_tenant.uid)
+            assert row is not None
+            assert row["locked_for_payment"] is True
+
+    async def test_concurrent_lock_attempts(self, purged_psql: asyncpg.Pool):
+        # Insert a tenant
+        tenant_data = await _insert_tenant(purged_psql, "test-tenant", "owner123")
+
+        # Create multiple storage instances for the same tenant
+        storage1 = PsqlTenantStorage(tenant_uid=tenant_data.uid, pool=purged_psql)
+        storage2 = PsqlTenantStorage(tenant_uid=tenant_data.uid, pool=purged_psql)
+        storage3 = PsqlTenantStorage(tenant_uid=tenant_data.uid, pool=purged_psql)
+
+        # Attempt to lock concurrently
+        results = await asyncio.gather(
+            storage1.attempt_lock_for_payment(),
+            storage2.attempt_lock_for_payment(),
+            storage3.attempt_lock_for_payment(),
+        )
+
+        # Only one should succeed
+        successful_results = [r for r in results if r is not None]
+        failed_results = [r for r in results if r is None]
+
+        assert len(successful_results) == 1
+        assert len(failed_results) == 2
+        assert successful_results[0].uid == tenant_data.uid
+
+
 class TestUnlockPaymentForSuccess:
     async def test_success(
         self,

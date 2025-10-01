@@ -12,6 +12,9 @@ from core.utils.background import active_background_task_count, wait_for_backgro
 from tests.pausable_memory_broker import PausableInMemoryBroker
 from tests.utils import fixtures_json
 
+LOOPS_TRANSACTIONAL_URL = "https://app.loops.so/api/v1/transactional"
+CLERK_BASE_URL = "https://api.clerk.com/v1"
+
 
 def openai_endpoint():
     return "https://api.openai.com/v1/chat/completions"
@@ -78,12 +81,13 @@ class IntegrationTestClient:
         fixture_name: str,
         status_code: int = 200,
         is_reusable: bool = False,
+        payload_override: dict[str, Any] | None = None,
         **kwargs: Any,
     ):
         matchers = provider_matchers(provider, model)
         self.httpx_mock.add_response(
             status_code=status_code,
-            json=fixtures_json(fixture_name),
+            json={**fixtures_json(fixture_name), **(payload_override or {})},
             **matchers,
             is_reusable=is_reusable,
             **kwargs,

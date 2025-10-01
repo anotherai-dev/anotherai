@@ -1,17 +1,23 @@
 import math
 import os
 from collections.abc import Awaitable, Callable
-from typing import Any, Literal, NamedTuple, Self
+from typing import Any, Literal, NamedTuple, Self, override
 
 import stripe
 from fastapi import Request
 from pydantic import BaseModel, ValidationError, field_serializer, field_validator
 from structlog import get_logger
 
-from core.domain.exceptions import BadRequestError, InternalError, ObjectNotFoundError
+from core.domain.events import EventRouter, PaymentUpdatedEvent
+from core.domain.exceptions import (
+    BadRequestError,
+    InternalError,
+    MissingPaymentMethodError,
+    ObjectNotFoundError,
+)
 from core.domain.tenant_data import TenantData
 from core.services.email_service import EmailService
-from core.services.payment_service import PaymentService
+from core.services.payment_service import PaymentHandler
 from core.storage.tenant_storage import AutomaticPayment, TenantStorage
 from core.utils.background import add_background_task
 from core.utils.fields import datetime_factory
@@ -27,17 +33,14 @@ class PaymentMethodResponse(BaseModel):
     exp_year: int
 
 
-class MissingPaymentMethodError(BadRequestError):
-    pass
-
-
 stripe.api_key = os.environ.get("STRIPE_API_KEY")
 
 
-class StripeService:
-    def __init__(self, tenant_storage: TenantStorage, payment_service: PaymentService, email_service: EmailService):
+# TODO: a lot of logic should be moved to the payment service
+class StripeService(PaymentHandler):
+    def __init__(self, tenant_storage: TenantStorage, email_service: EmailService, event_router: EventRouter):
         self._tenant_storage = tenant_storage
-        self._payment_service = payment_service
+        self._event_router = event_router
         self._email_service = email_service
 
     async def _create_customer(self, user_email: str) -> str:
@@ -85,7 +88,7 @@ class StripeService:
         # Clear a payment failure if any
         await self._tenant_storage.clear_payment_failure()
         # Decrement 0 credits to trigger a payment if needed
-        add_background_task(self._payment_service.decrement_credits(0))
+        self._event_router(PaymentUpdatedEvent())
         return payment_method.id
 
     async def delete_payment_method(self, data: TenantData) -> None:
@@ -202,7 +205,7 @@ class StripeService:
 
         await self._tenant_storage.update_automatic_payment(automatic_payment)
         if opt_in:
-            add_background_task(self._payment_service.decrement_credits(0))
+            self._event_router(PaymentUpdatedEvent())
 
     async def _handle_payment_success(self, metadata: dict[str, str], amount: float):
         try:
@@ -226,7 +229,6 @@ class StripeService:
 
     async def _unlock_payment_for_failure(
         self,
-        tenant: str,
         code: Literal["internal", "payment_failed"],
         failure_reason: str,
     ):
@@ -243,7 +245,6 @@ class StripeService:
         if parsed_metadata.trigger == "automatic":
             try:
                 await self._unlock_payment_for_failure(
-                    parsed_metadata.tenant,
                     code="payment_failed",
                     failure_reason=failure_reason,
                 )
@@ -259,6 +260,30 @@ class StripeService:
                         "Automatic payment failed but we don't have a payment failure",
                         extra={"metadata": metadata},
                     ) from e
+
+    async def _send_low_credits_email_if_needed(self, tenant: TenantData):
+        # For now only a single email at $5
+        threshold = 5
+
+        if not tenant.current_credits_usd >= threshold:
+            return
+
+        locked = await self._tenant_storage.lock_for_low_credits_email(threshold)
+        if not locked:
+            # Skipping, there is already a lock for this threshold
+            return
+
+        try:
+            await self._email_service.send_low_credits_email()
+        except Exception:  # noqa: BLE001
+            _log.exception("Failed to send low credits email", tenant=tenant)
+
+    @override
+    async def handle_credit_decrement(self, tenant: TenantData):
+        if tenant.should_trigger_automatic_payment(min_amount=0):
+            await self.trigger_automatic_payment_if_needed(min_amount=2)
+
+        add_background_task(self._send_low_credits_email_if_needed(tenant))
 
     @classmethod
     async def stripe_webhook(
@@ -306,6 +331,101 @@ class StripeService:
                 await payment_service.handle_payment_failure(payment_intent.metadata, failure_reason)
             case _:
                 _log.warning("Unhandled Stripe event", event_obj=event.data.object)
+
+    async def _trigger_automatic_payment(self, org_settings: TenantData, amount: float):
+        """Create and confirm a payment intent on Stripe.
+        This function expects that the org has already been locked for payment.
+        It does not add credits or unlock the organization for intents since
+        we need to wait for the webhook."""
+
+        payment_intent = await self.create_payment_intent(org_settings, amount, trigger="automatic")
+
+        default_payment_method = await self.get_payment_method(org_settings)
+        if default_payment_method is None:
+            raise MissingPaymentMethodError(
+                "Organization has no default payment method",
+                tenant_data=org_settings,
+            )
+
+        # We need to confirm the payment so that it does not
+        # remain in requires_confirmation state
+        # From https://docs.stripe.com/payments/paymentintents/lifecycle it looks like
+        # We may not need to do this in 2 steps (create + confirm) but ok for now
+        res = await stripe.PaymentIntent.confirm_async(
+            payment_intent.payment_intent_id,
+            payment_method=default_payment_method.payment_method_id,
+        )
+        if not res.status == "succeeded":
+            raise InternalError(
+                "Confirming payment intent failed",
+                extra={"confirm_response": res},
+            )
+
+    async def _start_automatic_payment_for_locked_org(self, tenant: TenantData, min_amount: float):
+        """Create and confirm a payment intent on Stripe.
+        This function expects that the org has already been locked for payment.
+        It does not add credits or unlock the organization for intents since
+        we need to wait for the webhook."""
+
+        charge_amount = tenant.autocharge_amount(min_amount)
+        if not charge_amount:
+            # This should never happen
+            raise InternalError(
+                "Charge amount is None. Discarding Automatic payment",
+                extra={"tenant": tenant.uid},
+            )
+
+        _log.info(
+            "Organization has less than threshold credits so automatic payment processing is starting",
+            tenant=tenant,
+        )
+        await self._trigger_automatic_payment(tenant, charge_amount)
+
+    async def trigger_automatic_payment_if_needed(
+        self,
+        min_amount: float,
+    ):
+        """Trigger an automatic payment
+        If `min_amount` is provided, a payment will be triggered no matter what the current balance is.
+
+        Returns true if the payment was triggered successfully"""
+        tenant = await self._tenant_storage.attempt_lock_for_payment()
+
+        if not tenant:
+            # There is already a payment being processed so there is no need to retry
+            _log.debug("Failed to lock for payment")
+            return False
+
+        # TODO: check for org autopay status
+
+        try:
+            await self._start_automatic_payment_for_locked_org(tenant, min_amount=min_amount)
+        except MissingPaymentMethodError:
+            # Capture for now, this should not happen
+            _log.error("Automatic payment failed due to missing payment method", tenant=tenant)
+            # The customer has no default payment method so we can't process the payment
+            await self._unlock_payment_for_failure(
+                code="payment_failed",
+                failure_reason="The account does not have a default payment method",
+            )
+        except stripe.CardError as e:
+            await self._unlock_payment_for_failure(
+                code="payment_failed",
+                failure_reason=e.user_message or f"Payment failed with an unknown error. Code: {e.code or 'unknown'}",
+            )
+        except Exception:  # noqa: BLE001
+            await self._unlock_payment_for_failure(
+                code="internal",
+                failure_reason="The payment process could not be initiated. This could be due to an internal error on "
+                "our side or Stripe's. Your runs will not be locked for now until the issue is resolved.",
+            )
+            # TODO: send slack message, this is important as the error could be on our side
+            # For now, since we don't really know what could cause the failure, we should fix manually
+            # by updating the db or triggering a retry on the customer account.
+            _log.exception("Automatic payment failed due to an internal error", tenant=tenant)
+            return False
+
+        return True
 
 
 def _customer_id_or_raise(data: TenantData, capture: bool = True) -> str:

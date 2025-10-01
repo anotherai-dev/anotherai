@@ -118,6 +118,7 @@ FilesServiceDep = Annotated[FilesService, Depends(files_service)]
 def payment_service(tenant: TenantDep, dependencies: LifecycleDependenciesDep) -> PaymentService:
     return PaymentService(
         tenant_storage=dependencies.storage_builder.tenants(tenant.uid),
+        payment_handler=dependencies.payment_handler(tenant.uid),
     )
 
 

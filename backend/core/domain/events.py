@@ -31,5 +31,9 @@ class StartExperimentCompletionEvent(Event):
     input_id: str
 
 
+class PaymentUpdatedEvent(Event):
+    pass
+
+
 class EventRouter(Protocol):
     def __call__(self, event: Event, delay: float | None = None) -> None: ...
