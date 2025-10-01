@@ -8,7 +8,6 @@ from core.services.stripe.stripe_service import PaymentMethodResponse, StripeSer
 from protocol._common.documentation import INCLUDE_PRIVATE_ROUTES
 from protocol.api._dependencies._lifecycle import LifecycleDependenciesDep
 from protocol.api._dependencies._tenant import TenantDep
-from protocol.worker._dependencies import EventRouterDep
 
 router = APIRouter(prefix="/v1/payments", include_in_schema=INCLUDE_PRIVATE_ROUTES)
 
@@ -25,11 +24,10 @@ class PaymentMethodIdResponse(BaseModel):
 def _stripe_service(
     dependencies: LifecycleDependenciesDep,
     tenant: TenantDep,
-    event_router: EventRouterDep,
 ) -> StripeService:
     return StripeService(
         tenant_storage=dependencies.storage_builder.tenants(tenant.uid),
-        event_router=event_router,
+        event_router=dependencies.tenant_event_router(tenant.uid),
         email_service=dependencies.email_service(tenant.uid),
     )
 

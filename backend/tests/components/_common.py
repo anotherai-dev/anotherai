@@ -12,6 +12,9 @@ from core.utils.background import active_background_task_count, wait_for_backgro
 from tests.pausable_memory_broker import PausableInMemoryBroker
 from tests.utils import fixtures_json
 
+LOOPS_TRANSACTIONAL_URL = "https://app.loops.so/api/v1/transactional"
+CLERK_BASE_URL = "https://api.clerk.com/v1"
+
 
 def openai_endpoint():
     return "https://api.openai.com/v1/chat/completions"
