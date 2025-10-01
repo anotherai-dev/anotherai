@@ -898,7 +898,7 @@ class Tenant(BaseModel):
 
     class PaymentFailure(BaseModel):
         failure_date: datetime
-        failure_code: Literal["payment_failed", "internal"]
+        failure_code: str
         failure_reason: str
 
     payment_failure: PaymentFailure | None

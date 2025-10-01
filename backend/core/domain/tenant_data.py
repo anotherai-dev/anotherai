@@ -52,7 +52,7 @@ class TenantData(PublicOrganizationData):
 
     class PaymentFailure(BaseModel):
         failure_date: datetime
-        failure_code: Literal["payment_failed", "internal"]
+        failure_code: Literal["payment_failed", "internal"] | str
         failure_reason: str
 
     payment_failure: PaymentFailure | None = None

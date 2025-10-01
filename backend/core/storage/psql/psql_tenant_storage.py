@@ -402,6 +402,15 @@ class _TenantRow(BaseModel):
     payment_failure_reason: str | None = None
     low_credits_email_sent_by_threshold: JSONList | None = None
 
+    def _payment_failure(self) -> TenantData.PaymentFailure | None:
+        if self.payment_failure_date is None:
+            return None
+        return TenantData.PaymentFailure(
+            failure_date=self.payment_failure_date,
+            failure_code=self.payment_failure_code or "internal",
+            failure_reason=self.payment_failure_reason or "Unknown reason",
+        )
+
     def to_domain(self) -> TenantData:
         # TODO: other fields
         return TenantData(
@@ -410,6 +419,13 @@ class _TenantRow(BaseModel):
             org_id=self.org_id,
             owner_id=self.owner_id,
             current_credits_usd=self.current_credits_usd,
+            customer_id=self.stripe_customer_id,
+            automatic_payment_enabled=self.automatic_payment_enabled,
+            automatic_payment_threshold=self.automatic_payment_threshold,
+            automatic_payment_balance_to_maintain=self.automatic_payment_balance_to_maintain,
+            payment_failure=self._payment_failure(),
+            # TODO:
+            # low_credits_email_sent_by_threshold=self.low_credits_email_sent_by_threshold,
         )
 
 

@@ -76,7 +76,7 @@ export function useStripePayments() {
         }
 
         await fetchOrganizationSettings();
-        console.log(`$${amountToAdd} in Credits Added Successfully`);
+
         return true;
       } catch (error) {
         console.error(errorMessage(error, "Payment failed"));

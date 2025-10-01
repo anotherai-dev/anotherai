@@ -545,6 +545,9 @@ class TestSetCustomerID:
         result = await tenant_storage.set_customer_id("cus_123456")
         assert result.uid == inserted_tenant.uid
 
+        tenant = await tenant_storage.current_tenant()
+        assert tenant.customer_id == "cus_123456"
+
 
 class TestClearPaymentFailure:
     async def test_success(

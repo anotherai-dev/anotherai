@@ -61,7 +61,7 @@ export const useBillingStore = create<BillingState>((set, get) => ({
     );
 
     try {
-      const response = await apiFetch("/v1/organization/settings", {
+      const response = await apiFetch("/v1/tenants/me", {
         method: "GET",
       });
 
@@ -94,6 +94,7 @@ export const useBillingStore = create<BillingState>((set, get) => ({
 
   fetchPaymentMethod: async () => {
     if (get().isLoadingPaymentMethod) return;
+    if (get().isPaymentMethodInitialized) return;
 
     set(
       produce((state: BillingState) => {
@@ -243,18 +244,6 @@ export const useBillingStore = create<BillingState>((set, get) => ({
   },
 }));
 
-// Hooks for easy component usage
-export const useOrganizationSettings = () => {
-  const { organizationSettings, isLoadingOrganizationSettings, organizationSettingsError, fetchOrganizationSettings } =
-    useBillingStore();
-  return {
-    organizationSettings,
-    isLoading: isLoadingOrganizationSettings,
-    error: organizationSettingsError,
-    fetchOrganizationSettings,
-  };
-};
-
 export const usePaymentMethod = () => {
   const { paymentMethod, isLoadingPaymentMethod, paymentMethodError, isPaymentMethodInitialized, fetchPaymentMethod } =
     useBillingStore();
@@ -269,26 +258,27 @@ export const usePaymentMethod = () => {
 
 // Auto-fetching hooks with polling
 export const useOrFetchOrganizationSettings = (pollingInterval?: number) => {
-  const store = useBillingStore();
+  const { fetchOrganizationSettings, organizationSettings, isLoadingOrganizationSettings, organizationSettingsError } =
+    useBillingStore();
 
   React.useEffect(() => {
     // Initial fetch
-    store.fetchOrganizationSettings();
+    fetchOrganizationSettings();
 
     // Set up polling if interval provided
     if (pollingInterval) {
       const interval = setInterval(() => {
-        store.fetchOrganizationSettings();
+        fetchOrganizationSettings();
       }, pollingInterval);
 
       return () => clearInterval(interval);
     }
-  }, [store, pollingInterval]);
+  }, [fetchOrganizationSettings, pollingInterval]);
 
   return {
-    organizationSettings: store.organizationSettings,
-    isLoading: store.isLoadingOrganizationSettings,
-    error: store.organizationSettingsError,
+    organizationSettings: organizationSettings,
+    isLoading: isLoadingOrganizationSettings,
+    error: organizationSettingsError,
   };
 };
 
