@@ -34,7 +34,7 @@ export function MatrixSection(props: Props) {
 
   // Sort versions to show ones with prompt or output schema first
   const sortedVersions = useMemo(() => {
-    return sortVersionsByPromptAndSchema(experiment.versions);
+    return sortVersionsByPromptAndSchema(experiment.versions ?? []);
   }, [experiment.versions]);
 
   // State for column order - initially ordered by sorted version index
