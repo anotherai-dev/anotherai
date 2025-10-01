@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { OrganizationSettings } from "@/types/models";
+import { AutomaticPayment } from "@/types/models";
 
 interface CurrencyInputProps {
   amount: number | undefined;
@@ -47,17 +47,13 @@ function CurrencyInput({ amount, setAmount, placeholder = "0.00" }: CurrencyInpu
 }
 
 interface EnableAutoRechargeContentProps {
-  organizationSettings: OrganizationSettings | null;
+  automaticPayment: AutomaticPayment | undefined | null;
   onClose: () => void;
 }
 
-export function EnableAutoRechargeContent({ organizationSettings, onClose }: EnableAutoRechargeContentProps) {
-  const [triggerThreshold, setTriggerThreshold] = useState<number | undefined>(
-    organizationSettings?.automatic_payment_threshold ?? 10
-  );
-  const [targetBalance, setTargetBalance] = useState<number | undefined>(
-    organizationSettings?.automatic_payment_balance_to_maintain ?? 50
-  );
+export function EnableAutoRechargeContent({ automaticPayment, onClose }: EnableAutoRechargeContentProps) {
+  const [triggerThreshold, setTriggerThreshold] = useState<number | undefined>(automaticPayment?.threshold ?? 10);
+  const [targetBalance, setTargetBalance] = useState<number | undefined>(automaticPayment?.balance_to_maintain ?? 50);
 
   return (
     <div className="flex flex-col h-full w-full">

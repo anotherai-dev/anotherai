@@ -42,18 +42,16 @@ export interface PaymentFailure {
   failure_reason: string;
 }
 
-export interface OrganizationSettings {
+export interface AutomaticPayment {
+  threshold: number;
+  balance_to_maintain: number;
+}
+
+export interface Tenant {
   id: string;
-  name?: string;
-  slug?: string;
   current_credits_usd?: number;
-  added_credits_usd?: number;
-  automatic_payment_enabled?: boolean;
-  automatic_payment_threshold?: number | null;
-  automatic_payment_balance_to_maintain?: number | null;
-  payment_failure?: PaymentFailure | null;
-  locked_for_payment?: boolean | null;
-  stripe_customer_id?: string | null;
+  automatic_payment?: AutomaticPayment | null | undefined;
+  payment_failure?: PaymentFailure | null | undefined;
 }
 
 export interface Tool {

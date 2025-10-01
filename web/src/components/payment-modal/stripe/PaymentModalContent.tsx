@@ -1,6 +1,6 @@
 "use client";
 
-import { OrganizationSettings, PaymentMethodResponse } from "@/types/models";
+import { PaymentMethodResponse, Tenant } from "@/types/models";
 import { AmountToAddSection } from "../AmountToAddSection";
 import { AutomaticPaymentsSection } from "../AutomaticPaymentsSection";
 import { BottomButtonBar } from "../BottomButtonBar";
@@ -12,7 +12,7 @@ import { AddPaymentMethodContent } from "./AddPaymentMethodContent";
 
 interface PaymentModalContentProps {
   paymentMethod: PaymentMethodResponse | null;
-  organizationSettings: OrganizationSettings | null;
+  organizationSettings: Tenant | null;
   showAddPaymentMethod: boolean;
   setShowAddPaymentMethod: (show: boolean) => void;
   showEnableAutoRecharge: boolean;
@@ -52,7 +52,7 @@ export function PaymentModalContent({
   if (showEnableAutoRecharge) {
     return (
       <EnableAutoRechargeContent
-        organizationSettings={organizationSettings}
+        automaticPayment={organizationSettings?.automatic_payment}
         onClose={() => setShowEnableAutoRecharge(false)}
       />
     );
@@ -81,7 +81,7 @@ export function PaymentModalContent({
       <AutomaticPaymentsSection
         hasPaymentMethod={isPaymentMethodAvailable}
         automaticPaymentsFailure={automaticPaymentsFailure}
-        organizationSettings={organizationSettings}
+        automaticPayment={organizationSettings?.automatic_payment}
         onEnableAutoRecharge={() => setShowEnableAutoRecharge(true)}
         onUpdatePaymentMethod={onUpdatePaymentMethod}
       />

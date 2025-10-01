@@ -31,17 +31,17 @@ export function CreditsSection({ className }: CreditsSectionProps) {
   }, []);
 
   const currentCredits = organizationSettings?.current_credits_usd;
-  const addedCredits = organizationSettings?.added_credits_usd;
+  const addedCredits = 10; // TODO: use last added credits
 
   // Calculate progress percentage
-  const progress = addedCredits === 0 || !currentCredits || !addedCredits ? 0 : (currentCredits / addedCredits) * 100;
+  const progress = !currentCredits || !addedCredits ? 0 : (currentCredits / addedCredits) * 100;
 
   // Show warning when credits are low (≤ $5)
   const lowCreditsMode = !!currentCredits && currentCredits <= 5;
 
   // Payment method status
   const isPaymentMethodAvailable = !!paymentMethod?.payment_method_id;
-  const automaticPaymentsEnabled = organizationSettings?.automatic_payment_enabled;
+  const automaticPaymentsEnabled = organizationSettings?.automatic_payment !== null;
   const paymentFailure = organizationSettings?.payment_failure;
 
   // Tooltip text logic similar to WorkflowAI

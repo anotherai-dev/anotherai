@@ -1,22 +1,22 @@
 "use client";
 
 import { CheckCircle, XCircle } from "lucide-react";
-import { OrganizationSettings } from "@/types/models";
+import { AutomaticPayment } from "@/types/models";
 import { PaymentsFailedInfoLabel } from "./PaymentsFailedInfoLabel";
 
 interface AutomaticPaymentsSectionProps {
   automaticPaymentsFailure: string | undefined;
   hasPaymentMethod: boolean;
-  organizationSettings: OrganizationSettings | null;
+  automaticPayment: AutomaticPayment | null | undefined;
   onEnableAutoRecharge: () => void;
   onUpdatePaymentMethod: () => void;
 }
 
 function EnabledAutomaticPaymentsSection({
-  organizationSettings,
+  automaticPayment,
   onEnableAutoRecharge,
 }: {
-  organizationSettings: OrganizationSettings | null;
+  automaticPayment: AutomaticPayment;
   onEnableAutoRecharge: () => void;
 }) {
   return (
@@ -28,8 +28,8 @@ function EnabledAutomaticPaymentsSection({
         </div>
       </div>
       <div className="text-gray-500 font-normal text-xs pt-1">
-        When your credit balance reaches ${organizationSettings?.automatic_payment_threshold ?? 10}, your payment method
-        will be charged to bring the balance up to ${organizationSettings?.automatic_payment_balance_to_maintain ?? 50}.
+        When your credit balance reaches ${automaticPayment.threshold ?? 10}, your payment method will be charged to
+        bring the balance up to ${automaticPayment.balance_to_maintain ?? 50}.
       </div>
       <div className="pt-2">
         <button
@@ -44,13 +44,13 @@ function EnabledAutomaticPaymentsSection({
 }
 
 export function AutomaticPaymentsSection({
-  organizationSettings,
+  automaticPayment,
   onEnableAutoRecharge,
   automaticPaymentsFailure,
   hasPaymentMethod,
   onUpdatePaymentMethod,
 }: AutomaticPaymentsSectionProps) {
-  const isAutomaticPaymentsEnabled = organizationSettings?.automatic_payment_enabled;
+  const isAutomaticPaymentsEnabled = !!automaticPayment;
 
   return (
     <div className="flex flex-col px-4 py-2 gap-1 mb-2">
@@ -63,7 +63,7 @@ export function AutomaticPaymentsSection({
       )}
       {isAutomaticPaymentsEnabled && !automaticPaymentsFailure ? (
         <EnabledAutomaticPaymentsSection
-          organizationSettings={organizationSettings}
+          automaticPayment={automaticPayment}
           onEnableAutoRecharge={onEnableAutoRecharge}
         />
       ) : (

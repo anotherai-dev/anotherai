@@ -6,17 +6,17 @@ import { apiFetch } from "@/lib/apiFetch";
 import {
   AutomaticPaymentRequest,
   CreatePaymentIntentRequest,
-  OrganizationSettings,
   PaymentIntentCreatedResponse,
   PaymentMethodRequest,
   PaymentMethodResponse,
+  Tenant,
 } from "@/types/models";
 
 enableMapSet();
 
 interface BillingState {
   // Organization Settings
-  organizationSettings: OrganizationSettings | null;
+  organizationSettings: Tenant | null;
   isLoadingOrganizationSettings: boolean;
   organizationSettingsError: Error | null;
 
@@ -69,7 +69,7 @@ export const useBillingStore = create<BillingState>((set, get) => ({
         throw await createErrorFromResponse(response);
       }
 
-      const settings: OrganizationSettings = await response.json();
+      const settings: Tenant = await response.json();
 
       set(
         produce((state: BillingState) => {
