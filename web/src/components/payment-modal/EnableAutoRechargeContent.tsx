@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { AutomaticPayment } from "@/types/models";
 import { useBillingStore } from "@/store/billing";
+import { AutomaticPayment } from "@/types/models";
 
 interface CurrencyInputProps {
   amount: number | undefined;
