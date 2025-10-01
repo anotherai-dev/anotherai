@@ -2,9 +2,12 @@ from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field, computed_field
+from structlog import get_logger
 
 from core.domain.models import Provider
 from core.providers._base.config import ProviderConfig
+
+_log = get_logger(__name__)
 
 
 class ProviderSettings(BaseModel):
@@ -78,3 +81,34 @@ class TenantData(PublicOrganizationData):
             return False
 
         return True
+
+    def autocharge_amount(self, min_amount: float) -> float:
+        """Returns the amount to charge or `min_amount` if no amount is needed"""
+        if (
+            self.automatic_payment_threshold is None
+            or self.automatic_payment_balance_to_maintain is None
+            or self.current_credits_usd > self.automatic_payment_threshold
+        ):
+            return min_amount
+
+        amount = self.automatic_payment_balance_to_maintain - self.current_credits_usd
+        # This can happen if automatic_payment_threshold > automatic_payment_balance_to_maintain
+        # For example: threshold = 100, maintain = 50, current = 75
+        # This would be a stupid case.
+        if amount <= min_amount:
+            _log.warning(
+                "Automatic payment would charge negative amount",
+                tenant={"tenant": self.model_dump(exclude_none=True, exclude={"providers"})},
+            )
+            # Returning the balance to maintain to avoid charging 0
+            return min_amount or self.automatic_payment_balance_to_maintain
+
+        return amount
+
+    def should_trigger_automatic_payment(self, min_amount: float) -> bool:
+        return (
+            self.automatic_payment_enabled
+            and not self.locked_for_payment
+            and not self.payment_failure
+            and self.autocharge_amount(min_amount=0) > 0
+        )

@@ -4,12 +4,11 @@ from fastapi import APIRouter, Depends, Header, Request
 from pydantic import BaseModel, Field
 
 from core.domain.exceptions import BadRequestError
-from core.services.payment_service import PaymentService
 from core.services.stripe.stripe_service import PaymentMethodResponse, StripeService
 from protocol._common.documentation import INCLUDE_PRIVATE_ROUTES
 from protocol.api._dependencies._lifecycle import LifecycleDependenciesDep
-from protocol.api._dependencies._services import PaymentServiceDep
 from protocol.api._dependencies._tenant import TenantDep
+from protocol.worker._dependencies import EventRouterDep
 
 router = APIRouter(prefix="/v1/payments", include_in_schema=INCLUDE_PRIVATE_ROUTES)
 
@@ -26,11 +25,11 @@ class PaymentMethodIdResponse(BaseModel):
 def _stripe_service(
     dependencies: LifecycleDependenciesDep,
     tenant: TenantDep,
-    payment_service: PaymentServiceDep,
+    event_router: EventRouterDep,
 ) -> StripeService:
     return StripeService(
         tenant_storage=dependencies.storage_builder.tenants(tenant.uid),
-        payment_service=payment_service,
+        event_router=event_router,
         email_service=dependencies.email_service(tenant.uid),
     )
 
@@ -119,11 +118,11 @@ async def update_automatic_payments(
 
 async def _stripe_service_builder(dependencies: LifecycleDependenciesDep, tenant_uid: int) -> StripeService:
     tenant_storage = dependencies.storage_builder.tenants(tenant_uid)
-    payment_service = PaymentService(tenant_storage=tenant_storage)
+    event_router = dependencies.tenant_event_router(tenant_uid)
     email_service = dependencies.email_service(tenant_uid)
     return StripeService(
         tenant_storage=tenant_storage,
-        payment_service=payment_service,
+        event_router=event_router,
         email_service=email_service,
     )
 

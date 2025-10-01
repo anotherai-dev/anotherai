@@ -379,6 +379,11 @@ class PsqlTenantStorage(PsqlBaseStorage, TenantStorage):
             )
 
 
+class _LowCreditsEmailSentByThreshold(BaseModel):
+    threshold: int
+    sent_at: datetime
+
+
 class _TenantRow(BaseModel):
     uid: int = 0
     slug: str = ""
@@ -411,6 +416,11 @@ class _TenantRow(BaseModel):
             failure_reason=self.payment_failure_reason or "Unknown reason",
         )
 
+    def _low_credits_email_sent_by_threshold(self) -> dict[int, datetime] | None:
+        if not self.low_credits_email_sent_by_threshold:
+            return None
+        return {item.threshold: item.sent_at for item in self.low_credits_email_sent_by_threshold}
+
     def to_domain(self) -> TenantData:
         # TODO: other fields
         return TenantData(
@@ -424,8 +434,7 @@ class _TenantRow(BaseModel):
             automatic_payment_threshold=self.automatic_payment_threshold,
             automatic_payment_balance_to_maintain=self.automatic_payment_balance_to_maintain,
             payment_failure=self._payment_failure(),
-            # TODO:
-            # low_credits_email_sent_by_threshold=self.low_credits_email_sent_by_threshold,
+            low_credits_email_sent_by_threshold=self._low_credits_email_sent_by_threshold(),
         )
 
 

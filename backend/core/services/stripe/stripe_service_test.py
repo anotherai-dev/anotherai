@@ -2,6 +2,7 @@
 
 from collections.abc import Awaitable, Callable
 from typing import Any
+from unittest import mock
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -10,15 +11,9 @@ import stripe
 from core.domain.exceptions import BadRequestError
 from core.domain.tenant_data import TenantData
 from core.services.email_service import EmailService
-from core.services.payment_service import PaymentService
 from core.services.stripe.stripe_service import StripeService, _BaseMetadata, _skip_webhook, _verify_stripe_signature
 from core.utils.background import wait_for_background_tasks
 from tests.fake_models import fake_tenant
-
-
-@pytest.fixture
-def mock_payment_service():
-    return Mock(spec=PaymentService)
 
 
 @pytest.fixture
@@ -27,10 +22,10 @@ def mock_email_service():
 
 
 @pytest.fixture
-def stripe_service(mock_tenant_storage: Mock, mock_payment_service: Mock, mock_email_service: Mock):
+def stripe_service(mock_tenant_storage: Mock, mock_event_router: Mock, mock_email_service: Mock):
     return StripeService(
         tenant_storage=mock_tenant_storage,
-        payment_service=mock_payment_service,
+        event_router=mock_event_router,
         email_service=mock_email_service,
     )
 
@@ -131,7 +126,7 @@ class TestAddPaymentMethod:
         stripe_service: StripeService,
         mock_tenant_storage: AsyncMock,
         mock_stripe: Mock,
-        mock_payment_service: Mock,
+        mock_event_router: Mock,
     ):
         # Not sure whybut mock_stripe.PaymentMethod.attach_async is not working
         mock_stripe.PaymentMethod.attach_async = AsyncMock(return_value=_mock_payment_method())
@@ -154,7 +149,7 @@ class TestAddPaymentMethod:
         )
         mock_tenant_storage.clear_payment_failure.assert_called_once()
         await wait_for_background_tasks()
-        mock_payment_service.decrement_credits.assert_called_once_with(0)
+        mock_event_router.assert_called_once()
 
     async def test_add_payment_method_no_customer(
         self,
@@ -438,3 +433,127 @@ class TestStripeWebhook:
         )
 
         mock_tenant_storage.add_credits.assert_not_called()
+
+
+class TestHandleCreditDecrement:
+    @pytest.fixture
+    def test_org(self, mock_tenant_storage: AsyncMock):
+        """Patch the org returned by decrement_credits"""
+        org = TenantData(
+            slug="test-tenant",
+            owner_id="test-owner",
+            org_id="test-org",
+            current_credits_usd=4.0,  # Below threshold
+            customer_id="cus_123",
+            automatic_payment_enabled=True,
+            automatic_payment_threshold=5.0,
+            automatic_payment_balance_to_maintain=10.0,
+        )
+
+        mock_tenant_storage.decrement_credits.return_value = org
+        return org
+
+    async def test_decrement_credits_no_automatic_payment(
+        self,
+        stripe_service: StripeService,
+        mock_tenant_storage: Mock,
+        test_org: TenantData,
+    ):
+        """Test when automatic payment is disabled"""
+        test_org.automatic_payment_enabled = False
+
+        await stripe_service.handle_credit_decrement(test_org)
+
+        # No attempt to lock since credits are above threshold
+        mock_tenant_storage.attempt_lock_for_payment.assert_not_called()
+
+    async def test_decrement_credits_triggers_automatic_payment(
+        self,
+        stripe_service: StripeService,
+        mock_tenant_storage: Mock,
+        mock_stripe: Mock,
+        test_org: TenantData,
+    ):
+        # Mock the organization document returned after decrementing credits
+
+        # Mock successful lock attempt
+        mock_tenant_storage.attempt_lock_for_payment.return_value = test_org.model_copy(
+            update={"locked_for_payment": True},
+        )
+        mock_stripe.Customer.retrieve_async.return_value = _mock_customer(payment_method=True)
+        mock_stripe.PaymentIntent.create_async.return_value = _payment_intent()
+        # Not sure why just using a return_value does not work here
+        mock_stripe.PaymentIntent.confirm_async = AsyncMock(return_value=Mock(status="succeeded"))
+
+        await stripe_service.handle_credit_decrement(test_org)
+
+        # Verify all the expected calls
+        mock_tenant_storage.attempt_lock_for_payment.assert_called_once()
+        mock_tenant_storage.unlock_payment_for_failure.assert_not_called()
+        mock_tenant_storage.unlock_payment_for_success.assert_not_called()
+
+    async def test_decrement_credits_automatic_payment_fails(
+        self,
+        stripe_service: StripeService,
+        mock_tenant_storage: Mock,
+        test_org: TenantData,
+        mock_stripe: Mock,
+        mock_email_service: Mock,
+    ):
+        # Mock successful lock attempt
+        mock_lock_doc = Mock()
+        mock_lock_doc.locked_for_payment = True
+        mock_tenant_storage.attempt_lock_for_payment.return_value = test_org.model_copy(
+            update={"locked_for_payment": True},
+        )
+
+        # Mock payment method retrieval
+        mock_stripe.Customer.retrieve_async.return_value = _mock_customer(payment_method=True)
+
+        # Mock payment intent creation and confirmation
+        mock_payment_intent = Mock()
+        mock_payment_intent.id = "pi_123"
+        mock_stripe.PaymentIntent.create_async.return_value = mock_payment_intent
+        mock_stripe.PaymentIntent.confirm_async.side_effect = Exception("Confirm payment failed")
+
+        await stripe_service.handle_credit_decrement(test_org)
+
+        # Verify all the expected calls
+        mock_tenant_storage.attempt_lock_for_payment.assert_called_once()
+        mock_tenant_storage.unlock_payment_for_failure.assert_called_once_with(
+            now=mock.ANY,
+            code="internal",
+            failure_reason=mock.ANY,
+        )
+
+        await wait_for_background_tasks()
+        mock_email_service.send_payment_failure_email.assert_called_once_with()
+
+    async def test_decrement_credits_missing_payment_method(
+        self,
+        stripe_service: StripeService,
+        mock_tenant_storage: Mock,
+        test_org: TenantData,
+        mock_stripe: Mock,
+        mock_email_service: Mock,
+    ):
+        mock_lock_doc = Mock()
+        mock_lock_doc.locked_for_payment = True
+        mock_tenant_storage.attempt_lock_for_payment.return_value = test_org.model_copy(
+            update={"locked_for_payment": True},
+        )
+
+        # Mock payment method retrieval
+        mock_stripe.Customer.retrieve_async.return_value = _mock_customer(payment_method=False)
+
+        await stripe_service.handle_credit_decrement(test_org)
+
+        mock_tenant_storage.attempt_lock_for_payment.assert_called_once()
+        mock_tenant_storage.unlock_payment_for_failure.assert_called_once_with(
+            now=mock.ANY,
+            code="payment_failed",
+            failure_reason="The account does not have a default payment method",
+        )
+
+        await wait_for_background_tasks()
+        mock_email_service.send_payment_failure_email.assert_called_once_with()
