@@ -43,6 +43,12 @@ export function DeploymentInfoSection({ deployment }: DeploymentInfoSectionProps
   const deploymentRows = useMemo(
     () => [
       {
+        label: "Deployment ID",
+        value: deployment.id,
+        copyValue: `anotherai/deployment/${deployment.id}`,
+        copyLabel: "Deployment ID",
+      },
+      {
         label: "Agent ID",
         value: deployment.agent_id,
         copyValue: `anotherai/agent/${deployment.agent_id}`,
@@ -59,7 +65,7 @@ export function DeploymentInfoSection({ deployment }: DeploymentInfoSectionProps
         value: formatDate(deployment.created_at, "relative_with_time"),
       },
     ],
-    [deployment.agent_id, deployment.version.id, deployment.created_at]
+    [deployment.id, deployment.agent_id, deployment.version.id, deployment.created_at]
   );
 
   const basicVersionRows = useMemo(
