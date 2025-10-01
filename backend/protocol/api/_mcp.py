@@ -1,10 +1,11 @@
 # ruff: noqa: B008
 # pyright: reportCallInDefaultInitializer=false
 
+from datetime import date
 from typing import Annotated, Any, Literal
 
 from mcp.types import ToolAnnotations
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from core.consts import ANOTHERAI_API_URL
 from core.domain.cache_usage import CacheUsage
@@ -21,6 +22,10 @@ from protocol.api._api_models import (
     Experiment,
     Input,
     Model,
+    ModelContextWindow,
+    ModelPricing,
+    ModelReasoning,
+    ModelSupports,
     Page,
     QueryCompletionResponse,
     SearchDocumentationResponse,
@@ -28,6 +33,58 @@ from protocol.api._api_models import (
     View,
 )
 from protocol.api._services import models_service
+
+
+class MCPModel(BaseModel):
+    """Model information for MCP tool responses, excluding icon_url to reduce context window usage."""
+
+    id: str = Field(
+        description="Unique identifier for the model, which should be used in the `model` parameter of the OpenAI API.",
+    )
+    display_name: str = Field(
+        description="Human-readable name for the model.",
+    )
+
+    supports: ModelSupports = Field(
+        description="Detailed information about what the model supports.",
+    )
+
+    pricing: ModelPricing = Field(
+        description="Pricing information for the model.",
+    )
+
+    release_date: date = Field(
+        description="The date the model was released on the WorkflowAI platform.",
+    )
+
+    reasoning: ModelReasoning | None = Field(
+        default=None,
+        description="Reasoning configuration for the model. None if the model does not support reasoning.",
+    )
+
+    context_window: ModelContextWindow = Field(
+        description="Context window and output token limits for the model.",
+    )
+
+    speed_index: float = Field(
+        description="An indication of speed of the model, the higher the index, the faster the model. "
+        "The index is calculated from the model's average tokens-per-second rate on a standardized translation task.",
+    )
+
+
+def _convert_model_for_mcp(model: Model) -> MCPModel:
+    """Convert a full API Model to an MCP Model without icon_url."""
+    return MCPModel(
+        id=model.id,
+        display_name=model.display_name,
+        supports=model.supports,
+        pricing=model.pricing,
+        release_date=model.release_date,
+        reasoning=model.reasoning,
+        context_window=model.context_window,
+        speed_index=model.speed_index,
+    )
+
 
 mcp = _mcp_utils.CustomFastMCP(
     "Another AI",
@@ -213,13 +270,12 @@ async def get_experiment(
 
 
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
-async def list_models() -> list[Model]:
+async def list_models() -> list[MCPModel]:
     """List all available AI models with their capabilities, pricing, and metadata.
 
     Returns a list of Model objects containing:
     - id: Model identifier to use in the 'models' parameter of playground/API calls (corresponds to version_model in query_completions)
     - display_name: Human-readable name of the model
-    - icon_url: URL to the model's icon image
     - supports: Capabilities including:
       - input/output modalities (text, image, audio, pdf support)
       - parallel_tool_calls: Whether model can make multiple tool calls in one inference
@@ -232,7 +288,8 @@ async def list_models() -> list[Model]:
 
     Use this tool before calling playground() to see available model IDs and their capabilities.
     """
-    return await models_service.list_models()
+    api_models = await models_service.list_models()
+    return [_convert_model_for_mcp(model) for model in api_models]
 
 
 # ------------------------------------------------------------
