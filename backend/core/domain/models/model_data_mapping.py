@@ -1075,7 +1075,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             supports_tool_calling=True,
             fallback=ModelFallback.default("medium"),
         ),
-        Model.CLAUDE_3_SONNET_20240229: DeprecatedModel(replacement_model=Model.CLAUDE_3_5_SONNET_20241022),
+        Model.CLAUDE_3_SONNET_20240229: DeprecatedModel(replacement_model=Model.CLAUDE_3_7_SONNET_20250219),
         Model.CLAUDE_3_HAIKU_20240307: ModelData(
             display_name="Claude 3 Haiku (2024-03-07)",
             supports_json_mode=False,
