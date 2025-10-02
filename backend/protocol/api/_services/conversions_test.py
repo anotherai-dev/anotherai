@@ -26,6 +26,7 @@ from protocol.api._services.conversions import (
     _extract_json_schema,
     annotation_to_domain,
     completion_from_domain,
+    deployment_from_domain,
     experiments_url,
     graph_from_domain,
     graph_to_domain,
@@ -41,7 +42,7 @@ from protocol.api._services.conversions import (
     view_to_domain,
     view_url,
 )
-from tests.fake_models import fake_completion, fake_graph, fake_version, fake_view
+from tests.fake_models import fake_completion, fake_deployment, fake_graph, fake_version, fake_view
 
 
 @pytest.fixture(autouse=True)
@@ -770,3 +771,10 @@ class TestAnnotationToDomainConversion:
 
         assert domain_annotation.context is not None
         assert domain_annotation.context.agent_id == expected_id
+
+
+class TestDeploymentFromDomain:
+    def test_deployment_from_domain(self):
+        domain_deployment = fake_deployment()
+        converted = deployment_from_domain(domain_deployment)
+        assert converted.id == "test-deployment"  # not prefixed
