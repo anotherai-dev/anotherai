@@ -3,7 +3,9 @@ import { Copy } from "lucide-react";
 import React, { memo, useCallback, useEffect, useRef, useState } from "react";
 import { TextBreak } from "@/components/utils/TextBreak";
 import { useToast } from "../ToastProvider";
+import { AudioViewer } from "../messages/AudioViewer";
 import { ImageViewer } from "../messages/ImageViewer";
+import { PDFViewer } from "../messages/PDFViewer";
 
 const MAX_VALUE_LENGTH = 1500;
 const MAX_HEIGHT_PX = 150;
@@ -23,6 +25,45 @@ const isImageUrl = (value: string): boolean => {
   // Check if it's a URL and ends with an image extension
   if (value.startsWith("http://") || value.startsWith("https://")) {
     return imageExtensions.some((ext) => lowercaseValue.includes(ext));
+  }
+
+  return false;
+};
+
+// Helper function to detect PDF data URIs
+const isPdfDataUri = (value: string): boolean => {
+  return typeof value === "string" && value.startsWith("data:application/pdf");
+};
+
+// Helper function to detect PDF URLs
+const isPdfUrl = (value: string): boolean => {
+  if (typeof value !== "string") return false;
+
+  const lowercaseValue = value.toLowerCase();
+
+  // Check if it's a URL and ends with .pdf extension
+  if (value.startsWith("http://") || value.startsWith("https://")) {
+    return lowercaseValue.includes(".pdf");
+  }
+
+  return false;
+};
+
+// Helper function to detect audio data URIs
+const isAudioDataUri = (value: string): boolean => {
+  return typeof value === "string" && value.startsWith("data:audio/");
+};
+
+// Helper function to detect audio URLs
+const isAudioUrl = (value: string): boolean => {
+  if (typeof value !== "string") return false;
+
+  const audioExtensions = [".mp3", ".wav", ".ogg", ".m4a", ".aac", ".flac", ".opus", ".webm"];
+  const lowercaseValue = value.toLowerCase();
+
+  // Check if it's a URL and ends with an audio extension
+  if (value.startsWith("http://") || value.startsWith("https://")) {
+    return audioExtensions.some((ext) => lowercaseValue.includes(ext));
   }
 
   return false;
@@ -125,6 +166,116 @@ function ValueDisplay({ value, textSize, showSeeMore }: ValueDisplayProps) {
               }}
               className="absolute top-1 right-1 p-1 bg-white border border-gray-200 rounded-[2px] hover:bg-gray-100 transition-colors cursor-pointer"
               title="Copy image URL to clipboard"
+            >
+              <Copy size={12} />
+            </button>
+          )}
+        </div>
+      );
+    }
+
+    // Special handling for PDF data URIs
+    if (isPdfDataUri(value)) {
+      return (
+        <div
+          className={cx("inline-block p-3 bg-white border border-gray-200 rounded-[2px] relative", textSizeClass)}
+          style={textSizeStyle}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          <div className="mb-2">
+            <PDFViewer pdfUrl={value} alt="Variable PDF" />
+          </div>
+          <div className="text-xs text-gray-500">PDF data URI ({Math.round(value.length / 1024)}KB)</div>
+          {isHovered && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                copyToClipboard();
+              }}
+              className="absolute top-1 right-1 p-1 bg-white border border-gray-200 rounded-[2px] hover:bg-gray-100 transition-colors cursor-pointer"
+              title="Copy PDF data URI to clipboard"
+            >
+              <Copy size={12} />
+            </button>
+          )}
+        </div>
+      );
+    }
+
+    // Special handling for PDF URLs
+    if (isPdfUrl(value)) {
+      return (
+        <div
+          className={cx("inline-block relative", textSizeClass)}
+          style={textSizeStyle}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          <PDFViewer pdfUrl={value} alt="Variable PDF" />
+          {isHovered && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                copyToClipboard();
+              }}
+              className="absolute top-1 right-1 p-1 bg-white border border-gray-200 rounded-[2px] hover:bg-gray-100 transition-colors cursor-pointer"
+              title="Copy PDF URL to clipboard"
+            >
+              <Copy size={12} />
+            </button>
+          )}
+        </div>
+      );
+    }
+
+    // Special handling for audio data URIs
+    if (isAudioDataUri(value)) {
+      return (
+        <div
+          className={cx("inline-block p-3 bg-white border border-gray-200 rounded-[2px] relative", textSizeClass)}
+          style={textSizeStyle}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          <div className="mb-2">
+            <AudioViewer audioUrl={value} />
+          </div>
+          <div className="text-xs text-gray-500">Audio data URI ({Math.round(value.length / 1024)}KB)</div>
+          {isHovered && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                copyToClipboard();
+              }}
+              className="absolute top-1 right-1 p-1 bg-white border border-gray-200 rounded-[2px] hover:bg-gray-100 transition-colors cursor-pointer"
+              title="Copy audio data URI to clipboard"
+            >
+              <Copy size={12} />
+            </button>
+          )}
+        </div>
+      );
+    }
+
+    // Special handling for audio URLs
+    if (isAudioUrl(value)) {
+      return (
+        <div
+          className={cx("inline-block relative", textSizeClass)}
+          style={textSizeStyle}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          <AudioViewer audioUrl={value} />
+          {isHovered && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                copyToClipboard();
+              }}
+              className="absolute top-1 right-1 p-1 bg-white border border-gray-200 rounded-[2px] hover:bg-gray-100 transition-colors cursor-pointer"
+              title="Copy audio URL to clipboard"
             >
               <Copy size={12} />
             </button>

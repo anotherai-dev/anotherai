@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { AudioViewer } from "@/components/messages/AudioViewer";
 import { ImageViewer } from "@/components/messages/ImageViewer";
 import { PDFViewer } from "@/components/messages/PDFViewer";
@@ -20,10 +21,10 @@ function isAudioType(contentType: string): boolean {
 }
 
 export function FileView({ file }: FileViewProps) {
-  const isImage = file.content_type ? isImageType(file.content_type) : false;
-  const isPdf = file.content_type ? isPdfType(file.content_type) : false;
-  const isAudio = file.content_type ? isAudioType(file.content_type) : false;
-  const url = file.url || file.storage_url || "";
+  const isImage = useMemo(() => (file.content_type ? isImageType(file.content_type) : false), [file.content_type]);
+  const isPdf = useMemo(() => (file.content_type ? isPdfType(file.content_type) : false), [file.content_type]);
+  const isAudio = useMemo(() => (file.content_type ? isAudioType(file.content_type) : false), [file.content_type]);
+  const url = useMemo(() => file.url || file.storage_url || "", [file.url, file.storage_url]);
 
   // For images, show the ImageViewer without the container
   if (isImage && url) {
