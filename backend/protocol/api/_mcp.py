@@ -442,8 +442,8 @@ async def query_completions(
     immediately load and view the actual content to verify the model's analysis. This is critical for debugging and should be done
     proactively without waiting for the user to explicitly ask.
 
-    - **Images**: Use `curl` to download to /tmp and then `Read` to view the image, or use `WebFetch` if the domain is accessible
-    - **Audio/PDFs**: Download using `curl` and inspect as needed
+    - **Images**: Download the image and view it to verify the model's analysis
+    - **Audio/PDFs**: Download and inspect the content as needed
 
     The completion table structured is defined below (in doubt, you can retrieve the structure using DESCRIBE TABLE completions).
 
