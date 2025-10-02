@@ -30,6 +30,7 @@ from core.domain.models.model_data import FinalModelData, MaxTokensData
 from core.domain.models.model_data import ModelReasoningBudget as DomainModelReasoningBudget
 from core.domain.models.model_data_supports import ModelDataSupports
 from core.domain.models.model_provider_data import ModelProviderData
+from core.domain.tenant_data import TenantData
 from core.domain.tool import HostedTool as DomainHostedTool
 from core.domain.tool import Tool as DomainTool
 from core.domain.tool_call import ToolCallRequest as DomainToolCallRequest
@@ -71,6 +72,7 @@ from protocol.api._api_models import (
     Output,
     OutputSchema,
     SupportsModality,
+    Tenant,
     TokenUsage,
     Tool,
     ToolCallRequest,
@@ -881,4 +883,31 @@ def experiment_completion_from_domain(completion: ExperimentOutput) -> Experimen
         output=output_from_domain(completion.output) if completion.output else Output(),
         cost_usd=completion.cost_usd or 0.0,
         duration_seconds=completion.duration_seconds or 0.0,
+    )
+
+
+def _automatic_payment_from_domain(tenant: TenantData) -> Tenant.AutomaticPayment | None:
+    if not tenant.automatic_payment_enabled:
+        return None
+    if tenant.automatic_payment_threshold is None or tenant.automatic_payment_balance_to_maintain is None:
+        _log.warning("Automatic payment is enabled but threshold or balance to maintain is not set", tenant=tenant)
+        return None
+    return Tenant.AutomaticPayment(
+        threshold=tenant.automatic_payment_threshold,
+        balance_to_maintain=tenant.automatic_payment_balance_to_maintain,
+    )
+
+
+def tenant_from_domain(tenant: TenantData) -> Tenant:
+    return Tenant(
+        id=tenant.slug,
+        current_credits_usd=tenant.current_credits_usd,
+        automatic_payment=_automatic_payment_from_domain(tenant),
+        payment_failure=Tenant.PaymentFailure(
+            failure_date=tenant.payment_failure.failure_date,
+            failure_code=tenant.payment_failure.failure_code,
+            failure_reason=tenant.payment_failure.failure_reason,
+        )
+        if tenant.payment_failure
+        else None,
     )

@@ -2,6 +2,58 @@ export interface ModelWithID {
   id: string;
 }
 
+// Payment-related types
+export interface PaymentMethodResponse {
+  payment_method_id: string;
+  payment_method_currency?: string;
+  last4: string;
+  brand: string;
+  exp_month: number;
+  exp_year: number;
+}
+
+export interface PaymentMethodRequest {
+  payment_method_id: string;
+  payment_method_currency?: string;
+}
+
+export interface PaymentMethodIdResponse {
+  payment_method_id: string;
+}
+
+export interface CreatePaymentIntentRequest {
+  amount: number;
+}
+
+export interface PaymentIntentCreatedResponse {
+  client_secret: string;
+  payment_intent_id: string;
+}
+
+export interface AutomaticPaymentRequest {
+  opt_in: boolean;
+  threshold?: number | null;
+  balance_to_maintain?: number | null;
+}
+
+export interface PaymentFailure {
+  failure_date: string;
+  failure_code: "payment_failed" | "internal";
+  failure_reason: string;
+}
+
+export interface AutomaticPayment {
+  threshold: number;
+  balance_to_maintain: number;
+}
+
+export interface Tenant {
+  id: string;
+  current_credits_usd?: number;
+  automatic_payment?: AutomaticPayment | null | undefined;
+  payment_failure?: PaymentFailure | null | undefined;
+}
+
 export interface Tool {
   name: string;
   description?: string;

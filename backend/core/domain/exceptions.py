@@ -84,9 +84,9 @@ class ObjectNotFoundError(DefaultError):
     code = "object_not_found"
     default_capture = False
 
-    def __init__(self, object_type: str, **kwargs: Any):
+    def __init__(self, object_type: str, msg: str | None = None, **kwargs: Any):
         self.object_type = object_type
-        super().__init__(msg=f"{object_type} not found", **kwargs)
+        super().__init__(msg=msg or f"{object_type} not found", **kwargs)
 
 
 class EntityTooLargeError(DefaultError):
@@ -297,3 +297,14 @@ Grab a fresh one (plus $5 in free LLM credits for new users) at {ANOTHERAI_APP_U
             "A valid authorization header with an API key looks like 'Bearer aai-****'. If you need a new API key, "
             f"Grab a fresh one (plus $5 in free LLM credits for new users) at {ANOTHERAI_APP_URL}/keys 🚀",
         )
+
+
+class MissingPaymentMethodError(BadRequestError):
+    pass
+
+
+class PaymentRequiredError(DefaultError):
+    default_status_code = 402
+    default_message = "Payment required"
+    code = "payment_required"
+    default_capture = True
