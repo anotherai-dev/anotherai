@@ -634,17 +634,9 @@ async def list_deployments(
 
 @mcp.tool(annotations=ToolAnnotations(idempotentHint=True))
 async def create_or_update_deployment(
-    agent_id: str = Field(
-        description="The agent id to deploy the version to",
-    ),
-    version_id: str = Field(
-        description="The version id to deploy. Can be found in an experiment or a completion.",
-    ),
-    deployment_id: str = Field(
-        # TODO: update description and examples based on tests. Make sure field in _api_models.py is updated too.
-        description="The id of the deployment",
-        examples=["my-agent-id:production#1"],
-    ),
+    agent_id: _mcp_utils.AgentID,
+    version_id: _mcp_utils.VersionID,
+    deployment_id: _mcp_utils.DeploymentID,
     author_name: str = Field(
         description="The name of the author of the deployment",
     ),
@@ -658,6 +650,9 @@ async def create_or_update_deployment(
 
     Updating an existing deployment needs user confirmation. You will be provided the URL where a user can
     confirm the update.
+
+    Note: when the deployment is used in the model fields of the OpenAI completion API, make sure
+    to use the correct format: `model=anotherai/deployment/<deployment_id>`.
     """
     return await (await _mcp_utils.deployment_service()).upsert_deployment(
         agent_id=agent_id,
