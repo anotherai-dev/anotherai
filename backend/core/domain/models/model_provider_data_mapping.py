@@ -222,6 +222,16 @@ AMAZON_BEDROCK_PROVIDER_DATA: ProviderDataByModel = {
             supports_input_pdf=False,
         ),
     ),
+    Model.CLAUDE_4_5_SONNET_20250929: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=3 * ONE_MILLION_TH,
+            completion_cost_per_token=15 * ONE_MILLION_TH,
+            source="https://aws.amazon.com/bedrock/pricing/",
+        ),
+        supports_override=ModelDataSupportsOverride(
+            supports_input_pdf=False,
+        ),
+    ),
     Model.CLAUDE_4_SONNET_20250514: ModelProviderData(
         text_price=TextPricePerToken(
             prompt_cost_per_token=3 * ONE_MILLION_TH,
@@ -576,6 +586,13 @@ ANTHROPIC_PROVIDER_DATA: ProviderDataByModel = {
         text_price=TextPricePerToken(
             prompt_cost_per_token=15 * ONE_MILLION_TH,
             completion_cost_per_token=75 * ONE_MILLION_TH,
+            source="https://docs.anthropic.com/en/docs/about-claude/models/all-models#model-comparison-table",
+        ),
+    ),
+    Model.CLAUDE_4_5_SONNET_20250929: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=3 * ONE_MILLION_TH,
+            completion_cost_per_token=15 * ONE_MILLION_TH,
             source="https://docs.anthropic.com/en/docs/about-claude/models/all-models#model-comparison-table",
         ),
     ),
