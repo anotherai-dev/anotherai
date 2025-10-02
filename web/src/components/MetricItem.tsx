@@ -2,6 +2,7 @@ import { cx } from "class-variance-authority";
 import { ArrowUp } from "lucide-react";
 import { memo, useMemo } from "react";
 import { HoverPopover } from "@/components/HoverPopover";
+import { formatNumber } from "@/components/universal-charts/utils";
 import { formatCurrency, formatDuration, getMetricBadgeWithRelative } from "@/components/utils/utils";
 
 type MetricItemProps = {
@@ -10,6 +11,7 @@ type MetricItemProps = {
   allMetricsPerKey?: Record<string, number[]>;
   versionMetricsPerKey?: Record<string, number[]>; // Version-specific data for percentiles
   showAvgPrefix?: boolean;
+  usePer1kMultiplier?: boolean; // Whether to use 1000 multiplier for costs
 };
 
 type PercentilesPopoverProps = {
@@ -60,6 +62,7 @@ export function MetricItem({
   allMetricsPerKey,
   versionMetricsPerKey,
   showAvgPrefix,
+  usePer1kMultiplier = true,
 }: MetricItemProps) {
   const metricType = useMemo(() => {
     if (metricKey.includes("cost")) {
@@ -102,15 +105,21 @@ export function MetricItem({
 
   const formatValue = useMemo(() => {
     if (metricType === "cost") {
-      return formatCurrency;
+      return (value: number) => (usePer1kMultiplier ? formatCurrency(value, 1000) : `$${formatNumber(value)}`);
     } else if (metricType === "duration") {
       return formatDuration;
     } else {
       return (value: number) => value.toFixed(2);
     }
-  }, [metricType]);
+  }, [metricType, usePer1kMultiplier]);
 
-  const displayLabel = showAvgPrefix ? `Average ${metricKey.replace(/_/g, " ")}` : metricKey.replace(/_/g, " ");
+  const displayLabel = showAvgPrefix
+    ? `Average ${metricKey === "cost" ? (usePer1kMultiplier ? "cost (Per 1k completions)" : "cost") : metricKey.replace(/_/g, " ")}`
+    : metricKey === "cost"
+      ? usePer1kMultiplier
+        ? "cost (Per 1k completions)"
+        : "cost"
+      : metricKey.replace(/_/g, " ");
 
   if (percentiles && showAvgPrefix) {
     return (

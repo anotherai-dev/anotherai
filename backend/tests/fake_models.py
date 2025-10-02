@@ -15,6 +15,7 @@ from core.domain.models._displayed_provider import DisplayedProvider
 from core.domain.models.model_data import MaxTokensData, ModelData, QualityData, SpeedData, SpeedIndex
 from core.domain.models.models import Model
 from core.domain.models.providers import Provider
+from core.domain.tenant_data import TenantData
 from core.domain.trace import LLMTrace
 from core.domain.version import Version
 from core.domain.view import Graph, View, ViewFolder
@@ -220,3 +221,18 @@ def fake_deployment(**kwargs: Any):
         metadata=None,
     )
     return base.model_copy(update=kwargs)
+
+
+def fake_tenant(**kwargs: Any):
+    base = TenantData(
+        uid=1,
+        slug="test-tenant",
+        org_id="test-org",
+        owner_id="test-owner",
+    )
+    return TenantData.model_validate(
+        {
+            **base.model_dump(),
+            **kwargs,
+        },
+    )

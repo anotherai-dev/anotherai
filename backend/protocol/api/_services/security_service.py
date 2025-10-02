@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field, ValidationError
 from core.consts import ANOTHERAI_APP_URL
 from core.domain.events import EventRouter, UserConnectedEvent
 from core.domain.exceptions import InvalidTokenError, ObjectNotFoundError
-from core.domain.tenant_data import TenantData
+from core.domain.tenant_data import TenantData, User
 from core.services.user_manager import UserManager
 from core.storage.tenant_storage import TenantStorage
 from core.storage.user_storage import UserStorage
@@ -73,10 +73,12 @@ class SecurityService:
     async def _oauth_tenant(self, token: str) -> TenantData:
         user_id = await self._user_manager.validate_oauth_token(token)
         try:
-            return await self._user_storage.last_used_organization(user_id)
+            data = await self._user_storage.last_used_organization(user_id)
         except ObjectNotFoundError:
             # If the user is not found, we auto create a tenant for the user
-            return await self._tenant_from_owner_id(user_id)
+            data = await self._tenant_from_owner_id(user_id)
+        data.user = User(sub=user_id, email=None)  # TODO: email
+        return data
 
     async def find_tenant(self, token: str) -> TenantData:
         if not token:
@@ -104,6 +106,10 @@ class SecurityService:
             tenant = await self._tenant_from_org_id(claims.org_id, claims)
         else:
             tenant = await self._tenant_from_owner_id(claims.sub)
+        tenant.user = User(
+            sub=claims.sub,
+            email=claims.email,
+        )
 
         self._event_router(UserConnectedEvent(user_id=claims.sub, organization_id=claims.org_id))
         return tenant
@@ -113,6 +119,7 @@ class _Claims(BaseModel):
     sub: str = Field(min_length=1)
     org_id: str | None = None
     org_slug: str | None = None
+    email: str | None = None
 
 
 def is_api_key(token: str) -> bool:

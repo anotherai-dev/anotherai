@@ -1,5 +1,6 @@
 import { Flowchart16Regular } from "@fluentui/react-icons";
 import { useMemo } from "react";
+import { formatNumber } from "@/components/universal-charts/utils";
 import { TraceModelEntry } from "./TraceModelEntry";
 
 type TraceAgentEntryProps = {
@@ -32,7 +33,7 @@ export function TraceAgentEntry(props: TraceAgentEntryProps) {
 
   const formatCost = (costMillionthUsd: number) => {
     const costUsd = costMillionthUsd / 1000000;
-    return `$${costUsd.toFixed(4)}`;
+    return `$${formatNumber(costUsd)}`;
   };
 
   const formatDuration = (durationDs: number) => {

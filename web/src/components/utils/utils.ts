@@ -144,7 +144,7 @@ export function getMetricBadgeWithRelative(
   };
 }
 
-export function formatCurrency(value: number, multiplier: number = 1000): string {
+export function formatCurrency(value: number, multiplier: number): string {
   // Convert using multiplier for better readability
   const adjustedValue = value * multiplier;
   return `$${adjustedValue.toFixed(2)}`;

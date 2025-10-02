@@ -121,7 +121,7 @@ class DeploymentService:
                 "Check that the version exists and is associated with the agent.",
             ) from None
 
-    async def upsert_deployment(
+    async def mcp_upsert_deployment(
         self,
         agent_id: str,
         version_id: str,
@@ -149,7 +149,10 @@ class DeploymentService:
                 metadata={},
             )
             await self._deployments_storage.create_deployment(inserted)
-            return deployment_from_domain(inserted)
+            dep = deployment_from_domain(inserted)
+            # Wrapping ID for mcp
+            dep.id = IDType.DEPLOYMENT.wrap(dep.id)
+            return dep
 
         # A deployment already exists
         # We won't update anything here since it would be too dangerous to update a deployment via MCP

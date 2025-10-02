@@ -38,22 +38,32 @@ class LRUCache[K: Hashable, T]:
 
 # We should probably inherit from MutableMapping instead
 class TLRUCache[K: Hashable, T]:
-    def __init__(self, capacity: int, ttl: Callable[[K, T], timedelta]):
-        self._cache: LRUCache[K, tuple[datetime, T]] = LRUCache[K, tuple[datetime, T]](capacity)
-        self._ttl: Callable[[K, T], timedelta] = ttl
+    def __init__(self, capacity: int, ttl: Callable[[K, T], timedelta | None]):
+        self._cache: LRUCache[K, tuple[datetime | None, T]] = LRUCache[K, tuple[datetime | None, T]](capacity)
+        self._ttl: Callable[[K, T], timedelta | None] = ttl
 
     def __getitem__(self, key: K) -> T:
         val = self._cache[key]
-        if val[0] < datetime.now(UTC):
+        if val[0] and val[0] < datetime.now(UTC):
             del self._cache[key]
             raise KeyError(f"Key {key} was expired in cache")
         return val[1]
 
     def __setitem__(self, key: K, value: T) -> None:
-        self._cache[key] = (datetime.now(UTC) + self._ttl(key, value), value)
+        ttl = self._ttl(key, value)
+        if ttl:
+            self.setex(key, ttl, value)
+        else:
+            self.set(key, value)
 
     def get(self, key: K, default: T | None = None) -> T | None:
         try:
             return self[key]
         except KeyError:
             return default
+
+    def setex(self, key: K, expiration: timedelta, value: T) -> None:
+        self._cache[key] = (datetime.now(UTC) + expiration, value)
+
+    def set(self, key: K, value: T) -> None:
+        self._cache[key] = (None, value)

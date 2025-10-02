@@ -41,7 +41,7 @@ async def test_create_and_use_deployment(test_api_client: IntegrationTestClient)
 
     # Now deploy the created version via MCP
     res = await _create_deployment_via_mcp(test_api_client, version_id)
-    assert res["result"]["id"] == "test-agent:production#1"
+    assert res["result"]["id"] == "anotherai/deployment/test-agent:production#1"
     assert res["result"]["version"]["id"] == version_id
     assert res["result"]["version"]["model"] == "gpt-4.1-latest"
     assert res["result"]["version"]["temperature"] == 0.0
@@ -112,7 +112,7 @@ async def test_create_and_use_deployment(test_api_client: IntegrationTestClient)
 
     # But I can create a new deployment
     dep2 = await _create_deployment_via_mcp(test_api_client, completion2["version"]["id"], deployment_id="dep2")
-    assert dep2["result"]["id"] == "dep2"
+    assert dep2["result"]["id"] == "anotherai/deployment/dep2"
     assert dep2["result"]["version"]["id"] == completion2["version"]["id"]
 
     # I can use the new deployment

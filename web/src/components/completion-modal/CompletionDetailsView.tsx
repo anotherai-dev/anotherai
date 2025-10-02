@@ -39,7 +39,7 @@ export function CompletionDetailsView(props: Props) {
         </div>
 
         <div className="space-y-2 px-4">
-          <InfoRow title="Agent ID" value={completion.agent_id} />
+          <InfoRow title="Agent ID" value={completion.agent_id} linkTo={`/agents/${completion.agent_id}`} />
           {completion.created_at && (
             <InfoRow title="Created" value={new Date(completion.created_at).toLocaleString()} />
           )}
