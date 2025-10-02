@@ -437,6 +437,14 @@ async def query_completions(
     Exposes the clickhouse database to the user. The tool validates your SQL query and returns a URL to view the results in the web interface.
     Avoid using the query_completions tool to then pass the inputs to the playground tool. Instead, use the completion_query parameter of the playground tool.
 
+    **Debugging completions with non-text inputs:**
+    When investigating issues with a completion that contains image_url, audio_url, or PDF inputs ALWAYS
+    immediately load and view the actual content to verify the model's analysis. This is critical for debugging and should be done
+    proactively without waiting for the user to explicitly ask.
+
+    - **Images**: Use `curl` to download to /tmp and then `Read` to view the image, or use `WebFetch` if the domain is accessible
+    - **Audio/PDFs**: Download using `curl` and inspect as needed
+
     The completion table structured is defined below (in doubt, you can retrieve the structure using DESCRIBE TABLE completions).
 
     ```sql
