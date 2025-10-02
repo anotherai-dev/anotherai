@@ -141,6 +141,20 @@ You can learn more about datasets and how to use them [here](/use-cases/fundamen
 
 If you have a small number of PDFs to test that you can also upload them individually to your AI assistant. Since PDFs uploaded this way aren't stored in a persistent dataset, this approach is best suited for ad-hoc testing rather than systematic experimentation. While any completions created using these PDFs will be stored in AnotherAI and can be reused in future experiments, if you wanted to test any specific PDFs again at a later date, you would need to provide links to the specific completions that used those documents.
 
+<Callout type="info">
+**How to reference PDFs properly for use in AnotherAI:**
+- **Claude Code:** When giving Claude Code PDFs for experiments, it's important to reference them using their full file path (e.g., `/Users/username/Documents/invoice.pdf`) rather than dragging and dropping into the chat. Dragged and dropped PDFs do not contain a file path, which is required for Claude Code to use the PDF in an AnotherAI experiment.
+- **Cursor:** Similarly, when working with Cursor's AI assistant, to add PDFs to AnotherAI experiments, you must provide the full file path (e.g., `/Users/username/Documents/invoice.pdf`) so the assistant can upload the file to AnotherAI's storage.
+
+Example prompt with proper file path reference:
+```
+Add these PDFs as input to anotherai/experiment/01999c4c-cb00-72bf-1b1b-7096ae019363:
+- /Users/username/Documents/invoice-2024-01.pdf
+- /Users/username/Documents/contract-final.pdf
+- /Users/username/Documents/report-q4.pdf
+```
+</Callout>
+
 
 ### Prompts
 
