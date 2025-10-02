@@ -651,6 +651,43 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             is_default=True,
             reasoning=ModelReasoningBudget(disabled=0, min=1, max=24576),
         ),
+        Model.GEMINI_2_5_FLASH_PREVIEW_0925: ModelData(
+            display_name="Gemini 2.5 Flash (preview 09-2025)",
+            supports_json_mode=True,
+            supports_input_image=True,
+            supports_input_pdf=True,
+            supports_input_audio=True,
+            supports_structured_output=True,
+            max_tokens_data=MaxTokensData(
+                max_tokens=1_048_576 + 65_536,
+                max_output_tokens=65_536,
+                source="https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-5-flash",
+            ),
+            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/google.svg",
+            release_date=date(2025, 9, 25),
+            quality_data=QualityData(
+                gpqa=82.8,
+                mmlu=88.4,
+                source="https://deepmind.google/models/gemini/flash/",
+            ),
+            speed_data=SpeedData(
+                index=SpeedIndex.from_experiment(output_tokens=2821, duration_seconds=13.4),
+            ),
+            provider_name=DisplayedProvider.GOOGLE.value,
+            supports_tool_calling=True,
+            fallback=ModelFallback.default(
+                "cheapest",
+                content_moderation=Model.GPT_41_NANO_LATEST,
+                rate_limit=Model.GEMINI_2_0_FLASH_001,
+                context_exceeded="no",
+            ),
+            is_default=True,
+            reasoning=ModelReasoningBudget(disabled=0, min=1, max=24576),
+            aliases=[
+                "gemini-2.5-flash-latest",
+                "gemini-flash-latest",
+            ],
+        ),
         Model.GEMINI_2_5_FLASH_THINKING_PREVIEW_0417: DeprecatedModel(replacement_model=Model.GEMINI_2_5_FLASH),
         Model.GEMINI_2_5_FLASH_THINKING_PREVIEW_0520: DeprecatedModel(replacement_model=Model.GEMINI_2_5_FLASH),
         Model.GEMINI_2_5_PRO: ModelData(
@@ -716,6 +753,42 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             ),
             # https://cloud.google.com/vertex-ai/generative-ai/docs/thinking
             reasoning=ModelReasoningBudget(disabled=0, min=512, max=24_576),
+        ),
+        Model.GEMINI_2_5_FLASH_LITE_PREVIEW_0925: ModelData(
+            display_name="Gemini 2.5 Flash Lite (preview 09-2025)",
+            supports_json_mode=True,
+            supports_input_image=True,
+            supports_input_pdf=True,
+            supports_input_audio=True,
+            supports_structured_output=True,
+            max_tokens_data=MaxTokensData(
+                max_tokens=1_048_576 + 65_536,
+                max_output_tokens=65_536,
+                source="https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-5-flash-lite",
+            ),
+            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/google.svg",
+            release_date=date(2025, 9, 25),
+            quality_data=QualityData(
+                gpqa_diamond=66.7,
+                mmlu=84.5,
+                source="https://deepmind.google/models/gemini/flash-lite/",
+            ),
+            speed_data=SpeedData(
+                index=SpeedIndex.from_experiment(output_tokens=2900, duration_seconds=9),
+            ),
+            provider_name=DisplayedProvider.GOOGLE.value,
+            supports_tool_calling=True,
+            fallback=ModelFallback.default(
+                "cheapest",
+                content_moderation=Model.GPT_41_NANO_LATEST,
+                context_exceeded="no",
+            ),
+            # https://cloud.google.com/vertex-ai/generative-ai/docs/thinking
+            reasoning=ModelReasoningBudget(disabled=0, min=512, max=24_576),
+            aliases=[
+                "gemini-2.5-flash-lite-latest",
+                "gemini-flash-lite-latest",
+            ],
         ),
         Model.GEMINI_2_5_FLASH_LITE_PREVIEW_0617: DeprecatedModel(replacement_model=Model.GEMINI_2_5_FLASH_LITE),
         Model.GEMINI_2_5_PRO_PREVIEW_0605: DeprecatedModel(replacement_model=Model.GEMINI_2_5_PRO),
