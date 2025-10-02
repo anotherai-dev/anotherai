@@ -1,8 +1,11 @@
+import datetime
+
 from core.domain.models import Model, Provider
 from core.providers.google.google_provider_domain import GOOGLE_CHARS_PER_TOKEN
 
 from .model_provider_data import (
     AudioPricePerToken,
+    LifecycleData,
     ModelDataSupportsOverride,
     ModelProviderData,
     TextPricePerToken,
@@ -242,27 +245,15 @@ AMAZON_BEDROCK_PROVIDER_DATA: ProviderDataByModel = {
             supports_input_pdf=False,
         ),
     ),
-    Model.CLAUDE_3_5_SONNET_20241022: ModelProviderData(
-        text_price=TextPricePerToken(
-            prompt_cost_per_token=3 * ONE_MILLION_TH,
-            completion_cost_per_token=15 * ONE_MILLION_TH,
-            source="https://aws.amazon.com/bedrock/pricing/",
-        ),
-        supports_override=ModelDataSupportsOverride(
-            supports_input_pdf=False,
-        ),
-    ),
-    Model.CLAUDE_3_5_SONNET_20240620: ModelProviderData(
-        text_price=TextPricePerToken(
-            prompt_cost_per_token=3 * ONE_MILLION_TH,
-            completion_cost_per_token=15 * ONE_MILLION_TH,
-            source="https://aws.amazon.com/bedrock/pricing/",
-        ),
-    ),
     Model.CLAUDE_3_OPUS_20240229: ModelProviderData(
         text_price=TextPricePerToken(
             prompt_cost_per_token=15 * ONE_MILLION_TH,
             completion_cost_per_token=75 * ONE_MILLION_TH,
+            source="https://aws.amazon.com/bedrock/pricing/",
+        ),
+        lifecycle_data=LifecycleData(
+            sunset_date=datetime.date(year=2026, month=1, day=5),
+            post_sunset_replacement_model=Model.CLAUDE_4_OPUS_20250514,
             source="https://aws.amazon.com/bedrock/pricing/",
         ),
     ),
@@ -551,20 +542,6 @@ ANTHROPIC_PROVIDER_DATA: ProviderDataByModel = {
             source="https://docs.anthropic.com/en/docs/about-claude/models/all-models#model-comparison-table",
         ),
     ),
-    Model.CLAUDE_3_5_SONNET_20241022: ModelProviderData(
-        text_price=TextPricePerToken(
-            prompt_cost_per_token=3.0 * ONE_MILLION_TH,
-            completion_cost_per_token=15 * ONE_MILLION_TH,
-            source="https://docs.anthropic.com/en/docs/about-claude/models/all-models#model-comparison-table",
-        ),
-    ),
-    Model.CLAUDE_3_5_SONNET_20240620: ModelProviderData(
-        text_price=TextPricePerToken(
-            prompt_cost_per_token=3.00 * ONE_MILLION_TH,
-            completion_cost_per_token=15.00 * ONE_MILLION_TH,
-            source="https://docs.anthropic.com/en/docs/about-claude/models/all-models#model-comparison-table",
-        ),
-    ),
     Model.CLAUDE_3_7_SONNET_20250219: ModelProviderData(
         text_price=TextPricePerToken(
             prompt_cost_per_token=3.00 * ONE_MILLION_TH,
@@ -598,6 +575,11 @@ ANTHROPIC_PROVIDER_DATA: ProviderDataByModel = {
             prompt_cost_per_token=15 * ONE_MILLION_TH,
             completion_cost_per_token=15 * ONE_MILLION_TH,
             source="https://docs.anthropic.com/en/docs/about-claude/models/all-models#model-comparison-table",
+        ),
+        lifecycle_data=LifecycleData(
+            sunset_date=datetime.date(year=2026, month=1, day=5),
+            post_sunset_replacement_model=Model.CLAUDE_4_OPUS_20250514,
+            source="https://aws.amazon.com/bedrock/pricing/",
         ),
     ),
     Model.CLAUDE_3_HAIKU_20240307: ModelProviderData(

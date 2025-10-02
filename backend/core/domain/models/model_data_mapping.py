@@ -929,28 +929,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             ),  # Claude docs mention that reasoning tokens 32k are rarely used.
             # https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking
         ),
-        Model.CLAUDE_3_5_SONNET_20241022: ModelData(
-            display_name="Claude 3.5 Sonnet (2024-10-22)",
-            supports_json_mode=False,
-            supports_input_image=True,
-            supports_input_pdf=True,
-            supports_input_audio=False,
-            max_tokens_data=MaxTokensData(
-                max_tokens=200000,
-                max_output_tokens=8192,
-                source="https://docs.anthropic.com/en/docs/about-claude/models",
-            ),
-            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/anthropic.svg",
-            release_date=date(2024, 10, 22),
-            quality_data=QualityData(mmlu=86, gpqa=68),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=543, duration_seconds=11),
-            ),
-            latest_model=Model.CLAUDE_3_5_SONNET_LATEST,
-            provider_name=DisplayedProvider.ANTHROPIC.value,
-            supports_tool_calling=True,
-            fallback=ModelFallback.default("medium"),
-        ),
+        Model.CLAUDE_3_5_SONNET_20241022: DeprecatedModel(replacement_model=Model.CLAUDE_3_7_SONNET_20250219),
         Model.GEMINI_1_5_FLASH_002: DeprecatedModel(
             replacement_model=Model.GEMINI_2_5_FLASH,
             reasoning_effort=ReasoningEffort.DISABLED,
@@ -971,10 +950,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             replacement_model=Model.GEMINI_2_5_PRO,
             reasoning_effort=ReasoningEffort.LOW,
         ),
-        Model.CLAUDE_3_5_SONNET_LATEST: LatestModel(
-            model=Model.CLAUDE_3_5_SONNET_20241022,
-            display_name="Claude 3.5 Sonnet (latest)",
-        ),
+        Model.CLAUDE_3_5_SONNET_LATEST: DeprecatedModel(replacement_model=Model.CLAUDE_3_7_SONNET_20250219),
         Model.O1_2024_12_17: ModelData(
             display_name="o1 (2024-12-17)",
             supports_json_mode=True,
@@ -1004,28 +980,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             supports_presence_penalty=False,
             supports_frequency_penalty=False,
         ),
-        Model.CLAUDE_3_5_SONNET_20240620: ModelData(
-            display_name="Claude 3.5 Sonnet (2024-06-20)",
-            supports_json_mode=False,
-            supports_input_image=True,
-            supports_input_pdf=False,
-            supports_input_audio=False,
-            max_tokens_data=MaxTokensData(
-                max_tokens=200000,
-                max_output_tokens=4096,
-                source="https://docs.anthropic.com/en/docs/about-claude/models",
-            ),
-            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/anthropic.svg",
-            latest_model=Model.CLAUDE_3_5_SONNET_LATEST,
-            release_date=date(2024, 6, 20),
-            quality_data=QualityData(mmlu=88.3, gpqa=59.4),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2655, duration_seconds=40),
-            ),
-            provider_name=DisplayedProvider.ANTHROPIC.value,
-            supports_tool_calling=True,
-            fallback=ModelFallback.default("medium"),
-        ),
+        Model.CLAUDE_3_5_SONNET_20240620: DeprecatedModel(replacement_model=Model.CLAUDE_3_7_SONNET_20250219),
         Model.CLAUDE_3_OPUS_20240229: ModelData(
             display_name="Claude 3 Opus (2024-02-29)",
             supports_json_mode=False,
