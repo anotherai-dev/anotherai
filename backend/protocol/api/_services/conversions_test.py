@@ -777,4 +777,4 @@ class TestDeploymentFromDomain:
     def test_deployment_from_domain(self):
         domain_deployment = fake_deployment()
         converted = deployment_from_domain(domain_deployment)
-        assert converted.id == "anotherai/deployment/test-deployment"
+        assert converted.id == "test-deployment"  # not prefixed

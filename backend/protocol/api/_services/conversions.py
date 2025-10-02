@@ -771,7 +771,7 @@ def api_key_from_domain_complete(api_key: DomainCompleteAPIKey) -> CompleteAPIKe
 
 def deployment_from_domain(deployment: DomainDeployment) -> Deployment:
     return Deployment(
-        id=IDType.DEPLOYMENT.wrap(deployment.id),
+        id=deployment.id,
         agent_id=deployment.agent_id,
         version=version_from_domain(deployment.version),
         metadata=deployment.metadata or {},

@@ -654,7 +654,7 @@ async def create_or_update_deployment(
     Note: when the deployment is used in the model fields of the OpenAI completion API, make sure
     to use the correct format: `model=anotherai/deployment/<deployment_id>`.
     """
-    return await (await _mcp_utils.deployment_service()).upsert_deployment(
+    return await (await _mcp_utils.deployment_service()).mcp_upsert_deployment(
         agent_id=agent_id,
         version_id=version_id,
         deployment_id=deployment_id,
