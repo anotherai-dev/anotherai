@@ -141,6 +141,20 @@ You can learn more about datasets and how to use them [here](/use-cases/fundamen
 
 If you have a small number of images to test that you can also upload them individually to your AI assistant. Since images uploaded this way aren't stored in a persistent dataset, this approach is best suited for ad-hoc testing rather than systematic experimentation.  While any completions created using these images will be stored in AnotherAI and can be reused in future experiments, if you wanted to test any specific images again at a later date, you would need to provide links to the specific completions that used those images.
 
+<Callout type="info">
+**How to reference images properly for use in AnotherAI:**
+- **Claude Code:** When giving Claude Code images for experiments, it's important to reference them using their full file path (e.g., `/Users/username/Pictures/photo.jpg`) rather than dragging and dropping into the chat. Dragged and dropped images do not contain a file path, which is required for Claude Code to use the image in an AnotherAI experiment.
+- **Cursor:** Similarly, when working with Cursor's AI assistant, to add images to AnotherAI experiments, you must provide the full file path (e.g., `/Users/username/Pictures/photo.jpg`) so the assistant can upload the file to AnotherAI's storage.
+
+Example prompt with proper file path reference:
+```
+Add these images as input to anotherai/experiment/01999c4c-cb00-72bf-1b1b-7096ae019363:
+- /Users/username/Pictures/photo1.jpg
+- /Users/username/Pictures/photo2.jpg
+- /Users/username/Pictures/photo3.jpg
+```
+</Callout>
+
 ### Prompts
 
 Comparing different prompts is one of the most effective ways to improve your agent's performance. Small changes in wording, structure, or examples can lead to significant improvements. If you notice an issue with an existing prompt, you can even ask your AI assistant to generate prompt variations to use in the experiment. 
