@@ -20,6 +20,7 @@ def mock_lifecycle_deps(mock_storage_builder: Mock, mock_event_router: Mock, moc
     patched.storage_builder = mock_storage_builder
     patched.tenant_event_router = mock_event_router
     patched.provider_factory = mock_provider_factory
+    patched.check_credits = Mock(return_value=None)
     with patch("protocol.api._mcp_utils.lifecycle_dependencies", return_value=patched):
         yield patched
 
