@@ -175,6 +175,8 @@ async def _authenticated_tenant() -> TenantData:
 async def playground_service() -> PlaygroundService:
     deps = lifecycle_dependencies()
     tenant = await _authenticated_tenant()
+    # Raise for negative credits if payment is enabled
+    deps.check_credits(tenant)
     return PlaygroundService(
         completion_runner(tenant, deps),
         deps.storage_builder.agents(tenant.uid),
@@ -277,3 +279,9 @@ def IdValidator(id_type: IDType):  # noqa: N802
 type ExperimentID = Annotated[str, IdValidator(IDType.EXPERIMENT), Field(description="The id of the experiment")]
 type CompletionID = Annotated[str, IdValidator(IDType.COMPLETION), Field(description="The id of the completion")]
 type AgentID = Annotated[str, IdValidator(IDType.AGENT), Field(description="The id of the agent")]
+type VersionID = Annotated[str, IdValidator(IDType.VERSION), Field(description="The id of the version")]
+type DeploymentID = Annotated[
+    str,
+    IdValidator(IDType.DEPLOYMENT),
+    Field(description="The id of the deployment", examples=["my-agent-id:production#1"]),
+]

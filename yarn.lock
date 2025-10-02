@@ -2720,6 +2720,26 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@stripe/react-stripe-js@npm:^3.9.1":
+  version: 3.10.0
+  resolution: "@stripe/react-stripe-js@npm:3.10.0"
+  dependencies:
+    prop-types: "npm:^15.7.2"
+  peerDependencies:
+    "@stripe/stripe-js": ">=1.44.1 <8.0.0"
+    react: ">=16.8.0 <20.0.0"
+    react-dom: ">=16.8.0 <20.0.0"
+  checksum: 10c0/d7629436629571883e1ab44b1fdbdd5bc002c9020400bbad212caccddad5eaedefbdb171e970bd34276b72d9c23deac86d1e0898db11961de2a7e8951bf9711a
+  languageName: node
+  linkType: hard
+
+"@stripe/stripe-js@npm:^7.8.0":
+  version: 7.9.0
+  resolution: "@stripe/stripe-js@npm:7.9.0"
+  checksum: 10c0/ca7dd386df944ed05be115422dde9f5a2b04846e508f482d996db273d95bf8ac8ab5078e58480534b8bc6e29c26c67e16c7e75e478c3112813f971ec6aba49f8
+  languageName: node
+  linkType: hard
+
 "@swc/helpers@npm:0.5.15":
   version: 0.5.15
   resolution: "@swc/helpers@npm:0.5.15"
@@ -10076,7 +10096,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prop-types@npm:^15.8.1":
+"prop-types@npm:^15.7.2, prop-types@npm:^15.8.1":
   version: 15.8.1
   resolution: "prop-types@npm:15.8.1"
   dependencies:
@@ -12363,6 +12383,8 @@ __metadata:
     "@radix-ui/react-dropdown-menu": "npm:^2.1.15"
     "@radix-ui/react-slot": "npm:^1.2.3"
     "@radix-ui/react-toast": "npm:^1.2.14"
+    "@stripe/react-stripe-js": "npm:^3.9.1"
+    "@stripe/stripe-js": "npm:^7.8.0"
     "@tailwindcss/postcss": "npm:^4"
     "@tailwindcss/typography": "npm:^0.5.16"
     "@testing-library/dom": "npm:^10.4.1"
@@ -12414,6 +12436,10 @@ __metadata:
     zustand: "npm:^5.0.6"
   dependenciesMeta:
     "@clerk/nextjs":
+      optional: true
+    "@stripe/react-stripe-js":
+      optional: true
+    "@stripe/stripe-js":
       optional: true
   languageName: unknown
   linkType: soft

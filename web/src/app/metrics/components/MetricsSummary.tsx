@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { TimeRangeOption } from "@/components/TimeRangeSelector";
+import { formatCurrency } from "@/components/utils/utils";
 import { useCompletionsQuery } from "@/store/completions";
 
 interface MetricsSummaryProps {
@@ -97,9 +98,9 @@ export function MetricsSummary({ timeRange }: MetricsSummaryProps) {
       { key: "Slowest Response", value: `${slowestResponse.toFixed(1)}s`, color: "text-red-600" },
 
       // Cost Metrics
-      { key: "Total Cost", value: `$${totalCost.toFixed(2)}` },
+      { key: `Total Cost (${timeRange.label})`, value: `$${totalCost.toFixed(2)}` },
       { key: "This Month's Cost", value: `$${monthlySpending.toFixed(2)}`, color: "text-blue-600" },
-      { key: "Avg Cost per Completion", value: `$${avgCost.toFixed(4)}` },
+      { key: "Avg Cost (Per 1k completions)", value: formatCurrency(avgCost, 1000) },
 
       // Usage Analytics
       { key: "Avg Daily Completions", value: Math.round(avgDailyCompletions).toLocaleString() },
@@ -123,6 +124,7 @@ export function MetricsSummary({ timeRange }: MetricsSummaryProps) {
       avgCost,
       fastestResponse,
       slowestResponse,
+      timeRange.label,
     ]
   );
 

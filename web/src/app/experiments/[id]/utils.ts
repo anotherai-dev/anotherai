@@ -238,9 +238,11 @@ export function getAllMetricsPerKeyForRow(
   const metricsPerKeyForRow: Record<string, number[]> = {};
 
   // Get all completions for this input across all versions
-  const completionsForInput = experiment.versions
+  const completionsForInput = (experiment.versions ?? [])
     .map((version) => {
-      const completion = experiment.completions.find((c) => c.input.id === inputId && c.version.id === version.id);
+      const completion = (experiment.completions ?? []).find(
+        (c) => c.input.id === inputId && c.version.id === version.id
+      );
       return completion;
     })
     .filter(Boolean) as ExperimentCompletion[];

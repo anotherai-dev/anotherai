@@ -109,6 +109,10 @@ api.include_router(probes_router.router)
 
 if not _INCLUDED_ROUTES or "api" in _INCLUDED_ROUTES:
     api.include_router(_api_router.router)
+    if "STRIPE_API_KEY" in os.environ:
+        from protocol.api._payment_router import router as payment_router
+
+        api.include_router(payment_router)
 
 if not _INCLUDED_ROUTES or "run" in _INCLUDED_ROUTES:
     api.include_router(_run_router.router)

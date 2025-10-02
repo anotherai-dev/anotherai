@@ -182,11 +182,12 @@ class TestFindTenant:
         token = "jwt-token-123"
         claims = {"sub": "user123", "org_id": "org456", "org_slug": "test-org"}
         mock_verifier.verify.return_value = claims
-        mock_tenant_storage.tenant_by_org_id.return_value = sample_tenant
+        mock_tenant_storage.tenant_by_org_id.return_value = sample_tenant.model_copy()
 
         result = await security_service.find_tenant(token)
 
-        assert result == sample_tenant
+        assert result.model_dump(exclude={"user"}) == sample_tenant.model_dump(exclude={"user"})
+        assert result.user
         mock_verifier.verify.assert_called_once_with(token)
         mock_tenant_storage.tenant_by_org_id.assert_called_once_with("org456")
         mock_tenant_storage.create_tenant_for_org_id.assert_not_called()

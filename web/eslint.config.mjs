@@ -20,6 +20,9 @@ const eslintConfig = [
         // Clerk should not be imported unless explicitly needed
         "@clerk/nextjs",
         "@clerk/nextjs/server",
+        // Stripe should not be imported unless explicitly needed
+        "@stripe/react-stripe-js",
+        "@stripe/stripe-js",
       ],
     },
   },

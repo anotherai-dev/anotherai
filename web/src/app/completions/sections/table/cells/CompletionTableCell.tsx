@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { formatNumber } from "@/components/universal-charts/utils";
 import { isDateValue, parseJSONValue } from "@/components/utils/utils";
 import { Message } from "@/types/models";
 import CompletionBaseTableCell from "./CompletionBaseTableCell";
@@ -57,7 +58,7 @@ export function CompletionTableCell(props: Props) {
     case "cost_millionth_usd":
       return <CompletionTableBadgeCell value={Number(value)} variant="white" rounded="2px" />;
     case "cost_usd":
-      return <CompletionTableBadgeCell value={`$${Number(value).toFixed(6)}`} variant="white" rounded="2px" />;
+      return <CompletionTableBadgeCell value={`$${formatNumber(Number(value))}`} variant="white" rounded="2px" />;
     case "duration_ds":
       return <CompletionTableBadgeCell value={`${(Number(value) / 10).toFixed(2)}s`} variant="white" rounded="2px" />;
     default:

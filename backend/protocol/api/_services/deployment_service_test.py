@@ -52,7 +52,7 @@ class TestUpsertDeployment:
         mock_deployments_storage.get_deployment.side_effect = ObjectNotFoundError("Deployment")
 
         # Act
-        result = await deployment_service.upsert_deployment(agent_id, version_id, deployment_id, author_name)
+        result = await deployment_service.mcp_upsert_deployment(agent_id, version_id, deployment_id, author_name)
 
         # Assert
         mock_completions_storage.get_version_by_id.assert_called_once_with(agent_id, version_id)
@@ -69,7 +69,7 @@ class TestUpsertDeployment:
 
         # Result should be a converted deployment
         assert isinstance(result, Deployment)
-        assert result.id == deployment_id
+        assert result.id == f"anotherai/deployment/{deployment_id}"
 
     async def test_return_confirmation_url_when_deployment_exists_and_compatible(
         self,
@@ -109,7 +109,7 @@ class TestUpsertDeployment:
         mock_deployments_storage.get_deployment.return_value = existing_deployment
 
         # Act
-        result = await deployment_service.upsert_deployment(agent_id, version_id, deployment_id, author_name)
+        result = await deployment_service.mcp_upsert_deployment(agent_id, version_id, deployment_id, author_name)
 
         # Assert
         mock_completions_storage.get_version_by_id.assert_called_once_with(agent_id, version_id)
@@ -148,7 +148,7 @@ class TestUpsertDeployment:
 
         # Act & Assert
         with pytest.raises(BadRequestError) as exc_info:
-            await deployment_service.upsert_deployment(agent_id, version_id, deployment_id, author_name)
+            await deployment_service.mcp_upsert_deployment(agent_id, version_id, deployment_id, author_name)
 
         assert "no input variables" in str(exc_info.value)
         assert "existing deployment does" in str(exc_info.value)
@@ -179,7 +179,7 @@ class TestUpsertDeployment:
 
         # Act & Assert
         with pytest.raises(BadRequestError) as exc_info:
-            await deployment_service.upsert_deployment(agent_id, version_id, deployment_id, author_name)
+            await deployment_service.mcp_upsert_deployment(agent_id, version_id, deployment_id, author_name)
 
         assert "expects input variables" in str(exc_info.value)
         assert "existing deployment does not" in str(exc_info.value)
@@ -214,7 +214,7 @@ class TestUpsertDeployment:
 
         # Act & Assert
         with pytest.raises(BadRequestError) as exc_info:
-            await deployment_service.upsert_deployment(agent_id, version_id, deployment_id, author_name)
+            await deployment_service.mcp_upsert_deployment(agent_id, version_id, deployment_id, author_name)
 
         assert "no output schema" in str(exc_info.value)
         assert "existing deployment does" in str(exc_info.value)
@@ -249,7 +249,7 @@ class TestUpsertDeployment:
 
         # Act & Assert
         with pytest.raises(BadRequestError) as exc_info:
-            await deployment_service.upsert_deployment(agent_id, version_id, deployment_id, author_name)
+            await deployment_service.mcp_upsert_deployment(agent_id, version_id, deployment_id, author_name)
 
         assert "has an output schema" in str(exc_info.value)
         assert "existing deployment does not" in str(exc_info.value)
@@ -282,7 +282,7 @@ class TestUpsertDeployment:
 
         # Act & Assert
         with pytest.raises(BadRequestError) as exc_info:
-            await deployment_service.upsert_deployment(agent_id, version_id, deployment_id, author_name)
+            await deployment_service.mcp_upsert_deployment(agent_id, version_id, deployment_id, author_name)
 
         assert "not compatible" in str(exc_info.value)
 
@@ -317,7 +317,7 @@ class TestUpsertDeployment:
 
         # Act & Assert
         with pytest.raises(BadRequestError) as exc_info:
-            await deployment_service.upsert_deployment(agent_id, version_id, deployment_id, author_name)
+            await deployment_service.mcp_upsert_deployment(agent_id, version_id, deployment_id, author_name)
 
         assert "not compatible" in str(exc_info.value)
 
@@ -351,7 +351,7 @@ class TestUpsertDeployment:
         mock_deployments_storage.get_deployment.return_value = existing_deployment
 
         # Act
-        result = await deployment_service.upsert_deployment(agent_id, version_id, deployment_id, author_name)
+        result = await deployment_service.mcp_upsert_deployment(agent_id, version_id, deployment_id, author_name)
 
         # Assert
         mock_completions_storage.get_version_by_id.assert_called_once_with(agent_id, version_id)
@@ -375,6 +375,8 @@ class TestUpsertDeployment:
 
         # Act & Assert
         with pytest.raises(BadRequestError) as exc_info:
-            await deployment_service.upsert_deployment("agent-123", hash_string("bla"), "deployment-789", "test-author")
+            await deployment_service.mcp_upsert_deployment(
+                "agent-123", hash_string("bla"), "deployment-789", "test-author",
+            )
 
         assert "Agent agent-123 not found" in str(exc_info.value)

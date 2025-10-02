@@ -7,10 +7,18 @@ type MetricsDisplayProps = {
   versionMetricsPerKey?: Record<string, number[]>;
   showAvgPrefix?: boolean;
   className?: string; // Allow custom styling
+  usePer1kMultiplier?: boolean; // Whether to use 1000 multiplier for costs
 };
 
 function MetricsDisplay(props: MetricsDisplayProps) {
-  const { metrics, allMetricsPerKey, versionMetricsPerKey, showAvgPrefix = false, className = "space-y-1" } = props;
+  const {
+    metrics,
+    allMetricsPerKey,
+    versionMetricsPerKey,
+    showAvgPrefix = false,
+    className = "space-y-1",
+    usePer1kMultiplier = true,
+  } = props;
 
   if (!metrics || metrics.length === 0) {
     return null;
@@ -26,6 +34,7 @@ function MetricsDisplay(props: MetricsDisplayProps) {
           allMetricsPerKey={allMetricsPerKey}
           versionMetricsPerKey={versionMetricsPerKey}
           showAvgPrefix={showAvgPrefix}
+          usePer1kMultiplier={usePer1kMultiplier}
         />
       ))}
     </div>
@@ -77,6 +86,7 @@ export default memo(MetricsDisplay, (prevProps, nextProps) => {
   return (
     prevProps.showAvgPrefix === nextProps.showAvgPrefix &&
     prevProps.className === nextProps.className &&
+    prevProps.usePer1kMultiplier === nextProps.usePer1kMultiplier &&
     areMetricsEqual(prevProps.metrics, nextProps.metrics) &&
     areMetricsPerKeyEqual(prevProps.allMetricsPerKey, nextProps.allMetricsPerKey) &&
     areMetricsPerKeyEqual(prevProps.versionMetricsPerKey, nextProps.versionMetricsPerKey)
