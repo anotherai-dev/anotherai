@@ -249,14 +249,20 @@ export function MatrixSection(props: Props) {
           </button>
         )}
       </div>
-      <TableComponent
-        columnHeaders={tableData.columnHeaders}
-        rowHeaders={tableData.rowHeaders}
-        data={tableData.data}
-        minColumnWidth={400}
-        hideScrollbar={false}
-        stickyHeaderData={stickyHeaderData}
-      />
+      {experiment.versions && experiment.versions.length > 0 ? (
+        <TableComponent
+          columnHeaders={tableData.columnHeaders}
+          rowHeaders={tableData.rowHeaders}
+          data={tableData.data}
+          minColumnWidth={400}
+          hideScrollbar={false}
+          stickyHeaderData={stickyHeaderData}
+        />
+      ) : (
+        <div className="bg-gray-50 border border-gray-200 rounded-[10px]">
+          <div className="px-4 py-2 text-sm text-gray-700">No versions found for this experiment</div>
+        </div>
+      )}
     </div>
   );
 }
