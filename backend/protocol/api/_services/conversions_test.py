@@ -770,3 +770,60 @@ class TestAnnotationToDomainConversion:
 
         assert domain_annotation.context is not None
         assert domain_annotation.context.agent_id == expected_id
+
+
+class TestMCPModelConversion:
+    """Test the MCP model conversion to exclude icon_url."""
+
+    def test_convert_model_for_mcp_excludes_icon_url(self):
+        """Test that _convert_model_for_mcp excludes icon_url from API models."""
+        from datetime import date
+
+        from protocol.api._api_models import (
+            Model,
+            ModelContextWindow,
+            ModelPricing,
+            ModelSupports,
+            SupportsModality,
+        )
+        from protocol.api._mcp import _convert_model_for_mcp
+
+        # Create a full API model with icon_url
+        api_model = Model(
+            id="test-model",
+            display_name="Test Model",
+            icon_url="https://example.com/icon.png",
+            supports=ModelSupports(
+                input=SupportsModality(text=True, image=False, audio=False, pdf=False),
+                output=SupportsModality(text=True, image=False, audio=False, pdf=False),
+                parallel_tool_calls=False,
+                response_format=False,
+                tools=False,
+                temperature=True,
+            ),
+            pricing=ModelPricing(input_token_usd=0.001, output_token_usd=0.002),
+            release_date=date(2024, 1, 1),
+            reasoning=None,
+            context_window=ModelContextWindow(max_input_tokens=4096, max_output_tokens=1024),
+            speed_index=1.0,
+        )
+
+        # Convert to MCP model
+        mcp_model = _convert_model_for_mcp(api_model)
+
+        # Verify all fields are copied except icon_url
+        assert mcp_model.id == api_model.id
+        assert mcp_model.display_name == api_model.display_name
+        assert mcp_model.supports == api_model.supports
+        assert mcp_model.pricing == api_model.pricing
+        assert mcp_model.release_date == api_model.release_date
+        assert mcp_model.reasoning == api_model.reasoning
+        assert mcp_model.context_window == api_model.context_window
+        assert mcp_model.speed_index == api_model.speed_index
+
+        # Verify icon_url is not present in MCP model
+        assert not hasattr(mcp_model, "icon_url")
+        
+        # Verify the MCP model doesn't include icon_url in its serialized form
+        mcp_model_dict = mcp_model.model_dump()
+        assert "icon_url" not in mcp_model_dict
