@@ -115,6 +115,7 @@ class Model(StrEnum):
     # --------------------------------------------------------------------------
     # Claude Models
     # --------------------------------------------------------------------------
+    CLAUDE_4_5_SONNET_20250929 = "claude-sonnet-4-5-20250929"
     CLAUDE_4_1_OPUS_20250805 = "claude-opus-4-1-20250805"
     # CLAUDE_4_SONNET_LATEST = "claude-sonnet-4-latest"
     CLAUDE_4_SONNET_20250514 = "claude-sonnet-4-20250514"

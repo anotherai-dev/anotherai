@@ -797,6 +797,41 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             ),  # Claude docs mention that reasoning tokens 32k are rarely used.
             # https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking
         ),
+        Model.CLAUDE_4_5_SONNET_20250929: ModelData(
+            display_name="Claude 4 Sonnet (2025-09-29)",
+            supports_json_mode=False,
+            supports_input_image=True,
+            supports_input_pdf=True,
+            supports_input_audio=False,
+            max_tokens_data=MaxTokensData(
+                max_tokens=200_000,
+                # See https://docs.anthropic.com/en/docs/about-claude/models/all-models
+                max_output_tokens=64_000,
+                source="https://docs.anthropic.com/en/docs/about-claude/models",
+            ),
+            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/anthropic.svg",
+            release_date=date(2025, 9, 29),
+            # https://www.anthropic.com/news/claude-4
+            # We only have the gpqa_diamond for now...
+            quality_data=QualityData(gpqa_diamond=83.4),
+            speed_data=SpeedData(
+                # TODO:
+                equivalent_to=(Model.CLAUDE_4_SONNET_20250514, 0),
+            ),
+            provider_name=DisplayedProvider.ANTHROPIC.value,
+            supports_tool_calling=True,
+            fallback=ModelFallback.default("medium"),
+            reasoning=ModelReasoningBudget(
+                min=1024,
+                # Claude docs mention that reasoning tokens 32k are rarely used.
+                # https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking
+                max=32000,
+            ),
+            aliases=[
+                "claude-4-5-sonnet",
+                "claude-4-5-sonnet-latest",
+            ],
+        ),
         Model.CLAUDE_4_1_OPUS_20250805: ModelData(
             display_name="Claude 4.1 Opus (2025-08-05)",
             supports_json_mode=False,
