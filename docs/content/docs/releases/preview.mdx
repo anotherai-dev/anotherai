@@ -1,0 +1,105 @@
+---
+title: MCP server designed for AI engineering
+summary: Public preview
+---
+
+Today we're introducing a public preview of **AnotherAI**, a MCP server designed for AI engineering that includes a set of tools that enables your AI assistant (such as Claude Code, Cursor, etc.) to:
+- run experiments to compare any models, and analyze the results (quality, speed, cost). [[docs](/use-cases/fundamentals/experiments)]
+- access production LLM completions to debug and improve agents based on real data. [[docs](/use-cases/fundamentals/debugging)]
+- collect and analyze users' feedback to improve an agent. [[docs](/use-cases/user-feedback)]
+- answer any questions about metrics (usage, performance, etc.) [[docs](/use-cases/fundamentals/metrics)]
+- deploy a new prompt or model without any code change [[docs](/use-cases/fundamentals/deployments)]
+
+Our work is available at:
+- https://anotherai.dev as a managed service, billed at the same cost as the underlying models (no markup).
+- https://github.com/anotherai-dev/anotherai under the Apache 2.0 license.
+
+## Compare models' performance, price, and latency.
+
+AnotherAI's MCP server exposes tools that let your AI assistant access over 100 models, and compare their performance, price and latency. In our own tests, we've found that models like Opus 4 are very good at reviewing work from other models, and the latest development of longer context windows (Sonnet 4.5 supports up to 1M tokens, Gemini has models with 2M context window) makes it possible to compare more parameters (models and prompts) and agents with longer inputs.
+
+[video]
+
+Some prompt examples:
+```
+> can you compare Gemini 2.5 Flash, GPT-4o-mini and Mistral Small for this agent "<agent_name>"?
+> can you find a model that is faster but keep the same quality and does not cost more?
+> can you test how GPT5 performs on this agent "<agent_name>"?
+> ...
+```
+
+Because your AI assistant can't always be trusted without a human in the loop, we've also implemented a web UI to review the experiments made by your AI assistant.
+
+[screenshot]
+
+## AI learns from production data.
+
+Learning from production usage is a key step to improving any AI agent. To learn from production usage, we have implemented an OpenAI compatible API that logs all the completions data coming through, and then our MCP server exposes these logs to your AI assistant.
+
+Some prompt examples:
+```
+> can you look at the last 20 completions for the agent "<agent_name>" and report back the ones that are not good?
+> can you understand why the customer "<customer_email>" had a bad experience with agent "<agent_name>"?
+> ...
+```
+
+Learn more about how to use the MCP server to learn from production data [here](/use-cases/fundamentals/debugging).
+
+## AI learns from users' feedback.
+
+On top of the completions logs, collecting users' feedback is a key step to improving any AI agent. To create a fluid feedback loop, we are exposing an Annotations API to let your end-users leave feedback on completions. Then our MCP server exposes these annotations to your AI assistant.
+
+We believe that AI assistants are so good now that they are able to read users' feedback, identify issues, propose improvements, and run experiments to test changes using production data.
+
+Some prompt examples:
+```
+> can you look at the users' feedback for the agent "<agent_name>" in the last week, and write a report with the most common issues?
+> based on the users' feedback, think about some improvements we can make to the agent "<agent_name>" and run an experiment to test them using the latest production data.
+> ...
+```
+
+Learn more about how to use the MCP server to learn from users' feedback [here](https://docs.anotherai.dev/use-cases/user-feedback).
+
+## Deploy a new prompt or model without any code change.
+
+One very popular feature of our previous product ([WorkflowAI](https://workflowai.com)) was the ability to update an agent's prompt or model without any code change. This feature enables faster iteration cycles, and fixing a prompt can be done without a PR and deployment. We've implemented the same feature in AnotherAI's MCP server, with a human confirmation step to prevent your AI assistant from making changes that are not intended.
+
+Some prompt examples:
+```
+> can you update the deployment "<deployment_id>" to use the model "<model_name>"?
+> update the prompt from "<deployment_id>" to use the prompt from this version "<version_id>"?
+> ...
+```
+Learn more about how to use the MCP server to deploy a new prompt or model without any code change [here](/use-cases/fundamentals/deployments).
+
+## AI deep dives into metrics.
+
+Because our LLM gateway logs all the completions data, we wanted to give you and your AI assistant the best way to leverage this data. So we've designed two complementary components:
+- an MCP tool `query_completions(sql_query)` that allow your AI assistant to query the completions data using SQL queries. We've been really impressed by how good AI assistants are at transforming a natural language question into a complex SQL query. Using SQL instead of a predefined API allows the AI assistant to query the data in very powerful ways.
+- a web UI to view graphs and metrics about your agents. 
+
+Some prompt examples:
+```
+> what is our most expensive agent? can we run an experiment to find a cheaper model that keeps the same quality?
+> what is the p90, and p99 latency for the agent "<agent_name>"?
+> can you create a graph that shows the cost by agent in the last month?
+```
+
+[video]
+
+We've also published a note about how we have secured the `query_completions` tool [here](/security#sql-query-tool-security) from malicious use. We welcome more feedback on our approach via our [Slack](https://join.slack.com/t/anotherai-dev/shared_invite/zt-3av2prezr-Lz10~8o~rSRQE72m_PyIJA)
+
+## Some (current) limitations.
+
+We've focused this initial preview on simple AI agents architecture, and not complex agentic system. Agents that have multiple back-and-forth or custom tools are harder to reproduce with other prompts and models because you need to be able to simulate one end of the conversation and for custom tools you need to run the code somehow. If you're building a complex agentic system, please get in touch on [Slack](https://join.slack.com/t/anotherai-dev/shared_invite/zt-3av2prezr-Lz10~8o~rSRQE72m_PyIJA) so we can design something that works well together.
+
+For very low latency agents, using AnotherAI's LLM gateway might not be the best option due to the added latency of the gateway, which we estimate at ~100ms. Also it's possible to use AnotherAI's MCP server independently from the AI gateway, to run experiments between models and prompts.
+
+## Try it
+
+The first step is to install the MCP server, you can find the instructions [here](/getting-started). Once the MCP server is installed, find your first use-case by looking at our use-cases in the [docs](/use-cases).
+
+We are really excited to hear from you, please join our [Slack channel](https://join.slack.com/t/anotherai-dev/shared_invite/zt-3av2prezr-Lz10~8o~rSRQE72m_PyIJA) to share what you're building with AnotherAI, meet our team, ask any questions, or just say hi.
+
+AnotherAI's team.
+[Pierre](https://x.com/pierrevalade), Anya, Guillaume, Jacek.
