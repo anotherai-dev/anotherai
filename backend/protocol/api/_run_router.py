@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from protocol.api._dependencies._lifecycle import LifecycleDependenciesDep
 from protocol.api._dependencies._misc import RequestStartDep
 from protocol.api._dependencies._services import CompletionRunnerDep
-from protocol.api._dependencies._tenant import TenantDep
+from protocol.api._dependencies._tenant import TenantWithCreditsDep
 from protocol.api._run_models import OpenAIProxyChatCompletionRequest
 from protocol.api._services.run.run_service import RunService
 
@@ -20,7 +20,7 @@ async def chat_completions(
     completion_runner: CompletionRunnerDep,
     dependencies: LifecycleDependenciesDep,
     start_time: RequestStartDep,
-    tenant: TenantDep,
+    tenant: TenantWithCreditsDep,
 ):
     run_service = RunService(tenant, completion_runner, dependencies.storage_builder.deployments(tenant.uid))
     return await run_service.run(request, start_time)

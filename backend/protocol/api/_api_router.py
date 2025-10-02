@@ -23,6 +23,7 @@ from protocol.api._api_models import (
     Page,
     PatchViewFolderRequest,
     PatchViewRequest,
+    Tenant,
     UploadFileResponse,
     View,
     ViewFolder,
@@ -38,8 +39,10 @@ from protocol.api._dependencies._services import (
     OrganizationServiceDep,
     ViewServiceDep,
 )
+from protocol.api._dependencies._tenant import TenantDep
 from protocol.api._services import models_service
 from protocol.api._services.completion_service import CompletionService
+from protocol.api._services.conversions import tenant_from_domain
 from protocol.api._services.utils_service import ExtractVariablesRequest, ExtractVariablesResponse
 
 router = APIRouter(prefix="")
@@ -339,3 +342,12 @@ async def upload_file(
     # ] = 24 * 60 * 60,
 ) -> UploadFileResponse:
     return await files_service.upload_file(file)
+
+
+# ------------------------------------------------------------
+# Tenants
+
+
+@router.get("/v1/tenants/me")
+async def get_tenant(tenant: TenantDep) -> Tenant:
+    return tenant_from_domain(tenant)

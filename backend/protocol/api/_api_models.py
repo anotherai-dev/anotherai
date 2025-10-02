@@ -879,3 +879,26 @@ class UploadFileResponse(BaseModel):
     url: str
     # TODO:
     # expires_at: datetime
+
+
+# ------------------------------------------------
+# Tenants
+
+
+class Tenant(BaseModel):
+    id: str
+
+    current_credits_usd: float
+
+    class AutomaticPayment(BaseModel):
+        balance_to_maintain: float
+        threshold: float
+
+    automatic_payment: AutomaticPayment | None
+
+    class PaymentFailure(BaseModel):
+        failure_date: datetime
+        failure_code: str
+        failure_reason: str
+
+    payment_failure: PaymentFailure | None

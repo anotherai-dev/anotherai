@@ -4,7 +4,13 @@ from typing import Generic, NamedTuple, TypeVar
 
 from structlog import get_logger
 
-from core.domain.events import Event, StartExperimentCompletionEvent, StoreCompletionEvent, UserConnectedEvent
+from core.domain.events import (
+    Event,
+    PaymentUpdatedEvent,
+    StartExperimentCompletionEvent,
+    StoreCompletionEvent,
+    UserConnectedEvent,
+)
 from protocol.worker.tasks._types import TASK
 
 _log = get_logger(__name__)
@@ -20,13 +26,19 @@ class _TaskListing(NamedTuple, Generic[_T_co]):  # noqa: UP046
 
 def _tasks() -> Sequence[_TaskListing[Event]]:
     # Importing here to avoid circular dependency
-    from protocol.worker.tasks import start_experiment_completion_tasks, store_completion_tasks, user_connected_tasks
+    from protocol.worker.tasks import (
+        payment_updated_tasks,
+        start_experiment_completion_tasks,
+        store_completion_tasks,
+        user_connected_tasks,
+    )
 
     # We use an array to have correct typing
     return [
         _TaskListing(StoreCompletionEvent, store_completion_tasks.TASKS),
         _TaskListing(UserConnectedEvent, user_connected_tasks.TASKS),
         _TaskListing(StartExperimentCompletionEvent, start_experiment_completion_tasks.TASKS),
+        _TaskListing(PaymentUpdatedEvent, payment_updated_tasks.TASKS),
     ]
 
 
