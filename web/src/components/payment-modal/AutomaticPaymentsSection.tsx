@@ -31,12 +31,18 @@ function EnabledAutomaticPaymentsSection({
         When your credit balance reaches ${automaticPayment.threshold ?? 10}, your payment method will be charged to
         bring the balance up to ${automaticPayment.balance_to_maintain ?? 50}.
       </div>
-      <div className="pt-2">
+      <div className="pt-2 flex gap-2">
         <button
           className="px-3 py-2 bg-gray-200 text-gray-700 text-[12px] font-semibold rounded-[2px] hover:bg-gray-300 transition-colors cursor-pointer"
           onClick={onEnableAutoRecharge}
         >
           Modify Auto-Recharge
+        </button>
+        <button
+          className="px-3 py-2 bg-gray-200 text-gray-700 text-[12px] font-semibold rounded-[2px] hover:bg-gray-300 transition-colors cursor-pointer"
+          onClick={onEnableAutoRecharge}
+        >
+          Turn Off
         </button>
       </div>
     </div>
@@ -50,7 +56,7 @@ export function AutomaticPaymentsSection({
   hasPaymentMethod,
   onUpdatePaymentMethod,
 }: AutomaticPaymentsSectionProps) {
-  const isAutomaticPaymentsEnabled = !!automaticPayment;
+  const isAutomaticPaymentsEnabled = !!automaticPayment && automaticPayment.opt_in !== false;
 
   return (
     <div className="flex flex-col px-4 py-2 gap-1 mb-2">

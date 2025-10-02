@@ -45,6 +45,7 @@ export interface PaymentFailure {
 export interface AutomaticPayment {
   threshold: number;
   balance_to_maintain: number;
+  opt_in?: boolean;
 }
 
 export interface Tenant {
