@@ -763,9 +763,35 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             reasoning_effort=ReasoningEffort.DISABLED,
         ),
         Model.CLAUDE_4_SONNET_LATEST: LatestModel(
-            model=Model.CLAUDE_4_SONNET_20250514,
+            model=Model.CLAUDE_4_5_SONNET_20250929,
             display_name="Claude 4 Sonnet (latest)",
             is_default=True,
+        ),
+        Model.CLAUDE_4_5_SONNET_20250929: ModelData(
+            display_name="Claude 4.5 Sonnet (2025-09-29)",
+            supports_json_mode=False,
+            supports_input_image=True,
+            supports_input_pdf=True,
+            supports_input_audio=False,
+            max_tokens_data=MaxTokensData(
+                max_tokens=200_000,
+                max_output_tokens=64_000,
+                source="https://docs.anthropic.com/en/docs/about-claude/models",
+            ),
+            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/anthropic.svg",
+            release_date=date(2025, 9, 29),
+            quality_data=QualityData(gpqa_diamond=72),
+            speed_data=SpeedData(
+                index=SpeedIndex.from_experiment(output_tokens=2648, duration_seconds=30),
+            ),
+            latest_model=Model.CLAUDE_4_SONNET_LATEST,
+            provider_name=DisplayedProvider.ANTHROPIC.value,
+            supports_tool_calling=True,
+            fallback=ModelFallback.default("medium"),
+            reasoning=ModelReasoningBudget(
+                min=1024,
+                max=32000,
+            ),
         ),
         Model.CLAUDE_4_SONNET_20250514: ModelData(
             display_name="Claude 4 Sonnet (2025-05-14)",

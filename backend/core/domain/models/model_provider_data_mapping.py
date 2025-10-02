@@ -212,6 +212,16 @@ OPENAI_PROVIDER_DATA: ProviderDataByModel = {
 
 
 AMAZON_BEDROCK_PROVIDER_DATA: ProviderDataByModel = {
+    Model.CLAUDE_4_5_SONNET_20250929: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=3 * ONE_MILLION_TH,
+            completion_cost_per_token=15 * ONE_MILLION_TH,
+            source="https://aws.amazon.com/bedrock/pricing/",
+        ),
+        supports_override=ModelDataSupportsOverride(
+            supports_input_pdf=False,
+        ),
+    ),
     Model.CLAUDE_4_OPUS_20250514: ModelProviderData(
         text_price=TextPricePerToken(
             prompt_cost_per_token=15 * ONE_MILLION_TH,
@@ -544,6 +554,13 @@ MISTRAL_PROVIDER_DATA: ProviderDataByModel = {
 }
 
 ANTHROPIC_PROVIDER_DATA: ProviderDataByModel = {
+    Model.CLAUDE_4_5_SONNET_20250929: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=3 * ONE_MILLION_TH,
+            completion_cost_per_token=15 * ONE_MILLION_TH,
+            source="https://docs.anthropic.com/en/docs/about-claude/models/all-models#model-comparison-table",
+        ),
+    ),
     Model.CLAUDE_3_5_HAIKU_20241022: ModelProviderData(
         text_price=TextPricePerToken(
             prompt_cost_per_token=0.80 * ONE_MILLION_TH,
