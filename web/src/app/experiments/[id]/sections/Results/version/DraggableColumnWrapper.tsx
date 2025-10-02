@@ -1,5 +1,6 @@
 import { GripVertical } from "lucide-react";
 import { ReactNode, useCallback, useState } from "react";
+import { ColumnResizer } from "./ColumnResizer";
 
 interface DraggableColumnWrapperProps {
   children: ReactNode;
@@ -7,6 +8,11 @@ interface DraggableColumnWrapperProps {
   dragIndex?: number;
   versionId: string;
   className?: string;
+  // Column resizing props
+  columnWidth?: number;
+  onColumnWidthChange?: (versionId: string, width: number) => void;
+  nextVersionId?: string;
+  isLastColumn?: boolean;
 }
 
 export function DraggableColumnWrapper({
@@ -15,6 +21,10 @@ export function DraggableColumnWrapper({
   dragIndex,
   versionId,
   className = "",
+  columnWidth,
+  onColumnWidthChange,
+  nextVersionId,
+  isLastColumn = false,
 }: DraggableColumnWrapperProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [dragOver, setDragOver] = useState<"left" | "right" | null>(null);
@@ -132,6 +142,16 @@ export function DraggableColumnWrapper({
       )}
 
       {children}
+
+      {/* Column resizer - only show if not the last column */}
+      {!isLastColumn && onColumnWidthChange && columnWidth && (
+        <ColumnResizer
+          leftVersionId={versionId}
+          rightVersionId={nextVersionId}
+          leftInitialWidth={columnWidth}
+          onWidthChange={onColumnWidthChange}
+        />
+      )}
     </div>
   );
 }

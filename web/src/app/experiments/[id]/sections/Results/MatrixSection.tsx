@@ -10,6 +10,7 @@ import {
   getValidCosts,
   getValidDurations,
 } from "@/components/utils/utils";
+import { useColumnWidths } from "@/hooks/useColumnWidths";
 import { useVersionHiding } from "@/hooks/useVersionHiding";
 import { Annotation, ExperimentWithLookups } from "@/types/models";
 import {
@@ -42,6 +43,13 @@ export function MatrixSection(props: Props) {
 
   // Version hiding hook
   const { hiddenVersionIds, hideVersion, showAllHiddenVersions, hasHiddenVersions } = useVersionHiding(experiment.id);
+
+  // Column widths hook
+  const visibleVersionIds = useMemo(() => {
+    return columnOrder.filter((versionId) => !hiddenVersionIds.includes(versionId));
+  }, [columnOrder, hiddenVersionIds]);
+
+  const { setColumnWidth, widthsArray } = useColumnWidths(experiment.id, visibleVersionIds, 400);
 
   // Update column order when sorted versions change
   useEffect(() => {
@@ -150,6 +158,9 @@ export function MatrixSection(props: Props) {
 
       // Find the original index of this version in the sorted versions array
       const originalIndex = sortedVersions.findIndex((v) => v.id === version.id);
+      const nextVersionId = dragIndex < orderedVersions.length - 1 ? orderedVersions[dragIndex + 1]?.id : undefined;
+      const isLastColumn = dragIndex === orderedVersions.length - 1;
+
       return (
         <VersionHeader
           key={version.id}
@@ -169,6 +180,10 @@ export function MatrixSection(props: Props) {
           onReorderColumns={reorderColumns}
           dragIndex={dragIndex}
           onHideVersion={hideVersion}
+          columnWidth={widthsArray[dragIndex]}
+          onColumnWidthChange={setColumnWidth}
+          nextVersionId={nextVersionId}
+          isLastColumn={isLastColumn}
         />
       );
     });
@@ -231,6 +246,8 @@ export function MatrixSection(props: Props) {
     reorderColumns,
     sortedVersions,
     hideVersion,
+    setColumnWidth,
+    widthsArray,
   ]);
 
   return (
@@ -251,13 +268,14 @@ export function MatrixSection(props: Props) {
       </div>
       {experiment.versions && experiment.versions.length > 0 ? (
         <TableComponent
-          columnHeaders={tableData.columnHeaders}
-          rowHeaders={tableData.rowHeaders}
-          data={tableData.data}
-          minColumnWidth={400}
-          hideScrollbar={false}
-          stickyHeaderData={stickyHeaderData}
-        />
+        columnHeaders={tableData.columnHeaders}
+        rowHeaders={tableData.rowHeaders}
+        data={tableData.data}
+        minColumnWidth={400}
+        hideScrollbar={false}
+        stickyHeaderData={stickyHeaderData}
+        columnWidths={widthsArray}
+      />
       ) : (
         <div className="bg-gray-50 border border-gray-200 rounded-[10px]">
           <div className="px-4 py-2 text-sm text-gray-700">No versions found for this experiment</div>

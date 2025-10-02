@@ -28,6 +28,8 @@ export interface TableProps {
     reasoningEffort?: "disabled" | "low" | "medium" | "high";
     reasoningBudget?: number;
   }>;
+  // Custom column widths array (if not provided, equal widths are used)
+  columnWidths?: number[];
 }
 
 export function TableComponent({
@@ -39,6 +41,7 @@ export function TableComponent({
   minHeaderHeight = 150,
   hideScrollbar = true,
   stickyHeaderData,
+  columnWidths,
 }: TableProps) {
   const headerRowWidth = "240px";
   const stickyHeaderRef = useRef<HTMLDivElement>(null);
@@ -68,23 +71,33 @@ export function TableComponent({
     },
   });
 
-  // Calculate column width based on available space and number of columns
-  const columnWidth = useMemo(() => {
+  // Calculate column widths - use custom widths if provided, otherwise equal widths
+  const calculatedColumnWidths = useMemo(() => {
     const numColumns = columnHeaders.length;
-    if (numColumns === 0) return minColumnWidth;
+    if (numColumns === 0) return [];
+
+    // If custom column widths are provided, use them with a minimum of 200px
+    if (columnWidths && columnWidths.length === numColumns) {
+      return columnWidths.map((width) => Math.max(width, 200)); // Always 200px minimum for custom widths
+    }
 
     // Available width = container width - header row width (240px) - padding/margins
     const headerRowWidthPx = 240;
     const availableWidth = containerWidth - headerRowWidthPx - 20; // 20px for padding/margins
 
-    if (availableWidth <= 0) return minColumnWidth;
+    if (availableWidth <= 0) {
+      return new Array(numColumns).fill(minColumnWidth);
+    }
 
     // Calculate equal width for all columns
     const equalWidth = availableWidth / numColumns;
+    const finalWidth = Math.max(equalWidth, minColumnWidth);
 
-    // If equal width is less than minColumnWidth, use minColumnWidth (will trigger horizontal scroll)
-    return Math.max(equalWidth, minColumnWidth);
-  }, [containerWidth, columnHeaders.length, minColumnWidth]);
+    return new Array(numColumns).fill(finalWidth);
+  }, [containerWidth, columnHeaders.length, minColumnWidth, columnWidths]);
+
+  // For backwards compatibility, provide a single columnWidth value (first column's width or default)
+  const columnWidth = calculatedColumnWidths.length > 0 ? calculatedColumnWidths[0] : minColumnWidth;
 
   const headerRef = useRef<HTMLTableSectionElement>(null);
   const tableRef = useRef<HTMLTableElement>(null);
@@ -156,9 +169,16 @@ export function TableComponent({
             columnHeaders={columnHeaders}
             headerRowWidth={headerRowWidth}
             columnWidth={columnWidth}
+            columnWidths={calculatedColumnWidths}
             minHeaderHeight={minHeaderHeight}
           />
-          <TableBody rowHeaders={rowHeaders} data={data} headerRowWidth={headerRowWidth} columnWidth={columnWidth} />
+          <TableBody
+            rowHeaders={rowHeaders}
+            data={data}
+            headerRowWidth={headerRowWidth}
+            columnWidth={columnWidth}
+            columnWidths={calculatedColumnWidths}
+          />
         </table>
       </div>
     </div>

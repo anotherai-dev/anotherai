@@ -4,7 +4,8 @@ interface TableHeaderProps {
   headerRef: MutableRefObject<HTMLTableSectionElement | null>;
   columnHeaders: ReactNode[];
   headerRowWidth: string;
-  columnWidth: number;
+  columnWidth: number; // For backwards compatibility
+  columnWidths?: number[]; // Individual column widths
   minHeaderHeight: number;
 }
 
@@ -13,6 +14,7 @@ export function TableHeader({
   columnHeaders,
   headerRowWidth,
   columnWidth,
+  columnWidths,
   minHeaderHeight,
 }: TableHeaderProps) {
   return (
@@ -28,20 +30,23 @@ export function TableHeader({
           }}
         ></th>
         {/* Column headers */}
-        {columnHeaders.map((header, index) => (
-          <th
-            key={index}
-            className="px-4 py-3 text-left text-xs font-medium text-gray-500 border-r border-gray-200 last:border-r-0 align-top"
-            style={{
-              width: `${columnWidth}px`,
-              minWidth: `${columnWidth}px`,
-              maxWidth: `${columnWidth}px`,
-              height: `${minHeaderHeight}px`,
-            }}
-          >
-            <div className="h-full flex flex-col">{header}</div>
-          </th>
-        ))}
+        {columnHeaders.map((header, index) => {
+          const width = columnWidths?.[index] || columnWidth;
+          return (
+            <th
+              key={index}
+              className="px-4 py-3 text-left text-xs font-medium text-gray-500 border-r border-gray-200 last:border-r-0 align-top"
+              style={{
+                width: `${width}px`,
+                minWidth: `${width}px`,
+                maxWidth: `${width}px`,
+                height: `${minHeaderHeight}px`,
+              }}
+            >
+              <div className="h-full flex flex-col">{header}</div>
+            </th>
+          );
+        })}
       </tr>
     </thead>
   );
