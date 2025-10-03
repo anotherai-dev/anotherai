@@ -450,6 +450,7 @@ class TestGetExperiment:
         assert len(exp.outputs) == 1
         out = exp.outputs[0]
         assert out.completion_id == completion_id
+        assert out.model == "gpt-4o"  # Should have the model from the version
         # get_experiment includes outputs with include={"output"} so messages should be present
         assert out.output is not None
         assert out.output.preview == "Answer"
@@ -895,3 +896,10 @@ async def test_output_flow(inserted_experiment: Experiment, experiment_storage: 
     outputs = await experiment_storage.list_experiment_completions(inserted_experiment.id)
     assert len(outputs) == 4
     assert {o.completion_id for o in outputs} == inserted_completions
+
+    # Check that model field is populated from versions
+    for output in outputs:
+        if output.version_id == version1.id:
+            assert output.model == "gpt-4o"
+        elif output.version_id == version2.id:
+            assert output.model == "gpt-4o-mini"

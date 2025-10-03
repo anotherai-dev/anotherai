@@ -22,6 +22,7 @@ class ExperimentOutput(BaseModel):
     output: AgentOutput | None
     cost_usd: float | None
     duration_seconds: float | None
+    model: str | None = None
 
 
 class Experiment(BaseModel):

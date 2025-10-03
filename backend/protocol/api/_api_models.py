@@ -472,6 +472,8 @@ class Experiment(BaseModel):
         # Only IDs are provided here but they have the same format as in the full object (completion.input.id)
         input: ModelWithID
         version: ModelWithID
+        version_label: str | None = Field(default=None, description="Human-readable version label (e.g. 'gpt-4o (temp=0.7)')")
+        input_label: str | None = Field(default=None, description="Human-readable input label or preview")
         output: Output
         cost_usd: float
         duration_seconds: float

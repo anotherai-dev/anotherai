@@ -447,7 +447,7 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
             args.append(input_ids)
 
         rows = await connection.fetch(
-            f"""SELECT {", ".join(selects)}, ei.input_id as input_id, ev.version_id as version_id
+            f"""SELECT {", ".join(selects)}, ei.input_id as input_id, ev.version_id as version_id, ev.model as model
             FROM experiment_outputs
             LEFT JOIN experiment_inputs ei ON ei.uid = experiment_outputs.input_uid
             LEFT JOIN experiment_versions ev ON ev.uid = experiment_outputs.version_uid
@@ -606,6 +606,7 @@ class _ExperimentOutputRow(PsqlBaseRow):
     output_preview: str | None = None
     cost_usd: float | None = None
     duration_seconds: float | None = None
+    model: str | None = None  # from JOIN queries
 
     @classmethod
     def from_domain(
@@ -639,6 +640,7 @@ class _ExperimentOutputRow(PsqlBaseRow):
                     "preview": self.output_preview or "",
                 },
             ),
+            model=self.model,
         )
 
     @classmethod

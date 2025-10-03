@@ -475,6 +475,10 @@ def experiment_from_domain(
     experiment: DomainExperiment,
     annotations: list[DomainAnnotation],
 ) -> Experiment:
+    # Create lookup maps for versions and inputs
+    version_map = {v.id: v for v in experiment.versions} if experiment.versions else {}
+    input_map = {i.id: i for i in experiment.inputs} if experiment.inputs else {}
+
     return Experiment(
         id=experiment.id,
         agent_id=experiment.agent_id,
@@ -484,7 +488,7 @@ def experiment_from_domain(
         title=experiment.title,
         description=experiment.description,
         result=experiment.result,
-        completions=[experiment_completion_from_domain(c) for c in experiment.outputs] if experiment.outputs else None,
+        completions=[experiment_completion_from_domain(c, version_map, input_map) for c in experiment.outputs] if experiment.outputs else None,
         versions=[version_from_domain(v) for v in experiment.versions] if experiment.versions else None,
         inputs=[input_from_domain(i) for i in experiment.inputs] if experiment.inputs else None,
         annotations=[annotation_from_domain(a) for a in annotations] if annotations else None,
@@ -875,11 +879,44 @@ def trace_to_domain(trace: Trace) -> DomainTrace:
     )
 
 
-def experiment_completion_from_domain(completion: ExperimentOutput) -> Experiment.Completion:
+def experiment_completion_from_domain(
+    completion: ExperimentOutput,
+    version_map: dict[str, DomainVersion],
+    input_map: dict[str, DomainInput],
+) -> Experiment.Completion:
+    # Generate version label
+    version_label = None
+    if completion.model:
+        # Use model from completion if available
+        version_label = completion.model
+        if completion.version_id in version_map:
+            version = version_map[completion.version_id]
+            # Add temperature if different from default
+            if version.temperature and version.temperature != 1.0:
+                version_label += f" (temp={version.temperature})"
+    elif completion.version_id in version_map:
+        # Fall back to version lookup
+        version = version_map[completion.version_id]
+        version_label = f"{version.model} (temp={version.temperature})"
+
+    # Generate input label
+    input_label = None
+    if completion.input_id in input_map:
+        input_obj = input_map[completion.input_id]
+        if input_obj.name:
+            input_label = input_obj.name
+        elif input_obj.input_preview:
+            # Use first 50 chars of preview
+            input_label = input_obj.input_preview[:50]
+            if len(input_obj.input_preview) > 50:
+                input_label += "..."
+
     return Experiment.Completion(
         id=completion.completion_id,
         version=ModelWithID(id=completion.version_id),
         input=ModelWithID(id=completion.input_id),
+        version_label=version_label,
+        input_label=input_label,
         output=output_from_domain(completion.output) if completion.output else Output(),
         cost_usd=completion.cost_usd or 0.0,
         duration_seconds=completion.duration_seconds or 0.0,
