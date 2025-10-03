@@ -139,7 +139,11 @@ export function UniversalFileViewer({ url, addMargin = false }: UniversalFileVie
   }, [url, variableMatch]);
 
   if (variableMatch) {
-    return <strong>{url}</strong>;
+    return (
+      <div className="inline-block px-2 py-1 bg-gray-50 border border-gray-200 rounded-[2px] text-gray-900 font-bold text-xs">
+        {url}
+      </div>
+    );
   }
 
   if (isLoading) {
