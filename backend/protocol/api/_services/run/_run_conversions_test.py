@@ -6,15 +6,24 @@ import pytest
 
 from core.domain.agent_output import AgentOutput
 from core.domain.error import Error
+from core.domain.exceptions import BadRequestError
+from core.domain.file import FileKind
 from core.domain.message import Message, MessageContent
 from core.domain.tool_call import ToolCallRequest
 from core.runners.runner_output import RunnerOutputChunk, ToolCallRequestDelta
+from protocol.api._run_models import (
+    OpenAIAudioInput,
+    OpenAIProxyContent,
+    OpenAIProxyFile,
+    OpenAIProxyImageURL,
+)
 from tests.fake_models import fake_completion
 
 from ._run_conversions import (
     _extract_completion_from_output,
     completion_chunk_choice_final_from_completion,
     completion_response_from_domain,
+    content_to_domain,
 )
 
 
@@ -555,3 +564,230 @@ class TestCompletionChunkChoiceFinalFromCompletion:
         )
 
         assert result.finish_reason == expected_finish_reason
+
+
+class TestContentToDomain:
+    def test_text_content_type(self):
+        """Test content_to_domain with text content type"""
+        content = OpenAIProxyContent(
+            type="text",
+            text="Hello, world!",
+        )
+
+        result = content_to_domain(content)
+
+        assert isinstance(result, MessageContent)
+        assert result.text == "Hello, world!"
+        assert result.file is None
+        assert result.tool_call_request is None
+        assert result.tool_call_result is None
+        assert result.object is None
+
+    def test_text_content_type_with_whitespace(self):
+        """Test content_to_domain with text content that has leading/trailing whitespace"""
+        content = OpenAIProxyContent(
+            type="text",
+            text="  \n  Hello, world!  \n  ",
+        )
+
+        result = content_to_domain(content)
+
+        assert result.text == "Hello, world!"
+
+    def test_text_content_type_empty_text_raises_error(self):
+        """Test content_to_domain with empty text raises BadRequestError"""
+        content = OpenAIProxyContent(
+            type="text",
+            text="",
+        )
+
+        with pytest.raises(BadRequestError, match="Text content is required"):
+            content_to_domain(content)
+
+    def test_text_content_type_none_text_raises_error(self):
+        """Test content_to_domain with None text raises BadRequestError"""
+        content = OpenAIProxyContent(
+            type="text",
+            text=None,
+        )
+
+        with pytest.raises(BadRequestError, match="Text content is required"):
+            content_to_domain(content)
+
+    def test_image_url_content_type(self):
+        """Test content_to_domain with image_url content type"""
+        content = OpenAIProxyContent(
+            type="image_url",
+            image_url=OpenAIProxyImageURL(url="https://example.com/image.png"),
+        )
+
+        result = content_to_domain(content)
+
+        assert isinstance(result, MessageContent)
+        assert result.text is None
+        assert result.file is not None
+        assert result.file.url == "https://example.com/image.png"
+        assert result.file.format == FileKind.IMAGE
+        assert result.file.data is None
+        assert result.file.content_type is None
+
+    def test_image_url_content_type_with_detail(self):
+        """Test content_to_domain with image_url content type including detail"""
+        content = OpenAIProxyContent(
+            type="image_url",
+            image_url=OpenAIProxyImageURL(
+                url="https://example.com/image.jpg",
+                detail="high",
+            ),
+        )
+
+        result = content_to_domain(content)
+
+        assert result.file is not None
+        assert result.file.url == "https://example.com/image.jpg"
+        assert result.file.format == FileKind.IMAGE
+
+    def test_image_url_content_type_missing_image_url_raises_error(self):
+        """Test content_to_domain with missing image_url raises BadRequestError"""
+        content = OpenAIProxyContent(
+            type="image_url",
+            image_url=None,
+        )
+
+        with pytest.raises(BadRequestError, match="Image URL content is required"):
+            content_to_domain(content)
+
+    def test_input_audio_content_type_with_url(self):
+        """Test content_to_domain with input_audio content type using URL"""
+        content = OpenAIProxyContent(
+            type="input_audio",
+            input_audio=OpenAIAudioInput(
+                data="https://example.com/audio.mp3",
+                format="mp3",
+            ),
+        )
+
+        result = content_to_domain(content)
+
+        assert isinstance(result, MessageContent)
+        assert result.text is None
+        assert result.file is not None
+        assert result.file.url == "https://example.com/audio.mp3"
+        assert result.file.format == FileKind.AUDIO
+        assert result.file.data is None
+        assert result.file.content_type is None
+
+    def test_input_audio_content_type_with_base64_data(self):
+        """Test content_to_domain with input_audio content type using base64 data"""
+        content = OpenAIProxyContent(
+            type="input_audio",
+            input_audio=OpenAIAudioInput(
+                data="dGVzdCBhdWRpbyBkYXRh",  # base64 encoded "test audio data"
+                format="wav",
+            ),
+        )
+
+        result = content_to_domain(content)
+
+        assert isinstance(result, MessageContent)
+        assert result.text is None
+        assert result.file is not None
+        assert result.file.data == "dGVzdCBhdWRpbyBkYXRh"
+        assert result.file.content_type == "audio/wav"
+        assert result.file.format == FileKind.AUDIO
+        assert result.file.url is None
+
+    def test_input_audio_content_type_format_without_slash(self):
+        """Test content_to_domain with input_audio format that doesn't include slash"""
+        content = OpenAIProxyContent(
+            type="input_audio",
+            input_audio=OpenAIAudioInput(
+                data="dGVzdCBhdWRpbyBkYXRh",
+                format="mp3",  # No slash, should be converted to audio/mp3
+            ),
+        )
+
+        result = content_to_domain(content)
+
+        assert result.file is not None
+        assert result.file.content_type == "audio/mp3"
+
+    def test_input_audio_content_type_missing_input_audio_raises_error(self):
+        """Test content_to_domain with missing input_audio raises BadRequestError"""
+        content = OpenAIProxyContent(
+            type="input_audio",
+            input_audio=None,
+        )
+
+        with pytest.raises(BadRequestError, match="Input audio content is required"):
+            content_to_domain(content)
+
+    def test_file_content_type_with_url(self):
+        """Test content_to_domain with file content type using URL"""
+        content = OpenAIProxyContent(
+            type="file",
+            file=OpenAIProxyFile(file_data="https://example.com/document.pdf"),
+        )
+
+        result = content_to_domain(content)
+
+        assert isinstance(result, MessageContent)
+        assert result.text is None
+        assert result.file is not None
+        assert result.file.url == "https://example.com/document.pdf"
+        assert result.file.data is None
+        assert result.file.content_type is None
+        assert result.file.format is None
+
+    def test_file_content_type_with_base64_data(self):
+        """Test content_to_domain with file content type using base64 data"""
+        content = OpenAIProxyContent(
+            type="file",
+            file=OpenAIProxyFile(file_data="dGVzdCBmaWxlIGRhdGE="),  # base64 encoded "test file data"
+        )
+
+        result = content_to_domain(content)
+
+        assert isinstance(result, MessageContent)
+        assert result.text is None
+        assert result.file is not None
+        assert result.file.data == "dGVzdCBmaWxlIGRhdGE="
+        assert result.file.url is None
+        assert result.file.content_type is None
+        assert result.file.format is None
+
+    def test_file_content_type_missing_file_raises_error(self):
+        """Test content_to_domain with missing file raises BadRequestError"""
+        content = OpenAIProxyContent(
+            type="file",
+            file=None,
+        )
+
+        with pytest.raises(BadRequestError, match="File content is required"):
+            content_to_domain(content)
+
+    def test_unknown_content_type_raises_error(self):
+        """Test content_to_domain with unknown content type raises BadRequestError"""
+        content = OpenAIProxyContent(
+            type="unknown_type",
+            text="Some text",
+        )
+
+        with pytest.raises(BadRequestError, match="Unknown content type: unknown_type"):
+            content_to_domain(content)
+
+    @pytest.mark.parametrize(
+        ("content_type", "expected_error"),
+        [
+            ("text", "Text content is required"),
+            ("image_url", "Image URL content is required"),
+            ("input_audio", "Input audio content is required"),
+            ("file", "File content is required"),
+        ],
+    )
+    def test_content_type_validation_errors(self, content_type, expected_error):
+        """Test that appropriate validation errors are raised for each content type"""
+        content = OpenAIProxyContent(type=content_type)
+
+        with pytest.raises(BadRequestError, match=expected_error):
+            content_to_domain(content)

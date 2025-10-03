@@ -12,7 +12,7 @@ from core.domain.models import Model, Provider
 from core.domain.tool_call import ToolCallRequest, ToolCallResult
 from core.providers._base.abstract_provider import RawCompletion
 from core.providers._base.llm_usage import LLMUsage
-from core.providers._base.provider_error import ProviderInvalidFileError
+from core.providers._base.provider_error import ModelDoesNotSupportModeError, ProviderInvalidFileError
 from core.providers._base.provider_options import ProviderOptions
 from core.providers.openai.openai_domain import (
     ChoiceDelta,
@@ -451,33 +451,52 @@ class TestBuildRequest:
         assert req.temperature is None
 
 
-def test_invalid_request_error_too_many_images() -> None:
-    """Test that 'Too many images in request' error returns ProviderInvalidFileError."""
-    provider = _TestOpenAIProviderBase()
+class TestInvalidRequestError:
+    def test_too_many_images(self, base_provider: _TestOpenAIProviderBase):
+        """Test that 'Too many images in request' error returns ProviderInvalidFileError."""
 
-    # Create a mock OpenAI error payload
-    error_payload = OpenAIError(
-        error=OpenAIError.Payload(
-            code="invalid_request_error",
-            message="Too many images in request. Only 5 images are allowed per request.",
-            type="invalid_request_error",
-            param="messages",
-        ),
-    )
+        # Create a mock OpenAI error payload
+        error_payload = OpenAIError(
+            error=OpenAIError.Payload(
+                code="invalid_request_error",
+                message="Too many images in request. Only 5 images are allowed per request.",
+                type="invalid_request_error",
+                param="messages",
+            ),
+        )
 
-    # Create a mock HTTP response
-    response = Response(
-        status_code=400,
-        headers={},
-        content=b'{"error": {"code": "invalid_request_error", "message": "Too many images in request. Only 5 images are allowed per request.", "type": "invalid_request_error", "param": "messages"}}',
-    )
+        # Create a mock HTTP response
+        response = Response(
+            status_code=400,
+            headers={},
+            content=b'{"error": {"code": "invalid_request_error", "message": "Too many images in request. Only 5 images are allowed per request.", "type": "invalid_request_error", "param": "messages"}}',
+        )
 
-    # Test the _invalid_request_error method
-    result = provider._invalid_request_error(error_payload, response)
+        # Test the _invalid_request_error method
+        result = base_provider._invalid_request_error(error_payload, response)
 
-    # Verify it returns ProviderInvalidFileError
-    assert isinstance(result, ProviderInvalidFileError)
-    assert "Too many images in request" in str(result)
+        # Verify it returns ProviderInvalidFileError
+        assert isinstance(result, ProviderInvalidFileError)
+        assert "Too many images in request" in str(result)
+
+    def test_does_not_support_content(self, base_provider: _TestOpenAIProviderBase):
+        error_payload = OpenAIError(
+            error=OpenAIError.Payload(
+                code="invalid_request_error",
+                message="Invalid Value: 'file'. This model does not support file content types.",
+                type="invalid_request_error",
+                param="model",
+            ),
+        )
+
+        # Create a mock HTTP response
+        response = Response(status_code=400)
+
+        # Test the _invalid_request_error method
+        result = base_provider._invalid_request_error(error_payload, response)
+
+        assert isinstance(result, ModelDoesNotSupportModeError)
+        assert "Invalid Value: 'file'. This model does not support file content types." in str(result)
 
 
 class TestResponseFormat:
