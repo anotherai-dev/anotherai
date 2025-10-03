@@ -52,17 +52,28 @@ def setup_logs(
     # Convert string level to logging constant
     numeric_level = getattr(logging, min_level.upper(), logging.INFO)
 
+    # Build processors list
+    processors_list: list[Processor] = [
+        structlog.contextvars.merge_contextvars,  # request-scoped context
+        structlog.stdlib.add_log_level,
+        structlog.processors.TimeStamper(fmt="iso", utc=True),
+        pydantic_processor,
+    ]
+
+    # Only include PostHog processor if API key is defined
+    posthog_api_key = os.environ.get("POSTHOG_API_KEY")
+    if posthog_api_key:
+        posthog_host = os.environ.get("POSTHOG_HOST", "https://us.i.posthog.com")
+        processors_list.append(PostHogProcessor(api_key=posthog_api_key, host=posthog_host))
+
+    processors_list.extend([
+        SentryProcessor(event_level=logging.WARNING),  # capture warnings+ as events
+        _renderer(),
+        *processors,
+    ])
+
     structlog.configure(
-        processors=[
-            structlog.contextvars.merge_contextvars,  # request-scoped context
-            structlog.stdlib.add_log_level,
-            structlog.processors.TimeStamper(fmt="iso", utc=True),
-            pydantic_processor,
-            PostHogProcessor(),  # send analytics events to PostHog
-            SentryProcessor(event_level=logging.WARNING),  # capture warnings+ as events
-            _renderer(),
-            *processors,
-        ],
+        processors=processors_list,
         wrapper_class=structlog.make_filtering_bound_logger(numeric_level),
         cache_logger_on_first_use=True,
     )
