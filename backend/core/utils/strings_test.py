@@ -3,6 +3,7 @@ import pytest
 from .strings import (
     b64_urldecode,
     clean_unicode_chars,
+    is_http_url,
     is_url_safe,
     is_valid_unicode,
     normalize,
@@ -231,3 +232,16 @@ def test_remove_urls(input_str: str, expected_output: str) -> None:
 class TestIsValidUnicode:
     def test_not_raised_on_single_byte(self):
         assert is_valid_unicode(b"a") is None
+
+
+class TestIsHttpUrl:
+    @pytest.mark.parametrize(
+        ("input_str", "expected_output"),
+        [
+            ("https://example.com", True),
+            ("http://example.com", True),
+            ("bla", False),
+        ],
+    )
+    def test_is_url(self, input_str: str, expected_output: bool) -> None:
+        assert is_http_url(input_str) == expected_output

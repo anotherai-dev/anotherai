@@ -43,11 +43,16 @@ class OpenAIProxyImageURL(BaseModel):
     detail: Literal["low", "high", "auto"] | None = None
 
 
+class OpenAIProxyFile(BaseModel):
+    file_data: str
+
+
 class OpenAIProxyContent(BaseModel):
     type: str
     text: str | None = None
     image_url: OpenAIProxyImageURL | None = None
     input_audio: OpenAIAudioInput | None = None
+    file: OpenAIProxyFile | None = None
 
 
 class OpenAIProxyFunctionCall(BaseModel):
