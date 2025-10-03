@@ -20,6 +20,7 @@ interface PaymentModalContentProps {
   amountToAdd: number | undefined;
   setAmountToAdd: (amount: number | undefined) => void;
   isAddCreditsButtonActive: boolean;
+  isProcessingPayment: boolean;
   onAddCredits: () => void;
   onDeletePaymentMethod: () => Promise<void>;
   onUpdatePaymentMethod: () => void;
@@ -36,6 +37,7 @@ export function PaymentModalContent({
   amountToAdd,
   setAmountToAdd,
   isAddCreditsButtonActive,
+  isProcessingPayment,
   onAddCredits,
   onDeletePaymentMethod,
   onUpdatePaymentMethod,
@@ -88,8 +90,8 @@ export function PaymentModalContent({
 
       <BottomButtonBar
         tooltipText={!isPaymentMethodAvailable ? "Add a Payment method before adding credits" : undefined}
-        actionText="Add Credits"
-        isActionDisabled={!isAddCreditsButtonActive}
+        actionText={isProcessingPayment ? "Processing..." : "Add Credits"}
+        isActionDisabled={!isAddCreditsButtonActive || isProcessingPayment}
         onCancel={onClose}
         onAction={onAddCredits}
       />
