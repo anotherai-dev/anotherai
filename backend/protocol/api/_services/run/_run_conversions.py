@@ -21,6 +21,7 @@ from core.domain.trace import LLMTrace, Trace
 from core.domain.version import Version
 from core.providers._base.provider_error import MissingModelError
 from core.runners.runner_output import RunnerOutputChunk, ToolCallRequestDelta
+from core.utils.strings import is_http_url
 from protocol.api._run_models import (
     FinishReason,
     OpenAIAudioInput,
@@ -80,6 +81,13 @@ def content_to_domain(content: "OpenAIProxyContent") -> MessageContent:
             if not content.input_audio:
                 raise BadRequestError("Input audio content is required")
             return MessageContent(file=audio_input_to_domain(content.input_audio))
+
+        case "file":
+            if not content.file:
+                raise BadRequestError("File content is required")
+            if is_http_url(content.file.file_data) or content.file.file_data.startswith("data:"):
+                return MessageContent(file=File(url=content.file.file_data))
+            return MessageContent(file=File(data=content.file.file_data))
         case _:
             raise BadRequestError(f"Unknown content type: {content.type}", capture=True)
 

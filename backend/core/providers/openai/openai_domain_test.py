@@ -1,6 +1,6 @@
 import pytest
 
-from core.domain.exceptions import UnpriceableRunError
+from core.domain.exceptions import InternalError, UnpriceableRunError
 from core.domain.file import File
 from core.domain.message import MessageDeprecated
 from core.domain.models import Model
@@ -9,6 +9,7 @@ from core.providers._base.provider_error import FailedGenerationError, ProviderE
 from core.providers.openai.openai_domain import (
     AudioContent,
     CompletionResponse,
+    FileContent,
     ImageContent,
     OpenAIError,
     OpenAIMessage,
@@ -178,6 +179,187 @@ class TestOpenAIMessageFromDomain:
         assert openai_message.content[0].text == "Hello"
         assert isinstance(openai_message.content[1], ImageContent)
         assert isinstance(openai_message.content[2], AudioContent)
+
+    @pytest.mark.parametrize(
+        ("content_type", "expected_format"),
+        [
+            ("image/png", "image/png"),
+            ("image/jpeg", "image/jpeg"),
+            ("image/gif", "image/gif"),
+            ("image/webp", "image/webp"),
+            ("image/svg+xml", "image/svg+xml"),
+        ],
+    )
+    def test_different_image_file_types(self, content_type: str, expected_format: str):
+        message = MessageDeprecated(
+            content="Here's an image",
+            files=[File(content_type=content_type, data="base64_image_data")],
+            role=MessageDeprecated.Role.USER,
+        )
+        openai_message = OpenAIMessage.from_domain(message, is_system_allowed=True)
+        assert isinstance(openai_message.content, list)
+        assert len(openai_message.content) == 2
+        assert isinstance(openai_message.content[0], TextContent)
+        assert openai_message.content[0].text == "Here's an image"
+        assert isinstance(openai_message.content[1], ImageContent)
+        assert openai_message.content[1].image_url.url == f"data:{expected_format};base64,base64_image_data"
+
+    @pytest.mark.parametrize(
+        ("content_type", "expected_format"),
+        [
+            ("audio/mpeg", "mp3"),
+            ("audio/wav", "wav"),
+            ("audio/wave", "wav"),
+            ("audio/mp3", "mp3"),
+            ("audio/x-wav", "wav"),
+            ("audio/x-mpeg", "mp3"),
+        ],
+    )
+    def test_different_audio_file_types(self, content_type: str, expected_format: str):
+        message = MessageDeprecated(
+            content="Here's an audio file",
+            files=[File(content_type=content_type, data="base64_audio_data")],
+            role=MessageDeprecated.Role.USER,
+        )
+        openai_message = OpenAIMessage.from_domain(message, is_system_allowed=True)
+        assert isinstance(openai_message.content, list)
+        assert len(openai_message.content) == 2
+        assert isinstance(openai_message.content[0], TextContent)
+        assert openai_message.content[0].text == "Here's an audio file"
+        assert isinstance(openai_message.content[1], AudioContent)
+        assert openai_message.content[1].input_audio.data == "base64_audio_data"
+        assert openai_message.content[1].input_audio.format == expected_format
+
+    @pytest.mark.parametrize(
+        "content_type",
+        [
+            "application/pdf",
+            "text/plain",
+            "text/markdown",
+            "text/csv",
+            "application/json",
+            "text/html",
+            "application/octet-stream",
+        ],
+    )
+    def test_document_file_types(self, content_type: str):
+        message = MessageDeprecated(
+            content="Here's a document",
+            files=[File(content_type=content_type, data="base64_document_data")],
+            role=MessageDeprecated.Role.USER,
+        )
+        openai_message = OpenAIMessage.from_domain(message, is_system_allowed=True)
+        assert isinstance(openai_message.content, list)
+        assert len(openai_message.content) == 2
+        assert isinstance(openai_message.content[0], TextContent)
+        assert openai_message.content[0].text == "Here's a document"
+        assert isinstance(openai_message.content[1], FileContent)
+        assert openai_message.content[1].file.file_data == f"data:{content_type};base64,base64_document_data"
+        assert openai_message.content[1].file.filename is not None
+
+    def test_mixed_file_types_in_single_message(self):
+        message = MessageDeprecated(
+            content="Mixed content message",
+            files=[
+                File(content_type="image/png", data="image_data"),
+                File(content_type="audio/mp3", data="audio_data"),
+                File(content_type="application/pdf", data="pdf_data"),
+                File(content_type="text/plain", data="text_data"),
+            ],
+            role=MessageDeprecated.Role.USER,
+        )
+        openai_message = OpenAIMessage.from_domain(message, is_system_allowed=True)
+        assert isinstance(openai_message.content, list)
+        assert len(openai_message.content) == 5
+
+        # Text content first
+        assert isinstance(openai_message.content[0], TextContent)
+        assert openai_message.content[0].text == "Mixed content message"
+
+        # Image content
+        assert isinstance(openai_message.content[1], ImageContent)
+        assert openai_message.content[1].image_url.url == "data:image/png;base64,image_data"
+
+        # Audio content
+        assert isinstance(openai_message.content[2], AudioContent)
+        assert openai_message.content[2].input_audio.data == "audio_data"
+        assert openai_message.content[2].input_audio.format == "mp3"
+
+        # PDF file content
+        assert isinstance(openai_message.content[3], FileContent)
+        assert openai_message.content[3].file.file_data == "data:application/pdf;base64,pdf_data"
+
+        # Text file content
+        assert isinstance(openai_message.content[4], FileContent)
+        assert openai_message.content[4].file.file_data == "data:text/plain;base64,text_data"
+
+    def test_message_with_only_files_no_text(self):
+        message = MessageDeprecated(
+            content="",
+            files=[
+                File(content_type="image/jpeg", data="jpeg_data"),
+                File(content_type="audio/wav", data="wav_data"),
+            ],
+            role=MessageDeprecated.Role.USER,
+        )
+        openai_message = OpenAIMessage.from_domain(message, is_system_allowed=True)
+        assert isinstance(openai_message.content, list)
+        assert len(openai_message.content) == 2
+        assert isinstance(openai_message.content[0], ImageContent)
+        assert isinstance(openai_message.content[1], AudioContent)
+
+    def test_message_with_only_text_no_files(self):
+        message = MessageDeprecated(
+            content="Just text content",
+            files=None,
+            role=MessageDeprecated.Role.USER,
+        )
+        openai_message = OpenAIMessage.from_domain(message, is_system_allowed=True)
+        assert openai_message.content == "Just text content"
+
+    def test_unsupported_audio_format_raises_error(self):
+        message = MessageDeprecated(
+            content="Unsupported audio",
+            files=[File(content_type="audio/flac", data="flac_data")],
+            role=MessageDeprecated.Role.USER,
+        )
+        with pytest.raises(FailedGenerationError) as e:
+            OpenAIMessage.from_domain(message, is_system_allowed=True)
+        assert e.value.code == "failed_generation"
+        assert "audio/flac" in str(e.value)
+
+    def test_file_without_data_raises_error_for_audio(self):
+        message = MessageDeprecated(
+            content="Audio without data",
+            files=[File(content_type="audio/mp3", data=None)],
+            role=MessageDeprecated.Role.USER,
+        )
+        with pytest.raises(InternalError) as e:
+            OpenAIMessage.from_domain(message, is_system_allowed=True)
+        assert "Audio file's data is required" in str(e.value)
+
+    def test_file_without_content_type_creates_file_content(self):
+        message = MessageDeprecated(
+            content="File without content type",
+            files=[File(content_type=None, data="file_data")],
+            role=MessageDeprecated.Role.USER,
+        )
+        openai_message = OpenAIMessage.from_domain(message, is_system_allowed=True)
+        assert isinstance(openai_message.content, list)
+        assert len(openai_message.content) == 2
+        assert isinstance(openai_message.content[0], TextContent)
+        assert isinstance(openai_message.content[1], FileContent)
+        assert openai_message.content[1].file.file_data == "data:None;base64,file_data"
+
+    def test_file_without_data_raises_error_for_file_content(self):
+        message = MessageDeprecated(
+            content="File without data",
+            files=[File(content_type="application/pdf", data=None)],
+            role=MessageDeprecated.Role.USER,
+        )
+        with pytest.raises(InternalError) as e:
+            OpenAIMessage.from_domain(message, is_system_allowed=True)
+        assert "File's data is required" in str(e.value)
 
 
 def test_parse_completion_response_with_tool_calls():
