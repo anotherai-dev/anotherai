@@ -24,7 +24,7 @@ export function DraggableColumnWrapper({
   columnWidth,
   onColumnWidthChange,
   nextVersionId,
-  isLastColumn = false,
+  isLastColumn = false, // eslint-disable-line @typescript-eslint/no-unused-vars
 }: DraggableColumnWrapperProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [dragOver, setDragOver] = useState<"left" | "right" | null>(null);
@@ -143,8 +143,8 @@ export function DraggableColumnWrapper({
 
       {children}
 
-      {/* Column resizer - only show if not the last column */}
-      {!isLastColumn && onColumnWidthChange && columnWidth && (
+      {/* Column resizer - show for all columns */}
+      {onColumnWidthChange && columnWidth && (
         <ColumnResizer
           leftVersionId={versionId}
           rightVersionId={nextVersionId}

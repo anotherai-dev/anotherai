@@ -30,6 +30,10 @@ export interface TableProps {
   }>;
   // Custom column widths array (if not provided, equal widths are used)
   columnWidths?: number[];
+  // First column width (default: 240px)
+  firstColumnWidth?: number;
+  // Callback for first column width changes
+  onFirstColumnWidthChange?: (width: number) => void;
 }
 
 export function TableComponent({
@@ -42,8 +46,11 @@ export function TableComponent({
   hideScrollbar = true,
   stickyHeaderData,
   columnWidths,
+  firstColumnWidth = 240,
+  onFirstColumnWidthChange,
 }: TableProps) {
-  const headerRowWidth = "240px";
+  const headerRowWidthPx = firstColumnWidth;
+  const headerRowWidth = `${headerRowWidthPx}px`;
   const stickyHeaderRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -81,8 +88,7 @@ export function TableComponent({
       return columnWidths.map((width) => Math.max(width, 200)); // Always 200px minimum for custom widths
     }
 
-    // Available width = container width - header row width (240px) - padding/margins
-    const headerRowWidthPx = 240;
+    // Available width = container width - header row width - padding/margins
     const availableWidth = containerWidth - headerRowWidthPx - 20; // 20px for padding/margins
 
     if (availableWidth <= 0) {
@@ -94,10 +100,16 @@ export function TableComponent({
     const finalWidth = Math.max(equalWidth, minColumnWidth);
 
     return new Array(numColumns).fill(finalWidth);
-  }, [containerWidth, columnHeaders.length, minColumnWidth, columnWidths]);
+  }, [containerWidth, columnHeaders.length, minColumnWidth, columnWidths, headerRowWidthPx]);
 
   // For backwards compatibility, provide a single columnWidth value (first column's width or default)
   const columnWidth = calculatedColumnWidths.length > 0 ? calculatedColumnWidths[0] : minColumnWidth;
+
+  // Calculate total table width based on actual column widths to prevent space redistribution
+  const totalTableWidth = useMemo(() => {
+    const dataColumnsWidth = calculatedColumnWidths.reduce((sum, width) => sum + width, 0);
+    return headerRowWidthPx + dataColumnsWidth;
+  }, [headerRowWidthPx, calculatedColumnWidths]);
 
   const headerRef = useRef<HTMLTableSectionElement>(null);
   const tableRef = useRef<HTMLTableElement>(null);
@@ -120,9 +132,11 @@ export function TableComponent({
         <StickyTableHeaders
           stickyHeaderData={stickyHeaderData}
           columnWidth={columnWidth}
+          columnWidths={calculatedColumnWidths}
           scrollLeft={scrollLeft}
           containerLeft={containerLeft}
           containerWidth={containerWidth}
+          headerRowWidthPx={headerRowWidthPx}
           headerRef={headerRef}
           tableRef={tableRef}
           stickyHeaderRef={stickyHeaderRef}
@@ -163,7 +177,14 @@ export function TableComponent({
         }}
         onScroll={handleMainScroll}
       >
-        <table ref={tableRef} className="w-full">
+        <table
+          ref={tableRef}
+          style={{
+            tableLayout: "fixed",
+            width: `${totalTableWidth}px`,
+            minWidth: `${totalTableWidth}px`,
+          }}
+        >
           <TableHeader
             headerRef={headerRef}
             columnHeaders={columnHeaders}
@@ -171,6 +192,8 @@ export function TableComponent({
             columnWidth={columnWidth}
             columnWidths={calculatedColumnWidths}
             minHeaderHeight={minHeaderHeight}
+            onFirstColumnWidthChange={onFirstColumnWidthChange}
+            firstColumnWidth={firstColumnWidth}
           />
           <TableBody
             rowHeaders={rowHeaders}

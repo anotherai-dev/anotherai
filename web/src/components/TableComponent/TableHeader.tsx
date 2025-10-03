@@ -1,4 +1,5 @@
 import { MutableRefObject, ReactNode } from "react";
+import { FirstColumnResizer } from "./FirstColumnResizer";
 
 interface TableHeaderProps {
   headerRef: MutableRefObject<HTMLTableSectionElement | null>;
@@ -7,6 +8,8 @@ interface TableHeaderProps {
   columnWidth: number; // For backwards compatibility
   columnWidths?: number[]; // Individual column widths
   minHeaderHeight: number;
+  onFirstColumnWidthChange?: (width: number) => void;
+  firstColumnWidth?: number;
 }
 
 export function TableHeader({
@@ -16,19 +19,27 @@ export function TableHeader({
   columnWidth,
   columnWidths,
   minHeaderHeight,
+  onFirstColumnWidthChange,
+  firstColumnWidth,
 }: TableHeaderProps) {
   return (
     <thead ref={headerRef} className="bg-gray-50">
       <tr className="border-b border-gray-200">
         {/* Empty corner cell */}
         <th
-          className="text-left text-xs font-medium text-gray-500 sticky left-0 bg-gray-50 z-10"
+          className="text-left text-xs font-medium text-gray-500 sticky left-0 bg-gray-50 z-10 relative"
           style={{
             minWidth: headerRowWidth,
             width: headerRowWidth,
             maxWidth: headerRowWidth,
+            flexShrink: 0,
           }}
-        ></th>
+        >
+          {/* First column resizer */}
+          {onFirstColumnWidthChange && firstColumnWidth && (
+            <FirstColumnResizer width={firstColumnWidth} onWidthChange={onFirstColumnWidthChange} />
+          )}
+        </th>
         {/* Column headers */}
         {columnHeaders.map((header, index) => {
           const width = columnWidths?.[index] || columnWidth;

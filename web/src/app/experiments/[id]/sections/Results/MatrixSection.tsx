@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocalStorage } from "usehooks-ts";
 import { TableComponent } from "@/components/TableComponent";
 import {
   findCompletionForInputAndVersion,
@@ -50,6 +51,9 @@ export function MatrixSection(props: Props) {
   }, [columnOrder, hiddenVersionIds]);
 
   const { setColumnWidth, widthsArray } = useColumnWidths(experiment.id, visibleVersionIds, 400);
+
+  // First column width management
+  const [firstColumnWidth, setFirstColumnWidth] = useLocalStorage<number>(`first-column-width-${experiment.id}`, 240);
 
   // Update column order when sorted versions change
   useEffect(() => {
@@ -275,6 +279,8 @@ export function MatrixSection(props: Props) {
           hideScrollbar={false}
           stickyHeaderData={stickyHeaderData}
           columnWidths={widthsArray}
+          firstColumnWidth={firstColumnWidth}
+          onFirstColumnWidthChange={setFirstColumnWidth}
         />
       ) : (
         <div className="bg-gray-50 border border-gray-200 rounded-[10px]">

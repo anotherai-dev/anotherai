@@ -21,6 +21,7 @@ export function TableBody({ rowHeaders, data, headerRowWidth, columnWidth, colum
               width: headerRowWidth,
               maxWidth: headerRowWidth,
               height: "300px",
+              flexShrink: 0,
             }}
           >
             <div className="px-4 py-4">{rowHeader}</div>
