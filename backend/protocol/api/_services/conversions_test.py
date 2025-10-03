@@ -22,6 +22,7 @@ from protocol.api._api_models import (
     ToolCallRequest,
     ToolCallResult,
 )
+from protocol.api._mcp import _convert_model_for_mcp
 from protocol.api._services.conversions import (
     _extract_json_schema,
     annotation_to_domain,
@@ -786,7 +787,6 @@ class TestMCPModelConversion:
             ModelSupports,
             SupportsModality,
         )
-        from protocol.api._mcp import _convert_model_for_mcp
 
         # Create a full API model with icon_url
         api_model = Model(
@@ -797,14 +797,14 @@ class TestMCPModelConversion:
                 input=SupportsModality(text=True, image=False, audio=False, pdf=False),
                 output=SupportsModality(text=True, image=False, audio=False, pdf=False),
                 parallel_tool_calls=False,
-                response_format=False,
                 tools=False,
+                top_p=True,
                 temperature=True,
             ),
             pricing=ModelPricing(input_token_usd=0.001, output_token_usd=0.002),
             release_date=date(2024, 1, 1),
             reasoning=None,
-            context_window=ModelContextWindow(max_input_tokens=4096, max_output_tokens=1024),
+            context_window=ModelContextWindow(max_tokens=4096, max_output_tokens=1024),
             speed_index=1.0,
         )
 
@@ -823,7 +823,7 @@ class TestMCPModelConversion:
 
         # Verify icon_url is not present in MCP model
         assert not hasattr(mcp_model, "icon_url")
-        
+
         # Verify the MCP model doesn't include icon_url in its serialized form
         mcp_model_dict = mcp_model.model_dump()
         assert "icon_url" not in mcp_model_dict
