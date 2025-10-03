@@ -442,9 +442,6 @@ async def query_completions(
     immediately load and view the actual content to verify the model's analysis. This is critical for debugging and should be done
     proactively without waiting for the user to explicitly ask.
 
-    - **Images**: Download the image and view it to verify the model's analysis
-    - **Audio/PDFs**: Download and inspect the content as needed
-
     The completion table structured is defined below (in doubt, you can retrieve the structure using DESCRIBE TABLE completions).
 
     ```sql
