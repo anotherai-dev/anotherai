@@ -307,4 +307,4 @@ class PaymentRequiredError(DefaultError):
     default_status_code = 402
     default_message = "Payment required"
     code = "payment_required"
-    default_capture = True
+    default_capture = False
