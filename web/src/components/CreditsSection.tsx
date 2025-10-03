@@ -2,10 +2,11 @@
 
 import { cx } from "class-variance-authority";
 import { AlertTriangle } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { CircularProgress } from "@/components/CircularProgress";
 import { HoverPopover } from "@/components/HoverPopover";
 import { PaymentModal } from "@/components/payment-modal/PaymentModal";
+import { useQueryBool } from "@/lib/queryString";
 import { useOrFetchOrganizationSettings, useOrFetchPaymentMethod } from "@/store/billing";
 
 interface CreditsSectionProps {
@@ -24,11 +25,11 @@ function formatCurrency(amount?: number): string {
 export function CreditsSection({ className }: CreditsSectionProps) {
   const { organizationSettings, isLoading } = useOrFetchOrganizationSettings(30000); // Refresh every 30s
   const { paymentMethod, isInitialized: isPaymentMethodInitialized } = useOrFetchPaymentMethod(30000);
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useQueryBool("credits");
 
   const handleClick = useCallback(() => {
     setIsPaymentModalOpen(true);
-  }, []);
+  }, [setIsPaymentModalOpen]);
 
   const currentCredits = organizationSettings?.current_credits_usd;
   const addedCredits = 10; // TODO: use last added credits
