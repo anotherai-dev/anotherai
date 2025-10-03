@@ -411,7 +411,7 @@ class TestProviderCostCalculation:
             MessageDeprecated(role=MessageDeprecated.Role.ASSISTANT, content="Assistant message"),
             MessageDeprecated(role=MessageDeprecated.Role.USER, content="User message 2"),
         ]
-        options = ProviderOptions(model=Model.CLAUDE_3_5_SONNET_20240620, temperature=0.7, max_tokens=100)
+        options = ProviderOptions(model=Model.CLAUDE_4_SONNET_20250514, temperature=0.7, max_tokens=100)
         stream = False
 
         request = provider._build_request(messages, options, stream)  # pyright: ignore [reportPrivateUsage]
@@ -434,7 +434,7 @@ class TestProviderCostCalculation:
             MessageDeprecated(role=MessageDeprecated.Role.ASSISTANT, content="Assistant message"),
             MessageDeprecated(role=MessageDeprecated.Role.USER, content="User message 2"),
         ]
-        options = ProviderOptions(model=Model.CLAUDE_3_5_SONNET_20240620, temperature=0.7)
+        options = ProviderOptions(model=Model.CLAUDE_4_SONNET_20250514, temperature=0.7)
         stream = False
 
         request = provider._build_request(messages, options, stream)  # pyright: ignore [reportPrivateUsage]
@@ -456,7 +456,7 @@ class TestProviderCostCalculation:
         assert request.system == [AmazonBedrockSystemMessage(text="System message")]
 
 
-def _url(model: str = "us.anthropic.claude-3-5-sonnet-20240620-v1:0", region: str = "us-west-2") -> str:
+def _url(model: str = "us.anthropic.claude-sonnet-4-20250514-v1:0", region: str = "us-west-2") -> str:
     return f"https://bedrock-runtime.{region}.amazonaws.com/model/{model}/converse"
 
 
@@ -470,7 +470,7 @@ async def test_complete_500(httpx_mock: HTTPXMock, amazon_provider: AmazonBedroc
     with pytest.raises(ProviderInternalError) as e:
         await amazon_provider.complete(
             [Message.with_text("Hello")],
-            options=ProviderOptions(model=Model.CLAUDE_3_5_SONNET_20240620, max_tokens=10, temperature=0),
+            options=ProviderOptions(model=Model.CLAUDE_4_SONNET_20250514, max_tokens=10, temperature=0),
             output_factory=_output_factory,
         )
 
@@ -523,7 +523,7 @@ class TestCompleteWithRetry:
         )
 
         messages = [Message.with_text("Hello")]
-        options = ProviderOptions(model=Model.CLAUDE_3_5_SONNET_20240620, max_tokens=10, temperature=0)
+        options = ProviderOptions(model=Model.CLAUDE_4_SONNET_20250514, max_tokens=10, temperature=0)
 
         o = await amazon_provider.complete(messages, options, output_factory=_output_factory)
         assert o.agent_output == {"text": "Hello"}
@@ -619,7 +619,7 @@ async def test_cost_is_set_to_0_if_error_occurs_in_usage_computation(
     )
 
     messages = [Message.with_text("Hello")]
-    options = ProviderOptions(model=Model.CLAUDE_3_5_SONNET_20240620, max_tokens=10, temperature=0)
+    options = ProviderOptions(model=Model.CLAUDE_4_SONNET_20250514, max_tokens=10, temperature=0)
 
     with patch.object(amazon_provider, "_compute_llm_completion_cost") as mock_compute_llm_completion_usage:
         mock_compute_llm_completion_usage.side_effect = error_class("test")
@@ -636,7 +636,7 @@ class TestPrepareCompletion:
         """Test that the 'role' key appears before 'content' in the prepared request."""
         request = amazon_provider._build_request(
             messages=[MessageDeprecated(role=MessageDeprecated.Role.USER, content="Hello")],
-            options=ProviderOptions(model=Model.CLAUDE_3_5_SONNET_20240620, max_tokens=10, temperature=0),
+            options=ProviderOptions(model=Model.CLAUDE_4_SONNET_20250514, max_tokens=10, temperature=0),
             stream=False,
         )
 
@@ -730,7 +730,7 @@ class TestNativeTools:
     def test_build_request_with_tools(self, amazon_provider: AmazonBedrockProvider):
         messages = [MessageDeprecated(role=MessageDeprecated.Role.USER, content="Use tool")]
         options = ProviderOptions(
-            model=Model.CLAUDE_3_5_SONNET_20240620,
+            model=Model.CLAUDE_4_SONNET_20250514,
             temperature=0.7,
             enabled_tools=[
                 Tool(
@@ -758,7 +758,7 @@ class TestNativeTools:
     def test_build_request_with_empty_tool_description(self, amazon_provider: AmazonBedrockProvider):
         messages = [MessageDeprecated(role=MessageDeprecated.Role.USER, content="Use tool")]
         options = ProviderOptions(
-            model=Model.CLAUDE_3_5_SONNET_20240620,
+            model=Model.CLAUDE_4_SONNET_20250514,
             temperature=0.7,
             enabled_tools=[
                 Tool(
@@ -977,7 +977,7 @@ class TestBuildRequestWithThinking:
         from core.domain.models.utils import get_model_data
         from core.providers._base.provider_options import ProviderOptions
 
-        model = Model.CLAUDE_3_5_SONNET_20240620
+        model = Model.CLAUDE_4_SONNET_20250514
         model_data = get_model_data(model)
 
         # Mock the model data to have reasoning capabilities
@@ -1017,7 +1017,7 @@ class TestBuildRequestWithThinking:
     def test_build_request_without_thinking_budget(self, amazon_provider: AmazonBedrockProvider):
         """Test that no thinking configuration is added when reasoning budget is not set."""
         options = ProviderOptions(
-            model=Model.CLAUDE_3_5_SONNET_20240620,
+            model=Model.CLAUDE_4_SONNET_20250514,
             max_tokens=1000,
         )
 

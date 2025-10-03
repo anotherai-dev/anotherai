@@ -190,6 +190,8 @@ class OpenAIProviderBase[OpenAIConfigVar: OpenAIProviderBaseConfig](HTTPXProvide
             )
         if "Too many images in request" in payload.error.message:
             return ProviderInvalidFileError(msg=payload.error.message, response=response)
+        if "does not support file content types." in payload.error.message:
+            return ModelDoesNotSupportModeError(msg=payload.error.message, response=response)
 
         return None
 
