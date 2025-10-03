@@ -16,7 +16,6 @@ type HoverPopoverProps = {
     | "topRight"
     | "topRightAligned"
     | "topLeftAligned"
-    | "topRightAlignedNew"
     | "rightOverlap"
     | "bottomLeft";
 };
@@ -95,18 +94,9 @@ export function HoverPopover({
         left = rect.right;
         break;
       case "topRightAligned":
-        top = rect.top - 32;
+        // Position directly: popover bottom = trigger top, right edges aligned
+        top = rect.top;
         left = rect.right;
-        // Adjust after popover is rendered to align right edges
-        setTimeout(() => {
-          if (popoverRef.current) {
-            const popoverRect = popoverRef.current.getBoundingClientRect();
-            setPopoverPosition(() => ({
-              top: rect.top - popoverRect.height + 8,
-              left: rect.right - popoverRect.width,
-            }));
-          }
-        }, 0);
         break;
       case "topLeftAligned":
         top = rect.top - 8; // Initial offset, will be adjusted after popover is rendered
@@ -118,21 +108,6 @@ export function HoverPopover({
             setPopoverPosition((prev) => ({
               ...prev,
               top: rect.top - popoverRect.height - 8,
-            }));
-          }
-        }, 0);
-        break;
-      case "topRightAlignedNew":
-        top = rect.top - 8; // Initial offset, will be adjusted after popover is rendered
-        left = rect.right;
-        // Adjust after popover is rendered to position above the trigger
-        setTimeout(() => {
-          if (popoverRef.current) {
-            const popoverRect = popoverRef.current.getBoundingClientRect();
-            setPopoverPosition((prev) => ({
-              ...prev,
-              top: rect.top - popoverRect.height - 8,
-              left: rect.right - popoverRect.width,
             }));
           }
         }, 0);
@@ -215,9 +190,9 @@ export function HoverPopover({
               ? "translateY(-50%)"
               : position === "topRight"
                 ? "translateX(-50%) translateY(-100%)"
-                : position === "bottomLeft" || position === "topLeftAligned"
-                  ? "translateX(0)"
-                  : position === "topRightAlignedNew"
+                : position === "topRightAligned"
+                  ? "translateX(-100%) translateY(-100%)"
+                  : position === "bottomLeft" || position === "topLeftAligned"
                     ? "translateX(0)"
                     : "translateX(-50%)",
       }}

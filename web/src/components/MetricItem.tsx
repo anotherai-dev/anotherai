@@ -132,7 +132,7 @@ export function MetricItem({
             formatValue={formatValue}
           />
         }
-        position="topRightAlignedNew"
+        position="topRightAligned"
         popoverClassName="bg-gray-800 text-white rounded-[4px]"
         className=""
       >

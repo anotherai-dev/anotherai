@@ -20,7 +20,6 @@ type MatchingJSONValueProps = {
     | "topRight"
     | "topRightAligned"
     | "topLeftAligned"
-    | "topRightAlignedNew"
     | "rightOverlap"
     | "bottomLeft";
 };
