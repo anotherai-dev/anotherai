@@ -1,26 +1,7 @@
 import { useRouter } from "next/navigation";
 import { memo, useCallback } from "react";
 import { buildQuery } from "../../utils/queries";
-
-type InfoRowProps = {
-  title: string;
-  value: string;
-  onClick?: () => void;
-};
-
-const InfoRow = memo(function InfoRow({ title, value, onClick }: InfoRowProps) {
-  return (
-    <div
-      className={`bg-white border border-gray-200 rounded-[2px] p-2 ${onClick ? "cursor-pointer hover:bg-gray-50 hover:border-gray-300" : ""}`}
-      onClick={onClick}
-    >
-      <div className="flex justify-between items-center">
-        <span className="text-xs font-medium text-gray-700">{title}</span>
-        <span className="text-xs text-gray-900 text-right">{value}</span>
-      </div>
-    </div>
-  );
-});
+import InfoRow from "./InfoRow";
 
 type Props = {
   metadata: Record<string, unknown>;
@@ -54,6 +35,7 @@ function MetadataView({ metadata }: Props) {
             title={key}
             value={typeof value === "string" ? value : JSON.stringify(value)}
             onClick={() => handleMetadataClick(key, value)}
+            copyable={true}
           />
         ))}
       </div>

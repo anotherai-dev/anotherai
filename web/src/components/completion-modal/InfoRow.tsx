@@ -9,13 +9,15 @@ type InfoRowProps = {
   copyable?: boolean;
   copyValue?: string; // Optional separate value for copying
   linkTo?: string; // Optional URL to make the value clickable
+  onClick?: () => void; // Optional click handler
 };
 
-function InfoRow({ title, value, copyable = false, copyValue, linkTo }: InfoRowProps) {
+function InfoRow({ title, value, copyable = false, copyValue, linkTo, onClick }: InfoRowProps) {
   const { showToast } = useToast();
   const [isHovered, setIsHovered] = useState(false);
 
-  const handleCopy = async () => {
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering the row's onClick
     try {
       // Use copyValue if provided, otherwise use display value
       await navigator.clipboard.writeText(copyValue || value);
@@ -61,9 +63,10 @@ function InfoRow({ title, value, copyable = false, copyValue, linkTo }: InfoRowP
 
   return (
     <div
-      className="bg-white border border-gray-200 rounded-[2px] px-2"
+      className={`bg-white border border-gray-200 rounded-[2px] px-2 ${onClick ? "cursor-pointer hover:bg-gray-50" : ""}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onClick={onClick}
     >
       {content}
     </div>
