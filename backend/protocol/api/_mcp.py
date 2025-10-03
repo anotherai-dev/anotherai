@@ -1,11 +1,10 @@
 # ruff: noqa: B008
 # pyright: reportCallInDefaultInitializer=false
 
-from datetime import date
 from typing import Annotated, Any, Literal
 
 from mcp.types import ToolAnnotations
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from core.consts import ANOTHERAI_API_URL
 from core.domain.cache_usage import CacheUsage
@@ -21,11 +20,8 @@ from protocol.api._api_models import (
     Deployment,
     Experiment,
     Input,
+    MCPModel,
     Model,
-    ModelContextWindow,
-    ModelPricing,
-    ModelReasoning,
-    ModelSupports,
     Page,
     QueryCompletionResponse,
     SearchDocumentationResponse,
@@ -33,43 +29,6 @@ from protocol.api._api_models import (
     View,
 )
 from protocol.api._services import models_service
-
-
-class MCPModel(BaseModel):
-    """Model information for MCP tool responses, excluding icon_url to reduce context window usage."""
-
-    id: str = Field(
-        description="Unique identifier for the model, which should be used in the `model` parameter of the OpenAI API.",
-    )
-    display_name: str = Field(
-        description="Human-readable name for the model.",
-    )
-
-    supports: ModelSupports = Field(
-        description="Detailed information about what the model supports.",
-    )
-
-    pricing: ModelPricing = Field(
-        description="Pricing information for the model.",
-    )
-
-    release_date: date = Field(
-        description="The date the model was released on the WorkflowAI platform.",
-    )
-
-    reasoning: ModelReasoning | None = Field(
-        default=None,
-        description="Reasoning configuration for the model. None if the model does not support reasoning.",
-    )
-
-    context_window: ModelContextWindow = Field(
-        description="Context window and output token limits for the model.",
-    )
-
-    speed_index: float = Field(
-        description="An indication of speed of the model, the higher the index, the faster the model. "
-        "The index is calculated from the model's average tokens-per-second rate on a standardized translation task.",
-    )
 
 
 def _convert_model_for_mcp(model: Model) -> MCPModel:
