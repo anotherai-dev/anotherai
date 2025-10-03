@@ -19,6 +19,7 @@ export function PaymentModalWrapper({ onClose }: PaymentModalWrapperProps) {
   const [showAddPaymentMethod, setShowAddPaymentMethod] = useState(false);
   const [showEnableAutoRecharge, setShowEnableAutoRecharge] = useState(false);
   const [amountToAdd, setAmountToAdd] = useState<number | undefined>(undefined);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   const isAddCreditsButtonActive =
     !!amountToAdd && !!paymentMethod?.payment_method_id && amountToAdd >= 5 && amountToAdd <= 5000;
@@ -30,16 +31,21 @@ export function PaymentModalWrapper({ onClose }: PaymentModalWrapperProps) {
   }, []);
 
   const handleAddCredits = useCallback(async () => {
-    if (!amountToAdd) {
+    if (!amountToAdd || isProcessingPayment) {
       return;
     }
 
-    const success = await addCredits(amountToAdd);
-    if (success) {
-      reset();
-      onClose();
+    setIsProcessingPayment(true);
+    try {
+      const success = await addCredits(amountToAdd);
+      if (success) {
+        reset();
+        onClose();
+      }
+    } finally {
+      setIsProcessingPayment(false);
     }
-  }, [amountToAdd, addCredits, reset, onClose]);
+  }, [amountToAdd, isProcessingPayment, addCredits, reset, onClose]);
 
   const handleDeletePaymentMethod = useCallback(async () => {
     try {
@@ -68,6 +74,7 @@ export function PaymentModalWrapper({ onClose }: PaymentModalWrapperProps) {
       amountToAdd={amountToAdd}
       setAmountToAdd={setAmountToAdd}
       isAddCreditsButtonActive={isAddCreditsButtonActive}
+      isProcessingPayment={isProcessingPayment}
       onAddCredits={handleAddCredits}
       onDeletePaymentMethod={handleDeletePaymentMethod}
       onUpdatePaymentMethod={handleUpdatePaymentMethod}
