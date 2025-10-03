@@ -2,7 +2,7 @@ from typing import final
 
 from structlog import get_logger
 
-from core.domain.exceptions import BadRequestError
+from core.domain.exceptions import BadRequestError, ObjectNotFoundError
 from core.storage.completion_storage import CompletionStorage
 from core.storage.view_storage import ViewStorage
 from core.utils.iter_utils import safe_map
@@ -99,5 +99,19 @@ class ViewService:
         return view_from_domain(v)
 
     async def create_or_update_mcp(self, view: View) -> CreateViewResponse:
-        view = await self.create_view(view)
-        return view_to_create_view_response(view)
+        # Validate the query first
+        await self._validate_query(view.query)
+
+        # Check if view exists and preserve its folder_id
+        try:
+            existing_view = await self._view_storage.retrieve_view(view.id)
+            # Convert to domain view and preserve the existing folder_id
+            domain_view = view_to_domain(view)
+            domain_view.folder_id = existing_view.folder_id
+            await self._view_storage.create_or_replace_view(domain_view)
+            created_view = view_from_domain(domain_view)
+        except ObjectNotFoundError:
+            # View doesn't exist, create it normally
+            created_view = await self.create_view(view)
+
+        return view_to_create_view_response(created_view)
