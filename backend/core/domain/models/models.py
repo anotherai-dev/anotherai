@@ -78,6 +78,8 @@ class Model(StrEnum):
     GEMINI_2_5_PRO = "gemini-2.5-pro"
     # GEMINI_2_5_FLASH = "gemini-2.5-flash"
     GEMINI_2_5_FLASH_LITE = "gemini-2.5-flash-lite"
+    GEMINI_2_5_FLASH_LITE_PREVIEW_0925 = "gemini-2.5-flash-lite-preview-09-2025"
+    GEMINI_2_5_FLASH_PREVIEW_0925 = "gemini-2.5-flash-preview-09-2025"
 
     GEMINI_2_5_PRO_PREVIEW_0605 = "gemini-2.5-pro-preview-06-05"
     GEMINI_2_5_FLASH_PREVIEW_0520 = "gemini-2.5-flash-preview-05-20"
@@ -115,6 +117,7 @@ class Model(StrEnum):
     # --------------------------------------------------------------------------
     # Claude Models
     # --------------------------------------------------------------------------
+    CLAUDE_4_5_SONNET_20250929 = "claude-sonnet-4-5-20250929"
     CLAUDE_4_1_OPUS_20250805 = "claude-opus-4-1-20250805"
     # CLAUDE_4_SONNET_LATEST = "claude-sonnet-4-latest"
     CLAUDE_4_SONNET_20250514 = "claude-sonnet-4-20250514"
