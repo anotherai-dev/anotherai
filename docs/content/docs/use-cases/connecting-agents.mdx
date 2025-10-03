@@ -251,3 +251,23 @@ Create a graph showing daily cost for workflow_name='meeting-analysis'
 ```
 
 ![Workflow Daily Cost Graph](/images/workflow-daily-cost-graph.png)
+
+## Debugging Workflows
+
+When a workflow produces incorrect output, sometimes it can be challenging to identify which agent introduced the problem. Since workflows chain multiple agents together, an error in an early agent can cascade through subsequent agents, making the final output incorrect.
+
+To save time from finding the problematic agent manually, you can ask your AI assistant to debug an entire workflow by trace_id:
+
+```
+Debug the workflow with trace_id=aece5cad-1090-47d2-b78b-eb7b014fc97e. The final output is 
+incorrect, but I'm not sure which agent caused the problem. Review all completions in this 
+workflow and help me identify where the issue was introduced.
+```
+
+Your AI assistant will:
+1. Query all agents' completions with the specified trace_id
+2. Review each agent's input and output in sequence
+3. Identify where the error was introduced
+4. Explain what went wrong and which agent is responsible
+
+This makes it easy to debug complex workflows without manually inspecting each agent's output.

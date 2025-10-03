@@ -1,7 +1,7 @@
 ---
-title: Image Agents
-description: Learn how to build, test, and optimize AI agents that process images.
-summary: Build and optimize AI agents that process images with systematic experimentation and testing strategies.
+title: PDF Processing Agents
+description: Learn how to build, test, and optimize AI agents that extract information from PDF documents.
+summary: Build and optimize AI agents that extract structured data from PDF documents with systematic experimentation and testing strategies.
 ---
 
 import { Step, Steps } from 'fumadocs-ui/components/steps';
@@ -25,12 +25,13 @@ The easiest way to create a new agent is to ask your preferred AI assistant to b
 
 Start by describing what your agent should do:
 
-For image agents, we recommend including a few examples of the images you want to use as input to the agent in your initial prompt. You can learn more about how to work with image test data [here](/use-cases/image-agents#data-for-image-experiments).
+For PDF processing agents, we recommend including a few examples of the PDFs you want to use as input to the agent in your initial prompt. You can learn more about how to work with PDF test data [here](/use-cases/pdf-processing-agents#data-for-pdf-processing-experiments).
+
 
 ```
-Create an AnotherAI agent that provides a list of detected foods and their approximate 
-calorie count from a given image. Use the content of @food-analysis-dataset.json as inputs 
-to test the agent with an AnotherAI experiment.
+Create a new AnotherAI agent that extracts key information from PDF documents. Use 
+/Developer/anotherai/datasets/insurance-declarations as inputs to test the agent with 
+an AnotherAI experiment.
 ```
 
 #### Adding Performance Requirements
@@ -40,17 +41,19 @@ If you have other criteria or constraints for your agent, you can include them i
 **For customer-facing agents that need fast responses:**
 
 ```
-Create a new AnotherAI agent that provides a list of detected foods and their approximate calorie 
-count from a given image where the average response time is less than 4 seconds. Use the content of 
-@food-analysis-dataset.json as inputs to test the agent with an AnotherAI experiment.
+Create a new AnotherAI agent that extracts key information from PDF documents 
+where the average response time is less than 4 seconds. Use 
+/Developer/anotherai/datasets/insurance-declarations as inputs to test the agent with 
+an AnotherAI experiment.
 ```
 
 **For high-volume agents that need to be cost-effective:**
 
 ```
-Create a new AnotherAI agent that provides a list of detected foods and their approximate calorie 
-count from a given image that costs less than $5 for 1000 requests. Use the content of 
-@food-analysis-dataset.json as inputs to test the agent with an AnotherAI experiment.
+Create a new AnotherAI agent that extracts key information from PDF documents 
+that costs less than $5 for 1000 requests. Use 
+/Developer/anotherai/datasets/insurance-declarations as inputs to test the agent with 
+an AnotherAI experiment.
 ```
 
 Your AI assistant will be able to construct the agent's code, and will be able to use AnotherAI to access 100+ different models to find the best configuration to help you achieve your goals.
@@ -64,9 +67,10 @@ You can also add custom metadata to your agents to help organize and track them.
 - **User identification**: include a user_id customer_email key. 
 
 ```
-Create a new AnotherAI agent that provides a list of detected foods and their approximate calorie 
-count from a given image and include a customer_id metadata key. Use the content of 
-@food-analysis-dataset.json as inputs to test the agent with an AnotherAI experiment.
+Create a new AnotherAI agent that extracts key information from PDF documents 
+and include a customer_id metadata key. Use 
+/Developer/anotherai/datasets/insurance-declarations as inputs to test the agent with 
+an AnotherAI experiment.
 ```
 
 **Agent IDs in Metadata**
@@ -75,7 +79,7 @@ When your AI assistant creates an agent, it automatically assigns an `agent_id` 
 
 You might ask your AI assistant a question about a specific agent, like:
 ```
-How much is anotherai/agent/food-analyzer costing me this month?
+How much is anotherai/agent/pdf-extractor costing me this month?
 ```
 (if you're curious about costs of agents, see our [metrics](/use-cases/fundamentals/metrics) page!)
 
@@ -92,125 +96,124 @@ In the cases above where certain constraints were specified, your AI assistant w
 
 For the prompt requesting a fast agent:
 
-![Fast models experiment](/images/fast-models-experiment-food-analyzer.png)
+![Fast models experiment](/images/pdf-extraction-fast-models.png)
 
 For the prompt requesting a cost-effective agent:
 
-![Cost-effective models experiment](/images/cost-optimization-experiment-food-analyzer.png)
+![Cost-effective models experiment](/images/pdf-extraction-low-cost.png)
 
 If you find there is additional criteria you want to test, you can always ask your AI assistant to create additional experiments. The most common parameters to experiment with are prompts and models, however you can also experiment with changes to other parameters like temperature. 
 
-### Data for Image Experiments
+### Data for PDF Processing Experiments
 
-For text-based agents, it's quite simple for your AI assistant to generate data for you, however for image-based agents, AI assistants are inconsistent about generating valid image URLs as input. Therefore, to produce useful results, we strongly recommend that you use your own images for testing. There are a couple ways to do this:
+For text-based agents, it's quite simple for your AI assistant to generate data for you, however for PDF processing agents, AI assistants are inconsistent about generating valid PDF URLs as input. Therefore, to produce useful results, you will need to use your own PDFs for testing. There are a couple ways to do this:
 
 #### Using a Dataset
 
-A dataset is a collection of images - either local files or public URLs - stored in a structured format (like a folder of images, or a JSON file with image URLs and optional expected outputs) that you can use to test your agent. Datasets can contain expected outputs, but do not need to. 
+A dataset is a collection of PDFs - either local files or public URLs - stored in a structured format (like a folder of files, or a JSON file with PDF file names and optional expected outputs) that you can use to test your agent. Datasets can contain expected outputs, but do not need to.
 
 Datasets can be useful for several reasons:
 - They give you a consistent set of data to test different versions of your agent against.
-- They allow you to make a large number of images easily available in one file or folder, so you don't need to reference each image individually to your AI assistant each time you want to test your agent. 
+- They allow you to make a large number of PDF inputs easily available in one file or folder, so you don't need to reference each PDF individually to your AI assistant each time you want to test your agent. 
 - If working in an IDE like Cursor, you can commit the dataset file to your codebase to make it accessible to your team. 
 
 Example dataset with expected outputs:
 ```json
 [
   {
-    "image_url": "https://example.com/images/meal1.jpg",
-    "expected_output": [
-      {"name": "grilled chicken breast", "calories": 165},
-      {"name": "steamed broccoli", "calories": 55},
-      {"name": "brown rice", "calories": 215}
-    ]
+    "pdf_url": "https://example.com/documents/invoice1.pdf",
+    "expected_extracted_fields": {
+      "invoice_number": "INV-2024-001",
+      "total_amount": "$1,234.56",
+      "due_date": "2024-03-15"
+    }
   },
   {
-    "image_url": "https://example.com/images/meal2.jpg",
-    "expected_output": [
-      {"name": "salmon fillet", "calories": 280},
-      {"name": "asparagus", "calories": 40},
-      {"name": "quinoa", "calories": 220}
-    ]
+    "pdf_url": "https://example.com/documents/invoice2.pdf",
+    "expected_extracted_fields": {
+      "invoice_number": "INV-2024-002",
+      "total_amount": "$850.00",
+      "due_date": "2024-03-20"
+    }
   },
   {
-    "image_url": "https://example.com/images/meal3.jpg",
-    "expected_output": [
-      {"name": "scrambled eggs", "calories": 180},
-      {"name": "whole wheat toast", "calories": 140},
-      {"name": "avocado", "calories": 120}
-    ]
+    "pdf_url": "https://example.com/documents/invoice3.pdf",
+    "expected_extracted_fields": {
+      "invoice_number": "INV-2024-003",
+      "total_amount": "$2,100.75",
+      "due_date": "2024-03-25"
+    }
   }
 ]
 ```
 
-Example dataset with images only:
+Example dataset with PDFs only:
 ```json
 [
   {
-    "image_url": "https://example.com/images/photo1.jpg"
+    "pdf_url": "https://example.com/documents/invoice1.pdf"
   },
   {
-    "image_url": "https://example.com/images/photo2.jpg"
+    "pdf_url": "https://example.com/documents/contract2.pdf"
   },
   {
-    "image_url": "https://example.com/images/photo3.jpg"
+    "pdf_url": "https://example.com/documents/report3.pdf"
   }
 ]
 ```
 
-You can learn more about datasets and how to use them [here](/use-cases/fundamentals/evaluating#using-datasets-to-evaluate-your-agents).
+You can learn more about datasets and how to use them [here](/use-cases/fundamentals/evaluating#using-datasets-to-evaluate-your-agents), and specifically about how to create datasets for non-text inputs like PDFs [here](/use-cases/fundamentals/evaluating#non-text-data-local-files-urls)
 
-#### Using Individual Images
+#### Using Individual PDFs
 
-If you have a small number of images to test that you can also upload them individually to your AI assistant. Since images uploaded this way aren't stored in a persistent dataset, this approach is best suited for ad-hoc testing rather than systematic experimentation.  While any completions created using these images will be stored in AnotherAI and can be reused in future experiments, if you wanted to test any specific images again at a later date, you would need to provide links to the specific completions that used those images. 
+If you have a small number of PDFs to test that you can also upload them individually to Claude Code or ChatGPT (Cursor's AI Assistant does not allow you to upload PDFs). Since PDFs uploaded this way aren't stored in a persistent dataset, this approach is best suited for ad-hoc testing rather than systematic experimentation. While any completions created using these PDFs will be stored in AnotherAI and can be reused in future experiments, if you wanted to test any specific PDFs again at a later date, you would need to provide links to the specific completions that used those documents.
 
-Refer to the next section below to learn how to upload and reference images properly for use in AnotherAI.
+Refer to the next section below to learn how to upload and reference PDFs properly for use in AnotherAI.
 
-#### How to reference images properly for use in AnotherAI
-When it comes to using image data as input, the inputs can be either local files (ex. `/Users/username/documents/george-washington.png`) or public URLs (ex. `https://cdn.britannica.com/43/173043-050-957816CE/oil-George-Washington-canvas-Gilbert-Stuart-Washington.jpg`). Here is the process for using each type of image as input:
+#### How to reference PDFs properly for use in AnotherAI
+When it comes to using PDF data as input, the inputs can be either local files (ex. `/Users/username/documents/f1040.pdf`) or public URLs (ex. `https://www.irs.gov/pub/irs-pdf/f1040.pdf`). Here is the process for using each type of image as input:
 
 **Public URLs**
 
-If the images you want to use are available via public URLs and you're building your dataset in an IDE like Cursor:
+If the files you want to use are available via public URLs and you're building your dataset in an IDE like Cursor:
 1. Create a file in your project for your dataset input URLs and - optionally - expected outputs.
    - Using a JSON file is common, but if there is another format you'd prefer to use (.csv, .txt, etc.), you can use that instead. If you're unsure how to format your dataset, you can ask your AI assistant to help you.
-2. Paste the image URL(s) directly into your AI assistant's chat and ask them to add it to your dataset.
+2. Paste the PDF URL(s) directly into your AI assistant's chat and ask them to add it to your dataset.
 
 ```
-Add https://cdn.britannica.com/43/173043-050-957816CE/oil-George-Washington-canvas-Gilbert-Stuart-Washington.jpg 
-as an input to my us-presidents.json dataset.
+Add https://www.irs.gov/pub/irs-pdf/f1040.pdf as an input to my tax_form.json dataset.
 ```
 3. Your AI assistant will be able to add the URL to your dataset using the correct formatting.
-4. If you want to include an expected output for your URL input (for example, a description of the image), you can also ask your AI assistant to view the content and extract the information you need.
+4. If you want to include an expected output for your URL input (for example, the content of the PDF), you can also ask your AI assistant to view the content and extract the information you need.
 
 ```
-Add https://cdn.britannica.com/43/173043-050-957816CE/oil-George-Washington-canvas-Gilbert-Stuart-Washington.jpg 
-to my us-presidents.json dataset as input. 
-Then view the content of this URL, write a description of the image and add it to the dataset 
+Add https://www.irs.gov/pub/irs-pdf/f1040.pdf to my tax_form.json dataset as input. 
+View the content of this URL, extract the content of the file and add it to the dataset 
 as the input's expected output.
 ```
 
-**Local Images**
+<Callout type="info">
+**When working with PDFs:** If you want to add an expected output for your URL input, you will need to use Claude Code to extract the content. At this time, Cursor's AI assistant is not able to view the content of the PDFs. 
+</Callout>
 
-If the images you want to use are available via local files and you're building your dataset in an IDE like Cursor:
-1. Create a folder in your for your dataset in your project. 
-2. Locate the local files on your computer that you want to use as inputs
-3. Drag and drop the images directly into the folder you created for your dataset
+**Local PDFs**
+
+If the PDFs you want to use are available via local files and you're building your dataset in an IDE like Cursor:
+1. Create a folder for your dataset in your project. 
+2. Locate the PDFs you want to use as inputs on your computer
+3. Drag and drop the files directly into the folder you created for your dataset
 
 <iframe src="https://customer-turax1sz4f7wbpuv.cloudflarestream.com/204ccbb4b1c3a0db9525c71ef2e2e9e3/iframe" width="100%"
 height="400" style={{border: 0}} allowFullScreen></iframe>
-4. From there, you can reference the image in your AI assistant chat freely (either by `@[file_name]` or by dragging and dropping it into the chatbox). Your AI assistant will be able to access the image to provide a ground-truth expected output, or add it as an input to an AnotherAI experiment. 
+4. From here, you can reference the PDF in your AI assistant chat freely (either by `@[file_name]` or by dragging and dropping it into the chatbox). Your AI assistant will be able to access the file to provide a ground-truth expected output, or add it as an input to an AnotherAI experiment. 
+    - Note: At this time, Cursor's AI assistant is not able to view the content of the PDFs, even after preforming the steps above. If working with PDFs, we recommend using Claude Code.
 
 ```
-Create a new experiment of anotherai/agent/image-identifier and find the fastest model 
-that can correctly identify this image:
-/Developer/anotherai/datasets/us-presidents/george-washington.png
+Create a new experiment of anotherai/agent/pdf-analyzer and find the fastest model 
+that can correctly extract all information from:
+/Developer/anotherai/datasets/pdf-documents/f1040.pdf
 
 ```
-
-<Callout type="info">
-**A note about image files:** Do not drag and drop a local images into your AI assistant's chat and ask the assistant to add them to your dataset for you. While the chat will be able to see the images, it will not be able to reference them by their file path, meaning it cannot correctly add the files to your dataset or as inputs to an AnotherAI experiment.
-</Callout>
 
 **Using Existing Datasets**
 
@@ -220,9 +223,10 @@ If you already have a dataset you want to use, and you're using an IDE like Curs
 3. From there, you can reference your dataset in your AI assistant chat and request it use some - or all - of the dataset as inputs to test your agent.
 
 ```
-Create a new experiment of anotherai/agent/image-identifier and use the content 
-of @us-presidents.json as inputs to the experiment.
+Create a new experiment of anotherai/agent/pdf-analyzer and use the content 
+of @pdf-documents.json as inputs to the experiment.
 ```
+
 ### Prompts
 
 Comparing different prompts is one of the most effective ways to improve your agent's performance. Small changes in wording, structure, or examples can lead to significant improvements. If you notice an issue with an existing prompt, you can even ask your AI assistant to generate prompt variations to use in the experiment. 
@@ -230,19 +234,20 @@ Comparing different prompts is one of the most effective ways to improve your ag
 Example:
 
 ```
-Look at the prompt of anotherai/agent/food-analyzer and create an experiment in AnotherAI 
-that compares the current prompt with a new prompt that ensures the food is listed from largest 
-to smallest detected quantity. Use the content of @food-analysis-dataset.json as inputs to 
-test the agent with an AnotherAI experiment.
+Look at the prompt of anotherai/agent/pdf-extractor and create an experiment in AnotherAI
+that compares the current prompt with a new prompt that requests the output only include extract 
+information and no intro from the AI. Use 
+/Developer/anotherai/datasets/insurance-declarations as inputs to test the agent with 
+an AnotherAI experiment.
 ```
 
 Your AI assistant will create the experiment and give you an initial analysis of the results and well as a URL to view the results in the AnotherAI web app.
 
-![Terminal output showing experiment creation](/images/experiment-prompt-enhancement-terminal-food-analyzer.png)
+![Terminal output showing experiment creation](/images/pdf-extraction-prompt-enhancement-terminal.png)
 
 You can use the provided URL to view the results in the AnotherAI web app to perform manual analysis of the results.
 
-![Experiment prompts comparison](/images/experiment-prompts-comparison-food-analyzer.png)
+![Experiment prompts comparison](/images/pdf-extraction-prompt-compare.png)
 
 ### Models
 
@@ -251,21 +256,22 @@ Different models excel at different tasks. AnotherAI supports over 100 different
 Example:
 
 ```
-Create an AnotherAI experiment to help me find a faster model for anotherai/agent/food-analyzer,
-but still maintains the clear and accurate analysis as my current model. Use the content of 
-@food-analysis-dataset.json as inputs to test the agent with an AnotherAI experiment.
+Create an AnotherAI experiment to help me find a faster model for anotherai/agent/pdf-extractor,
+but still maintains the same accuracy for data extraction as my current model. Use 
+/Developer/anotherai/datasets/insurance-declarations as inputs to test the agent with 
+an AnotherAI experiment.
 ```
 
-If you have a specific model in mind that you want to try - **for example, a newly released model** - you can ask your AI assistant to help you test that model against your existing agent version. You can always request that your AI assistant uses inputs from existing completions, to ensure that you're testing with real, production data. 
+If you have a specific model in mind that you want to try - **for example, a newly released model** - you can ask your AI assistant to help you test that model against your existing agent version. You can always request that your AI assistant uses inputs from existing completions, to ensure that you're testing with real, production data.
 
 Example:
 
 ```
-Can you retry the last 5 completions of anotherai/agent/food-analyzer and compare the outputs with
-GPT 5 mini?
+Can you retry the last 5 completions of anotherai/agent/pdf-extractor and compare the outputs with
+Magistral Medium 1.2 (the most recently released model with PDF support)?
 ```
 
-![Model comparison experiment](/images/model-comparison-experiment-food-analyzer.png)
+![Model comparison experiment](/images/pdf-extraction-new-model.png)
 
 ### Other Parameters
 
@@ -297,11 +303,11 @@ Temperature is the most important parameter to experiment with after prompts and
 Example:
 
 ```
-Test my food-analyzer agent with temperatures 0.2, 0.5, and 0.8 to find
-the right balance between creativity and professionalism
+Test my pdf-extractor agent with temperatures 0.2, 0.5, and 0.8 to find
+the right balance between consistency and flexibility in data extraction
 ```
 
-![Food Analyzer Temperature Experiment](/images/temperature-experiment-food-analyzer.png)
+![PDF Extraction Temperature Experiment](/images/pdf-extraction-temperature-experiment.png)
 
 ### Managing Large Experiments with Claude Code
 If you're testing an agent that has a large system prompt and/or very long inputs, you may encounter token limit issues with the `get_experiment` MCP tool that impacts Claude Code's ability to provide accurate insights on your agent.
@@ -388,10 +394,6 @@ Your AI assistant will analyze your feedback and create an improved version of y
 
 To learn more about how annotations can be used to improve your agent, see our [Improving an Agent with Annotations](/use-cases/fundamentals/annotations) page.
 
-<Callout type="info">
-Images can currently only be processed as input to agents. Image generation as output is not yet supported.
-</Callout>
+## Debugging PDF Processing Agents
 
-## Debugging Image Agents
-
-The process of debugging image agents is the same as debugging text-based agents. You can learn more about debugging agents in our [Debugging guide](/use-cases/fundamentals/debugging).
+The process of debugging PDF processing agents is the same as debugging text-based agents. You can learn more about debugging agents in our [Debugging guide](/use-cases/fundamentals/debugging).

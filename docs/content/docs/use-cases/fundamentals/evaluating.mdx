@@ -200,9 +200,9 @@ These datasets contain only inputs without predefined expected outputs. Evaluati
 
 ### Populating Your Evaluation Dataset
 
-While there is no one-size-fits-all way to build a dataset, there are a few common ways to collect content for your dataset:
+While there is no one-size-fits-all way to build a dataset, there are a few common ways to collect content for your dataset.
 
-#### From User Feedback
+#### User Feedback
 
 When users report issues with your agent's outputs, these completions become valuable test cases because they represent a case that your agent is not handling well but should. To add the content of a completion to your dataset:
 
@@ -213,7 +213,13 @@ When users report issues with your agent's outputs, these completions become val
 3. Paste the completion ID into your AI coding agent's chat and ask them to add the completion to your dataset.
     - Your AI agent will be able to convert the completion content into the format of your existing dataset entries. 
 
-#### From Production Data
+```
+Get completion anotherai/completion/0199a698-56c2-72e7-4ad8-e6bb1699a0a8 and add
+it to email-rewriter-dataset.json as a new test case. 
+```
+Learn more about collecting and using user feedback [here](/use-cases/user-feedback).
+
+#### Production Data
 
 Using data from production completions instead of mocked data ensures that you're testing real-world scenarios. AnotherAI logs all completions from your agents, so you can easily review past completions for important cases to add to your dataset.
 
@@ -223,6 +229,65 @@ You can browse past completions from your in the AnotherAI web app:
 2. Locate the agent whose completions you want to review
 3. Select the agent and scroll down it's page
    - You'll be able to see some of the recent completions immediately, but for a full list, select "View all completions"
+
+#### Non-Text Data (Local files, URLs)
+
+When it comes to creating a dataset for non-text data, the inputs can be either local files (ex. `/Users/username/documents/f1040.pdf`) or public URLs (ex. `https://www.irs.gov/pub/irs-pdf/f1040.pdf`). Here is the process for creating a dataset for each type of input.
+
+**Public URLs**
+
+If the files you want to use are available via public URLs and you're building your dataset in an IDE like Cursor:
+1. You can paste the URL or URLs directly into your AI assistant's chat and ask them to add it to your dataset.
+
+```
+Add https://www.irs.gov/pub/irs-pdf/f1040.pdf as an input to my tax_form.json dataset.
+```
+2. Your AI assistant will be able to add the URL to your dataset using the correct formatting.
+3. If you want to include an expected output for your URL input (for example, the content of the PDF), you can also ask your AI assistant to view the content and extract the information you need.
+
+```
+Add https://www.irs.gov/pub/irs-pdf/f1040.pdf to my tax_form.json dataset as input. 
+View the content of this URL, extract the content of the file and add it to the dataset 
+as the input's expected output.
+```
+
+<Callout type="info">
+**When working with PDFs:** If you want to add an expected output for your URL input, you will need to use Claude Code to extract the content. At this time, Cursor's AI assistant is not able to view the content of the PDFs. 
+</Callout>
+
+**Local Files**
+
+If the files you want to use are available via local files and you're building your dataset in an IDE like Cursor:
+1. Create a folder for your dataset in your project. 
+2. Locate the local files you want to use as inputs
+3. Drag and drop the files directly into the folder you created for your dataset
+4. From there, you can reference the file in your AI assistant chat freely (either by `@[file_name]` or by dragging and dropping it into the chatbox). Your AI assistant will be able to access the file to provide a ground-truth expected output, or add it as an input to an AnotherAI experiment. 
+    - Note: At this time, Cursor's AI assistant is not able to view the content of the PDFs, even after preforming the steps above. If working with PDFs, we recommend using Claude Code.
+
+```
+Create a new experiment of anotherai/agent/food-image-analyzer and find the fastest model 
+that can correctly list all food items in 
+/Developer/anotherai/datasets/food-images/saturday-breakfast.jpg
+
+```
+
+<Callout type="info">
+**A note about image files:** Do not drag and drop a local images into your AI assistant's chat and ask the assistant to add them to your dataset for you. While the chat will be able to see the images, it will not be able to reference them by their file path, meaning it cannot correctly add the files to your dataset or as inputs to an AnotherAI experiment.
+
+You can drag and drop local **PDF files** directly into Claude Code, as their file path is preserved. 
+</Callout>
+
+**Existing Datasets**
+
+If you already have a dataset you want to use, and you're using an IDE like Cursor:
+1. Create a new folder for your dataset in your project. 
+2. Drag and drop the existing dataset file into the folder you created in step 1.
+3. From there, you can reference your dataset in your AI assistant chat and request it use some - or all - of the dataset as inputs to test your agent.
+
+```
+Create a new experiment of anotherai/agent/food-image-analyzer and use the content 
+of @food-analysis-dataset.json as inputs to the experiment.
+```
 
 ## Evaluating the Results of Running Your Dataset
 
