@@ -1,17 +1,16 @@
 from collections.abc import Collection
 from datetime import datetime
-from typing import Any, override
+from typing import Any, Protocol, override
 from uuid import UUID
 
+import asyncpg
 import structlog
 from asyncpg.pool import PoolConnectionProxy
 
-from core.domain.agent_input import AgentInput
 from core.domain.agent_output import AgentOutput
 from core.domain.cache_usage import CacheUsage
 from core.domain.exceptions import DuplicateValueError, ObjectNotFoundError
-from core.domain.experiment import Experiment, ExperimentOutput
-from core.domain.version import Version
+from core.domain.experiment import Experiment, ExperimentInput, ExperimentOutput, ExperimentVersion
 from core.storage.experiment_storage import (
     CompletionIDTuple,
     CompletionOutputTuple,
@@ -164,7 +163,7 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
         experiment_uid: int,
         version_ids: Collection[str] | None = None,
         full=False,
-    ) -> list[Version]:
+    ) -> list[ExperimentVersion]:
         select = "*" if full else "version_id"
         where = ["experiment_uid = $1"]
         args: list[Any] = [experiment_uid]
@@ -183,7 +182,7 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
         experiment_uid: int,
         input_ids: Collection[str] | None = None,
         full=False,
-    ) -> list[AgentInput]:
+    ) -> list[ExperimentInput]:
         select = "*" if full else "input_id"
         where: list[str] = ["experiment_uid = $1"]
         args: list[Any] = [experiment_uid]
@@ -237,8 +236,8 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
                 raise ObjectNotFoundError(f"Experiment not found: {experiment_id}")
 
             experiment_uid = row["uid"]
-            versions: list[Version] | None = None
-            inputs: list[AgentInput] | None = None
+            versions: list[ExperimentVersion] | None = None
+            inputs: list[ExperimentInput] | None = None
             outputs: list[ExperimentOutput] | None = None
             if include:
                 version_included = self._include_versions(include)
@@ -307,32 +306,143 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
             raise ObjectNotFoundError(f"Input not found: {input_ids - {row['input_id'] for row in rows}}")
         return {row["input_id"]: row["uid"] for row in rows}
 
+    async def _lock_experiment(self, connection: PoolConnectionProxy, experiment_uid: int) -> None:
+        await connection.execute(
+            "SELECT pg_advisory_xact_lock($1)",
+            experiment_uid,
+        )
+
+    async def _update_null_aliases(
+        self,
+        connection: PoolConnectionProxy,
+        experiment_uid: int,
+        table: str,
+        id_column: str,
+        alias_to_update: Collection[tuple[str, str]],
+    ):
+        value_query: list[str] = []
+        values: list[str] = []
+        for id, alias in alias_to_update:
+            value_query.append(f"(${len(values) + 2}, ${len(values) + 3})")
+            values.append(id)
+            values.append(alias)
+
+        await connection.execute(
+            f"""UPDATE {table} AS t
+            SET alias = c.new_alias
+            FROM (VALUES {", ".join(value_query)}) AS c(id, new_alias)
+            WHERE t.{id_column} = c.id AND t.alias IS NULL AND t.experiment_uid = $1""",  # noqa: S608
+            experiment_uid,
+            *values,
+        )
+
+    async def _validate_aliases[T: _AliasAndID](
+        self,
+        connection: PoolConnectionProxy,
+        experiment_uid: int,
+        table: str,
+        id_column: str,
+        values: "Collection[T]",
+    ):
+        """Check that all requested aliases are either available or attached to the same ID.
+        Return a list of IDs that should are already in the DB"""
+        requested_aliases = {v.id: v.alias for v in values}
+        if not requested_aliases:
+            # Nothing to do
+            return set()
+        # We fetch all the existing IDs for the requested aliases
+        existing_aliases = await connection.fetch(
+            f"SELECT {id_column}, alias FROM {table} WHERE experiment_uid = $1 AND {id_column} = ANY($2)",  # noqa: S608
+            experiment_uid,
+            list(requested_aliases.keys()),
+        )
+        # Checking IDs that will not need to be inserted
+        existing_ids: set[str] = set()
+        id_mismatch: list[tuple[str, str]] = []
+        alias_to_update: list[tuple[str, str]] = []
+        for row in existing_aliases:
+            # requested_id will be the new ID associated with the alias
+            requested_alias = requested_aliases.get(row[0])
+            existing_ids.add(row[0])
+            if requested_alias and requested_alias != row[1]:
+                if row[1] is None:
+                    # The existing alias is None so we can update it
+                    alias_to_update.append((row[0], requested_alias))
+                else:
+                    id_mismatch.append((row[0], row[1]))
+                continue
+
+        if id_mismatch:
+            id_mismatch_str = ", ".join(f"{id}: {alias}" for id, alias in id_mismatch)
+            raise DuplicateValueError(f"Some inputs already exist with different aliases: {id_mismatch_str}")
+
+        if alias_to_update:
+            await self._update_null_aliases(
+                connection,
+                experiment_uid,
+                "experiment_inputs",
+                "input_id",
+                alias_to_update,
+            )
+
+        return existing_ids
+
     @override
-    async def add_inputs(self, experiment_id: str, inputs: list[AgentInput]) -> set[str]:
+    async def add_inputs(self, experiment_id: str, inputs: list[ExperimentInput]):
         async with self._connect() as connection:
             experiment_uid = await self._experiment_uid(connection, experiment_id)
-            to_insert = (_ExperimentInputRow.from_domain(experiment_uid, input) for input in inputs)
+            # We lock the entire experiment
+            # We could try to lock inputs separately but it's not worth the complexity
+            await self._lock_experiment(connection, experiment_uid)
+
+            # First let's check that we won't have duplicate aliases
+            # We cannot deal with it with an on conflict clause, because we want to be
+            # idempotent for inserts when the alias is attached to the same id
+            existing = await self._validate_aliases(connection, experiment_uid, "experiment_inputs", "input_id", inputs)
+
+            # Get the current max position
+            max_position = await connection.fetchval(
+                "SELECT COALESCE(MAX(position), 0) FROM experiment_inputs WHERE experiment_uid = $1",
+                experiment_uid,
+            )
+
+            to_insert = (
+                _ExperimentInputRow.from_domain(experiment_uid, input, max_position + i + 1)
+                for i, input in enumerate(inputs)
+                if input.id not in existing
+            )
+
             values = await connection.fetchmany(
                 f"""INSERT INTO experiment_inputs ({", ".join(_INPUT_INSERT_FIELDS)})
                 VALUES ({", ".join(f"${i + 1}" for i in range(len(_INPUT_INSERT_FIELDS)))})
-                ON CONFLICT (experiment_uid, input_id) DO NOTHING
                 RETURNING input_id""",  # noqa: S608 # OK here since fields is defined above
                 list(insert_iterator(_INPUT_INSERT_FIELDS, to_insert)),
             )
+
             return {input[0] for input in values}
 
     @override
-    async def add_versions(self, experiment_id: str, versions: list[Version]) -> set[str]:
+    async def add_versions(self, experiment_id: str, versions: list[ExperimentVersion]) -> set[str]:
         async with self._connect() as connection:
             experiment_uid = await self._experiment_uid(connection, experiment_id)
             to_insert = (_ExperimentVersionRow.from_domain(experiment_uid, version) for version in versions)
-            values = await connection.fetchmany(
-                f"""INSERT INTO experiment_versions ({", ".join(_VERSION_INSERT_FIELDS)})
-                VALUES ({", ".join(f"${i + 1}" for i in range(len(_VERSION_INSERT_FIELDS)))})
-                ON CONFLICT (experiment_uid, version_id) DO NOTHING
-                RETURNING version_id""",  # noqa: S608 # OK here since fields is defined above
-                list(insert_iterator(_VERSION_INSERT_FIELDS, to_insert)),
-            )
+            try:
+                values = await connection.fetchmany(
+                    f"""INSERT INTO experiment_versions ({", ".join(_VERSION_INSERT_FIELDS)})
+                    VALUES ({", ".join(f"${i + 1}" for i in range(len(_VERSION_INSERT_FIELDS)))})
+                    ON CONFLICT (experiment_uid, version_id) DO NOTHING
+                    RETURNING version_id""",  # noqa: S608 # OK here since fields is defined above
+                    list(insert_iterator(_VERSION_INSERT_FIELDS, to_insert)),
+                )
+            except asyncpg.UniqueViolationError as e:
+                # Check if it's an alias conflict
+                if "experiment_versions_alias_unique" in str(e):
+                    # Find which alias caused the conflict
+                    conflicting_aliases = [version.alias for version in versions if version.alias]
+                    raise DuplicateValueError(
+                        f"Duplicate alias found in experiment versions: {conflicting_aliases}",
+                    ) from e
+                raise DuplicateValueError("Duplicate version found in experiment") from e
             return {version[0] for version in values}
 
     @override
@@ -497,8 +607,8 @@ class _ExperimentRow(AgentLinkedRow, WithUpdatedAtRow):
 
     def to_domain(
         self,
-        versions: list[Version] | None = None,
-        inputs: list[AgentInput] | None = None,
+        versions: list[ExperimentVersion] | None = None,
+        inputs: list[ExperimentInput] | None = None,
         outputs: list[ExperimentOutput] | None = None,
     ) -> Experiment:
         return Experiment(
@@ -519,7 +629,15 @@ class _ExperimentRow(AgentLinkedRow, WithUpdatedAtRow):
         )
 
 
-_INPUT_INSERT_FIELDS = ["experiment_uid", "input_id", "input_messages", "input_variables", "input_preview"]
+_INPUT_INSERT_FIELDS = [
+    "experiment_uid",
+    "input_id",
+    "input_messages",
+    "input_variables",
+    "input_preview",
+    "alias",
+    "position",
+]
 
 
 class _ExperimentInputRow(PsqlBaseRow):
@@ -528,9 +646,11 @@ class _ExperimentInputRow(PsqlBaseRow):
     input_messages: JSONList | None = None
     input_variables: JSONDict | None = None
     input_preview: str | None = None
+    alias: str | None = None
+    position: int | None = None
 
     @classmethod
-    def from_domain(cls, experiment_uid: int, input: AgentInput):
+    def from_domain(cls, experiment_uid: int, input: ExperimentInput, position: int):
         # TODO: use a separate type for validation
         dumped = input.model_dump(include={"messages", "variables"})
         return cls(
@@ -539,44 +659,48 @@ class _ExperimentInputRow(PsqlBaseRow):
             input_preview=input.preview,
             input_messages=dumped["messages"],
             input_variables=dumped["variables"],
+            alias=input.alias,
+            position=position,
         )
 
-    def to_domain(self) -> AgentInput:
-        return AgentInput.model_validate(
-            {
-                "id": self.input_id or "",
-                "preview": self.input_preview or "",
-                "messages": self.input_messages,
-                "variables": self.input_variables,
-            },
+    def to_domain(self) -> ExperimentInput:
+        return ExperimentInput(
+            id=self.input_id or "",
+            preview=self.input_preview or "",
+            messages=self.input_messages,
+            variables=self.input_variables,
+            alias=self.alias,
         )
 
 
-_VERSION_INSERT_FIELDS = ["experiment_uid", "version_id", "model", "payload"]
+_VERSION_INSERT_FIELDS = ["experiment_uid", "version_id", "model", "payload", "alias"]
 
 
 class _ExperimentVersionRow(PsqlBaseRow):
+    alias: str | None = None
+    position: int | None = None
     experiment_uid: int | None = None
     version_id: str | None = None
     model: str | None = None
     payload: JSONDict | None = None
 
     @classmethod
-    def from_domain(cls, experiment_uid: int, version: Version):
+    def from_domain(cls, experiment_uid: int, version: ExperimentVersion):
         return cls(
             experiment_uid=experiment_uid,
             version_id=version.id,
             model=version.model,
             payload=version.model_dump(exclude_none=True),
+            alias=version.alias,
         )
 
-    def to_domain(self) -> Version:
+    def to_domain(self) -> ExperimentVersion:
         payload = self.payload or {}
         if self.version_id is not None:
             payload["id"] = self.version_id
         if self.model is not None:
             payload["model"] = self.model
-        return Version.model_validate(payload)
+        return ExperimentVersion.model_validate(payload)
 
 
 _OUTPUT_INSERT_FIELDS = [
@@ -651,3 +775,11 @@ class _ExperimentOutputRow(PsqlBaseRow):
             base_fields.remove("output_error")
 
         return [f"{prefix}.{f}" for f in base_fields]
+
+
+class _AliasAndID(Protocol):
+    @property
+    def alias(self) -> str | None: ...
+
+    @property
+    def id(self) -> str: ...

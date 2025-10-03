@@ -12,7 +12,7 @@ from core.domain.agent_input import AgentInput
 from core.domain.agent_output import AgentOutput
 from core.domain.error import Error
 from core.domain.exceptions import DuplicateValueError, ObjectNotFoundError
-from core.domain.experiment import Experiment
+from core.domain.experiment import Experiment, ExperimentInput
 from core.domain.message import Message
 from core.domain.version import Version
 from core.storage.experiment_storage import CompletionIDTuple, CompletionOutputTuple
@@ -542,7 +542,7 @@ class TestAddInputs:
         inserted_experiment: Experiment,
         experiment_storage: PsqlExperimentStorage,
     ):
-        input = AgentInput(messages=[Message.with_text("Hello")], variables={"a": "b"})
+        input = ExperimentInput(messages=[Message.with_text("Hello")], variables={"a": "b"})
         inserted = await experiment_storage.add_inputs(inserted_experiment.id, [input])
         assert inserted == {"96566260da4cac46ded8c8d969adaa74"}
 
@@ -555,8 +555,8 @@ class TestAddInputs:
         inserted_experiment: Experiment,
         experiment_storage: PsqlExperimentStorage,
     ):
-        input1 = AgentInput(messages=[Message.with_text("Hello")], variables={"a": "b"})
-        input2 = AgentInput(messages=[Message.with_text("World")], variables={"x": 1})
+        input1 = ExperimentInput(messages=[Message.with_text("Hello")], variables={"a": "b"})
+        input2 = ExperimentInput(messages=[Message.with_text("World")], variables={"x": 1})
 
         inserted = await experiment_storage.add_inputs(inserted_experiment.id, [input1, input2])
         assert inserted == {input1.id, input2.id}
@@ -569,9 +569,92 @@ class TestAddInputs:
         self,
         experiment_storage: PsqlExperimentStorage,
     ):
-        input = AgentInput(messages=[Message.with_text("Hello")], variables={"a": "b"})
+        input = ExperimentInput(messages=[Message.with_text("Hello")], variables={"a": "b"})
         with pytest.raises(ObjectNotFoundError):
             await experiment_storage.add_inputs("nonexistent-exp", [input])
+
+    async def test_add_inputs_updates_null_alias(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+        purged_psql_tenant_conn: PoolConnectionProxy,
+    ):
+        input1 = ExperimentInput(messages=[Message.with_text("Hello")], variables={"a": "b"})
+        # Add the input once with alias is None
+        inserted = await experiment_storage.add_inputs(inserted_experiment.id, [input1])
+        assert inserted == {input1.id}
+        # Add the input again with a different alias
+        input2 = ExperimentInput(messages=[Message.with_text("Hello")], variables={"a": "b"}, alias="new-alias")
+        assert input2.id == input1.id
+        inserted = await experiment_storage.add_inputs(inserted_experiment.id, [input2])
+        assert inserted == set()
+
+        row = await purged_psql_tenant_conn.fetchrow(
+            "SELECT alias FROM experiment_inputs WHERE input_id = $1",
+            input1.id,
+        )
+        assert row
+        assert row[0] == "new-alias"
+
+        # Trying to add again with a different alias should raise
+        input3 = ExperimentInput(messages=[Message.with_text("Hello")], variables={"a": "b"}, alias="new-alias-2")
+        assert input3.id == input1.id
+        with pytest.raises(DuplicateValueError):
+            await experiment_storage.add_inputs(inserted_experiment.id, [input3])
+
+        # But I can add it again with the same alias
+        inserted = await experiment_storage.add_inputs(inserted_experiment.id, [input2])
+        assert inserted == set()
+
+        # Check that the position is correct
+        position = await purged_psql_tenant_conn.fetchval(
+            "SELECT position FROM experiment_inputs WHERE input_id = $1",
+            input1.id,
+        )
+        assert position == 1
+
+    async def test_position_is_correct(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+        purged_psql_tenant_conn: PoolConnectionProxy,
+    ):
+        input1 = ExperimentInput(variables={"a": "b"})
+        input2 = ExperimentInput(variables={"a": "c"})
+        inserted = await experiment_storage.add_inputs(inserted_experiment.id, [input1, input2])
+        assert inserted == {input1.id, input2.id}
+
+        rows = await purged_psql_tenant_conn.fetch("SELECT input_id, position FROM experiment_inputs")
+        assert len(rows) == 2
+        assert {row[0]: row[1] for row in rows} == {input1.id: 1, input2.id: 2}
+
+        # Add another input
+        input3 = ExperimentInput(variables={"a": "d"})
+        inserted = await experiment_storage.add_inputs(inserted_experiment.id, [input3])
+        assert inserted == {input3.id}
+        rows = await purged_psql_tenant_conn.fetch("SELECT input_id, position FROM experiment_inputs")
+        assert len(rows) == 3
+        assert {row[0]: row[1] for row in rows} == {input1.id: 1, input2.id: 2, input3.id: 3}
+
+    async def test_concurrent_insert(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+        purged_psql_tenant_conn: PoolConnectionProxy,
+    ):
+        input1 = ExperimentInput(variables={"a": "b"})
+        input2 = ExperimentInput(variables={"a": "c"})
+        input3 = ExperimentInput(variables={"a": "d"})
+        input4 = ExperimentInput(variables={"a": "e"})
+        # Nothing should fail
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(experiment_storage.add_inputs(inserted_experiment.id, [input1, input2]))
+            tg.create_task(experiment_storage.add_inputs(inserted_experiment.id, [input3]))
+            tg.create_task(experiment_storage.add_inputs(inserted_experiment.id, [input4]))
+
+        rows = await purged_psql_tenant_conn.fetch("SELECT position FROM experiment_inputs")
+        assert len(rows) == 4
+        assert sorted([row[0] for row in rows]) == [1, 2, 3, 4]
 
 
 class TestAddVersions:
