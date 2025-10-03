@@ -32,6 +32,11 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Install uv # UV GitHub integration: https://docs.astral.sh/uv/guides/integration/github/
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
       - name: Run Claude Code
         id: claude
         uses: anthropics/claude-code-action@v1
