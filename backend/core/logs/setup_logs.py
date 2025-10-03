@@ -9,6 +9,7 @@ from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.starlette import StarletteIntegration
 from structlog.types import Processor
 
+from core.logs._posthog_processor import PostHogProcessor
 from core.logs._pydantic_processor import pydantic_processor
 from core.logs._sentry_processor import SentryProcessor
 
@@ -57,6 +58,7 @@ def setup_logs(
             structlog.stdlib.add_log_level,
             structlog.processors.TimeStamper(fmt="iso", utc=True),
             pydantic_processor,
+            PostHogProcessor(),  # send analytics events to PostHog
             SentryProcessor(event_level=logging.WARNING),  # capture warnings+ as events
             _renderer(),
             *processors,
