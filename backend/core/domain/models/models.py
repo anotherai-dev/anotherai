@@ -179,12 +179,11 @@ class Model(StrEnum):
     MISTRAL_SMALL_2501 = "mistral-small-2501"
     MISTRAL_SMALL_2409 = "mistral-small-2409"
     MISTRAL_SABA_2502 = "mistral-saba-2502"
-    MAGISTRAL_SMALL_2506 = "magistral-small-2506"
-    MAGISTRAL_SMALL_2507 = "magistral-small-2507"
+    # magistral-small-2506 and magistral-small-2507 deprecated, use magistral-small-latest alias
     MAGISTRAL_SMALL_2509 = "magistral-small-2509"
-    MAGISTRAL_MEDIUM_2506 = "magistral-medium-2506"
-    MAGISTRAL_MEDIUM_2507 = "magistral-medium-2507"
+    # magistral-medium-2506 and magistral-medium-2507 deprecated, use magistral-medium-latest alias
     MAGISTRAL_MEDIUM_2509 = "magistral-medium-2509"
+    # devstral-small-2505 deprecated, use devstral-small-latest
     CODESTRAL_2501 = "codestral-2501"
     CODESTRAL_2508 = "codestral-2508"
     CODESTRAL_MAMBA_2407 = "codestral-mamba-2407"

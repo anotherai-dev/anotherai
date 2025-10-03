@@ -349,56 +349,8 @@ def mistral_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             fallback=ModelFallback.default("cheap"),
             aliases=["mistral-medium", "mistral-medium-latest"],
         ),
-        Model.MAGISTRAL_SMALL_2506: ModelData(
-            display_name="Magistral Small (25-06)",
-            supports_json_mode=True,
-            supports_input_image=True,
-            supports_input_pdf=True,
-            supports_input_audio=False,
-            max_tokens_data=MaxTokensData(
-                max_tokens=40_000,
-                source="https://docs.mistral.ai/getting-started/models/models_overview/",
-            ),
-            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/mistral.svg",
-            release_date=date(2025, 6, 11),
-            quality_data=QualityData(
-                gpqa_diamond=68.18,
-                source="https://huggingface.co/mistralai/Magistral-Small-2506",
-            ),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2500, duration_seconds=74),
-            ),
-            provider_name=DisplayedProvider.MISTRAL_AI.value,
-            supports_tool_calling=True,
-            # Magistral does not support configuring a reasoning budget or effort
-            reasoning=ModelReasoningBudget(disabled=None, low=None, medium=None, high=None),
-            fallback=ModelFallback.default("cheap"),
-        ),
-        Model.MAGISTRAL_SMALL_2507: ModelData(
-            display_name="Magistral Small 1.1 (25-07)",
-            supports_json_mode=True,
-            supports_input_image=True,
-            supports_input_pdf=True,
-            supports_input_audio=False,
-            max_tokens_data=MaxTokensData(
-                max_tokens=40_960,
-                source="https://docs.mistral.ai/getting-started/models/models_overview/",
-            ),
-            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/mistral.svg",
-            release_date=date(2025, 7, 25),
-            quality_data=QualityData(
-                gpqa_diamond=68.18,
-                source="https://huggingface.co/mistralai/Magistral-Small-2506",
-            ),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2500, duration_seconds=74),
-            ),
-            provider_name=DisplayedProvider.MISTRAL_AI.value,
-            supports_tool_calling=True,
-            # Magistral does not support configuring a reasoning budget or effort
-            reasoning=ModelReasoningBudget(disabled=None, low=None, medium=None, high=None),
-            fallback=ModelFallback.default("cheap"),
-        ),
+        # Model.MAGISTRAL_SMALL_2506 deprecated - use magistral-small-latest
+        # Model.MAGISTRAL_SMALL_2507 deprecated - use magistral-small-latest
         Model.MAGISTRAL_SMALL_2509: ModelData(
             display_name="Magistral Small 1.2 (25-09)",
             supports_json_mode=True,
@@ -425,56 +377,8 @@ def mistral_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             fallback=ModelFallback.default("cheap"),
             aliases=["magistral-small", "magistral-small-latest"],
         ),
-        Model.MAGISTRAL_MEDIUM_2506: ModelData(
-            display_name="Magistral Medium (25-06)",
-            supports_json_mode=True,
-            supports_input_image=True,
-            supports_input_pdf=True,
-            supports_input_audio=False,
-            max_tokens_data=MaxTokensData(
-                max_tokens=40_960,
-                source="https://docs.mistral.ai/getting-started/models/models_overview/",
-            ),
-            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/mistral.svg",
-            release_date=date(2025, 6, 11),
-            quality_data=QualityData(
-                gpqa_diamond=79.8,
-                source="https://mistral.ai/news/magistral",
-            ),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2500, duration_seconds=85),
-            ),
-            provider_name=DisplayedProvider.MISTRAL_AI.value,
-            supports_tool_calling=True,
-            # Magistral does not support configuring a reasoning budget or effort
-            reasoning=ModelReasoningBudget(disabled=None, low=None, medium=None, high=None),
-            fallback=ModelFallback.default("medium"),
-        ),
-        Model.MAGISTRAL_MEDIUM_2507: ModelData(
-            display_name="Magistral Medium 1.1 (25-07)",
-            supports_json_mode=True,
-            supports_input_image=True,
-            supports_input_pdf=True,
-            supports_input_audio=False,
-            max_tokens_data=MaxTokensData(
-                max_tokens=40_960,
-                source="https://docs.mistral.ai/getting-started/models/models_overview/",
-            ),
-            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/mistral.svg",
-            release_date=date(2025, 7, 25),
-            quality_data=QualityData(
-                gpqa_diamond=79.8,
-                source="https://mistral.ai/news/magistral",
-            ),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2500, duration_seconds=85),
-            ),
-            provider_name=DisplayedProvider.MISTRAL_AI.value,
-            supports_tool_calling=True,
-            # Magistral does not support configuring a reasoning budget or effort
-            reasoning=ModelReasoningBudget(disabled=None, low=None, medium=None, high=None),
-            fallback=ModelFallback.default("medium"),
-        ),
+        # Model.MAGISTRAL_MEDIUM_2506 deprecated - use magistral-medium-latest
+        # Model.MAGISTRAL_MEDIUM_2507 deprecated - use magistral-medium-latest
         Model.MAGISTRAL_MEDIUM_2509: ModelData(
             display_name="Magistral Medium 1.2 (25-09)",
             supports_json_mode=True,

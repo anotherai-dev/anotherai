@@ -512,20 +512,8 @@ MISTRAL_PROVIDER_DATA: ProviderDataByModel = {
             source="https://mistral.ai/products/la-plateforme#pricing",
         ),
     ),
-    Model.MAGISTRAL_SMALL_2506: ModelProviderData(
-        text_price=TextPricePerToken(
-            prompt_cost_per_token=0.5 * ONE_MILLION_TH,
-            completion_cost_per_token=1.5 * ONE_MILLION_TH,
-            source="https://mistral.ai/pricing#api-pricing",
-        ),
-    ),
-    Model.MAGISTRAL_SMALL_2507: ModelProviderData(
-        text_price=TextPricePerToken(
-            prompt_cost_per_token=0.5 * ONE_MILLION_TH,
-            completion_cost_per_token=1.5 * ONE_MILLION_TH,
-            source="https://mistral.ai/pricing#api-pricing",
-        ),
-    ),
+    # Model.MAGISTRAL_SMALL_2506 deprecated - use magistral-small-latest
+    # Model.MAGISTRAL_SMALL_2507 deprecated - use magistral-small-latest
     Model.MAGISTRAL_SMALL_2509: ModelProviderData(
         text_price=TextPricePerToken(
             prompt_cost_per_token=0.5 * ONE_MILLION_TH,
@@ -533,20 +521,8 @@ MISTRAL_PROVIDER_DATA: ProviderDataByModel = {
             source="https://mistral.ai/pricing#api-pricing",
         ),
     ),
-    Model.MAGISTRAL_MEDIUM_2506: ModelProviderData(
-        text_price=TextPricePerToken(
-            prompt_cost_per_token=2.0 * ONE_MILLION_TH,
-            completion_cost_per_token=5.0 * ONE_MILLION_TH,
-            source="https://mistral.ai/pricing#api-pricing",
-        ),
-    ),
-    Model.MAGISTRAL_MEDIUM_2507: ModelProviderData(
-        text_price=TextPricePerToken(
-            prompt_cost_per_token=2.0 * ONE_MILLION_TH,
-            completion_cost_per_token=5.0 * ONE_MILLION_TH,
-            source="https://mistral.ai/pricing#api-pricing",
-        ),
-    ),
+    # Model.MAGISTRAL_MEDIUM_2506 deprecated - use magistral-medium-latest
+    # Model.MAGISTRAL_MEDIUM_2507 deprecated - use magistral-medium-latest
     Model.MAGISTRAL_MEDIUM_2509: ModelProviderData(
         text_price=TextPricePerToken(
             prompt_cost_per_token=2.0 * ONE_MILLION_TH,
