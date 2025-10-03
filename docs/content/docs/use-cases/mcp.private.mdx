@@ -357,7 +357,7 @@ response = client.chat.completions.create(
 ```python
 # Initial request with MCP server
 initial_response = client.chat.completions.create(
-    model="code-reviewer/#1/production",
+    model="anotherai/deployment/code-reviewer:production#1",
     messages=[{"role": "user", "content": "Review my latest commit"}],
     extra_body={
         "mcp_servers": [{
@@ -371,7 +371,7 @@ initial_response = client.chat.completions.create(
 
 # Follow-up using conversation state
 followup_response = client.chat.completions.create(
-    model="code-reviewer/#1/production", 
+    model="anotherai/deployment/code-reviewer:production#1", 
     messages=[{"role": "user", "content": "Apply the suggested changes"}],
     extra_body={
         "reply_to_run_id": initial_response.id,

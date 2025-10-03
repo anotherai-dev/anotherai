@@ -249,6 +249,29 @@ completion = await openai.chat.completions.create(
 </Accordion>
 </Accordions>
 
+## Deployment ID Format
+
+When referencing a deployment in the `model` field, you must use the following format:
+
+```
+anotherai/deployment/<agent-id>:<environment>#<version>
+```
+
+**Format Components:**
+- `anotherai/deployment/` - Required prefix for all deployment references
+- `<agent-id>` - Your agent's identifier (e.g., `travel-assistant`, `question-answering-agent`)
+- `<environment>` - The deployment environment (e.g., `production`, `staging`, `dev`)
+- `<version>` - The version number (e.g., `1`, `2`, `3`)
+
+**Examples:**
+- `anotherai/deployment/travel-assistant:production#1` - Version 1 of travel-assistant in production
+- `anotherai/deployment/customer-support:staging#2` - Version 2 of customer-support in staging
+- `anotherai/deployment/data-processor:dev#5` - Version 5 of data-processor in dev
+
+<Callout type="info">
+  The `anotherai/deployment/` prefix is **required** when using deployments in the `model` field. This prefix tells AnotherAI to look up the deployment configuration rather than treating it as a direct model name.
+</Callout>
+
 <Accordions>
 <Accordion title="Reconciling Code and Deployments" id="reconciling-code-and-deployments">
 
