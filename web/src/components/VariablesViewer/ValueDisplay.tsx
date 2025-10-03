@@ -24,9 +24,18 @@ const isImageUrl = (value: string): boolean => {
 
   // Check if it's a URL
   if (value.startsWith("http://") || value.startsWith("https://")) {
-    // Check for image service URLs (like Unsplash) that don't have file extensions
-    if (lowercaseValue.includes("images.unsplash.com")) {
-      return true;
+    // Check for trusted image service URLs by hostname
+    try {
+      const url = new URL(value);
+      const hostname = url.hostname.toLowerCase();
+
+      // Trusted image service hostnames
+      const trustedImageHosts = ["images.unsplash.com"];
+      if (trustedImageHosts.includes(hostname)) {
+        return true;
+      }
+    } catch {
+      // Invalid URL, continue to extension check
     }
 
     // Check if it ends with an image extension
