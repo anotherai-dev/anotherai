@@ -42,7 +42,8 @@ class BaseMiddleware(Middleware):
         context: MiddlewareContext[CallToolRequestParams],
         call_next: CallNext[CallToolRequestParams, ToolResult],
     ) -> ToolResult:
-        _log.info("on_call_tool", method=context.method)
+        tool_name = context.message.name
+        _log.info("on_call_tool", method=context.method, analytics="mcp_tool_call", tool_name=tool_name)
         # Trying to deserialize JSON sent as a string
         # See https://github.com/jlowin/fastmcp/issues/932
         if context.message.arguments:

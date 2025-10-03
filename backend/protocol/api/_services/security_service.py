@@ -1,6 +1,7 @@
 import os
 from typing import final
 
+import structlog
 from pydantic import BaseModel, Field, ValidationError
 
 from core.consts import ANOTHERAI_APP_URL
@@ -13,6 +14,8 @@ from core.storage.user_storage import UserStorage
 from core.utils.signature_verifier import SignatureVerifier
 
 NO_AUTHORIZATION_ALLOWED = os.getenv("NO_AUTHORIZATION_ALLOWED") == "true"
+
+_log = structlog.get_logger(__name__)
 
 
 @final
@@ -47,15 +50,28 @@ class SecurityService:
         try:
             return await self._tenant_storage.tenant_by_org_id(org_id)
         except ObjectNotFoundError:
-            # org id is not found but we have a valid claims so we can create a new tenant
-            return await self._tenant_storage.create_tenant_for_org_id(org_id, claims.org_slug or org_id, claims.sub)
+            tenant = await self._tenant_storage.create_tenant_for_org_id(org_id, claims.org_slug or org_id, claims.sub)
+            _log.info(
+                "User signed up",
+                analytics="user_signup",
+                user_id=claims.sub,
+                org_id=org_id,
+                signup_method="org",
+            )
+            return tenant
 
     async def _tenant_from_owner_id(self, owner_id: str) -> TenantData:
         try:
             return await self._tenant_storage.tenant_by_owner_id(owner_id)
         except ObjectNotFoundError:
-            # owner id is not found but we have a valid claims so we can create a new tenant
-            return await self._tenant_storage.create_tenant_for_owner_id(owner_id)
+            tenant = await self._tenant_storage.create_tenant_for_owner_id(owner_id)
+            _log.info(
+                "User signed up",
+                analytics="user_signup",
+                user_id=owner_id,
+                signup_method="owner",
+            )
+            return tenant
 
     def token_from_header(self, authorization: str) -> str:
         if not authorization or not authorization.startswith("Bearer "):
@@ -75,8 +91,13 @@ class SecurityService:
         try:
             data = await self._user_storage.last_used_organization(user_id)
         except ObjectNotFoundError:
-            # If the user is not found, we auto create a tenant for the user
             data = await self._tenant_from_owner_id(user_id)
+            _log.info(
+                "User signed up",
+                analytics="user_signup",
+                user_id=user_id,
+                signup_method="oauth",
+            )
         data.user = User(sub=user_id, email=None)  # TODO: email
         return data
 

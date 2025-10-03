@@ -243,6 +243,19 @@ class RunService:
             return await self._stream(runner, builder, request)
 
         completion = await self._completion_runner.run(runner, builder)
+        _log.info(
+            "Completion",
+            analytics="completion",
+            tenant_uid=self._tenant.uid,
+            agent_id=prepared_run.agent_id,
+            model=completion.final_model,
+            cost_usd=completion.cost_usd,
+            duration_seconds=completion.duration_seconds,
+            source=completion.source,
+            cached=completion.from_cache,
+            stream=stream,
+            completion_id=str(completion.id),
+        )
         return completion_response_from_domain(
             completion=completion,
             deprecated_function=request.function_call is not None,
