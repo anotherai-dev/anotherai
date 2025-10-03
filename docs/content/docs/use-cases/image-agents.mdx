@@ -162,7 +162,9 @@ You can learn more about datasets and how to use them [here](/use-cases/fundamen
 
 #### Using Individual Images
 
-If you have a small number of images to test that you can also upload them individually to your AI assistant. Since images uploaded this way aren't stored in a persistent dataset, this approach is best suited for ad-hoc testing rather than systematic experimentation.  While any completions created using these images will be stored in AnotherAI and can be reused in future experiments, if you wanted to test any specific images again at a later date, you would need to provide links to the specific completions that used those images.
+If you have a small number of images to test that you can also upload them individually to your AI assistant. Since images uploaded this way aren't stored in a persistent dataset, this approach is best suited for ad-hoc testing rather than systematic experimentation.  While any completions created using these images will be stored in AnotherAI and can be reused in future experiments, if you wanted to test any specific images again at a later date, you would need to provide links to the specific completions that used those images. 
+
+Refer to the next section below to learn how to upload and reference images properly for use in AnotherAI.
 
 #### How to reference images properly for use in AnotherAI
 When it comes to using image data as input, the inputs can be either local files (ex. `/Users/username/documents/george-washington.png`) or public URLs (ex. `https://cdn.britannica.com/43/173043-050-957816CE/oil-George-Washington-canvas-Gilbert-Stuart-Washington.jpg`). Here is the process for using each type of image as input:
@@ -194,6 +196,9 @@ If the images you want to use are available via local files and you're building 
 1. Create a folder in your for your dataset in your project. 
 2. Locate the local files on your computer that you want to use as inputs
 3. Drag and drop the images directly into the folder you created for your dataset
+
+<iframe src="https://customer-turax1sz4f7wbpuv.cloudflarestream.com/204ccbb4b1c3a0db9525c71ef2e2e9e3/iframe" width="100%"
+height="400" style={{border: 0}} allowFullScreen></iframe>
 4. From there, you can reference the image in your AI assistant chat freely (either by `@[file_name]` or by dragging and dropping it into the chatbox). Your AI assistant will be able to access the image to provide a ground-truth expected output, or add it as an input to an AnotherAI experiment. 
 
 ```

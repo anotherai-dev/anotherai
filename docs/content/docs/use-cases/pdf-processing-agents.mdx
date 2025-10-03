@@ -168,6 +168,8 @@ You can learn more about datasets and how to use them [here](/use-cases/fundamen
 
 If you have a small number of PDFs to test that you can also upload them individually to Claude Code or ChatGPT (Cursor's AI Assistant does not allow you to upload PDFs). Since PDFs uploaded this way aren't stored in a persistent dataset, this approach is best suited for ad-hoc testing rather than systematic experimentation. While any completions created using these PDFs will be stored in AnotherAI and can be reused in future experiments, if you wanted to test any specific PDFs again at a later date, you would need to provide links to the specific completions that used those documents.
 
+Refer to the next section below to learn how to upload and reference PDFs properly for use in AnotherAI.
+
 #### How to reference PDFs properly for use in AnotherAI
 When it comes to using PDF data as input, the inputs can be either local files (ex. `/Users/username/documents/f1040.pdf`) or public URLs (ex. `https://www.irs.gov/pub/irs-pdf/f1040.pdf`). Here is the process for using each type of image as input:
 
@@ -200,7 +202,10 @@ If the PDFs you want to use are available via local files and you're building yo
 1. Create a folder for your dataset in your project. 
 2. Locate the PDFs you want to use as inputs on your computer
 3. Drag and drop the files directly into the folder you created for your dataset
-4. From there, you can reference the PDF in your AI assistant chat freely (either by `@[file_name]` or by dragging and dropping it into the chatbox). Your AI assistant will be able to access the file to provide a ground-truth expected output, or add it as an input to an AnotherAI experiment. 
+
+<iframe src="https://customer-turax1sz4f7wbpuv.cloudflarestream.com/204ccbb4b1c3a0db9525c71ef2e2e9e3/iframe" width="100%"
+height="400" style={{border: 0}} allowFullScreen></iframe>
+4. From here, you can reference the PDF in your AI assistant chat freely (either by `@[file_name]` or by dragging and dropping it into the chatbox). Your AI assistant will be able to access the file to provide a ground-truth expected output, or add it as an input to an AnotherAI experiment. 
     - Note: At this time, Cursor's AI assistant is not able to view the content of the PDFs, even after preforming the steps above. If working with PDFs, we recommend using Claude Code.
 
 ```
