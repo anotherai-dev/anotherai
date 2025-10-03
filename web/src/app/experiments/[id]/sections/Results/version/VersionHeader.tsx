@@ -39,6 +39,11 @@ type VersionHeaderProps = {
   dragIndex?: number;
   // Hide version functionality
   onHideVersion?: (versionId: string) => void;
+  // Column width props
+  columnWidth?: number;
+  onColumnWidthChange?: (versionId: string, width: number) => void;
+  nextVersionId?: string;
+  isLastColumn?: boolean;
 };
 
 function VersionHeader(props: VersionHeaderProps) {
@@ -61,6 +66,10 @@ function VersionHeader(props: VersionHeaderProps) {
     onReorderColumns,
     dragIndex,
     onHideVersion,
+    columnWidth,
+    onColumnWidthChange,
+    nextVersionId,
+    isLastColumn,
   } = props;
 
   const [isHovered, setIsHovered] = useState(false);
@@ -134,6 +143,10 @@ function VersionHeader(props: VersionHeaderProps) {
       dragIndex={dragIndex}
       versionId={version.id}
       className="firefox-version-header"
+      columnWidth={columnWidth}
+      onColumnWidthChange={onColumnWidthChange}
+      nextVersionId={nextVersionId}
+      isLastColumn={isLastColumn}
     >
       <div className="firefox-version-content">
         <div onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
