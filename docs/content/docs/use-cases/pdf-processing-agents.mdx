@@ -8,8 +8,6 @@ import { Step, Steps } from 'fumadocs-ui/components/steps';
 import { Callout } from 'fumadocs-ui/components/callout';
 import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
 
-**Our goal with building with AnotherAI is to turn your AI coding assistant into your AI engineer.** Instead of manually testing different models and prompts, AnotherAI gives your AI coding agent the tools to automatically find the optimal configuration for your specific use case. Here is how to get started building a new agent with AnotherAI.
-
 <Callout type="warning">
 Before you begin, make sure you have the AnotherAI MCP server configured with your AI assistant. Your AI assistant needs this connection to create agents, run experiments, and manage deployments. See the [Getting Started guide](/getting-started) for setup instructions.
 </Callout>
@@ -27,8 +25,13 @@ The easiest way to create a new agent is to ask your preferred AI assistant to b
 
 Start by describing what your agent should do:
 
+For PDF processing agents, we recommend including a few examples of the PDFs you want to use as input to the agent in your initial prompt. You can learn more about how to work with PDF test data [here](/use-cases/pdf-processing-agents#data-for-pdf-processing-experiments).
+
+
 ```
-Create a new AnotherAI agent that extracts key information from PDF documents
+Create a new AnotherAI agent that extracts key information from PDF documents. Use 
+/Developer/anotherai/datasets/insurance-declarations as inputs to test the agent with 
+an AnotherAI experiment.
 ```
 
 #### Adding Performance Requirements
@@ -38,13 +41,19 @@ If you have other criteria or constraints for your agent, you can include them i
 **For customer-facing agents that need fast responses:**
 
 ```
-Create a new AnotherAI agent that extracts key information from PDF documents where the average response time is less than 4 seconds
+Create a new AnotherAI agent that extracts key information from PDF documents 
+where the average response time is less than 4 seconds. Use 
+/Developer/anotherai/datasets/insurance-declarations as inputs to test the agent with 
+an AnotherAI experiment.
 ```
 
 **For high-volume agents that need to be cost-effective:**
 
 ```
-Create a new AnotherAI agent that extracts key information from PDF documents that costs less than $5 for 1000 requests
+Create a new AnotherAI agent that extracts key information from PDF documents 
+that costs less than $5 for 1000 requests. Use 
+/Developer/anotherai/datasets/insurance-declarations as inputs to test the agent with 
+an AnotherAI experiment.
 ```
 
 Your AI assistant will be able to construct the agent's code, and will be able to use AnotherAI to access 100+ different models to find the best configuration to help you achieve your goals.
@@ -55,10 +64,13 @@ Your AI assistant will be able to construct the agent's code, and will be able t
 You can also add custom metadata to your agents to help organize and track them. Common use cases include:
 
 - **Workflow tracking**: include a trace_id and workflow_name key. (Learn more about workflows [here](/use-cases/connecting-agents))
-- **User identication**: include a user_id customer_email key. 
+- **User identification**: include a user_id customer_email key. 
 
 ```
-Create a new AnotherAI agent that extracts key information from PDF documents and include a customer_id metadata key.
+Create a new AnotherAI agent that extracts key information from PDF documents 
+and include a customer_id metadata key. Use 
+/Developer/anotherai/datasets/insurance-declarations as inputs to test the agent with 
+an AnotherAI experiment.
 ```
 
 **Agent IDs in Metadata**
@@ -94,28 +106,43 @@ If you find there is additional criteria you want to test, you can always ask yo
 
 ### Data for PDF Processing Experiments
 
-For text-based agents, it's quite simple for your AI assistant to generate data for you, however for PDF processing agents, AI assistants are inconsistent about generating valid PDF URLs as input. Therefore, to produce useful results, you will need to use your own PDFs for testing. There a couple ways to do this:
+For text-based agents, it's quite simple for your AI assistant to generate data for you, however for PDF processing agents, AI assistants are inconsistent about generating valid PDF URLs as input. Therefore, to produce useful results, you will need to use your own PDFs for testing. There are a couple ways to do this:
 
 #### Using a Dataset
 
-A dataset is a collection of PDFs in a file format that your AI assistant can understand. Datasets can contain expected outputs, but do not need to.
+A dataset is a collection of PDFs - either local files or public URLs - stored in a structured format (like a folder of files, or a JSON file with PDF file names and optional expected outputs) that you can use to test your agent. Datasets can contain expected outputs, but do not need to.
 
-Datasets can be useful because they allow you to make a large number of PDF inputs easily available in one file. If working in an IDE, you can commit the dataset file to your codebase to make it accessible to your team. If working with an AI assistant like ChatGPT, having a dataset means you only need to upload one file instead of each PDF individually.
+Datasets can be useful for several reasons:
+- They give you a consistent set of data to test different versions of your agent against.
+- They allow you to make a large number of PDF inputs easily available in one file or folder, so you don't need to reference each PDF individually to your AI assistant each time you want to test your agent. 
+- If working in an IDE like Cursor, you can commit the dataset file to your codebase to make it accessible to your team. 
 
 Example dataset with expected outputs:
 ```json
 [
   {
     "pdf_url": "https://example.com/documents/invoice1.pdf",
-    "expected_extracted_fields": ["invoice_number", "total_amount", "due_date"]
+    "expected_extracted_fields": {
+      "invoice_number": "INV-2024-001",
+      "total_amount": "$1,234.56",
+      "due_date": "2024-03-15"
+    }
   },
   {
-    "pdf_url": "https://example.com/documents/contract2.pdf",
-    "expected_extracted_fields": ["contract_id", "parties", "effective_date"]
+    "pdf_url": "https://example.com/documents/invoice2.pdf",
+    "expected_extracted_fields": {
+      "invoice_number": "INV-2024-002",
+      "total_amount": "$850.00",
+      "due_date": "2024-03-20"
+    }
   },
   {
-    "pdf_url": "https://example.com/documents/report3.pdf",
-    "expected_extracted_fields": ["report_title", "author", "key_findings"]
+    "pdf_url": "https://example.com/documents/invoice3.pdf",
+    "expected_extracted_fields": {
+      "invoice_number": "INV-2024-003",
+      "total_amount": "$2,100.75",
+      "due_date": "2024-03-25"
+    }
   }
 ]
 ```
@@ -124,22 +151,76 @@ Example dataset with PDFs only:
 ```json
 [
   {
-    "pdf_url": "https://example.com/documents/invoice1.pdf",
+    "pdf_url": "https://example.com/documents/invoice1.pdf"
   },
   {
-    "pdf_url": "https://example.com/documents/contract2.pdf",
+    "pdf_url": "https://example.com/documents/contract2.pdf"
   },
   {
-    "pdf_url": "https://example.com/documents/report3.pdf",
+    "pdf_url": "https://example.com/documents/report3.pdf"
   }
 ]
 ```
 
-You can learn more about datasets and how to use them [here](/use-cases/fundamentals/evaluating#using-datasets-to-evaluate-your-agents).
+You can learn more about datasets and how to use them [here](/use-cases/fundamentals/evaluating#using-datasets-to-evaluate-your-agents), and specifically about how to create datasets for non-text inputs like PDFs [here](/use-cases/fundamentals/evaluating#non-text-data-local-files-urls)
 
-#### Uploading Individual PDFs
+#### Using Individual PDFs
 
-If you have a small number of PDFs to test that you can also upload them individually to your AI assistant. Since PDFs uploaded this way aren't stored in a persistent dataset, this approach is best suited for ad-hoc testing rather than systematic experimentation. While any completions created using these PDFs will be stored in AnotherAI and can be reused in future experiments, if you wanted to test any specific PDFs again at a later date, you would need to provide links to the specific completions that used those documents.
+If you have a small number of PDFs to test that you can also upload them individually to Claude Code or ChatGPT (Cursor's AI Assistant does not allow you to upload PDFs). Since PDFs uploaded this way aren't stored in a persistent dataset, this approach is best suited for ad-hoc testing rather than systematic experimentation. While any completions created using these PDFs will be stored in AnotherAI and can be reused in future experiments, if you wanted to test any specific PDFs again at a later date, you would need to provide links to the specific completions that used those documents.
+
+#### How to reference PDFs properly for use in AnotherAI
+When it comes to using PDF data as input, the inputs can be either local files (ex. `/Users/username/documents/f1040.pdf`) or public URLs (ex. `https://www.irs.gov/pub/irs-pdf/f1040.pdf`). Here is the process for using each type of image as input:
+
+**Public URLs**
+
+If the files you want to use are available via public URLs and you're building your dataset in an IDE like Cursor:
+1. Create a file in your project for your dataset input URLs and - optionally - expected outputs.
+   - Using a JSON file is common, but if there is another format you'd prefer to use (.csv, .txt, etc.), you can use that instead. If you're unsure how to format your dataset, you can ask your AI assistant to help you.
+2. Paste the PDF URL(s) directly into your AI assistant's chat and ask them to add it to your dataset.
+
+```
+Add https://www.irs.gov/pub/irs-pdf/f1040.pdf as an input to my tax_form.json dataset.
+```
+3. Your AI assistant will be able to add the URL to your dataset using the correct formatting.
+4. If you want to include an expected output for your URL input (for example, the content of the PDF), you can also ask your AI assistant to view the content and extract the information you need.
+
+```
+Add https://www.irs.gov/pub/irs-pdf/f1040.pdf to my tax_form.json dataset as input. 
+View the content of this URL, extract the content of the file and add it to the dataset 
+as the input's expected output.
+```
+
+<Callout type="info">
+**When working with PDFs:** If you want to add an expected output for your URL input, you will need to use Claude Code to extract the content. At this time, Cursor's AI assistant is not able to view the content of the PDFs. 
+</Callout>
+
+**Local PDFs**
+
+If the PDFs you want to use are available via local files and you're building your dataset in an IDE like Cursor:
+1. Create a folder for your dataset in your project. 
+2. Locate the PDFs you want to use as inputs on your computer
+3. Drag and drop the files directly into the folder you created for your dataset
+4. From there, you can reference the PDF in your AI assistant chat freely (either by `@[file_name]` or by dragging and dropping it into the chatbox). Your AI assistant will be able to access the file to provide a ground-truth expected output, or add it as an input to an AnotherAI experiment. 
+    - Note: At this time, Cursor's AI assistant is not able to view the content of the PDFs, even after preforming the steps above. If working with PDFs, we recommend using Claude Code.
+
+```
+Create a new experiment of anotherai/agent/pdf-analyzer and find the fastest model 
+that can correctly extract all information from:
+/Developer/anotherai/datasets/pdf-documents/f1040.pdf
+
+```
+
+**Using Existing Datasets**
+
+If you already have a dataset you want to use, and you're using an IDE like Cursor:
+1. Create a new folder for your dataset in your project. 
+2. Drag and drop the existing dataset file into the folder you created in step 1.
+3. From there, you can reference your dataset in your AI assistant chat and request it use some - or all - of the dataset as inputs to test your agent.
+
+```
+Create a new experiment of anotherai/agent/pdf-analyzer and use the content 
+of @pdf-documents.json as inputs to the experiment.
+```
 
 ### Prompts
 
@@ -149,7 +230,10 @@ Example:
 
 ```
 Look at the prompt of anotherai/agent/pdf-extractor and create an experiment in AnotherAI
-that compares the current prompt with a new prompt that requests the output only include extract information and no intro from the AI.
+that compares the current prompt with a new prompt that requests the output only include extract 
+information and no intro from the AI. Use 
+/Developer/anotherai/datasets/insurance-declarations as inputs to test the agent with 
+an AnotherAI experiment.
 ```
 
 Your AI assistant will create the experiment and give you an initial analysis of the results and well as a URL to view the results in the AnotherAI web app.
@@ -168,7 +252,9 @@ Example:
 
 ```
 Create an AnotherAI experiment to help me find a faster model for anotherai/agent/pdf-extractor,
-but still maintains the same accuracy for data extraction as my current model.
+but still maintains the same accuracy for data extraction as my current model. Use 
+/Developer/anotherai/datasets/insurance-declarations as inputs to test the agent with 
+an AnotherAI experiment.
 ```
 
 If you have a specific model in mind that you want to try - **for example, a newly released model** - you can ask your AI assistant to help you test that model against your existing agent version. You can always request that your AI assistant uses inputs from existing completions, to ensure that you're testing with real, production data.
@@ -184,7 +270,7 @@ Magistral Medium 1.2 (the most recently released model with PDF support)?
 
 ### Other Parameters
 
-Beyond prompts and models, fine-tuning other parameters can impact your agent's behavior and output quality. Temperature in particular can have a significant impact on the quality of the output.
+Beyond prompts and models, adjusting other parameters can impact your agent's behavior and output quality. Temperature in particular can have a significant impact on the quality of the output.
 
 <Accordions>
 <Accordion title="What is Temperature?">
@@ -302,3 +388,7 @@ Your AI assistant will analyze your feedback and create an improved version of y
 </Steps>
 
 To learn more about how annotations can be used to improve your agent, see our [Improving an Agent with Annotations](/use-cases/fundamentals/annotations) page.
+
+## Debugging PDF Processing Agents
+
+The process of debugging PDF processing agents is the same as debugging text-based agents. You can learn more about debugging agents in our [Debugging guide](/use-cases/fundamentals/debugging).
