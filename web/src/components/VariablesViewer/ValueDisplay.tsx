@@ -22,8 +22,14 @@ const isImageUrl = (value: string): boolean => {
   const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".bmp", ".ico", ".tiff"];
   const lowercaseValue = value.toLowerCase();
 
-  // Check if it's a URL and ends with an image extension
+  // Check if it's a URL
   if (value.startsWith("http://") || value.startsWith("https://")) {
+    // Check for image service URLs (like Unsplash) that don't have file extensions
+    if (lowercaseValue.includes("images.unsplash.com")) {
+      return true;
+    }
+
+    // Check if it ends with an image extension
     return imageExtensions.some((ext) => lowercaseValue.includes(ext));
   }
 
@@ -69,6 +75,13 @@ const isAudioUrl = (value: string): boolean => {
   return false;
 };
 
+// Helper function to check if a key indicates an image
+const isImageKey = (key?: string): boolean => {
+  if (!key) return false;
+  const lowercaseKey = key.toLowerCase();
+  return lowercaseKey === "image_url" || lowercaseKey.includes("image_url");
+};
+
 const getTextSizeStyle = (textSize: "xs" | "sm" | "base" | string = "xs") => {
   if (textSize === "xs" || textSize === "sm" || textSize === "base") {
     return {
@@ -83,9 +96,10 @@ export type ValueDisplayProps = {
   value: unknown;
   textSize: "xs" | "sm" | "base" | string;
   showSeeMore: boolean;
+  key?: string;
 };
 
-function ValueDisplay({ value, textSize, showSeeMore }: ValueDisplayProps) {
+function ValueDisplay({ value, textSize, showSeeMore, key }: ValueDisplayProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldTruncateByHeight, setShouldTruncateByHeight] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -148,8 +162,8 @@ function ValueDisplay({ value, textSize, showSeeMore }: ValueDisplayProps) {
       );
     }
 
-    // Special handling for image URLs
-    if (isImageUrl(value)) {
+    // Special handling for image URLs (including URLs with image_url key)
+    if (isImageUrl(value) || isImageKey(key)) {
       return (
         <div
           className={cx("inline-block relative", textSizeClass)}
@@ -379,6 +393,7 @@ export default memo(ValueDisplay, (prevProps, nextProps) => {
   return (
     prevProps.value === nextProps.value &&
     prevProps.textSize === nextProps.textSize &&
-    prevProps.showSeeMore === nextProps.showSeeMore
+    prevProps.showSeeMore === nextProps.showSeeMore &&
+    prevProps.key === nextProps.key
   );
 });
