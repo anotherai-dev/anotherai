@@ -238,7 +238,6 @@ async def list_models() -> list[Model]:
     Returns a list of Model objects containing:
     - id: Model identifier to use in the 'models' parameter of playground/API calls (corresponds to version_model in query_completions)
     - display_name: Human-readable name of the model
-    - icon_url: URL to the model's icon image
     - supports: Capabilities including:
       - input/output modalities (text, image, audio, pdf support)
       - parallel_tool_calls: Whether model can make multiple tool calls in one inference
@@ -251,7 +250,7 @@ async def list_models() -> list[Model]:
 
     Use this tool before calling playground() to see available model IDs and their capabilities.
     """
-    return await models_service.list_models()
+    return await models_service.list_models_mcp()
 
 
 # ------------------------------------------------------------

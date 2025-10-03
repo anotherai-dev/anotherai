@@ -588,6 +588,22 @@ def model_response_from_domain(model_id: str, model: FinalModelData) -> Model:
     )
 
 
+def model_response_from_domain_mcp(model_id: str, model: FinalModelData) -> Model:
+    """Convert model data for MCP responses, excluding icon_url to reduce context window usage."""
+    provider_data = model.providers[0][1]
+    return Model(
+        id=model_id,
+        display_name=model.display_name,
+        icon_url="",  # Empty string for MCP responses to reduce context window
+        supports=model_supports_from_domain(model),
+        pricing=model_pricing(provider_data),
+        release_date=model.release_date,
+        reasoning=model_reasoning_from_domain(model.reasoning) if model.reasoning is not None else None,
+        context_window=model_context_window_from_domain(model.max_tokens_data),
+        speed_index=model.speed_index,
+    )
+
+
 def _sanitized_completion_id(completion_id: str) -> UUID:
     return UUID(sanitize_id(completion_id, IDType.COMPLETION))
 
