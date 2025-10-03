@@ -50,7 +50,7 @@ export function MatrixSection(props: Props) {
     return columnOrder.filter((versionId) => !hiddenVersionIds.includes(versionId));
   }, [columnOrder, hiddenVersionIds]);
 
-  const { setColumnWidth, widthsArray } = useColumnWidths(experiment.id, visibleVersionIds, 400);
+  const { setColumnWidth, widthsArray, hasCustomWidths } = useColumnWidths(experiment.id, visibleVersionIds, 400);
 
   // First column width management
   const [firstColumnWidth, setFirstColumnWidth] = useLocalStorage<number>(`first-column-width-${experiment.id}`, 240);
@@ -278,7 +278,11 @@ export function MatrixSection(props: Props) {
           minColumnWidth={400}
           hideScrollbar={false}
           stickyHeaderData={stickyHeaderData}
-          columnWidths={widthsArray}
+          columnWidths={
+            orderedVersions.length === 1 && !hasCustomWidths
+              ? undefined // Let TableComponent auto-size to full width
+              : widthsArray
+          }
           firstColumnWidth={firstColumnWidth}
           onFirstColumnWidthChange={setFirstColumnWidth}
         />
