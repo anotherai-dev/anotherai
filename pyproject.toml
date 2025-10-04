@@ -20,6 +20,7 @@ dependencies = [
     "jsonschema>=4.24.0",
     "mcp>=1.14.0",
     "openai>=1.93.1",
+    "posthog>=3.7.2",
     "pydantic>=2.0.0",
     "pydub>=0.25.1",
     "pyjwt>=2.9.0",
