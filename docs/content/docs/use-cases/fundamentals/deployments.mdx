@@ -276,6 +276,145 @@ completion = await openai.chat.completions.create(
 </Accordions>
 
 <Accordions>
+<Accordion title="Understanding Different Deployment Patterns">
+
+When a deployment is created, it captures the completion parameters from the existing code. Depending on what was in the code, the deployment will store different things, and the code updates needed to reference the deployment will differ.
+
+<Accordions>
+<Accordion title="Full Prompt Template with Input Variables (Most Common)">
+
+This is the pattern shown in the "Code Before and After Using Deployments" section above. When your deployment stores a templated prompt with input variables, your code passes empty messages and only provides the input variables.
+
+**When to use this pattern:**
+- You want maximum flexibility - both prompts and models managed outside your codebase
+- Non-technical team members need to iterate on prompts
+- You have a templated prompt with variable substitution
+
+</Accordion>
+
+<Accordion title="Model and Parameters Only (Generally for Non-Text Inputs)">
+
+If your deployment only stores the model, temperature, response_format, and other completion parameters **without a prompt template or input variables**, your code continues to pass messages normally. This pattern is generally used when working with images, PDFs, audio, or other non-text inputs that cannot be easily templated.
+
+**What the deployment stores:**
+- Model (e.g., `gpt-4o`, `claude-3-5-sonnet`)
+- Temperature, top_p, and other generation parameters
+- Response format (JSON schema)
+- Agent ID
+
+**What your code provides:**
+- All messages (system, user, assistant)
+- Any dynamic content
+
+**Example:**
+
+<Tabs items={["OpenAI SDK (Python)", "OpenAI SDK (JS)"]}>
+<Tab>
+```python
+# Deployment stores: model, temperature, response_format, agent_id
+# Code provides: all messages
+completion = await client.chat.completions.create(
+    model="anotherai/deployment/identity-verification:v1",
+    messages=[
+        {
+            "role": "system",
+            "content": "You are an expert in identity verification..."
+        },
+        {
+            "role": "user",
+            "content": [
+                {"type": "image_url", "image_url": {"url": profile_url}},
+                {"type": "image_url", "image_url": {"url": selfie_url}}
+            ]
+        }
+    ]
+)
+```
+</Tab>
+<Tab>
+```js
+// Deployment stores: model, temperature, response_format, agent_id
+// Code provides: all messages
+const completion = await client.chat.completions.create({
+    model: "anotherai/deployment/identity-verification:v1",
+    messages: [
+        {
+            role: "system",
+            content: "You are an expert in identity verification..."
+        },
+        {
+            role: "user",
+            content: [
+                {type: "image_url", image_url: {url: profileUrl}},
+                {type: "image_url", image_url: {url: selfieUrl}}
+            ]
+        }
+    ]
+});
+```
+</Tab>
+</Tabs>
+
+**When to use this pattern:**
+- You want to update models or parameters without code changes
+- You want to keep full control over prompts in your codebase
+- You're working with complex multi-turn conversations or multimodal inputs (images, PDFs, audio)
+
+</Accordion>
+
+<Accordion title="Determining which pattern applies">
+
+To determine which pattern applies to a deployment, list the deployment and examine its structure:
+
+```bash
+"List deployments for agent document-classifier"
+```
+
+Check the deployment response for:
+- **Has `prompt` field with templates (e.g., `{{ variable }}`)?** → Pattern 1 (input variables)
+- **Has `input_variables_schema` field?** → Pattern 1 (input variables)
+- **Only has `model`, `temperature`, `output_schema`?** → Pattern 2 (pass messages)
+
+**Example deployment using Pattern 1:**
+```json
+{
+  "id": "travel-assistant:v1",
+  "version": {
+    "model": "gpt-4o",
+    "temperature": 0.7,
+    "prompt": [
+      {
+        "role": "system",
+        "content": "You are an expert on {{ country }}..."
+      }
+    ],
+    "input_variables_schema": {
+      "type": "object",
+      "properties": {"country": {}}
+    }
+  }
+}
+```
+
+**Example deployment using Pattern 2:**
+```json
+{
+  "id": "identity-verification:v1",
+  "version": {
+    "model": "gpt-4o-latest",
+    "temperature": 1.0,
+    "output_schema": {...}
+  }
+}
+```
+
+</Accordion>
+</Accordions>
+
+</Accordion>
+</Accordions>
+
+<Accordions>
 <Accordion title="Reconciling Code and Deployments" id="reconciling-code-and-deployments">
 
 **Reconciling Code and Deployments**
