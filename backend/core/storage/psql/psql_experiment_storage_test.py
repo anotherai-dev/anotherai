@@ -1,6 +1,7 @@
 # pyright: reportPrivateUsage=false
 import asyncio
 import uuid
+from collections.abc import Callable
 from datetime import UTC, datetime
 
 import asyncpg
@@ -17,7 +18,7 @@ from core.domain.message import Message
 from core.domain.version import Version
 from core.storage.experiment_storage import CompletionIDTuple, CompletionOutputTuple
 from core.storage.psql.psql_agent_storage import PsqlAgentsStorage
-from core.storage.psql.psql_experiment_storage import PsqlExperimentStorage
+from core.storage.psql.psql_experiment_storage import PsqlExperimentStorage, _ExperimentOutputRow
 from core.utils.uuid import uuid7
 from tests.fake_models import fake_experiment
 
@@ -1193,3 +1194,102 @@ class TestInputUids:
                 experiment_uid,
                 {input1.id, "non_existent_input_id"},
             )
+
+
+class TestSortExperimentOutputs:
+    @pytest.fixture
+    def rows(self):
+        return [
+            _ExperimentOutputRow(
+                version_id="version_2",
+                input_id="input_1",
+                version_position=2,
+                input_position=1,
+                completion_id=uuid7(),
+            ),
+            _ExperimentOutputRow(
+                version_id="version_1",
+                input_id="input_2",
+                version_position=1,
+                input_position=2,
+                completion_id=uuid7(),
+            ),
+            _ExperimentOutputRow(
+                version_id="version_1",
+                input_id="input_1",
+                version_position=1,
+                input_position=1,
+                completion_id=uuid7(),
+            ),
+            _ExperimentOutputRow(
+                version_id="version_2",
+                input_id="input_2",
+                version_position=2,
+                input_position=2,
+                completion_id=uuid7(),
+            ),
+        ]
+
+    @pytest.fixture
+    def sort(self, experiment_storage: PsqlExperimentStorage):
+        def _sort(
+            rows: list[_ExperimentOutputRow],
+            version_ids: list[str] | None = None,
+            input_ids: list[str] | None = None,
+        ):
+            sorted_outputs = experiment_storage._sort_experiment_outputs(rows, version_ids, input_ids)
+            return [(s.version_id, s.input_id) for s in sorted_outputs]
+
+        return _sort
+
+    def test_sort_experiment_outputs_basic_ordering(
+        self,
+        sort: Callable[[list[_ExperimentOutputRow], list[str] | None, list[str] | None], list[tuple[str, str]]],
+        rows: list[_ExperimentOutputRow],
+    ):
+        sorted_outputs = sort(rows, None, None)
+        assert sorted_outputs == [
+            ("version_1", "input_1"),
+            ("version_2", "input_1"),
+            ("version_1", "input_2"),
+            ("version_2", "input_2"),
+        ]
+
+    def test_sort_experiment_outputs_with_version_ids(
+        self,
+        sort: Callable[[list[_ExperimentOutputRow], list[str] | None, list[str] | None], list[tuple[str, str]]],
+        rows: list[_ExperimentOutputRow],
+    ):
+        sorted_outputs = sort(rows, ["version_2", "version_1"], None)
+        assert sorted_outputs == [
+            ("version_2", "input_1"),
+            ("version_1", "input_1"),
+            ("version_2", "input_2"),
+            ("version_1", "input_2"),
+        ]
+
+    def test_sort_experiment_outputs_with_input_ids(
+        self,
+        sort: Callable[[list[_ExperimentOutputRow], list[str] | None, list[str] | None], list[tuple[str, str]]],
+        rows: list[_ExperimentOutputRow],
+    ):
+        sorted_outputs = sort(rows, None, ["input_2", "input_1"])
+        assert sorted_outputs == [
+            ("version_1", "input_2"),
+            ("version_2", "input_2"),
+            ("version_1", "input_1"),
+            ("version_2", "input_1"),
+        ]
+
+    def test_sort_experiment_outputs_with_version_ids_and_input_ids(
+        self,
+        sort: Callable[[list[_ExperimentOutputRow], list[str] | None, list[str] | None], list[tuple[str, str]]],
+        rows: list[_ExperimentOutputRow],
+    ):
+        sorted_outputs = sort(rows, ["version_2", "version_1"], ["input_2", "input_1"])
+        assert sorted_outputs == [
+            ("version_2", "input_2"),
+            ("version_1", "input_2"),
+            ("version_2", "input_1"),
+            ("version_1", "input_1"),
+        ]

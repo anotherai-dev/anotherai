@@ -1,4 +1,4 @@
-from collections.abc import Collection
+from collections.abc import Collection, Iterable
 from datetime import datetime
 from typing import Any, Protocol, override
 from uuid import UUID
@@ -168,13 +168,13 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
         where = ["experiment_uid = $1"]
         args: list[Any] = [experiment_uid]
         if version_ids:
-            where.append("version_id = ANY($2)")
+            where.append("(version_id = ANY($2) OR alias = ANY($2))")
             args.append(version_ids)
         rows = await connection.fetch(
             f"SELECT {select} FROM experiment_versions WHERE {' AND '.join(where)} ORDER BY position ASC",  # noqa: S608
             *args,
         )
-        return [self._validate(_ExperimentVersionRow, row).to_domain() for row in rows]
+        return _sort_by_id((self._validate(_ExperimentVersionRow, row).to_domain() for row in rows), version_ids)
 
     async def _list_experiment_inputs(
         self,
@@ -193,7 +193,7 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
             f"SELECT {select} FROM experiment_inputs WHERE {' AND '.join(where)} ORDER BY position ASC",  # noqa: S608
             *args,
         )
-        return [self._validate(_ExperimentInputRow, row).to_domain() for row in rows]
+        return _sort_by_id((self._validate(_ExperimentInputRow, row).to_domain() for row in rows), input_ids)
 
     @classmethod
     def _include_versions(cls, include: Collection[ExperimentFields]) -> bool | None:
@@ -548,6 +548,33 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
                 completion_id,
             )
 
+    def _sort_experiment_outputs(
+        self,
+        iter: "Iterable[_ExperimentOutputRow]",
+        version_ids: Collection[str] | None = None,
+        input_ids: Collection[str] | None = None,
+    ) -> list[ExperimentOutput]:
+        """Try and respect the requested order of inputs and versions if provided"""
+        version_pos = {v: i for i, v in enumerate(version_ids)} if version_ids else {}
+        input_pos = {v: i for i, v in enumerate(input_ids)} if input_ids else {}
+
+        def _get_pos(id: str | None, alias: str | None, d: dict[str, int], fallback: int | None) -> int:
+            if alias and alias in d:
+                return d[alias]
+            if id and id in d:
+                return d[id]
+            return fallback or 0
+
+        def _key(row: _ExperimentOutputRow) -> tuple[int, int]:
+            return _get_pos(row.input_id, row.input_alias, input_pos, row.input_position), _get_pos(
+                row.version_id,
+                row.version_alias,
+                version_pos,
+                row.version_position,
+            )
+
+        return safe_map(sorted(iter, key=_key), lambda x: x.to_domain(), log)
+
     async def _list_experiment_completions(
         self,
         connection: PoolConnectionProxy,
@@ -568,14 +595,19 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
 
         # We want to make it easy to compare 2 outputs for the same input and different versions
         # So we want all outputs for a given input to be grouped together
-        query = f"""SELECT {", ".join(selects)}, COALESCE(ei.alias, ei.input_id) as input_id, COALESCE(ev.alias, ev.version_id) as version_id
+        query = f"""SELECT {", ".join(selects)},
+            ei.input_id as input_id, ei.position as input_position, ei.alias as input_alias,
+            ev.version_id as version_id, ev.position as version_position, ev.alias as version_alias
             FROM experiment_outputs
             LEFT JOIN experiment_inputs ei ON ei.uid = experiment_outputs.input_uid
             LEFT JOIN experiment_versions ev ON ev.uid = experiment_outputs.version_uid
             WHERE {" AND ".join(where)}
             ORDER BY ei.position ASC, ev.position ASC"""  # noqa: S608 # Ordering will be done in PSQL memory here which is not great
         rows = await connection.fetch(query, *args)
-        return safe_map(rows, lambda x: self._validate(_ExperimentOutputRow, x).to_domain(), log)
+        outputs = (self._validate(_ExperimentOutputRow, x) for x in rows)
+        if not input_ids and not version_ids:
+            return safe_map(outputs, lambda x: x.to_domain(), log)
+        return self._sort_experiment_outputs(outputs, version_ids, input_ids)
 
     @override
     async def list_experiment_completions(
@@ -731,8 +763,10 @@ class _ExperimentOutputRow(PsqlBaseRow):
     experiment_uid: int = 0
     version_uid: int = 0
     version_id: str | None = None  # from JOIN queries
+    version_alias: str | None = None  # from JOIN queries
     input_uid: int = 0
     input_id: str | None = None  # from JOIN queries
+    input_alias: str | None = None  # from JOIN queries
     completion_id: UUID | None = None
     started_at: datetime | None = None
     completed_at: datetime | None = None
@@ -741,6 +775,8 @@ class _ExperimentOutputRow(PsqlBaseRow):
     output_preview: str | None = None
     cost_usd: float | None = None
     duration_seconds: float | None = None
+    input_position: int | None = None
+    version_position: int | None = None
 
     @classmethod
     def from_domain(
@@ -760,8 +796,8 @@ class _ExperimentOutputRow(PsqlBaseRow):
     def to_domain(self) -> ExperimentOutput:
         return ExperimentOutput(
             completion_id=self.completion_id or uuid_zero(),
-            version_id=self.version_id or "",
-            input_id=self.input_id or "",
+            version_id=self.version_alias or self.version_id or "",
+            input_id=self.input_alias or self.input_id or "",
             created_at=self.created_at or datetime_zero(),
             started_at=self.started_at,
             completed_at=self.completed_at,
@@ -781,6 +817,10 @@ class _ExperimentOutputRow(PsqlBaseRow):
         base_fields = set(cls.model_fields.keys())
         base_fields.remove("input_id")
         base_fields.remove("version_id")
+        base_fields.remove("input_alias")
+        base_fields.remove("version_alias")
+        base_fields.remove("input_position")
+        base_fields.remove("version_position")
         if not include or "output" not in include:
             base_fields.remove("output_messages")
             base_fields.remove("output_error")
@@ -794,3 +834,20 @@ class _AliasAndID(Protocol):
 
     @property
     def id(self) -> str: ...
+
+
+def _sorter(value: Collection[str]):
+    by_pos = {v: i for i, v in enumerate(value)}
+
+    def _keymap(v: _AliasAndID) -> int:
+        if v.alias and v.alias in by_pos:
+            return by_pos[v.alias]
+        return by_pos.get(v.id, len(value))
+
+    return _keymap
+
+
+def _sort_by_id[T: _AliasAndID](it: Iterable[T], ids: Collection[str] | None) -> list[T]:
+    if ids is None:
+        return list(it)
+    return sorted(it, key=_sorter(ids))
