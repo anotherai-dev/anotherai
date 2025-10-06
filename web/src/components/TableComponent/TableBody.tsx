@@ -33,7 +33,7 @@ export function TableBody({ rowHeaders, data, headerRowWidth, columnWidth, colum
             return (
               <td
                 key={columnIndex}
-                className="px-4 py-4 text-sm border-r border-gray-200 last:border-r-0 align-top"
+                className="px-4 py-4 text-sm border-r border-gray-200 align-top"
                 style={{
                   width: `${width}px`,
                   minWidth: `${width}px`,

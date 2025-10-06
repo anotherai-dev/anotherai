@@ -46,7 +46,7 @@ export function TableHeader({
           return (
             <th
               key={index}
-              className="px-4 py-3 text-left text-xs font-medium text-gray-500 border-r border-gray-200 last:border-r-0 align-top"
+              className="px-4 py-3 text-left text-xs font-medium text-gray-500 border-r border-gray-200 align-top"
               style={{
                 width: `${width}px`,
                 minWidth: `${width}px`,

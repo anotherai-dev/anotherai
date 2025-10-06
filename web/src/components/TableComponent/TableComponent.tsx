@@ -88,8 +88,8 @@ export function TableComponent({
       return columnWidths.map((width) => Math.max(width, 200)); // Always 200px minimum for custom widths
     }
 
-    // Available width = container width - header row width - padding/margins
-    const availableWidth = containerWidth - headerRowWidthPx - 20; // 20px for padding/margins
+    // Available width = container width - header row width
+    const availableWidth = containerWidth - headerRowWidthPx;
 
     if (availableWidth <= 0) {
       return new Array(numColumns).fill(minColumnWidth);
@@ -117,7 +117,7 @@ export function TableComponent({
   return (
     <div
       ref={containerRef}
-      className={cx("bg-white border border-gray-200 rounded-lg overflow-hidden relative", className)}
+      className={cx("bg-gray-50 border border-gray-200 rounded-lg overflow-hidden relative", className)}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >

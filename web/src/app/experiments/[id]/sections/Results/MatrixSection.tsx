@@ -279,8 +279,8 @@ export function MatrixSection(props: Props) {
           hideScrollbar={false}
           stickyHeaderData={stickyHeaderData}
           columnWidths={
-            orderedVersions.length === 1 && !hasCustomWidths
-              ? undefined // Let TableComponent auto-size to full width
+            !hasCustomWidths
+              ? undefined // Let TableComponent auto-size using available space
               : widthsArray
           }
           firstColumnWidth={firstColumnWidth}
