@@ -25,9 +25,7 @@ class IDType(StrEnum):
 
 
 _EXPECTED_ID_REGEXPS = {
-    IDType.VERSION: HASH_REGEXP_32,
     IDType.COMPLETION: UUID7_REGEXP,
-    IDType.INPUT: HASH_REGEXP_32,
     IDType.OUTPUT: HASH_REGEXP_32,
 }
 
@@ -62,5 +60,6 @@ def sanitize_id(value: str, expected_type: IDType) -> str:
     return sanitized
 
 
-def sanitize_ids(ids: list[str], expected_type: IDType) -> set[str]:
-    return {sanitize_id(id, expected_type) for id in ids}
+def sanitize_ids(ids: list[str], expected_type: IDType):
+    for id in ids:
+        yield sanitize_id(id, expected_type)
