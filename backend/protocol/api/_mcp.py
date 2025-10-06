@@ -19,7 +19,7 @@ from protocol.api._api_models import (
     CreateViewResponse,
     Deployment,
     Experiment,
-    Input,
+    ExperimentInput,
     ModelField,
     Page,
     QueryCompletionResponse,
@@ -171,7 +171,7 @@ Returns the ids of the added inputs.""",
 async def add_inputs_to_experiment(
     experiment_id: _mcp_utils.ExperimentID,
     inputs: Annotated[
-        list[Input] | None,
+        list[ExperimentInput] | None,
         Field(
             description="""The inputs to use for the playground. A completion will be generated per input per version.
             An input can include a set of variables used in the templated prompt or a list of messages to be appended

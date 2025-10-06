@@ -171,7 +171,7 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
             where.append("version_id = ANY($2)")
             args.append(version_ids)
         rows = await connection.fetch(
-            f"SELECT {select} FROM experiment_versions WHERE {' AND '.join(where)}",  # noqa: S608
+            f"SELECT {select} FROM experiment_versions WHERE {' AND '.join(where)} ORDER BY position ASC",  # noqa: S608
             *args,
         )
         return [self._validate(_ExperimentVersionRow, row).to_domain() for row in rows]
@@ -190,7 +190,7 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
             where.append("input_id = ANY($2)")
             args.append(input_ids)
         rows = await connection.fetch(
-            f"SELECT {select} FROM experiment_inputs WHERE {' AND '.join(where)}",  # noqa: S608
+            f"SELECT {select} FROM experiment_inputs WHERE {' AND '.join(where)} ORDER BY position ASC",  # noqa: S608
             *args,
         )
         return [self._validate(_ExperimentInputRow, row).to_domain() for row in rows]
@@ -556,14 +556,15 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
             where.append(f"ei.input_id = ANY(${len(args) + 1})")
             args.append(input_ids)
 
-        rows = await connection.fetch(
-            f"""SELECT {", ".join(selects)}, ei.input_id as input_id, ev.version_id as version_id
+        # We want to make it easy to compare 2 outputs for the same input and different versions
+        # So we want all outputs for a given input to be grouped together
+        query = f"""SELECT {", ".join(selects)}, ei.input_id as input_id, ev.version_id as version_id
             FROM experiment_outputs
             LEFT JOIN experiment_inputs ei ON ei.uid = experiment_outputs.input_uid
             LEFT JOIN experiment_versions ev ON ev.uid = experiment_outputs.version_uid
-            WHERE {" AND ".join(where)}""",  # noqa: S608
-            *args,
-        )
+            WHERE {" AND ".join(where)}
+            ORDER BY ei.position ASC, ev.position ASC"""  # noqa: S608 # Ordering will be done in PSQL memory here which is not great
+        rows = await connection.fetch(query, *args)
         return safe_map(rows, lambda x: self._validate(_ExperimentOutputRow, x).to_domain(), log)
 
     @override

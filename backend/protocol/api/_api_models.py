@@ -143,6 +143,11 @@ class _BaseVersion(BaseModel):
 class VersionRequest(_BaseVersion):
     model_config = ConfigDict(revalidate_instances="always", extra="forbid")
 
+    alias: str | None = Field(
+        default=None,
+        description="An alias for the version. Allows to easily identify the version within an experiment.",
+    )
+
     # Here we are trying to be as flexible as possible
     # Models will likely send a response_format field
     output_json_schema: dict[str, Any] | None = Field(
@@ -224,6 +229,13 @@ class Input(BaseModel):
     variables: dict[str, Any] | None = Field(
         default=None,
         description="Optional, variables used to template the prompt when the prompt is a template",
+    )
+
+
+class ExperimentInput(Input):
+    alias: str | None = Field(
+        default=None,
+        description="An alias for the input. Allows to easily identify the input within an experiment.",
     )
 
 

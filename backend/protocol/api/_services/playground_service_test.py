@@ -9,7 +9,7 @@ import pytest
 from core.domain.agent_input import AgentInput
 from core.domain.exceptions import BadRequestError
 from core.storage.experiment_storage import CompletionIDTuple
-from protocol.api._api_models import Input, Message, VersionRequest
+from protocol.api._api_models import ExperimentInput, Message, VersionRequest
 from protocol.api._services.playground_service import (
     PlaygroundService,
     _validate_version,
@@ -167,7 +167,7 @@ class TestAddInputsToExperiment:
         mock_experiment_storage.get_experiment.return_value = fake_experiment()
 
         inputs = [
-            Input(
+            ExperimentInput(
                 variables={
                     # A very long transcript
                     "transcript": "Good morning everyone. I'm calling from our headquarters in London to discuss the quarterly results. We had excellent performance in our Tokyo office this quarter, with sales up 15%. Our team in Berlin also exceeded expectations. Next month, I'll be traveling to Sydney to meet with our Australian partners, and then heading to Toronto for the North American summit.",
@@ -200,7 +200,7 @@ class TestAddInputsToExperiment:
         )
         await playground_service.add_inputs_to_experiment(
             "test-experiment",
-            [Input(variables={"name": "John"})],
+            [ExperimentInput(variables={"name": "John"})],
             None,
         )
         assert patched_start_completions.call_count == 1
@@ -229,7 +229,7 @@ class TestAddInputsToExperiment:
         res = await playground_service.add_inputs_to_experiment(
             "test-experiment",
             # Second input ID is 43396217dcb18701763a4d45e4de11b2
-            [Input(variables={"name": "John"}), Input(variables={"name": "Jane"})],
+            [ExperimentInput(variables={"name": "John"}), ExperimentInput(variables={"name": "Jane"})],
             None,
         )
         assert patched_start_completions.call_count == 1
