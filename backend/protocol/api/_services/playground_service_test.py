@@ -15,7 +15,7 @@ from protocol.api._services.playground_service import (
     _validate_version,
     _version_request_with_override,
 )
-from tests.fake_models import fake_deployment, fake_experiment, fake_input, fake_version
+from tests.fake_models import fake_deployment, fake_experiment, fake_experiment_version, fake_input
 
 
 @pytest.fixture
@@ -104,7 +104,7 @@ class TestVersionById:
         d = fake_deployment()
         mock_deployment_storage.get_deployment.return_value = d
 
-        v = await playground_service._get_version_by_id("test-agent", "test-deployment")
+        v = await playground_service._get_version_by_id("test-agent", "anotherai/deployment/test-deployment")
 
         assert v.model == d.version.model
 
@@ -117,7 +117,7 @@ class TestVersionById:
         mock_completion_storage: Mock,
         mock_deployment_storage: Mock,
     ):
-        v = fake_version()
+        v = fake_experiment_version()
         mock_completion_storage.get_version_by_id.return_value = v, UUID(int=0)
         found = await playground_service._get_version_by_id("test-agent", v.id)
         assert found.model == v.model
@@ -194,7 +194,7 @@ class TestAddInputsToExperiment:
         mock_experiment_storage: Mock,
         patched_start_completions: Mock,
     ):
-        version = fake_version()
+        version = fake_experiment_version()
         mock_experiment_storage.get_experiment.return_value = fake_experiment(
             versions=[version],
         )
@@ -216,7 +216,7 @@ class TestAddInputsToExperiment:
         patched_start_completions: Mock,
     ):
         mock_experiment_storage.get_experiment.return_value = fake_experiment(
-            versions=[fake_version()],
+            versions=[fake_experiment_version()],
         )
         mock_experiment_storage.add_inputs.reset_mock()
 
@@ -250,7 +250,10 @@ class TestStartExperimentCompletion:
         mock_experiment_storage: Mock,
         mock_event_router: Mock,
     ):
-        versions = [fake_version(model="gpt-4o-mini-latest"), fake_version(model="gpt-4.1-mini-latest")]
+        versions = [
+            fake_experiment_version(model="gpt-4o-mini-latest"),
+            fake_experiment_version(model="gpt-4.1-mini-latest"),
+        ]
         inputs = [fake_input(variables={"name": "John"}), fake_input(variables={"name": "Jane"})]
 
         assert len({v.id for v in versions}) == 2, "sanity"
