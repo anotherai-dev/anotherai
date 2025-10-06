@@ -796,8 +796,10 @@ class _ExperimentOutputRow(PsqlBaseRow):
     def to_domain(self) -> ExperimentOutput:
         return ExperimentOutput(
             completion_id=self.completion_id or uuid_zero(),
-            version_id=self.version_alias or self.version_id or "",
-            input_id=self.input_alias or self.input_id or "",
+            version_id=self.version_id or "",
+            version_alias=self.version_alias,
+            input_id=self.input_id or "",
+            input_alias=self.input_alias,
             created_at=self.created_at or datetime_zero(),
             started_at=self.started_at,
             completed_at=self.completed_at,

@@ -15,7 +15,9 @@ from core.utils.fields import datetime_zero
 class ExperimentOutput(BaseModel):
     completion_id: UUID
     version_id: str
+    version_alias: str | None
     input_id: str
+    input_alias: str | None
     created_at: datetime = Field(default_factory=datetime_zero)
     started_at: datetime | None
     completed_at: datetime | None

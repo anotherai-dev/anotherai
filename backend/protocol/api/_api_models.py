@@ -44,8 +44,9 @@ class Agent(BaseModel):
     created_at: datetime
 
 
-class ModelWithID(BaseModel):
+class IDAndAlias(BaseModel):
     id: str
+    alias: str | None = None
 
 
 class Tool(BaseModel):
@@ -490,8 +491,8 @@ class Experiment(BaseModel):
     class Completion(BaseModel):
         id: UUID
         # Only IDs are provided here but they have the same format as in the full object (completion.input.id)
-        input: ModelWithID
-        version: ModelWithID
+        input: IDAndAlias
+        version: IDAndAlias
         output: Output
         cost_usd: float
         duration_seconds: float

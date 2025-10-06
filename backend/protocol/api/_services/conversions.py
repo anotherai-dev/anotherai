@@ -65,6 +65,7 @@ from protocol.api._api_models import (
     ExperimentInput,
     ExperimentVersion,
     Graph,
+    IDAndAlias,
     InferenceUsage,
     Input,
     Message,
@@ -74,7 +75,6 @@ from protocol.api._api_models import (
     ModelPricing,
     ModelReasoning,
     ModelSupports,
-    ModelWithID,
     Output,
     OutputSchema,
     SupportsModality,
@@ -428,8 +428,7 @@ def input_from_domain[T: Input](agent_input: DomainInput, t: type[T] = Input, **
 
 
 def experiment_input_from_domain(input: DomainExperimentInput) -> ExperimentInput:
-    test = input_from_domain(input, ExperimentInput, alias=input.alias)
-    return test
+    return input_from_domain(input, ExperimentInput, alias=input.alias)
 
 
 def input_to_domain(agent_input: Input) -> DomainInput:
@@ -915,8 +914,8 @@ def trace_to_domain(trace: Trace) -> DomainTrace:
 def experiment_completion_from_domain(completion: ExperimentOutput) -> Experiment.Completion:
     return Experiment.Completion(
         id=completion.completion_id,
-        version=ModelWithID(id=completion.version_id),
-        input=ModelWithID(id=completion.input_id),
+        version=IDAndAlias(id=completion.version_id, alias=completion.version_alias),
+        input=IDAndAlias(id=completion.input_id, alias=completion.input_alias),
         output=output_from_domain(completion.output) if completion.output else Output(),
         cost_usd=completion.cost_usd or 0.0,
         duration_seconds=completion.duration_seconds or 0.0,
