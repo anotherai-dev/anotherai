@@ -1,6 +1,7 @@
 import { enableMapSet, produce } from "immer";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { create } from "zustand";
+import { useAuth } from "@/auth/components";
 import { apiFetch } from "@/lib/apiFetch";
 import {
   CreateViewRequest,
@@ -423,6 +424,7 @@ export const useViews = create<ViewsState>((set, get) => ({
 
 // Hook for fetching individual views
 export const useOrFetchView = (viewId: string | undefined) => {
+  const { isLoaded, isSignedIn } = useAuth();
   const fetchView = useViews((state) => state.fetchView);
   const view = useViews((state) => (viewId ? state.viewsMap.get(viewId) : undefined));
 
@@ -440,10 +442,10 @@ export const useOrFetchView = (viewId: string | undefined) => {
   }, [fetchView, viewId]);
 
   useEffect(() => {
-    if (!viewRef.current && viewId) {
+    if (!viewRef.current && viewId && isLoaded && isSignedIn) {
       fetchView(viewId);
     }
-  }, [fetchView, viewId]);
+  }, [fetchView, viewId, isLoaded, isSignedIn]);
 
   return {
     view,
@@ -455,6 +457,7 @@ export const useOrFetchView = (viewId: string | undefined) => {
 
 // Hook for fetching all view folders
 export const useOrFetchViewFolders = () => {
+  const { isLoaded, isSignedIn } = useAuth();
   const fetchViewFolders = useViews((state) => state.fetchViewFolders);
   const viewFolders = useViews((state) => state.viewFolders);
   const isLoading = useViews((state) => state.isLoadingViewFolders);
@@ -474,10 +477,10 @@ export const useOrFetchViewFolders = () => {
   }, [fetchViewFolders]);
 
   useEffect(() => {
-    if (!hasLoaded) {
+    if (!hasLoaded && isLoaded && isSignedIn) {
       fetchViewFolders();
     }
-  }, [fetchViewFolders, hasLoaded]);
+  }, [fetchViewFolders, hasLoaded, isLoaded, isSignedIn]);
 
   return {
     viewFolders,
