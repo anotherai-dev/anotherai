@@ -52,6 +52,7 @@ class PostHogProcessor:
         user_id = event_dict.get("user_id") or event_dict.get("tenant") or "anonymous"
 
         ts = event_dict.get("timestamp")
+        # Posthog supposedly accepts strings but it creates an error if it's not a datetime
         if isinstance(ts, str):
             ts = datetime.fromisoformat(ts)
             ts.replace(tzinfo=UTC)
