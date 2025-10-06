@@ -27,7 +27,7 @@ from core.storage.agent_storage import AgentStorage
 from core.storage.completion_storage import CompletionStorage
 from core.storage.deployment_storage import DeploymentStorage
 from core.storage.experiment_storage import CompletionIDTuple, CompletionOutputTuple, ExperimentStorage
-from core.utils.hash import hash_model, is_hash_32
+from core.utils.hash import hash_model
 from core.utils.uuid import uuid7
 from protocol.api._api_models import ExperimentInput, VersionRequest
 from protocol.api._services.conversions import (
@@ -68,8 +68,8 @@ class PlaygroundService:
                 except ValidationError as e:
                     raise BadRequestError(f"Invalid version: {e}") from e
 
-            # Not sure what this is so we check if it's a hash
-            id_type = IDType.VERSION if is_hash_32(id) else IDType.DEPLOYMENT
+            # Not sure what this is so we assume it's a version
+            id_type = IDType.VERSION
 
         match id_type:
             case IDType.VERSION:

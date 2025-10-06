@@ -482,3 +482,84 @@ async def test_image_url_as_url_object(test_api_client: IntegrationTestClient):
         },
     )
     assert len(versions2["result"]) == 6
+
+
+async def test_playground_ordering(test_api_client: IntegrationTestClient):
+    test_api_client.mock_provider_call(
+        Provider.OPEN_AI,
+        Model.GPT_41_MINI_2025_04_14,
+        "openai/completion.json",
+        is_reusable=True,
+    )
+    # Create an experiment
+    res = await test_api_client.call_tool(
+        "create_experiment",
+        {
+            "id": "test-experiment",
+            "title": "Capital Extractor Test Experiment",
+            "description": "This is a test experiment",
+            "author_name": "user",
+            "agent_id": "test-agent",
+        },
+    )
+    # add 2 inputs
+    await test_api_client.call_tool(
+        "add_inputs_to_experiment",
+        {
+            "experiment_id": res["id"],
+            "inputs": [
+                {"alias": "input_1", "variables": {"name": "Toulouse"}},
+                {"alias": "input_2", "variables": {"name": "Pittsburgh"}},
+            ],
+        },
+    )
+    # add 2 versions
+    await test_api_client.call_tool(
+        "add_versions_to_experiment",
+        {
+            "experiment_id": res["id"],
+            "version": {
+                "alias": "version_1",
+                "model": "gpt-4.1-mini-latest",
+                "prompt": [
+                    {
+                        "role": "user",
+                        "content": "What is the capital of the country that has {{ name }}?",
+                    },
+                ],
+            },
+            "overrides": [
+                {"alias": "version_2", "model": "gpt-4.1-nano-latest"},
+            ],
+        },
+    )
+    await test_api_client.wait_for_background()
+    exp = await test_api_client.call_tool(
+        "get_experiment",
+        {
+            "id": res["id"],
+        },
+    )
+    assert "completions" in exp
+    assert [(c["version"]["id"], c["input"]["id"]) for c in exp["completions"]] == [
+        ("version_1", "input_1"),
+        ("version_2", "input_1"),
+        ("version_1", "input_2"),
+        ("version_2", "input_2"),
+    ]
+
+    # Now fetch by changing the order
+    exp = await test_api_client.call_tool(
+        "get_experiment",
+        {
+            "id": res["id"],
+            "version_ids": ["version_2", "version_1"],
+            "input_ids": ["input_2", "input_1"],
+        },
+    )
+    assert [(c["version"]["id"], c["input"]["id"]) for c in exp["completions"]] == [
+        ("version_2", "input_2"),
+        ("version_1", "input_2"),
+        ("version_2", "input_1"),
+        ("version_1", "input_1"),
+    ]

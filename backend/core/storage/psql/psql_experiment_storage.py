@@ -187,7 +187,7 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
         where: list[str] = ["experiment_uid = $1"]
         args: list[Any] = [experiment_uid]
         if input_ids:
-            where.append("input_id = ANY($2)")
+            where.append("(input_id = ANY($2) OR alias = ANY($2))")
             args.append(input_ids)
         rows = await connection.fetch(
             f"SELECT {select} FROM experiment_inputs WHERE {' AND '.join(where)} ORDER BY position ASC",  # noqa: S608
@@ -587,10 +587,10 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
         args: list[Any] = [experiment_uid]
         where: list[str] = ["experiment_outputs.experiment_uid = $1"]
         if version_ids:
-            where.append(f"ev.version_id = ANY(${len(args) + 1})")
+            where.append(f"(ev.version_id = ANY(${len(args) + 1}) OR ev.alias = ANY(${len(args) + 1}))")
             args.append(version_ids)
         if input_ids:
-            where.append(f"ei.input_id = ANY(${len(args) + 1})")
+            where.append(f"(ei.input_id = ANY(${len(args) + 1}) OR ei.alias = ANY(${len(args) + 1}))")
             args.append(input_ids)
 
         # We want to make it easy to compare 2 outputs for the same input and different versions
