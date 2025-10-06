@@ -39,6 +39,7 @@ class User(BaseModel):
 
 
 class TenantData(PublicOrganizationData):
+    created_at: datetime | None = None
     customer_id: str | None = None
     providers: list[ProviderSettings] = Field(default_factory=list, description="List of provider configurations")
 
