@@ -1,6 +1,7 @@
 # pyright: reportPrivateUsage=false
 import asyncio
 import uuid
+from collections.abc import Callable
 from datetime import UTC, datetime
 
 import asyncpg
@@ -12,12 +13,12 @@ from core.domain.agent_input import AgentInput
 from core.domain.agent_output import AgentOutput
 from core.domain.error import Error
 from core.domain.exceptions import DuplicateValueError, ObjectNotFoundError
-from core.domain.experiment import Experiment
+from core.domain.experiment import Experiment, ExperimentInput, ExperimentVersion
 from core.domain.message import Message
 from core.domain.version import Version
 from core.storage.experiment_storage import CompletionIDTuple, CompletionOutputTuple
 from core.storage.psql.psql_agent_storage import PsqlAgentsStorage
-from core.storage.psql.psql_experiment_storage import PsqlExperimentStorage
+from core.storage.psql.psql_experiment_storage import PsqlExperimentStorage, _ExperimentOutputRow
 from core.utils.uuid import uuid7
 from tests.fake_models import fake_experiment
 
@@ -124,16 +125,16 @@ class TestAddRunId:
     ):
         await experiment_storage.create(sample_experiment)
 
-        run_id = "run-123"
+        run_id = uuid.uuid4()
         await experiment_storage.add_run_id(sample_experiment.id, run_id)
 
         retrieved = await experiment_storage.get_experiment(sample_experiment.id)
-        assert retrieved.run_ids == [run_id]
+        assert retrieved.run_ids == [str(run_id)]
 
         # Add it again to make sure it's not added again
         await experiment_storage.add_run_id(sample_experiment.id, run_id)
         retrieved = await experiment_storage.get_experiment(sample_experiment.id)
-        assert retrieved.run_ids == [run_id]
+        assert retrieved.run_ids == [str(run_id)]
 
     async def test_add_multiple_run_ids(
         self,
@@ -142,20 +143,20 @@ class TestAddRunId:
     ):
         await experiment_storage.create(sample_experiment)
 
-        run_ids = ["run-1", "run-2", "run-3"]
+        run_ids = [uuid7(), uuid7(), uuid7()]
         for run_id in run_ids:
             await experiment_storage.add_run_id(sample_experiment.id, run_id)
 
         retrieved = await experiment_storage.get_experiment(sample_experiment.id)
         for run_id in run_ids:
-            assert run_id in retrieved.run_ids
+            assert str(run_id) in retrieved.run_ids
 
     async def test_add_run_id_nonexistent_experiment(
         self,
         experiment_storage: PsqlExperimentStorage,
     ):
         # This should not raise an error - it's a valid operation that just doesn't match any rows
-        await experiment_storage.add_run_id("nonexistent-experiment", "run-123")
+        await experiment_storage.add_run_id("nonexistent-experiment", uuid7())
 
 
 class TestDelete:
@@ -358,8 +359,8 @@ class TestGetExperiment:
         inserted_experiment: Experiment,
         experiment_storage: PsqlExperimentStorage,
     ):
-        v1 = Version(model="gpt-4o")
-        v2 = Version(model="gpt-4o-mini")
+        v1 = ExperimentVersion(model="gpt-4o")
+        v2 = ExperimentVersion(model="gpt-4o-mini")
         inserted = await experiment_storage.add_versions(inserted_experiment.id, [v1, v2])
         assert inserted == {v1.id, v2.id}
 
@@ -369,8 +370,8 @@ class TestGetExperiment:
             include={"versions.id"},
         )
         assert exp_ids_only.versions is not None
-        ids_only = sorted([v.id for v in exp_ids_only.versions])
-        assert ids_only == sorted([v1.id, v2.id])
+        ids_only = [v.id for v in exp_ids_only.versions]
+        assert ids_only == [v1.id, v2.id]
         # Minimal versions should still have id but no model
         assert all(v.id for v in exp_ids_only.versions)
         assert all(v.model is None for v in exp_ids_only.versions)
@@ -381,19 +382,29 @@ class TestGetExperiment:
             include={"versions"},
         )
         assert exp_full.versions is not None
-        full_ids = sorted([v.id for v in exp_full.versions])
-        assert full_ids == sorted([v1.id, v2.id])
+        full_ids = [v.id for v in exp_full.versions]
+        assert full_ids == [v1.id, v2.id]
         # Ensure model field is present
-        models = sorted([m for m in (v.model for v in exp_full.versions) if m is not None])
-        assert models == sorted(["gpt-4o", "gpt-4o-mini"])
+        models = [m for m in (v.model for v in exp_full.versions) if m is not None]
+        assert models == ["gpt-4o", "gpt-4o-mini"]
+
+        # Add another version
+        v3 = ExperimentVersion(model="gpt-4o-nano")
+        await experiment_storage.add_versions(inserted_experiment.id, [v3])
+        exp3 = await experiment_storage.get_experiment(
+            inserted_experiment.id,
+            include={"versions"},
+        )
+        assert exp3.versions is not None
+        assert [v.id for v in exp3.versions] == [v1.id, v2.id, v3.id]
 
     async def test_get_experiment_include_inputs(
         self,
         inserted_experiment: Experiment,
         experiment_storage: PsqlExperimentStorage,
     ):
-        i1 = AgentInput(messages=[Message.with_text("I1")], variables=None, preview="I1")
-        i2 = AgentInput(messages=None, variables={"x": 1}, preview="I2")
+        i1 = ExperimentInput(messages=[Message.with_text("I1")], variables=None, preview="I1")
+        i2 = ExperimentInput(messages=None, variables={"x": 1}, preview="I2")
         inserted = await experiment_storage.add_inputs(inserted_experiment.id, [i1, i2])
         assert inserted == {i1.id, i2.id}
 
@@ -403,7 +414,7 @@ class TestGetExperiment:
             include={"inputs.id"},
         )
         assert exp_ids_only.inputs is not None
-        ids_only = sorted([i.id for i in exp_ids_only.inputs])
+        ids_only = [i.id for i in exp_ids_only.inputs]
         assert ids_only == sorted([i1.id, i2.id])
         assert all(i.messages is None and i.variables is None for i in exp_ids_only.inputs)
 
@@ -413,9 +424,9 @@ class TestGetExperiment:
             include={"inputs"},
         )
         assert exp_full.inputs is not None
-        full_ids = sorted([i.id for i in exp_full.inputs])
+        full_ids = [i.id for i in exp_full.inputs]
         assert full_ids == sorted([i1.id, i2.id])
-        previews = sorted([i.preview for i in exp_full.inputs])
+        previews = [i.preview for i in exp_full.inputs]
         assert previews == ["I1", "I2"]
 
     async def test_get_experiment_include_outputs(
@@ -424,8 +435,8 @@ class TestGetExperiment:
         experiment_storage: PsqlExperimentStorage,
     ):
         # Prepare inputs, versions and one output
-        agent_input = AgentInput(messages=[Message.with_text("Question")], variables=None, preview="Q")
-        version = Version(model="gpt-4o")
+        agent_input = ExperimentInput(messages=[Message.with_text("Question")], variables=None, preview="Q")
+        version = ExperimentVersion(model="gpt-4o")
         await experiment_storage.add_inputs(inserted_experiment.id, [agent_input])
         await experiment_storage.add_versions(inserted_experiment.id, [version])
         completion_id = uuid7()
@@ -464,8 +475,8 @@ class TestListExperimentVersions:
         experiment_storage: PsqlExperimentStorage,
         purged_psql_tenant_conn: PoolConnectionProxy,
     ):
-        v1 = Version(model="gpt-4o")
-        v2 = Version(model="gpt-4o-mini")
+        v1 = ExperimentVersion(model="gpt-4o")
+        v2 = ExperimentVersion(model="gpt-4o-mini")
         inserted = await experiment_storage.add_versions(inserted_experiment.id, [v1, v2])
         assert inserted == {v1.id, v2.id}
 
@@ -481,7 +492,7 @@ class TestListExperimentVersions:
             experiment_uid,
             full=False,
         )
-        assert sorted([v.id for v in ids_only]) == sorted([v1.id, v2.id])
+        assert [v.id for v in ids_only] == [v1.id, v2.id]
         assert all(v.model is None for v in ids_only)
 
         # Full selection with filtering
@@ -503,8 +514,8 @@ class TestListExperimentInputs:
         experiment_storage: PsqlExperimentStorage,
         purged_psql_tenant_conn: PoolConnectionProxy,
     ):
-        i1 = AgentInput(messages=[Message.with_text("I1")], variables=None, preview="I1")
-        i2 = AgentInput(messages=None, variables={"x": 1}, preview="I2")
+        i1 = ExperimentInput(messages=[Message.with_text("I1")], variables=None, preview="I1")
+        i2 = ExperimentInput(messages=None, variables={"x": 1}, preview="I2")
         inserted = await experiment_storage.add_inputs(inserted_experiment.id, [i1, i2])
         assert inserted == {i1.id, i2.id}
 
@@ -542,7 +553,7 @@ class TestAddInputs:
         inserted_experiment: Experiment,
         experiment_storage: PsqlExperimentStorage,
     ):
-        input = AgentInput(messages=[Message.with_text("Hello")], variables={"a": "b"})
+        input = ExperimentInput(messages=[Message.with_text("Hello")], variables={"a": "b"})
         inserted = await experiment_storage.add_inputs(inserted_experiment.id, [input])
         assert inserted == {"96566260da4cac46ded8c8d969adaa74"}
 
@@ -555,8 +566,8 @@ class TestAddInputs:
         inserted_experiment: Experiment,
         experiment_storage: PsqlExperimentStorage,
     ):
-        input1 = AgentInput(messages=[Message.with_text("Hello")], variables={"a": "b"})
-        input2 = AgentInput(messages=[Message.with_text("World")], variables={"x": 1})
+        input1 = ExperimentInput(messages=[Message.with_text("Hello")], variables={"a": "b"})
+        input2 = ExperimentInput(messages=[Message.with_text("World")], variables={"x": 1})
 
         inserted = await experiment_storage.add_inputs(inserted_experiment.id, [input1, input2])
         assert inserted == {input1.id, input2.id}
@@ -569,9 +580,92 @@ class TestAddInputs:
         self,
         experiment_storage: PsqlExperimentStorage,
     ):
-        input = AgentInput(messages=[Message.with_text("Hello")], variables={"a": "b"})
+        input = ExperimentInput(messages=[Message.with_text("Hello")], variables={"a": "b"})
         with pytest.raises(ObjectNotFoundError):
             await experiment_storage.add_inputs("nonexistent-exp", [input])
+
+    async def test_add_inputs_updates_null_alias(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+        purged_psql_tenant_conn: PoolConnectionProxy,
+    ):
+        input1 = ExperimentInput(messages=[Message.with_text("Hello")], variables={"a": "b"})
+        # Add the input once with alias is None
+        inserted = await experiment_storage.add_inputs(inserted_experiment.id, [input1])
+        assert inserted == {input1.id}
+        # Add the input again with a different alias
+        input2 = ExperimentInput(messages=[Message.with_text("Hello")], variables={"a": "b"}, alias="new-alias")
+        assert input2.id == input1.id
+        inserted = await experiment_storage.add_inputs(inserted_experiment.id, [input2])
+        assert inserted == set()
+
+        row = await purged_psql_tenant_conn.fetchrow(
+            "SELECT alias FROM experiment_inputs WHERE input_id = $1",
+            input1.id,
+        )
+        assert row
+        assert row[0] == "new-alias"
+
+        # Trying to add again with a different alias should raise
+        input3 = ExperimentInput(messages=[Message.with_text("Hello")], variables={"a": "b"}, alias="new-alias-2")
+        assert input3.id == input1.id
+        with pytest.raises(DuplicateValueError):
+            await experiment_storage.add_inputs(inserted_experiment.id, [input3])
+
+        # But I can add it again with the same alias
+        inserted = await experiment_storage.add_inputs(inserted_experiment.id, [input2])
+        assert inserted == set()
+
+        # Check that the position is correct
+        position = await purged_psql_tenant_conn.fetchval(
+            "SELECT position FROM experiment_inputs WHERE input_id = $1",
+            input1.id,
+        )
+        assert position == 1
+
+    async def test_position_is_correct(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+        purged_psql_tenant_conn: PoolConnectionProxy,
+    ):
+        input1 = ExperimentInput(variables={"a": "b"})
+        input2 = ExperimentInput(variables={"a": "c"})
+        inserted = await experiment_storage.add_inputs(inserted_experiment.id, [input1, input2])
+        assert inserted == {input1.id, input2.id}
+
+        rows = await purged_psql_tenant_conn.fetch("SELECT input_id, position FROM experiment_inputs")
+        assert len(rows) == 2
+        assert {row[0]: row[1] for row in rows} == {input1.id: 1, input2.id: 2}
+
+        # Add another input
+        input3 = ExperimentInput(variables={"a": "d"})
+        inserted = await experiment_storage.add_inputs(inserted_experiment.id, [input3])
+        assert inserted == {input3.id}
+        rows = await purged_psql_tenant_conn.fetch("SELECT input_id, position FROM experiment_inputs")
+        assert len(rows) == 3
+        assert {row[0]: row[1] for row in rows} == {input1.id: 1, input2.id: 2, input3.id: 3}
+
+    async def test_concurrent_insert(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+        purged_psql_tenant_conn: PoolConnectionProxy,
+    ):
+        input1 = ExperimentInput(variables={"a": "b"})
+        input2 = ExperimentInput(variables={"a": "c"})
+        input3 = ExperimentInput(variables={"a": "d"})
+        input4 = ExperimentInput(variables={"a": "e"})
+        # Nothing should fail
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(experiment_storage.add_inputs(inserted_experiment.id, [input1, input2]))
+            tg.create_task(experiment_storage.add_inputs(inserted_experiment.id, [input3]))
+            tg.create_task(experiment_storage.add_inputs(inserted_experiment.id, [input4]))
+
+        rows = await purged_psql_tenant_conn.fetch("SELECT position FROM experiment_inputs")
+        assert len(rows) == 4
+        assert sorted([row[0] for row in rows]) == [1, 2, 3, 4]
 
 
 class TestAddVersions:
@@ -580,7 +674,7 @@ class TestAddVersions:
         inserted_experiment: Experiment,
         experiment_storage: PsqlExperimentStorage,
     ):
-        version = Version(model="gpt-4o")
+        version = ExperimentVersion(model="gpt-4o")
         inserted = await experiment_storage.add_versions(inserted_experiment.id, [version])
         assert inserted == {version.id}
 
@@ -596,12 +690,12 @@ class TestAddCompletions:
         experiment_storage: PsqlExperimentStorage,
     ):
         # Prepare prerequisites: one input and one version
-        agent_input = AgentInput(messages=[Message.with_text("Hello")], variables={"x": 1})
-        version = Version(model="gpt-4o")
+        agent_input = ExperimentInput(messages=[Message.with_text("Hello")], variables={"x": 1})
+        version = ExperimentVersion(model="gpt-4o")
         await experiment_storage.add_inputs(inserted_experiment.id, [agent_input])
         await experiment_storage.add_versions(inserted_experiment.id, [version])
 
-        completion_id = uuid.uuid4()
+        completion_id = uuid7()
         inserted = await experiment_storage.add_completions(
             inserted_experiment.id,
             [CompletionIDTuple(completion_id=completion_id, version_id=version.id, input_id=agent_input.id)],
@@ -634,6 +728,69 @@ class TestAddCompletions:
                 ],
             )
 
+    async def test_add_completion_with_aliases(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+    ):
+        # Create input and version with aliases
+        agent_input = ExperimentInput(
+            messages=[Message.with_text("Test message")],
+            variables=None,
+            alias="test-input-alias",
+        )
+        version = ExperimentVersion(
+            model="gpt-4o",
+            alias="test-version-alias",
+        )
+
+        # Add them to the experiment
+        await experiment_storage.add_inputs(inserted_experiment.id, [agent_input])
+        await experiment_storage.add_versions(inserted_experiment.id, [version])
+
+        # Add completion using aliases instead of IDs
+        completion_id = uuid7()
+        inserted = await experiment_storage.add_completions(
+            inserted_experiment.id,
+            [
+                CompletionIDTuple(
+                    completion_id=completion_id,
+                    version_id="test-version-alias",  # Using alias instead of version.id
+                    input_id="test-input-alias",  # Using alias instead of agent_input.id
+                ),
+            ],
+        )
+        assert inserted == {completion_id}
+
+        # Verify the completion was added correctly by listing completions
+        completions = await experiment_storage.list_experiment_completions(
+            inserted_experiment.id,
+            include={"output"},
+        )
+        assert len(completions) == 1
+        assert completions[0].completion_id == completion_id
+        assert completions[0].version_id == "test-version-alias"
+        assert completions[0].input_id == "test-input-alias"
+
+    async def test_add_completion_with_nonexistent_aliases(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+    ):
+        # Try to add completion with non-existent aliases
+        completion_id = uuid7()
+        with pytest.raises(ObjectNotFoundError):
+            await experiment_storage.add_completions(
+                inserted_experiment.id,
+                [
+                    CompletionIDTuple(
+                        completion_id=completion_id,
+                        version_id="nonexistent-version-alias",
+                        input_id="nonexistent-input-alias",
+                    ),
+                ],
+            )
+
 
 class TestStartCompletion:
     async def test_start_then_double_start_raises(
@@ -642,12 +799,12 @@ class TestStartCompletion:
         experiment_storage: PsqlExperimentStorage,
     ):
         # Prepare input, version, and completion
-        agent_input = AgentInput(messages=[Message.with_text("Hi")], variables=None)
-        version = Version(model="gpt-4o")
+        agent_input = ExperimentInput(messages=[Message.with_text("Hi")], variables=None)
+        version = ExperimentVersion(model="gpt-4o")
         await experiment_storage.add_inputs(inserted_experiment.id, [agent_input])
         await experiment_storage.add_versions(inserted_experiment.id, [version])
 
-        completion_id = uuid.uuid4()
+        completion_id = uuid7()
         await experiment_storage.add_completions(
             inserted_experiment.id,
             [CompletionIDTuple(completion_id=completion_id, version_id=version.id, input_id=agent_input.id)],
@@ -676,8 +833,8 @@ class TestFailCompletion:
         experiment_storage: PsqlExperimentStorage,
     ):
         # Prepare input, version, and completion
-        agent_input = AgentInput(messages=[Message.with_text("Hi")], variables=None)
-        version = Version(model="gpt-4o")
+        agent_input = ExperimentInput(messages=[Message.with_text("Hi")], variables=None)
+        version = ExperimentVersion(model="gpt-4o")
         await experiment_storage.add_inputs(inserted_experiment.id, [agent_input])
         await experiment_storage.add_versions(inserted_experiment.id, [version])
 
@@ -707,14 +864,14 @@ class TestFailCompletion:
 
 @pytest.fixture
 async def inserted_input(inserted_experiment: Experiment, experiment_storage: PsqlExperimentStorage):
-    agent_input = AgentInput(messages=[Message.with_text("Hi")], variables={"x": 1})
+    agent_input = ExperimentInput(messages=[Message.with_text("Hi")], variables={"x": 1})
     await experiment_storage.add_inputs(inserted_experiment.id, [agent_input])
     return agent_input
 
 
 @pytest.fixture
 async def inserted_version(inserted_experiment: Experiment, experiment_storage: PsqlExperimentStorage):
-    version = Version(model="gpt-4o")
+    version = ExperimentVersion(model="gpt-4o")
     await experiment_storage.add_versions(inserted_experiment.id, [version])
     return version
 
@@ -780,14 +937,80 @@ class TestListExperimentCompletions:
         assert len(completions) == 1
         assert completions[0].completion_id == inserted_completion
 
+    async def test_list_experiment_completions_returns_aliases_when_available(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+    ):
+        # Create input and version with aliases
+        input_with_alias = ExperimentInput(
+            messages=[Message.with_text("Hello")],
+            variables={"test": "value"},
+            alias="test-input-alias",
+        )
+        version_with_alias = ExperimentVersion(model="gpt-4o", alias="test-version-alias")
+
+        await experiment_storage.add_inputs(inserted_experiment.id, [input_with_alias])
+        await experiment_storage.add_versions(inserted_experiment.id, [version_with_alias])
+
+        # Create completion
+        completion_id = uuid7()
+        await experiment_storage.add_completions(
+            inserted_experiment.id,
+            [
+                CompletionIDTuple(
+                    completion_id=completion_id,
+                    version_id=version_with_alias.id,
+                    input_id=input_with_alias.id,
+                ),
+            ],
+        )
+
+        # List completions and verify aliases are returned
+        completions = await experiment_storage.list_experiment_completions(inserted_experiment.id)
+        assert len(completions) == 1
+        assert completions[0].input_id == "test-input-alias"
+        assert completions[0].version_id == "test-version-alias"
+
+    async def test_list_experiment_completions_falls_back_to_ids_when_no_aliases(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+    ):
+        # Create input and version without aliases
+        input_without_alias = ExperimentInput(messages=[Message.with_text("Hello")], variables={"test": "value"})
+        version_without_alias = ExperimentVersion(model="gpt-4o")
+
+        await experiment_storage.add_inputs(inserted_experiment.id, [input_without_alias])
+        await experiment_storage.add_versions(inserted_experiment.id, [version_without_alias])
+
+        # Create completion
+        completion_id = uuid7()
+        await experiment_storage.add_completions(
+            inserted_experiment.id,
+            [
+                CompletionIDTuple(
+                    completion_id=completion_id,
+                    version_id=version_without_alias.id,
+                    input_id=input_without_alias.id,
+                ),
+            ],
+        )
+
+        # List completions and verify IDs are returned when no aliases
+        completions = await experiment_storage.list_experiment_completions(inserted_experiment.id)
+        assert len(completions) == 1
+        assert completions[0].input_id == input_without_alias.id
+        assert completions[0].version_id == version_without_alias.id
+
     async def test_list_experiment_completions_include(
         self,
         inserted_experiment: Experiment,
         experiment_storage: PsqlExperimentStorage,
     ):
         # Create an input and a version, then a completion with an output
-        agent_input = AgentInput(messages=[Message.with_text("Hi")], variables=None)
-        version = Version(model="gpt-4o")
+        agent_input = ExperimentInput(messages=[Message.with_text("Hi")], variables=None)
+        version = ExperimentVersion(model="gpt-4o")
         await experiment_storage.add_inputs(inserted_experiment.id, [agent_input])
         await experiment_storage.add_versions(inserted_experiment.id, [version])
 
@@ -837,22 +1060,24 @@ class TestListExperimentCompletions:
 
 async def test_output_flow(inserted_experiment: Experiment, experiment_storage: PsqlExperimentStorage):
     # First add 2 inputs
-    input1 = AgentInput(messages=[Message.with_text("I1")], variables=None, preview="I1")
-    input2 = AgentInput(messages=None, variables={"x": 1}, preview="I2")
+    input1 = ExperimentInput(messages=[Message.with_text("I1")], variables=None, preview="I1")
+    input2 = ExperimentInput(messages=None, variables={"x": 1}, preview="I2")
     inserted_inputs = await experiment_storage.add_inputs(inserted_experiment.id, [input1, input2])
     assert inserted_inputs == {input1.id, input2.id}
     # Then add 2 versions
-    version1 = Version(model="gpt-4o")
-    version2 = Version(model="gpt-4o-mini")
+    version1 = ExperimentVersion(model="gpt-4o")
+    version2 = ExperimentVersion(model="gpt-4o-mini")
     inserted_versions = await experiment_storage.add_versions(inserted_experiment.id, [version1, version2])
     assert inserted_versions == {version1.id, version2.id}
 
     # Then add 4 completions
     completions = [
         CompletionIDTuple(completion_id=uuid7(), version_id=vid, input_id=iid)
-        for vid in [version1.id, version2.id]
         for iid in [input1.id, input2.id]
+        for vid in [version1.id, version2.id]
     ]
+    assert completions[0].input_id == completions[1].input_id == input1.id, "sanity"
+
     inserted_completions = await experiment_storage.add_completions(inserted_experiment.id, completions)
     assert inserted_completions == {cid.completion_id for cid in completions}
     completion_id_list = [cid.completion_id for cid in completions]
@@ -894,4 +1119,177 @@ async def test_output_flow(inserted_experiment: Experiment, experiment_storage: 
 
     outputs = await experiment_storage.list_experiment_completions(inserted_experiment.id)
     assert len(outputs) == 4
-    assert {o.completion_id for o in outputs} == inserted_completions
+    assert [o.completion_id for o in outputs] == completion_id_list
+
+
+class TestInputUids:
+    async def test_input_uids_success_with_aliases(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+        purged_psql_tenant_conn: PoolConnectionProxy,
+    ):
+        # Insert inputs directly into database with aliases
+        input1 = ExperimentInput(
+            messages=[Message.with_text("I1")],
+            variables=None,
+            preview="I1",
+            alias="input_alias_1",
+        )
+        input2 = ExperimentInput(messages=None, variables={"x": 1}, preview="I2", alias="input_alias_2")
+        await experiment_storage.add_inputs(inserted_experiment.id, [input1, input2])
+
+        # Get experiment_uid
+        experiment_uid = await purged_psql_tenant_conn.fetchval(
+            "SELECT uid FROM experiments WHERE slug = $1",
+            inserted_experiment.id,
+        )
+
+        # Get the actual UIDs from the database
+        input1_uid = await purged_psql_tenant_conn.fetchval(
+            "SELECT uid FROM experiment_inputs WHERE input_id = $1",
+            input1.id,
+        )
+        input2_uid = await purged_psql_tenant_conn.fetchval(
+            "SELECT uid FROM experiment_inputs WHERE input_id = $1",
+            input2.id,
+        )
+
+        # Test success case with just the IDs (aliases should be included in the result)
+        input_uids = await experiment_storage._input_uids(
+            purged_psql_tenant_conn,
+            experiment_uid,
+            {input1.id, input2.id},
+        )
+
+        # Should return mapping for both IDs and aliases
+        expected = {
+            input1.id: input1_uid,
+            input2.id: input2_uid,
+            "input_alias_1": input1_uid,
+            "input_alias_2": input2_uid,
+        }
+        assert input_uids == expected
+
+    async def test_input_uids_failure_not_found(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+        purged_psql_tenant_conn: PoolConnectionProxy,
+    ):
+        # Insert one input
+        input1 = ExperimentInput(messages=[Message.with_text("I1")], variables=None, preview="I1")
+        await experiment_storage.add_inputs(inserted_experiment.id, [input1])
+
+        # Get experiment_uid
+        experiment_uid = await purged_psql_tenant_conn.fetchval(
+            "SELECT uid FROM experiments WHERE slug = $1",
+            inserted_experiment.id,
+        )
+
+        # Test failure case with non-existent input IDs
+        with pytest.raises(ObjectNotFoundError, match="experiment_inputs not found"):
+            await experiment_storage._input_uids(
+                purged_psql_tenant_conn,
+                experiment_uid,
+                {input1.id, "non_existent_input_id"},
+            )
+
+
+class TestSortExperimentOutputs:
+    @pytest.fixture
+    def rows(self):
+        return [
+            _ExperimentOutputRow(
+                version_id="version_2",
+                input_id="input_1",
+                version_position=2,
+                input_position=1,
+                completion_id=uuid7(),
+            ),
+            _ExperimentOutputRow(
+                version_id="version_1",
+                input_id="input_2",
+                version_position=1,
+                input_position=2,
+                completion_id=uuid7(),
+            ),
+            _ExperimentOutputRow(
+                version_id="version_1",
+                input_id="input_1",
+                version_position=1,
+                input_position=1,
+                completion_id=uuid7(),
+            ),
+            _ExperimentOutputRow(
+                version_id="version_2",
+                input_id="input_2",
+                version_position=2,
+                input_position=2,
+                completion_id=uuid7(),
+            ),
+        ]
+
+    @pytest.fixture
+    def sort(self, experiment_storage: PsqlExperimentStorage):
+        def _sort(
+            rows: list[_ExperimentOutputRow],
+            version_ids: list[str] | None = None,
+            input_ids: list[str] | None = None,
+        ):
+            sorted_outputs = experiment_storage._sort_experiment_outputs(rows, version_ids, input_ids)
+            return [(s.version_id, s.input_id) for s in sorted_outputs]
+
+        return _sort
+
+    def test_sort_experiment_outputs_basic_ordering(
+        self,
+        sort: Callable[[list[_ExperimentOutputRow], list[str] | None, list[str] | None], list[tuple[str, str]]],
+        rows: list[_ExperimentOutputRow],
+    ):
+        sorted_outputs = sort(rows, None, None)
+        assert sorted_outputs == [
+            ("version_1", "input_1"),
+            ("version_2", "input_1"),
+            ("version_1", "input_2"),
+            ("version_2", "input_2"),
+        ]
+
+    def test_sort_experiment_outputs_with_version_ids(
+        self,
+        sort: Callable[[list[_ExperimentOutputRow], list[str] | None, list[str] | None], list[tuple[str, str]]],
+        rows: list[_ExperimentOutputRow],
+    ):
+        sorted_outputs = sort(rows, ["version_2", "version_1"], None)
+        assert sorted_outputs == [
+            ("version_2", "input_1"),
+            ("version_1", "input_1"),
+            ("version_2", "input_2"),
+            ("version_1", "input_2"),
+        ]
+
+    def test_sort_experiment_outputs_with_input_ids(
+        self,
+        sort: Callable[[list[_ExperimentOutputRow], list[str] | None, list[str] | None], list[tuple[str, str]]],
+        rows: list[_ExperimentOutputRow],
+    ):
+        sorted_outputs = sort(rows, None, ["input_2", "input_1"])
+        assert sorted_outputs == [
+            ("version_1", "input_2"),
+            ("version_2", "input_2"),
+            ("version_1", "input_1"),
+            ("version_2", "input_1"),
+        ]
+
+    def test_sort_experiment_outputs_with_version_ids_and_input_ids(
+        self,
+        sort: Callable[[list[_ExperimentOutputRow], list[str] | None, list[str] | None], list[tuple[str, str]]],
+        rows: list[_ExperimentOutputRow],
+    ):
+        sorted_outputs = sort(rows, ["version_2", "version_1"], ["input_2", "input_1"])
+        assert sorted_outputs == [
+            ("version_2", "input_2"),
+            ("version_1", "input_2"),
+            ("version_2", "input_1"),
+            ("version_1", "input_1"),
+        ]

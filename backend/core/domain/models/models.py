@@ -78,6 +78,8 @@ class Model(StrEnum):
     GEMINI_2_5_PRO = "gemini-2.5-pro"
     # GEMINI_2_5_FLASH = "gemini-2.5-flash"
     GEMINI_2_5_FLASH_LITE = "gemini-2.5-flash-lite"
+    GEMINI_2_5_FLASH_LITE_PREVIEW_0925 = "gemini-2.5-flash-lite-preview-09-2025"
+    GEMINI_2_5_FLASH_PREVIEW_0925 = "gemini-2.5-flash-preview-09-2025"
 
     GEMINI_2_5_PRO_PREVIEW_0605 = "gemini-2.5-pro-preview-06-05"
     GEMINI_2_5_FLASH_PREVIEW_0520 = "gemini-2.5-flash-preview-05-20"
@@ -115,6 +117,7 @@ class Model(StrEnum):
     # --------------------------------------------------------------------------
     # Claude Models
     # --------------------------------------------------------------------------
+    CLAUDE_4_5_SONNET_20250929 = "claude-sonnet-4-5-20250929"
     CLAUDE_4_1_OPUS_20250805 = "claude-opus-4-1-20250805"
     # CLAUDE_4_SONNET_LATEST = "claude-sonnet-4-latest"
     CLAUDE_4_SONNET_20250514 = "claude-sonnet-4-20250514"
@@ -164,19 +167,26 @@ class Model(StrEnum):
     MISTRAL_LARGE_LATEST = "mistral-large-latest"
     MISTRAL_LARGE_2411 = "mistral-large-2411"
     MISTRAL_MEDIUM_2505 = "mistral-medium-2505"
+    MISTRAL_MEDIUM_2508 = "mistral-medium-2508"
     PIXTRAL_LARGE_LATEST = "pixtral-large-latest"
     PIXTRAL_LARGE_2411 = "pixtral-large-2411"
     PIXTRAL_12B_2409 = "pixtral-12b-2409"
     MINISTRAL_3B_2410 = "ministral-3b-2410"
     MINISTRAL_8B_2410 = "ministral-8b-2410"
     MISTRAL_SMALL_LATEST = "mistral-small-latest"
+    MISTRAL_SMALL_2506 = "mistral-small-2506"
     MISTRAL_SMALL_2503 = "mistral-small-2503"
     MISTRAL_SMALL_2501 = "mistral-small-2501"
     MISTRAL_SMALL_2409 = "mistral-small-2409"
     MISTRAL_SABA_2502 = "mistral-saba-2502"
     MAGISTRAL_SMALL_2506 = "magistral-small-2506"
+    MAGISTRAL_SMALL_2507 = "magistral-small-2507"
+    MAGISTRAL_SMALL_2509 = "magistral-small-2509"
     MAGISTRAL_MEDIUM_2506 = "magistral-medium-2506"
+    MAGISTRAL_MEDIUM_2507 = "magistral-medium-2507"
+    MAGISTRAL_MEDIUM_2509 = "magistral-medium-2509"
     CODESTRAL_2501 = "codestral-2501"
+    CODESTRAL_2508 = "codestral-2508"
     CODESTRAL_MAMBA_2407 = "codestral-mamba-2407"
 
     # --------------------------------------------------------------------------

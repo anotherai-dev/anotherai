@@ -1,6 +1,6 @@
 import contextlib
 import json
-from typing import Any, override
+from typing import Annotated, Any, override
 
 import pydantic_core
 from fastmcp.exceptions import ToolError
@@ -10,7 +10,7 @@ from fastmcp.server.dependencies import get_access_token
 from fastmcp.server.middleware import CallNext, Middleware, MiddlewareContext
 from fastmcp.tools.tool import Tool, ToolResult
 from mcp.types import CallToolRequestParams, ListToolsRequest
-from pydantic import ValidationError
+from pydantic import BeforeValidator, Field, ValidationError
 from structlog import get_logger
 from structlog.contextvars import bind_contextvars
 
@@ -27,6 +27,7 @@ from protocol.api._services.completion_service import CompletionService
 from protocol.api._services.deployment_service import DeploymentService
 from protocol.api._services.documentation_service import DocumentationService
 from protocol.api._services.experiment_service import ExperimentService
+from protocol.api._services.ids_service import IDType, sanitize_id
 from protocol.api._services.organization_service import OrganizationService
 from protocol.api._services.playground_service import PlaygroundService
 from protocol.api._services.view_service import ViewService
@@ -41,7 +42,7 @@ class BaseMiddleware(Middleware):
         context: MiddlewareContext[CallToolRequestParams],
         call_next: CallNext[CallToolRequestParams, ToolResult],
     ) -> ToolResult:
-        _log.info("on_call_tool", method=context.method)
+        _log.info("Tool call", method=context.method, analytics="tool_call")
         # Trying to deserialize JSON sent as a string
         # See https://github.com/jlowin/fastmcp/issues/932
         if context.message.arguments:
@@ -78,7 +79,7 @@ class BaseMiddleware(Middleware):
     async def on_message(self, context: MiddlewareContext[Any], call_next: CallNext[Any, Any]) -> Any:
         tool_name = getattr(context.message, "name", None)
         bind_contextvars(tool_name=tool_name)
-        _log.debug("on_message", method=context.method)
+        _log.debug("on_message", _method=context.method)
         try:
             return await call_next(context)
         except ToolError as e:
@@ -105,9 +106,12 @@ class BaseMiddleware(Middleware):
 def _add_string_to_property_type(property: dict[str, Any]) -> dict[str, Any]:
     if (t := property.get("type")) and isinstance(t, str) and t in {"array", "object"}:
         return {
-            **property,
-            "type": [t, "string"],
+            "anyOf": [
+                property,
+                {"type": "string"},
+            ],
         }
+
     if (
         (any_of := property.get("anyOf"))
         and isinstance(any_of, list)
@@ -171,6 +175,8 @@ async def _authenticated_tenant() -> TenantData:
 async def playground_service() -> PlaygroundService:
     deps = lifecycle_dependencies()
     tenant = await _authenticated_tenant()
+    # Raise for negative credits if payment is enabled
+    deps.check_credits(tenant)
     return PlaygroundService(
         completion_runner(tenant, deps),
         deps.storage_builder.agents(tenant.uid),
@@ -233,18 +239,17 @@ async def organization_service() -> OrganizationService:
 async def deployment_service() -> DeploymentService:
     deps = lifecycle_dependencies()
     tenant = await _authenticated_tenant()
-    return DeploymentService(deps.storage_builder.deployments(tenant.uid), deps.storage_builder.completions(tenant.uid))
+    return DeploymentService(
+        deps.storage_builder.deployments(tenant.uid),
+        deps.storage_builder.completions(tenant.uid),
+        deps.storage_builder.agents(tenant.uid),
+    )
 
 
 class CustomTokenVerifier(TokenVerifier):
     async def verify_token(self, token: str) -> AccessToken | None:
         deps = lifecycle_dependencies()
         tenant = await deps.security_service.find_tenant(token)
-        bind_contextvars(
-            tenant_org_id=tenant.org_id,
-            tenant_owner_id=tenant.owner_id,
-            tenant_slug=tenant.slug,
-        )
         return AccessToken(
             token=token,
             client_id="",
@@ -257,3 +262,21 @@ class CustomTokenVerifier(TokenVerifier):
 
 def build_auth_provider() -> AuthProvider:
     return CustomTokenVerifier()
+
+
+def IdValidator(id_type: IDType):  # noqa: N802
+    def _validate(id: str) -> str:
+        return sanitize_id(id, id_type)
+
+    return BeforeValidator(_validate)
+
+
+type ExperimentID = Annotated[str, IdValidator(IDType.EXPERIMENT), Field(description="The id of the experiment")]
+type CompletionID = Annotated[str, IdValidator(IDType.COMPLETION), Field(description="The id of the completion")]
+type AgentID = Annotated[str, IdValidator(IDType.AGENT), Field(description="The id of the agent")]
+type VersionID = Annotated[str, IdValidator(IDType.VERSION), Field(description="The id of the version")]
+type DeploymentID = Annotated[
+    str,
+    IdValidator(IDType.DEPLOYMENT),
+    Field(description="The id of the deployment", examples=["my-agent-id:production#1"]),
+]

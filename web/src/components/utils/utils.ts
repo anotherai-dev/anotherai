@@ -70,7 +70,7 @@ export function getMetricBadgeWithRelative(
     if (metricType === "duration") {
       return isBetterValue ? "faster" : "slower";
     }
-    return "better";
+    return ""; // Don't show any descriptor for unknown metric types
   };
 
   if (isHigherBetter) {
@@ -78,18 +78,26 @@ export function getMetricBadgeWithRelative(
     isWorst = value === min;
 
     if (isBest) {
-      color = "bg-green-200 border border-green-400 text-green-900";
-      relativeText = `${(max / min).toFixed(1)}x ${getComparisonText(true)}`;
+      color =
+        metricType === "cost" || metricType === "duration"
+          ? "bg-green-200 border border-green-400 text-green-900"
+          : "bg-transparent border border-gray-200 text-gray-700";
+      const comparisonText = getComparisonText(true);
+      relativeText = comparisonText ? `${(max / min).toFixed(1)}x ${comparisonText}` : `${(max / min).toFixed(1)}x`;
     } else if (isWorst) {
-      color = "bg-red-200 border border-red-300 text-red-900";
-      relativeText = `${(value / min).toFixed(1)}x ${getComparisonText(false)}`;
+      color =
+        metricType === "cost" || metricType === "duration"
+          ? "bg-red-200 border border-red-300 text-red-900"
+          : "bg-transparent border border-gray-200 text-gray-700";
+      const comparisonText = getComparisonText(false);
+      relativeText = comparisonText ? `${(value / min).toFixed(1)}x ${comparisonText}` : `${(value / min).toFixed(1)}x`;
     } else {
       color = "bg-transparent border border-gray-200 text-gray-700";
     }
 
     // For non-best values, show how much worse they are
     if (!isBest && max > 0) {
-      if (metricType) {
+      if (metricType === "cost" || metricType === "duration") {
         relativeText = `${(max / value).toFixed(1)}x ${getComparisonText(false)}`;
       } else {
         relativeText = `${(max / value).toFixed(1)}x`;
@@ -100,18 +108,26 @@ export function getMetricBadgeWithRelative(
     isWorst = value === max;
 
     if (isBest) {
-      color = "bg-green-200 border border-green-400 text-green-900";
-      relativeText = `${(max / min).toFixed(1)}x ${getComparisonText(true)}`;
+      color =
+        metricType === "cost" || metricType === "duration"
+          ? "bg-green-200 border border-green-400 text-green-900"
+          : "bg-transparent border border-gray-200 text-gray-700";
+      const comparisonText = getComparisonText(true);
+      relativeText = comparisonText ? `${(max / min).toFixed(1)}x ${comparisonText}` : `${(max / min).toFixed(1)}x`;
     } else if (isWorst) {
-      color = "bg-red-200 border border-red-300 text-red-900";
-      relativeText = `${(value / min).toFixed(1)}x ${getComparisonText(false)}`;
+      color =
+        metricType === "cost" || metricType === "duration"
+          ? "bg-red-200 border border-red-300 text-red-900"
+          : "bg-transparent border border-gray-200 text-gray-700";
+      const comparisonText = getComparisonText(false);
+      relativeText = comparisonText ? `${(value / min).toFixed(1)}x ${comparisonText}` : `${(value / min).toFixed(1)}x`;
     } else {
       color = "bg-transparent border border-gray-200 text-gray-700";
     }
 
     // For non-best values, show how much worse they are
     if (!isBest && min > 0) {
-      if (metricType) {
+      if (metricType === "cost" || metricType === "duration") {
         relativeText = `${(value / min).toFixed(1)}x ${getComparisonText(false)}`;
       } else {
         relativeText = `${(value / min).toFixed(1)}x`;
@@ -128,7 +144,7 @@ export function getMetricBadgeWithRelative(
   };
 }
 
-export function formatCurrency(value: number, multiplier: number = 1000): string {
+export function formatCurrency(value: number, multiplier: number): string {
   // Convert using multiplier for better readability
   const adjustedValue = value * multiplier;
   return `$${adjustedValue.toFixed(2)}`;
@@ -223,23 +239,53 @@ export function formatDate(
   }
 }
 
+// Utility functions for error-based filtering
+export function shouldIncludeCostMetric(
+  completion: ExperimentCompletion | undefined
+): completion is ExperimentCompletion {
+  return completion != null && completion.cost_usd != null && !(completion.cost_usd === 0 && completion.output?.error);
+}
+
+export function shouldIncludeDurationMetric(
+  completion: ExperimentCompletion | undefined
+): completion is ExperimentCompletion {
+  return (
+    completion != null &&
+    completion.duration_seconds != null &&
+    !(completion.duration_seconds === 0 && completion.output?.error)
+  );
+}
+
+export function getValidCosts(completions: (ExperimentCompletion | undefined)[]): number[] {
+  return completions
+    .filter((completion): completion is ExperimentCompletion => shouldIncludeCostMetric(completion))
+    .map((completion) => completion.cost_usd);
+}
+
+export function getValidDurations(completions: (ExperimentCompletion | undefined)[]): number[] {
+  return completions
+    .filter((completion): completion is ExperimentCompletion => shouldIncludeDurationMetric(completion))
+    .map((completion) => completion.duration_seconds);
+}
+
 export function calculateAverageMetrics(completions: ExperimentCompletion[]): {
-  avgCost: number;
-  avgDuration: number;
+  avgCost: number | undefined;
+  avgDuration: number | undefined;
   costs: number[];
   durations: number[];
 } {
-  if (completions.length === 0) return { avgCost: 0, avgDuration: 0, costs: [], durations: [] };
+  if (completions.length === 0) return { avgCost: undefined, avgDuration: undefined, costs: [], durations: [] };
 
-  const costs = completions.map((completion) => completion.cost_usd || 0);
-  const durations = completions.map((completion) => completion.duration_seconds || 0);
+  // Use centralized filtering logic
+  const costs = getValidCosts(completions);
+  const durations = getValidDurations(completions);
 
   const totalCost = costs.reduce((sum, cost) => sum + cost, 0);
   const totalDuration = durations.reduce((sum, duration) => sum + duration, 0);
 
   return {
-    avgCost: totalCost / completions.length,
-    avgDuration: totalDuration / completions.length,
+    avgCost: costs.length > 0 ? totalCost / costs.length : undefined,
+    avgDuration: durations.length > 0 ? totalDuration / durations.length : undefined,
     costs,
     durations,
   };
@@ -279,7 +325,7 @@ export function getPriceAndLatencyPerVersion(
   }>
 ): Array<{
   versionId: string;
-  metrics: { avgCost: number; avgDuration: number; costs: number[]; durations: number[] };
+  metrics: { avgCost: number | undefined; avgDuration: number | undefined; costs: number[]; durations: number[] };
 }> {
   return completionsPerVersion.map(({ versionId, completions }) => ({
     versionId,

@@ -1,5 +1,8 @@
 # pyright: reportPrivateUsage=false
+from datetime import UTC, datetime
+from typing import Any
 from unittest.mock import patch
+from uuid import UUID
 
 import pytest
 
@@ -11,7 +14,9 @@ from core.domain.tool import HostedTool as DomainHostedTool
 from core.domain.tool import Tool as DomainTool
 from core.domain.trace import LLMTrace as DomainLLMTrace
 from core.domain.trace import ToolTrace as DomainToolTrace
+from core.utils.uuid import uuid7_generation_time
 from protocol.api._api_models import (
+    Annotation,
     Message,
     Tool,
     ToolCallRequest,
@@ -19,6 +24,9 @@ from protocol.api._api_models import (
 )
 from protocol.api._services.conversions import (
     _extract_json_schema,
+    annotation_to_domain,
+    completion_from_domain,
+    deployment_from_domain,
     experiments_url,
     graph_from_domain,
     graph_to_domain,
@@ -34,7 +42,7 @@ from protocol.api._services.conversions import (
     view_to_domain,
     view_url,
 )
-from tests.fake_models import fake_graph, fake_version, fake_view
+from tests.fake_models import fake_completion, fake_deployment, fake_graph, fake_version, fake_view
 
 
 @pytest.fixture(autouse=True)
@@ -401,6 +409,26 @@ class TestUsageConversion:
         assert converted_domain.completion.cost_usd == original_domain.completion.cost_usd
 
 
+class TestCompletionConversion:
+    def test_completion_from_domain_includes_created_at(self):
+        """Test that completion_from_domain derives created_at from UUID7 ID."""
+
+        # Create a fake completion with a UUID7 ID
+        domain_completion = fake_completion(id_rand=12345)
+
+        # Convert to API model
+        api_completion = completion_from_domain(domain_completion)
+
+        # Verify created_at is set and matches the UUID7 timestamp
+        assert api_completion.created_at is not None
+        expected_created_at = uuid7_generation_time(domain_completion.id)
+        # Compare timestamps (allowing for microsecond sanitization)
+        assert api_completion.created_at.replace(microsecond=0, tzinfo=UTC) == expected_created_at.replace(
+            microsecond=0,
+            tzinfo=UTC,
+        )
+
+
 class TestExtractJsonSchema:
     """Test the _extract_json_schema function."""
 
@@ -550,3 +578,203 @@ class TestExtractJsonSchema:
         schema = {"json_schema": {"type": "object", "properties": {"data": {"type": "string"}}}}
         result = _extract_json_schema(schema)
         assert result == {"type": "object", "properties": {"data": {"type": "string"}}}
+
+
+def _annotation(**kwargs: Any) -> Annotation:
+    ann = Annotation(
+        id="test-annotation",
+        created_at=datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, 12, 0, 0, tzinfo=UTC),
+        author_name="Test Author",
+    )
+    return Annotation.model_validate(
+        {
+            **ann.model_dump(),
+            **kwargs,
+        },
+    )
+
+
+class TestAnnotationToDomainConversion:
+    """Test the annotation_to_domain conversion function, especially ID sanitization."""
+
+    def test_annotation_to_domain_basic(self):
+        """Test basic annotation conversion without target or context."""
+
+        api_annotation = _annotation()
+
+        domain_annotation = annotation_to_domain(api_annotation)
+
+        assert domain_annotation.id == "test-annotation"
+        assert domain_annotation.target is None
+        assert domain_annotation.context is None
+        assert domain_annotation.metric is None
+
+    def test_annotation_to_domain_with_metric(self):
+        """Test annotation conversion with metric."""
+
+        api_annotation = _annotation(
+            metric=Annotation.Metric(name="accuracy", value=0.95),
+        )
+
+        domain_annotation = annotation_to_domain(api_annotation)
+
+        assert domain_annotation.metric is not None
+        assert domain_annotation.metric.name == "accuracy"
+        assert domain_annotation.metric.value == 0.95
+
+    @pytest.mark.parametrize(
+        ("completion_id_input", "expected_uuid_str"),
+        [
+            # Plain UUID7 - should pass through sanitization
+            ("01997d25-b859-7066-681c-c11fe1250b89", "01997d25-b859-7066-681c-c11fe1250b89"),
+            # Prefixed with anotherai/completion/
+            ("anotherai/completion/01997d25-b859-7066-681c-c11fe1250b89", "01997d25-b859-7066-681c-c11fe1250b89"),
+            # Just prefixed with completion/
+            ("completion/01997d25-b859-7066-681c-c11fe1250b89", "01997d25-b859-7066-681c-c11fe1250b89"),
+        ],
+    )
+    def test_completion_id_sanitization_valid(self, completion_id_input, expected_uuid_str):
+        """Test that valid completion IDs are properly sanitized."""
+
+        api_annotation = _annotation(
+            target=Annotation.Target(completion_id=completion_id_input),
+        )
+
+        domain_annotation = annotation_to_domain(api_annotation)
+
+        assert domain_annotation.target is not None
+        assert domain_annotation.target.completion_id == UUID(expected_uuid_str)
+
+    @pytest.mark.parametrize(
+        "completion_id_input",
+        [
+            # Invalid UUID format
+            "invalid-uuid",
+            # Wrong ID type prefix
+            "anotherai/experiment/01997d25-b859-7066-681c-c11fe1250b89",
+            # Non-UUID7 format (regular UUID4)
+            "550e8400-e29b-41d4-a716-446655440000",
+        ],
+    )
+    def test_completion_id_sanitization_invalid(self, completion_id_input: str):
+        """Test that invalid completion IDs raise BadRequestError."""
+
+        api_annotation = _annotation(
+            target=Annotation.Target(completion_id=completion_id_input),
+        )
+
+        with pytest.raises(BadRequestError, match="Invalid completion id"):
+            annotation_to_domain(api_annotation)
+
+    def test_completion_id_none(self):
+        """Test that None completion ID is properly sanitized."""
+
+        api_annotation = _annotation(
+            target=Annotation.Target(completion_id=None),
+        )
+
+        domain_annotation = annotation_to_domain(api_annotation)
+
+        assert domain_annotation.target is not None
+        assert domain_annotation.target.completion_id is None
+
+    @pytest.mark.parametrize(
+        ("experiment_id_input", "expected_id"),
+        [
+            # Plain experiment ID
+            ("test-experiment-123", "test-experiment-123"),
+            # Prefixed with anotherai/experiment/
+            ("anotherai/experiment/test-experiment-123", "test-experiment-123"),
+            # Just prefixed with experiment/
+            ("experiment/test-experiment-123", "test-experiment-123"),
+            # UUID7 format
+            ("01997d25-b859-7066-681c-c11fe1250b89", "01997d25-b859-7066-681c-c11fe1250b89"),
+            # Prefixed UUID7
+            ("anotherai/experiment/01997d25-b859-7066-681c-c11fe1250b89", "01997d25-b859-7066-681c-c11fe1250b89"),
+        ],
+    )
+    def test_experiment_id_sanitization_valid_target(self, experiment_id_input: str, expected_id: str):
+        """Test that valid experiment IDs in target are properly sanitized."""
+
+        api_annotation = _annotation(
+            target=Annotation.Target(experiment_id=experiment_id_input),
+        )
+
+        domain_annotation = annotation_to_domain(api_annotation)
+
+        assert domain_annotation.target is not None
+        assert domain_annotation.target.experiment_id == expected_id
+
+    @pytest.mark.parametrize(
+        ("experiment_id_input", "expected_id"),
+        [
+            # Plain experiment ID
+            ("test-experiment-456", "test-experiment-456"),
+            # Prefixed with anotherai/experiment/
+            ("anotherai/experiment/test-experiment-456", "test-experiment-456"),
+            # Just prefixed with experiment/
+            ("experiment/test-experiment-456", "test-experiment-456"),
+        ],
+    )
+    def test_experiment_id_sanitization_valid_context(self, experiment_id_input: str, expected_id: str):
+        """Test that valid experiment IDs in context are properly sanitized."""
+
+        api_annotation = _annotation(
+            context=Annotation.Context(experiment_id=experiment_id_input),
+        )
+
+        domain_annotation = annotation_to_domain(api_annotation)
+
+        assert domain_annotation.context is not None
+        assert domain_annotation.context.experiment_id == expected_id
+
+    @pytest.mark.parametrize(
+        "experiment_id_input",
+        [
+            # Wrong ID type prefix
+            "anotherai/completion/01997d25-b859-7066-681c-c11fe1250b89",
+            "anotherai/agent/test-agent",
+        ],
+    )
+    def test_experiment_id_sanitization_invalid(self, experiment_id_input: str):
+        """Test that invalid experiment IDs raise BadRequestError."""
+
+        api_annotation = _annotation(
+            target=Annotation.Target(experiment_id=experiment_id_input),
+        )
+
+        with pytest.raises(BadRequestError, match="Invalid experiment id"):
+            annotation_to_domain(api_annotation)
+
+    @pytest.mark.parametrize(
+        ("agent_id_input", "expected_id"),
+        [
+            # Plain agent ID
+            ("test-agent", "test-agent"),
+            # Prefixed with anotherai/agent/
+            ("anotherai/agent/test-agent", "test-agent"),
+            # Just prefixed with agent/
+            ("agent/test-agent", "test-agent"),
+            # Agent with special characters
+            ("my-test-agent_123", "my-test-agent_123"),
+        ],
+    )
+    def test_agent_id_sanitization_valid(self, agent_id_input: str, expected_id: str):
+        """Test that valid agent IDs are properly sanitized."""
+
+        api_annotation = _annotation(
+            context=Annotation.Context(agent_id=agent_id_input),
+        )
+
+        domain_annotation = annotation_to_domain(api_annotation)
+
+        assert domain_annotation.context is not None
+        assert domain_annotation.context.agent_id == expected_id
+
+
+class TestDeploymentFromDomain:
+    def test_deployment_from_domain(self):
+        domain_deployment = fake_deployment()
+        converted = deployment_from_domain(domain_deployment)
+        assert converted.id == "test-deployment"  # not prefixed

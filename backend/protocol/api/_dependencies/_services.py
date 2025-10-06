@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import Depends
 
 from core.services.completion_runner import CompletionRunner
+from core.services.payment_service import PaymentService
 from core.services.store_completion.completion_storer import CompletionStorer
 from protocol.api._dependencies._lifecycle import LifecycleDependenciesDep
 from protocol.api._dependencies._tenant import TenantDep
@@ -89,6 +90,7 @@ def deployment_service(tenant: TenantDep, dependencies: LifecycleDependenciesDep
     return DeploymentService(
         dependencies.storage_builder.deployments(tenant.uid),
         dependencies.storage_builder.completions(tenant.uid),
+        agents_storage=dependencies.storage_builder.agents(tenant.uid),
     )
 
 
@@ -111,3 +113,13 @@ def files_service(tenant: TenantDep, dependencies: LifecycleDependenciesDep) -> 
 
 
 FilesServiceDep = Annotated[FilesService, Depends(files_service)]
+
+
+def payment_service(tenant: TenantDep, dependencies: LifecycleDependenciesDep) -> PaymentService:
+    return PaymentService(
+        tenant_storage=dependencies.storage_builder.tenants(tenant.uid),
+        payment_handler=dependencies.payment_handler(tenant.uid),
+    )
+
+
+PaymentServiceDep = Annotated[PaymentService, Depends(payment_service)]

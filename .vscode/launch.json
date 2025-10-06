@@ -9,7 +9,10 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${file}",
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/backend:${workspaceFolder}/scripts"
+      }
     },
     {
       "name": "Python: Debug Tests",

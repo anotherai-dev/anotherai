@@ -19,8 +19,8 @@ from protocol.api._api_models import (
     CreateViewResponse,
     Deployment,
     Experiment,
-    Input,
-    Model,
+    ExperimentInput,
+    ModelField,
     Page,
     QueryCompletionResponse,
     SearchDocumentationResponse,
@@ -111,7 +111,7 @@ async def add_experiment_result(
 
 @mcp.tool(annotations=ToolAnnotations(idempotentHint=True))
 async def add_versions_to_experiment(
-    experiment_id: str,
+    experiment_id: _mcp_utils.ExperimentID,
     version: Annotated[
         str | VersionRequest,
         Field(
@@ -133,6 +133,25 @@ async def add_versions_to_experiment(
     - the version is added as is
     - a version is added per provided override
 
+    IMPORTANT for image, audio, and PDF inputs:
+    When using template variables for images, audio, or PDFs, you MUST use the correct message content structure.
+    The template variable goes in the image_url or input_audio field, NOT in a text string.
+
+    CORRECT format for image inputs:
+    {
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "Please describe this image:"},
+            {"type": "image_url", "image_url": {"url": "{{image_url}}"}}
+        ]
+    }
+
+    INCORRECT format (will not work):
+    {
+        "role": "user",
+        "content": "Please describe {{image_url}}"  # Wrong - treats as text
+    }
+
     Returns the ids of the added versions.
     """
     return await (await _mcp_utils.playground_service()).add_versions_to_experiment(experiment_id, version, overrides)
@@ -150,9 +169,9 @@ When dealing with local images or audio files, instead of attempting to pass bas
 Returns the ids of the added inputs.""",
 )
 async def add_inputs_to_experiment(
-    experiment_id: str,
+    experiment_id: _mcp_utils.ExperimentID,
     inputs: Annotated[
-        list[Input] | None,
+        list[ExperimentInput] | None,
         Field(
             description="""The inputs to use for the playground. A completion will be generated per input per version.
             An input can include a set of variables used in the templated prompt or a list of messages to be appended
@@ -179,7 +198,7 @@ async def add_inputs_to_experiment(
 
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def get_experiment(
-    id: Annotated[str, Field(description="the id of the experiment")],
+    id: _mcp_utils.ExperimentID,
     version_ids: Annotated[list[str] | None, Field(description="version ids to filter the experiment outputs")] = None,
     input_ids: Annotated[list[str] | None, Field(description="input ids to filter the experiment outputs")] = None,
     include: Annotated[
@@ -213,13 +232,14 @@ async def get_experiment(
 
 
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
-async def list_models() -> list[Model]:
+async def list_models(
+    include: list[ModelField] | None = None,
+) -> list[dict[str, Any]]:
     """List all available AI models with their capabilities, pricing, and metadata.
 
     Returns a list of Model objects containing:
     - id: Model identifier to use in the 'models' parameter of playground/API calls (corresponds to version_model in query_completions)
     - display_name: Human-readable name of the model
-    - icon_url: URL to the model's icon image
     - supports: Capabilities including:
       - input/output modalities (text, image, audio, pdf support)
       - parallel_tool_calls: Whether model can make multiple tool calls in one inference
@@ -229,10 +249,10 @@ async def list_models() -> list[Model]:
     - pricing: Cost information per token (input_token_usd, output_token_usd)
     - release_date: When the model was released on the platform
     - reasoning: Optional reasoning configuration with token budgets for different effort levels
-
-    Use this tool before calling playground() to see available model IDs and their capabilities.
+    - context_window: Context window and output token limits for the model.
+    - speed_index: Speed index of the model.
     """
-    return await models_service.list_models()
+    return await models_service.list_models_mcp(include)
 
 
 # ------------------------------------------------------------
@@ -250,9 +270,9 @@ async def list_agents() -> Page[Agent]:
 
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def get_annotations(
-    experiment_id: str | None = None,
-    completion_id: str | None = None,
-    agent_id: str | None = None,
+    experiment_id: _mcp_utils.ExperimentID | None = None,
+    completion_id: _mcp_utils.CompletionID | None = None,
+    agent_id: _mcp_utils.AgentID | None = None,
     since: str | None = None,
 ) -> Page[Annotation]:
     """
@@ -417,6 +437,11 @@ async def query_completions(
     """
     Exposes the clickhouse database to the user. The tool validates your SQL query and returns a URL to view the results in the web interface.
     Avoid using the query_completions tool to then pass the inputs to the playground tool. Instead, use the completion_query parameter of the playground tool.
+
+    **Debugging completions with non-text inputs:**
+    When investigating issues with a completion that contains image_url, audio_url, or PDF inputs ALWAYS
+    immediately load and view the actual content to verify the model's analysis. This is critical for debugging and should be done
+    proactively without waiting for the user to explicitly ask.
 
     The completion table structured is defined below (in doubt, you can retrieve the structure using DESCRIBE TABLE completions).
 
@@ -634,17 +659,9 @@ async def list_deployments(
 
 @mcp.tool(annotations=ToolAnnotations(idempotentHint=True))
 async def create_or_update_deployment(
-    agent_id: str = Field(
-        description="The agent id to deploy the version to",
-    ),
-    version_id: str = Field(
-        description="The version id to deploy. Can be found in an experiment or a completion.",
-    ),
-    deployment_id: str = Field(
-        # TODO: update description and examples based on tests. Make sure field in _api_models.py is updated too.
-        description="The id of the deployment",
-        examples=["my-agent-id:production#1"],
-    ),
+    agent_id: _mcp_utils.AgentID,
+    version_id: _mcp_utils.VersionID,
+    deployment_id: _mcp_utils.DeploymentID,
     author_name: str = Field(
         description="The name of the author of the deployment",
     ),
@@ -658,8 +675,11 @@ async def create_or_update_deployment(
 
     Updating an existing deployment needs user confirmation. You will be provided the URL where a user can
     confirm the update.
+
+    Note: when the deployment is used in the model fields of the OpenAI completion API, make sure
+    to use the correct format: `model=anotherai/deployment/<deployment_id>`.
     """
-    return await (await _mcp_utils.deployment_service()).upsert_deployment(
+    return await (await _mcp_utils.deployment_service()).mcp_upsert_deployment(
         agent_id=agent_id,
         version_id=version_id,
         deployment_id=deployment_id,

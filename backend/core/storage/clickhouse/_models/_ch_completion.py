@@ -139,13 +139,12 @@ class ClickhouseCompletion(BaseModel):
 
     @classmethod
     def from_domain(cls, tenant: int, completion: AgentCompletion):
-        id = UUID(completion.id)
         return cls(
             # Core identifiers
             tenant_uid=tenant,
             agent_id=completion.agent.id,
-            id=id,
-            updated_at=uuid7_generation_time(id),
+            id=completion.id,
+            updated_at=uuid7_generation_time(completion.id),
             # Version
             version_id=completion.version.id,
             version_model=completion.version.model or "",
@@ -183,8 +182,7 @@ class ClickhouseCompletion(BaseModel):
         agent = agent or Agent(id=self.agent_id, uid=0)
 
         return AgentCompletion(
-            id=str(self.id),
-            created_at=uuid7_generation_time(self.id),
+            id=self.id,
             agent=agent,
             agent_input=_input_to_domain(self.input_variables, self.input_messages, self.input_preview, self.input_id),
             agent_output=_output_to_domain(

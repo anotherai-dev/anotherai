@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from uuid import UUID
 
 from core.storage.clickhouse._models._ch_completion import DEFAULT_EXCLUDE, ClickhouseCompletion
 from tests.fake_models import fake_completion
@@ -53,10 +54,9 @@ class TestClickhouseCompletion:
                 "preview": "hello",
             },
             "cost_usd": 1.0,
-            "created_at": datetime(1970, 1, 1, 0, 0, tzinfo=UTC),
             "duration_seconds": 1.0,
             "from_cache": False,
-            "id": "00000000-0000-7000-0000-000000000001",
+            "id": UUID("00000000-0000-7000-0000-000000000001"),
             "messages": [
                 {
                     "content": [

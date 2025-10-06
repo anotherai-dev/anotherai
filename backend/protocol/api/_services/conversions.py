@@ -1,10 +1,13 @@
+from collections.abc import Iterable
 from datetime import UTC, datetime
 from typing import Any, Literal
+from uuid import UUID
 
 from pydantic import TypeAdapter
 from pydantic_core import ValidationError
 from structlog import get_logger
 
+from core.consts import ANOTHERAI_API_URL
 from core.domain.agent import Agent as DomainAgent
 from core.domain.agent_completion import AgentCompletion as DomainCompletion
 from core.domain.agent_input import AgentInput as DomainInput
@@ -16,7 +19,9 @@ from core.domain.deployment import Deployment as DomainDeployment
 from core.domain.error import Error as DomainError
 from core.domain.exceptions import BadRequestError, JSONSchemaValidationError
 from core.domain.experiment import Experiment as DomainExperiment
+from core.domain.experiment import ExperimentInput as DomainExperimentInput
 from core.domain.experiment import ExperimentOutput
+from core.domain.experiment import ExperimentVersion as DomainExperimentVersion
 from core.domain.file import File
 from core.domain.inference_usage import CompletionUsage as DomainCompletionUsage
 from core.domain.inference_usage import InferenceUsage as DomainInferenceUsage
@@ -28,6 +33,7 @@ from core.domain.models.model_data import FinalModelData, MaxTokensData
 from core.domain.models.model_data import ModelReasoningBudget as DomainModelReasoningBudget
 from core.domain.models.model_data_supports import ModelDataSupports
 from core.domain.models.model_provider_data import ModelProviderData
+from core.domain.tenant_data import TenantData
 from core.domain.tool import HostedTool as DomainHostedTool
 from core.domain.tool import Tool as DomainTool
 from core.domain.tool_call import ToolCallRequest as DomainToolCallRequest
@@ -56,12 +62,14 @@ from protocol.api._api_models import (
     Deployment,
     Error,
     Experiment,
+    ExperimentInput,
     Graph,
     InferenceUsage,
     Input,
     Message,
     Model,
     ModelContextWindow,
+    ModelField,
     ModelPricing,
     ModelReasoning,
     ModelSupports,
@@ -69,6 +77,7 @@ from protocol.api._api_models import (
     Output,
     OutputSchema,
     SupportsModality,
+    Tenant,
     TokenUsage,
     Tool,
     ToolCallRequest,
@@ -81,6 +90,7 @@ from protocol.api._api_models import (
 )
 from protocol.api._run_models import OpenAIProxyResponseFormat
 from protocol.api._services._urls import deployment_url, experiments_url, view_url
+from protocol.api._services.ids_service import IDType, sanitize_id
 
 _log = get_logger(__name__)
 
@@ -355,13 +365,14 @@ def _sanitize_output_json_schema(output_json_schema: dict[str, Any] | None) -> D
     return _sanitize_json_schema(schema)
 
 
-def version_request_to_domain(version: VersionRequest) -> DomainVersion:
+def version_request_to_domain(version: VersionRequest) -> DomainExperimentVersion:
     if version.prompt is not None:
         input_variables_schema, _ = json_schema_for_template([message_to_domain(m) for m in version.prompt], {})
     else:
         input_variables_schema = None
 
-    return DomainVersion(
+    return DomainExperimentVersion(
+        alias=version.alias,
         model=version.model,
         temperature=version.temperature,
         top_p=version.top_p,
@@ -416,6 +427,14 @@ def input_to_domain(agent_input: Input) -> DomainInput:
     )
 
 
+def experiment_input_to_domain(experiment_input: ExperimentInput) -> DomainExperimentInput:
+    return DomainExperimentInput(
+        messages=[message_to_domain(m) for m in experiment_input.messages] if experiment_input.messages else None,
+        variables=experiment_input.variables or None,
+        alias=experiment_input.alias,
+    )
+
+
 def output_from_domain(output: DomainOutput) -> Output:
     return Output(
         messages=[message_from_domain(m) for m in output.messages] if output.messages else None,
@@ -431,9 +450,12 @@ def output_to_domain(output: Output) -> DomainOutput:
 
 
 def completion_from_domain(completion: DomainCompletion) -> Completion:
+    # Always derive created_at from the UUID7 ID for consistency
+
     return Completion(
         id=completion.id,
         agent_id=completion.agent.id,
+        created_at=_sanitize_datetime(completion.created_at),
         version=version_from_domain(completion.version),
         input=input_from_domain(completion.agent_input),
         output=output_from_domain(completion.agent_output),
@@ -447,6 +469,8 @@ def completion_from_domain(completion: DomainCompletion) -> Completion:
 
 
 def completion_to_domain(completion: Completion) -> DomainCompletion:
+    # Always derive created_at from the UUID7 ID for consistency
+
     return DomainCompletion(
         id=completion.id,
         agent=DomainAgent(id=completion.agent_id, uid=0),
@@ -578,11 +602,26 @@ def model_response_from_domain(model_id: str, model: FinalModelData) -> Model:
     )
 
 
+def model_response_filter(fields: Iterable[ModelField] | None, models: Iterable[Model]) -> Iterable[dict[str, Any]]:
+    """Convert model data for MCP responses, excluding icon_url to reduce context window usage."""
+    include = {"id", "display_name"}
+    if fields is None:
+        include.update(ModelField)
+    else:
+        include.update(fields)
+    for model in models:
+        yield model.model_dump(include=include, exclude_none=True)
+
+
+def _sanitized_completion_id(completion_id: str) -> UUID:
+    return UUID(sanitize_id(completion_id, IDType.COMPLETION))
+
+
 def annotation_from_domain(annotation: DomainAnnotation) -> Annotation:
     target = None
     if annotation.target:
         target = Annotation.Target(
-            completion_id=annotation.target.completion_id,
+            completion_id=str(annotation.target.completion_id) if annotation.target.completion_id else None,
             experiment_id=annotation.target.experiment_id,
             key_path=annotation.target.key_path,
         )
@@ -618,16 +657,24 @@ def annotation_to_domain(api_annotation: Annotation) -> DomainAnnotation:
     target = None
     if api_annotation.target:
         target = DomainAnnotation.Target(
-            completion_id=api_annotation.target.completion_id,
-            experiment_id=api_annotation.target.experiment_id,
+            completion_id=_sanitized_completion_id(api_annotation.target.completion_id)
+            if api_annotation.target.completion_id
+            else None,
+            experiment_id=sanitize_id(api_annotation.target.experiment_id, IDType.EXPERIMENT)
+            if api_annotation.target.experiment_id
+            else None,
             key_path=api_annotation.target.key_path,
         )
 
     context = None
     if api_annotation.context:
         context = DomainAnnotation.Context(
-            experiment_id=api_annotation.context.experiment_id,
-            agent_id=api_annotation.context.agent_id,
+            experiment_id=sanitize_id(api_annotation.context.experiment_id, IDType.EXPERIMENT)
+            if api_annotation.context.experiment_id
+            else None,
+            agent_id=sanitize_id(api_annotation.context.agent_id, IDType.AGENT)
+            if api_annotation.context.agent_id
+            else None,
         )
 
     metric = None
@@ -743,6 +790,7 @@ def api_key_from_domain_complete(api_key: DomainCompleteAPIKey) -> CompleteAPIKe
         last_used_at=api_key.last_used_at,
         created_by=api_key.created_by,
         key=api_key.api_key,
+        api_host=ANOTHERAI_API_URL,
     )
 
 
@@ -860,4 +908,31 @@ def experiment_completion_from_domain(completion: ExperimentOutput) -> Experimen
         output=output_from_domain(completion.output) if completion.output else Output(),
         cost_usd=completion.cost_usd or 0.0,
         duration_seconds=completion.duration_seconds or 0.0,
+    )
+
+
+def _automatic_payment_from_domain(tenant: TenantData) -> Tenant.AutomaticPayment | None:
+    if not tenant.automatic_payment_enabled:
+        return None
+    if tenant.automatic_payment_threshold is None or tenant.automatic_payment_balance_to_maintain is None:
+        _log.warning("Automatic payment is enabled but threshold or balance to maintain is not set", tenant=tenant)
+        return None
+    return Tenant.AutomaticPayment(
+        threshold=tenant.automatic_payment_threshold,
+        balance_to_maintain=tenant.automatic_payment_balance_to_maintain,
+    )
+
+
+def tenant_from_domain(tenant: TenantData) -> Tenant:
+    return Tenant(
+        id=tenant.slug,
+        current_credits_usd=tenant.current_credits_usd,
+        automatic_payment=_automatic_payment_from_domain(tenant),
+        payment_failure=Tenant.PaymentFailure(
+            failure_date=tenant.payment_failure.failure_date,
+            failure_code=tenant.payment_failure.failure_code,
+            failure_reason=tenant.payment_failure.failure_reason,
+        )
+        if tenant.payment_failure
+        else None,
     )

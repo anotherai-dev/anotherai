@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { formatNumber } from "@/components/universal-charts/utils";
 import { Trace } from "@/types/models";
 import InfoRow from "./InfoRow";
 
@@ -67,7 +68,9 @@ export function TracesView({ traces }: Props) {
                 return (
                   <div key={`${traceIndex}-${key}`} className="space-y-2">
                     <InfoRow title={formatTitle(key)} value={`${textTokenCount.toLocaleString()}`} />
-                    {costUsd !== undefined && <InfoRow title={formatCostTitle(key)} value={`$${costUsd.toFixed(8)}`} />}
+                    {costUsd !== undefined && (
+                      <InfoRow title={formatCostTitle(key)} value={`$${formatNumber(costUsd)}`} />
+                    )}
                   </div>
                 );
               })}

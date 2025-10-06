@@ -7,6 +7,7 @@ import asyncpg
 import pytest
 from clickhouse_connect.driver.asyncclient import AsyncClient
 from freezegun.api import freeze_time
+from structlog.testing import capture_logs
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -307,3 +308,9 @@ def mock_provider_factory():
     from core.providers.factory.abstract_provider_factory import AbstractProviderFactory
 
     return Mock(spec=AbstractProviderFactory)
+
+
+@pytest.fixture
+def cap_structlogs():
+    with capture_logs() as cap_logs:
+        yield cap_logs

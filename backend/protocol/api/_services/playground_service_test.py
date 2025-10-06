@@ -2,19 +2,20 @@
 
 from typing import Any
 from unittest.mock import Mock, patch
+from uuid import UUID
 
 import pytest
 
 from core.domain.agent_input import AgentInput
 from core.domain.exceptions import BadRequestError
 from core.storage.experiment_storage import CompletionIDTuple
-from protocol.api._api_models import Input, Message, VersionRequest
+from protocol.api._api_models import ExperimentInput, Message, VersionRequest
 from protocol.api._services.playground_service import (
     PlaygroundService,
     _validate_version,
     _version_request_with_override,
 )
-from tests.fake_models import fake_experiment, fake_input, fake_version
+from tests.fake_models import fake_deployment, fake_experiment, fake_experiment_version, fake_input
 
 
 @pytest.fixture
@@ -92,6 +93,50 @@ class TestValidateVersion:
             _validate_version(v)
 
 
+class TestVersionById:
+    async def test_deployment(
+        self,
+        playground_service: PlaygroundService,
+        mock_deployment_storage: Mock,
+        mock_completion_storage: Mock,
+    ):
+        """Version does not conform to hash so we guess it's a deployment"""
+        d = fake_deployment()
+        mock_deployment_storage.get_deployment.return_value = d
+
+        v = await playground_service._get_version_by_id("test-agent", "anotherai/deployment/test-deployment")
+
+        assert v.model == d.version.model
+
+        mock_completion_storage.get_version_by_id.assert_not_called()
+        mock_deployment_storage.get_deployment.assert_called_once_with("test-deployment")
+
+    async def test_version_id(
+        self,
+        playground_service: PlaygroundService,
+        mock_completion_storage: Mock,
+        mock_deployment_storage: Mock,
+    ):
+        v = fake_experiment_version()
+        mock_completion_storage.get_version_by_id.return_value = v, UUID(int=0)
+        found = await playground_service._get_version_by_id("test-agent", v.id)
+        assert found.model == v.model
+        mock_completion_storage.get_version_by_id.assert_called_once_with("test-agent", v.id)
+        mock_deployment_storage.get_deployment.assert_not_called()
+
+    async def test_serialized_version(
+        self,
+        playground_service: PlaygroundService,
+        mock_completion_storage: Mock,
+        mock_deployment_storage: Mock,
+    ):
+        found = await playground_service._get_version_by_id("test-agent", '{"model": "gpt-4o-mini-latest"}')
+
+        assert found.model == "gpt-4o-mini-latest"
+        mock_completion_storage.get_version_by_id.assert_not_called()
+        mock_deployment_storage.get_deployment.assert_not_called()
+
+
 class TestVersionWithOverride:
     def test_valid_override_updates_fields(self):
         base = VersionRequest(model="gpt-4o-mini-latest", temperature=0.1, top_p=None)
@@ -122,7 +167,7 @@ class TestAddInputsToExperiment:
         mock_experiment_storage.get_experiment.return_value = fake_experiment()
 
         inputs = [
-            Input(
+            ExperimentInput(
                 variables={
                     # A very long transcript
                     "transcript": "Good morning everyone. I'm calling from our headquarters in London to discuss the quarterly results. We had excellent performance in our Tokyo office this quarter, with sales up 15%. Our team in Berlin also exceeded expectations. Next month, I'll be traveling to Sydney to meet with our Australian partners, and then heading to Toronto for the North American summit.",
@@ -149,13 +194,13 @@ class TestAddInputsToExperiment:
         mock_experiment_storage: Mock,
         patched_start_completions: Mock,
     ):
-        version = fake_version()
+        version = fake_experiment_version()
         mock_experiment_storage.get_experiment.return_value = fake_experiment(
             versions=[version],
         )
         await playground_service.add_inputs_to_experiment(
             "test-experiment",
-            [Input(variables={"name": "John"})],
+            [ExperimentInput(variables={"name": "John"})],
             None,
         )
         assert patched_start_completions.call_count == 1
@@ -171,7 +216,7 @@ class TestAddInputsToExperiment:
         patched_start_completions: Mock,
     ):
         mock_experiment_storage.get_experiment.return_value = fake_experiment(
-            versions=[fake_version()],
+            versions=[fake_experiment_version()],
         )
         mock_experiment_storage.add_inputs.reset_mock()
 
@@ -184,7 +229,7 @@ class TestAddInputsToExperiment:
         res = await playground_service.add_inputs_to_experiment(
             "test-experiment",
             # Second input ID is 43396217dcb18701763a4d45e4de11b2
-            [Input(variables={"name": "John"}), Input(variables={"name": "Jane"})],
+            [ExperimentInput(variables={"name": "John"}), ExperimentInput(variables={"name": "Jane"})],
             None,
         )
         assert patched_start_completions.call_count == 1
@@ -205,7 +250,10 @@ class TestStartExperimentCompletion:
         mock_experiment_storage: Mock,
         mock_event_router: Mock,
     ):
-        versions = [fake_version(model="gpt-4o-mini-latest"), fake_version(model="gpt-4.1-mini-latest")]
+        versions = [
+            fake_experiment_version(model="gpt-4o-mini-latest"),
+            fake_experiment_version(model="gpt-4.1-mini-latest"),
+        ]
         inputs = [fake_input(variables={"name": "John"}), fake_input(variables={"name": "Jane"})]
 
         assert len({v.id for v in versions}) == 2, "sanity"

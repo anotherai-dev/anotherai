@@ -2,7 +2,7 @@ import pytest
 from pydantic import ValidationError
 
 from core.domain.reasoning_effort import ReasoningEffort
-from protocol.api._api_models import ToolCallResult, Version
+from protocol.api._api_models import Model, ModelField, ToolCallResult, Version
 
 
 class TestVersion:
@@ -50,3 +50,9 @@ class TestToolCallResult:
     def test_empty_payload(self):
         with pytest.raises(ValidationError):
             ToolCallResult.model_validate({"id": "hello"})
+
+
+class TestModelFields:
+    def test_subset_of_model(self):
+        for m in ModelField:
+            assert m.value in Model.model_fields, f"{m.value} not in {Model.model_fields}"

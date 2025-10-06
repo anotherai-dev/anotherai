@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from uuid import UUID
 
 from structlog import get_logger
 
@@ -6,6 +7,7 @@ from core.domain.deployment import Deployment as DomainDeployment
 from core.domain.exceptions import BadRequestError, ObjectNotFoundError
 from core.domain.version import Version
 from core.domain.version import Version as DomainVersion
+from core.storage.agent_storage import AgentStorage
 from core.storage.completion_storage import CompletionStorage
 from core.storage.deployment_storage import DeploymentStorage
 from core.utils.schemas import IncompatibleSchemaError, JsonSchema
@@ -17,6 +19,7 @@ from protocol.api._services.conversions import (
     page_token_to_datetime,
     version_to_domain,
 )
+from protocol.api._services.ids_service import IDType, sanitize_id
 
 _log = get_logger(__name__)
 
@@ -26,9 +29,11 @@ class DeploymentService:
         self,
         deployments_storage: DeploymentStorage,
         completions_storage: CompletionStorage,
+        agents_storage: AgentStorage,
     ):
         self._deployments_storage = deployments_storage
         self._completions_storage = completions_storage
+        self._agents_storage = agents_storage
 
     async def get_deployment(self, deployment_id: str):
         deployment = await self._deployments_storage.get_deployment(deployment_id)
@@ -100,7 +105,14 @@ class DeploymentService:
         )
         return deployment_from_domain(updated)
 
-    async def _get_version_by_id(self, agent_id: str, version_id: str) -> tuple[Version, str]:
+    async def _get_version_by_id(self, agent_id: str, version_id: str) -> tuple[Version, UUID]:
+        version_id = sanitize_id(version_id, IDType.VERSION)
+        # Check agent exists:
+        try:
+            await self._agents_storage.get_agent(agent_id)
+        except ObjectNotFoundError:
+            raise BadRequestError(f"Agent {agent_id} not found") from None
+
         try:
             return await self._completions_storage.get_version_by_id(agent_id, version_id)
         except ObjectNotFoundError:
@@ -109,7 +121,7 @@ class DeploymentService:
                 "Check that the version exists and is associated with the agent.",
             ) from None
 
-    async def upsert_deployment(
+    async def mcp_upsert_deployment(
         self,
         agent_id: str,
         version_id: str,
@@ -137,7 +149,10 @@ class DeploymentService:
                 metadata={},
             )
             await self._deployments_storage.create_deployment(inserted)
-            return deployment_from_domain(inserted)
+            dep = deployment_from_domain(inserted)
+            # Wrapping ID for mcp
+            dep.id = IDType.DEPLOYMENT.wrap(dep.id)
+            return dep
 
         # A deployment already exists
         # We won't update anything here since it would be too dangerous to update a deployment via MCP

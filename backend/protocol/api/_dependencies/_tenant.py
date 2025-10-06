@@ -13,3 +13,11 @@ async def authenticated_tenant(request: Request, lifecycle: LifecycleDependencie
 
 
 TenantDep = Annotated[TenantData, Depends(authenticated_tenant)]
+
+
+def tenant_with_credits(tenant: TenantDep, lifecycle: LifecycleDependenciesDep) -> TenantData:
+    lifecycle.check_credits(tenant)
+    return tenant
+
+
+TenantWithCreditsDep = Annotated[TenantData, Depends(tenant_with_credits)]

@@ -8,6 +8,7 @@ import { ApiKeysButton, UserButton } from "@/auth/components";
 import ViewsSection from "@/components/sidebar/ViewsSection";
 import WrappedNavigationSidebar from "@/components/sidebar/WrappedNavigationSidebar";
 import { useCookieState } from "@/hooks/useCookieState";
+import { CreditsSection } from "../CreditsSection";
 
 interface NavigationSidebarProps {
   onOpenCommandPalette?: () => void;
@@ -172,6 +173,7 @@ export default function NavigationSidebar({ onOpenCommandPalette, initialExpande
         </div>
 
         <UserButton className="border-t border-gray-200" />
+        <CreditsSection />
       </div>
     </div>
   );

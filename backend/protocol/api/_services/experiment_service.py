@@ -2,6 +2,7 @@ import asyncio
 import time
 from collections.abc import Collection
 from typing import Any, Literal, cast, final
+from uuid import UUID
 
 from core.domain.agent import Agent
 from core.domain.annotation import Annotation
@@ -12,13 +13,12 @@ from core.storage.annotation_storage import AnnotationStorage, TargetFilter
 from core.storage.completion_storage import CompletionStorage
 from core.storage.experiment_storage import ExperimentFields, ExperimentStorage
 from core.utils.background import add_background_task
-from core.utils.hash import HASH_REGEXP_32
 from protocol.api._api_models import CreateExperimentRequest, Experiment, Page
 from protocol.api._services.conversions import (
     create_experiment_to_domain,
     experiment_from_domain,
 )
-from protocol.api._services.utils_service import IDType, sanitize_ids
+from protocol.api._services.ids_service import IDType, sanitize_ids
 
 
 @final
@@ -45,8 +45,8 @@ class ExperimentService:
     ) -> Experiment:
         # we need a list here because we want to order the returned outputs the same way the versions and inputs
         # are ordered
-        sanitized_versions = list(sanitize_ids(version_ids, IDType.VERSION, HASH_REGEXP_32)) if version_ids else None
-        sanitized_inputs = list(sanitize_ids(input_ids, IDType.INPUT, HASH_REGEXP_32)) if input_ids else None
+        sanitized_versions = list(sanitize_ids(version_ids, IDType.VERSION)) if version_ids else None
+        sanitized_inputs = list(sanitize_ids(input_ids, IDType.INPUT)) if input_ids else None
 
         start_time = time.time()
 
@@ -88,7 +88,7 @@ class ExperimentService:
         annotations: list[Annotation] = []
         if include is None or "annotations" in include:
             annotations = await self.annotation_storage.list(
-                target=TargetFilter(completion_id=set(exp.run_ids)),
+                target=TargetFilter(completion_id={UUID(run_id) for run_id in exp.run_ids}),
                 context=None,
                 since=None,
                 limit=100,

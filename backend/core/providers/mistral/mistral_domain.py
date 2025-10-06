@@ -244,8 +244,47 @@ class CompletionRequest(BaseModel):
         return tool_choice
 
 
-class AssistantMessage(BaseModel):
-    content: str | None = None
+class _ThinkingContent(BaseModel):
+    text: str | None = None
+
+
+class _AssistantMessageContent(BaseModel):
+    thinking: list[_ThinkingContent] | None = None
+    text: str | None = None
+
+
+class _WithContentMixin(BaseModel):
+    content: str | list[_AssistantMessageContent] | None = None
+
+    def thinking_iter(self):
+        if not isinstance(self.content, list):
+            return
+        for c in self.content:
+            if c.thinking:
+                for t in c.thinking:
+                    if t.text:
+                        yield t.text
+
+    def text_iter(self):
+        if not self.content:
+            return
+        if isinstance(self.content, str):
+            yield self.content
+            return
+        for c in self.content:
+            if c.text:
+                yield c.text
+
+    def text_joined(self):
+        val = list(self.text_iter())
+        return "\n".join(val) if val else None
+
+    def thinking_joined(self):
+        val = list(self.thinking_iter())
+        return "\n".join(val) if val else None
+
+
+class AssistantMessage(_WithContentMixin):
     tool_calls: list[MistralToolCall] | None = None
     # prefix: bool = False
     # role: Literal["assistant"] = "assistant"
@@ -313,9 +352,9 @@ class MistralError(BaseModel):
         return self.message
 
 
-class DeltaMessage(BaseModel):
+class DeltaMessage(_WithContentMixin):
     role: str | None = None
-    content: str | None = None
+
     tool_calls: list[MistralToolCall] | None = None
 
 
@@ -348,10 +387,11 @@ class CompletionChunk(BaseModel):
             return ParsedResponse(usage=usage)
 
         return ParsedResponse(
-            delta=choice.delta.content,
+            delta=choice.delta.text_joined(),
             tool_call_requests=[tool_call.to_delta() for tool_call in choice.delta.tool_calls]
             if choice.delta.tool_calls
             else None,
             usage=usage,
             finish_reason=choice.parsed_finish_reason(),
+            reasoning=choice.delta.thinking_joined(),
         )
