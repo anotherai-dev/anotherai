@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 
 // Paths
-const docsPath = path.join(__dirname, "..", "..", "docs", "content", "docs", "releases", "preview.mdx");
+const docsPath = path.join(__dirname, "..", "src", "content", "preview.mdx");
 const outputPath = path.join(__dirname, "..", "src", "app", "home", "components", "bundled-content.ts");
 
 try {
