@@ -1,15 +1,21 @@
-import logging
-import os
 from typing import Any
 
 from posthog import Posthog
+from structlog import get_logger
 from structlog.types import EventDict, WrappedLogger
 
+from core.utils.coroutines import capture_errors
 
-# Define at module level as requested
-class PosthogMissing(Exception):
-    """Raised when PostHog SDK is not available."""
-    pass
+_EXCLUDED_KEYS = {
+    "event",
+    "level",
+    "logger",
+    "timestamp",
+    "analytics",
+    "sentry",
+    "sentry_id",
+    "sentry_skip",
+}
 
 
 class PostHogProcessor:
@@ -26,38 +32,20 @@ class PostHogProcessor:
         :param host: PostHog host URL, defaults to US cloud instance
         """
         self._posthog = Posthog(api_key, host=host)
-        self._logger = logging.getLogger(__name__)
 
     def _build_event_properties(self, event_dict: EventDict) -> dict[str, Any]:
         """Build event properties from structlog context.
 
         Excludes internal structlog keys and includes relevant context data.
         """
-        excluded_keys = {
-            "event",
-            "level",
-            "logger",
-            "timestamp",
-            "analytics",
-            "sentry",
-            "sentry_id",
-            "sentry_skip",
+
+        return {
+            key: value for key, value in event_dict.items() if key not in _EXCLUDED_KEYS and not key.startswith("_")
         }
-
-        properties: dict[str, Any] = {}
-        for key, value in event_dict.items():
-            if key not in excluded_keys and not key.startswith("_"):
-                try:
-                    properties[key] = value
-                except Exception:
-                    # Skip values that can't be serialized
-                    pass
-
-        return properties
 
     def _send_analytics_event(self, event_dict: EventDict, event_name: str) -> None:
         """Send analytics event to PostHog."""
-        user_id = event_dict.get("user_id") or event_dict.get("tenant_uid") or "anonymous"
+        user_id = event_dict.get("user_id") or event_dict.get("tenant") or "anonymous"
 
         properties = self._build_event_properties(event_dict)
         properties["timestamp"] = event_dict.get("timestamp")
@@ -75,13 +63,9 @@ class PostHogProcessor:
         event_dict: EventDict,
     ) -> EventDict:
         """A middleware to process structlog `event_dict` and send analytics to PostHog."""
-        analytics_event = event_dict.pop("analytics", None)
 
-        if analytics_event:
-            try:
+        if analytics_event := event_dict.get("analytics", None):
+            with capture_errors(get_logger(__name__), f"Failed to send analytics event to PostHog: {analytics_event}"):
                 self._send_analytics_event(event_dict, analytics_event)
-            except Exception as e:
-                # Log the exception but don't fail the logging pipeline
-                self._logger.exception(f"Failed to send analytics event to PostHog: {e}")
 
         return event_dict
