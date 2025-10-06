@@ -32,7 +32,7 @@ const renderValueBadge = (
   showSeeMore: boolean = false,
   key?: string
 ) => {
-  return <ValueDisplay value={value} textSize={textSize} showSeeMore={showSeeMore} key={key} />;
+  return <ValueDisplay value={value} textSize={textSize} showSeeMore={showSeeMore} keyName={key} />;
 };
 
 const renderProperty = (
