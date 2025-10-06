@@ -119,4 +119,4 @@ class LocalProviderFactory(AbstractProviderFactory):
 
     @override
     def available_providers(self) -> Iterable[Provider]:
-        return self._providers.keys()
+        return [provider for provider, instances in self._providers.items() if instances]
