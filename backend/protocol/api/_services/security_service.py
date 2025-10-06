@@ -14,6 +14,7 @@ from core.domain.tenant_data import TenantData, User
 from core.services.user_manager import UserManager
 from core.storage.tenant_storage import TenantStorage
 from core.storage.user_storage import UserStorage
+from core.utils.coroutines import capture_errors
 from core.utils.signature_verifier import SignatureVerifier
 
 NO_AUTHORIZATION_ALLOWED = os.getenv("NO_AUTHORIZATION_ALLOWED") == "true"
@@ -69,13 +70,14 @@ class SecurityService:
     async def _registration(self, coro: Awaitable[TenantData]):
         tenant = await coro
         # Check if tenant was just created, could be that it was migrated from a personal tenant to an organization
-        if tenant.created_at and tenant.created_at > datetime.now(UTC) - timedelta(minutes=1):
-            _log.info(
-                "Tenant created",
-                analytics="signup",
-                tenant=tenant,
-                org_id=tenant.org_id,
-            )
+        with capture_errors(get_logger(__name__), "Failed to check if tenant was just created"):
+            if tenant.created_at and tenant.created_at.replace(tzinfo=UTC) > datetime.now(UTC) - timedelta(minutes=1):
+                _log.info(
+                    "Tenant created",
+                    analytics="signup",
+                    tenant=tenant,
+                    org_id=tenant.org_id,
+                )
         return tenant
 
     def token_from_header(self, authorization: str) -> str:
