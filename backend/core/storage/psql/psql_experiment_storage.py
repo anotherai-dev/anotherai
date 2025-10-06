@@ -558,7 +558,7 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
 
         # We want to make it easy to compare 2 outputs for the same input and different versions
         # So we want all outputs for a given input to be grouped together
-        query = f"""SELECT {", ".join(selects)}, ei.input_id as input_id, ev.version_id as version_id
+        query = f"""SELECT {", ".join(selects)}, COALESCE(ei.alias, ei.input_id) as input_id, COALESCE(ev.alias, ev.version_id) as version_id
             FROM experiment_outputs
             LEFT JOIN experiment_inputs ei ON ei.uid = experiment_outputs.input_uid
             LEFT JOIN experiment_versions ev ON ev.uid = experiment_outputs.version_uid

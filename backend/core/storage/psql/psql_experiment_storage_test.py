@@ -873,6 +873,72 @@ class TestListExperimentCompletions:
         assert len(completions) == 1
         assert completions[0].completion_id == inserted_completion
 
+    async def test_list_experiment_completions_returns_aliases_when_available(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+    ):
+        # Create input and version with aliases
+        input_with_alias = ExperimentInput(
+            messages=[Message.with_text("Hello")],
+            variables={"test": "value"},
+            alias="test-input-alias",
+        )
+        version_with_alias = ExperimentVersion(model="gpt-4o", alias="test-version-alias")
+
+        await experiment_storage.add_inputs(inserted_experiment.id, [input_with_alias])
+        await experiment_storage.add_versions(inserted_experiment.id, [version_with_alias])
+
+        # Create completion
+        completion_id = uuid7()
+        await experiment_storage.add_completions(
+            inserted_experiment.id,
+            [
+                CompletionIDTuple(
+                    completion_id=completion_id,
+                    version_id=version_with_alias.id,
+                    input_id=input_with_alias.id,
+                ),
+            ],
+        )
+
+        # List completions and verify aliases are returned
+        completions = await experiment_storage.list_experiment_completions(inserted_experiment.id)
+        assert len(completions) == 1
+        assert completions[0].input_id == "test-input-alias"
+        assert completions[0].version_id == "test-version-alias"
+
+    async def test_list_experiment_completions_falls_back_to_ids_when_no_aliases(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+    ):
+        # Create input and version without aliases
+        input_without_alias = ExperimentInput(messages=[Message.with_text("Hello")], variables={"test": "value"})
+        version_without_alias = ExperimentVersion(model="gpt-4o")
+
+        await experiment_storage.add_inputs(inserted_experiment.id, [input_without_alias])
+        await experiment_storage.add_versions(inserted_experiment.id, [version_without_alias])
+
+        # Create completion
+        completion_id = uuid7()
+        await experiment_storage.add_completions(
+            inserted_experiment.id,
+            [
+                CompletionIDTuple(
+                    completion_id=completion_id,
+                    version_id=version_without_alias.id,
+                    input_id=input_without_alias.id,
+                ),
+            ],
+        )
+
+        # List completions and verify IDs are returned when no aliases
+        completions = await experiment_storage.list_experiment_completions(inserted_experiment.id)
+        assert len(completions) == 1
+        assert completions[0].input_id == input_without_alias.id
+        assert completions[0].version_id == version_without_alias.id
+
     async def test_list_experiment_completions_include(
         self,
         inserted_experiment: Experiment,

@@ -39,7 +39,7 @@ async def test_playground_tool(test_api_client: IntegrationTestClient):
         "add_inputs_to_experiment",
         {
             "experiment_id": experiment_id,
-            "inputs": [{"variables": {"name": "Toulouse"}}, {"variables": {"name": "Pittsburgh"}}],
+            "inputs": [{"alias": "Toulouse", "variables": {"name": "Toulouse"}}, {"variables": {"name": "Pittsburgh"}}],
         },
     )
     assert len(inserted_inputs["result"]) == 2
@@ -50,12 +50,13 @@ async def test_playground_tool(test_api_client: IntegrationTestClient):
         {
             "experiment_id": experiment_id,
             "version": {
+                "alias": "claude-4",
                 "model": Model.CLAUDE_4_SONNET_20250514,
                 "prompt": [{"role": "user", "content": "What is the capital of the country that has {{ name }}?"}],
                 "temperature": 0.5,
             },
             "overrides": [
-                {"temperature": 1.0},
+                {"alias": "claude-4-temp-1", "temperature": 1.0},
                 {"model": Model.GPT_41_MINI_2025_04_14},
                 {"model": Model.GPT_41_MINI_2025_04_14, "temperature": 1.0},
             ],
