@@ -44,6 +44,7 @@ class TestBuildEventProperties:
         assert properties == {
             "valid_key": "should_be_included",
             "another_valid": 42,
+            "env": "local",
         }
 
 
@@ -89,18 +90,18 @@ class TestSendAnalyticsEvent:
 
         event_dict = {
             "analytics": "test_event",
-            "timestamp": "2023-01-01T00:00:00Z",
             "user_id": "test_user",
             "some_data": "value",
+            "timestamp": "2023-01-01T00:00:00Z",
         }
 
         processor._send_analytics_event(event_dict, "test_event")
 
         mock_posthog.capture.assert_called_once()
         call_args = mock_posthog.capture.call_args
+        assert call_args[1]["timestamp"] == "2023-01-01T00:00:00Z"
         properties = call_args[1]["properties"]
 
-        assert properties["timestamp"] == "2023-01-01T00:00:00Z"
         assert properties["some_data"] == "value"
         # Excluded keys should not be in properties
         assert "analytics" not in properties

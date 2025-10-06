@@ -4,6 +4,7 @@ from posthog import Posthog
 from structlog import get_logger
 from structlog.types import EventDict, WrappedLogger
 
+from core.consts import ENV_NAME
 from core.utils.coroutines import capture_errors
 
 _EXCLUDED_KEYS = {
@@ -39,21 +40,21 @@ class PostHogProcessor:
         Excludes internal structlog keys and includes relevant context data.
         """
 
-        return {
+        props = {
             key: value for key, value in event_dict.items() if key not in _EXCLUDED_KEYS and not key.startswith("_")
         }
+        props["env"] = ENV_NAME
+        return props
 
     def _send_analytics_event(self, event_dict: EventDict, event_name: str) -> None:
         """Send analytics event to PostHog."""
         user_id = event_dict.get("user_id") or event_dict.get("tenant") or "anonymous"
 
-        properties = self._build_event_properties(event_dict)
-        properties["timestamp"] = event_dict.get("timestamp")
-
         self._posthog.capture(
             distinct_id=str(user_id),
             event=event_name,
-            properties=properties,
+            timestamp=event_dict.get("timestamp"),
+            properties=self._build_event_properties(event_dict),
         )
 
     def __call__(
