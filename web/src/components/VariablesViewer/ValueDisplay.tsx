@@ -105,10 +105,10 @@ export type ValueDisplayProps = {
   value: unknown;
   textSize: "xs" | "sm" | "base" | string;
   showSeeMore: boolean;
-  key?: string;
+  keyName?: string;
 };
 
-function ValueDisplay({ value, textSize, showSeeMore, key }: ValueDisplayProps) {
+function ValueDisplay({ value, textSize, showSeeMore, keyName }: ValueDisplayProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldTruncateByHeight, setShouldTruncateByHeight] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -172,7 +172,7 @@ function ValueDisplay({ value, textSize, showSeeMore, key }: ValueDisplayProps) 
     }
 
     // Special handling for image URLs (including URLs with image_url key)
-    if (isImageUrl(value) || isImageKey(key)) {
+    if (isImageUrl(value) || isImageKey(keyName)) {
       return (
         <div
           className={cx("inline-block relative", textSizeClass)}
@@ -403,6 +403,6 @@ export default memo(ValueDisplay, (prevProps, nextProps) => {
     prevProps.value === nextProps.value &&
     prevProps.textSize === nextProps.textSize &&
     prevProps.showSeeMore === nextProps.showSeeMore &&
-    prevProps.key === nextProps.key
+    prevProps.keyName === nextProps.keyName
   );
 });
