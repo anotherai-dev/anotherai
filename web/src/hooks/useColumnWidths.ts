@@ -5,10 +5,7 @@ import { useLocalStorage } from "usehooks-ts";
  * A hook for managing column widths in experiments with localStorage persistence
  */
 export function useColumnWidths(experimentId: string, versionIds: string[], defaultWidth: number = 400) {
-  const [columnWidths, setColumnWidths] = useLocalStorage<Record<string, number>>(
-    `column-widths-${experimentId}`,
-    {}
-  );
+  const [columnWidths, setColumnWidths] = useLocalStorage<Record<string, number>>(`column-widths-${experimentId}`, {});
 
   // Function to set width for a specific column
   const setColumnWidth = useCallback(
