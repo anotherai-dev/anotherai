@@ -276,20 +276,37 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
             raise ObjectNotFoundError(f"Experiment not found: {experiment_id}")
         return row["uid"]
 
+    async def _map_uids(
+        self,
+        connection: PoolConnectionProxy,
+        experiment_uid: int,
+        ids: set[str],
+        table: str,
+        column: str,
+    ):
+        rows = await connection.fetch(
+            f"SELECT uid, {column}, alias FROM {table} WHERE experiment_uid = $1 AND ({column} = ANY($2) OR alias = ANY($2))",  # noqa: S608
+            experiment_uid,
+            ids,
+        )
+
+        def _it():
+            for row in rows:
+                yield row[column], row["uid"]
+                if row["alias"]:
+                    yield row["alias"], row["uid"]
+
+        if len(rows) != len(ids):
+            raise ObjectNotFoundError(f"{table} not found: {ids - {row[0] for row in _it()}}")
+        return dict(_it())
+
     async def _version_uids(
         self,
         connection: PoolConnectionProxy,
         experiment_uid: int,
         version_ids: set[str],
     ) -> dict[str, int]:
-        rows = await connection.fetch(
-            "SELECT uid, version_id FROM experiment_versions WHERE experiment_uid = $1 AND version_id = ANY($2)",
-            experiment_uid,
-            version_ids,
-        )
-        if len(rows) != len(version_ids):
-            raise ObjectNotFoundError(f"Version not found: {version_ids - {row['version_id'] for row in rows}}")
-        return {row["version_id"]: row["uid"] for row in rows}
+        return await self._map_uids(connection, experiment_uid, version_ids, "experiment_versions", "version_id")
 
     async def _input_uids(
         self,
@@ -297,14 +314,7 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
         experiment_uid: int,
         input_ids: set[str],
     ) -> dict[str, int]:
-        rows = await connection.fetch(
-            "SELECT uid, input_id FROM experiment_inputs WHERE experiment_uid = $1 AND input_id = ANY($2)",
-            experiment_uid,
-            input_ids,
-        )
-        if len(rows) != len(input_ids):
-            raise ObjectNotFoundError(f"Input not found: {input_ids - {row['input_id'] for row in rows}}")
-        return {row["input_id"]: row["uid"] for row in rows}
+        return await self._map_uids(connection, experiment_uid, input_ids, "experiment_inputs", "input_id")
 
     async def _lock_experiment(self, connection: PoolConnectionProxy, experiment_uid: int) -> None:
         await connection.execute(

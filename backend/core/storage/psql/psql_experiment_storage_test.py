@@ -727,6 +727,69 @@ class TestAddCompletions:
                 ],
             )
 
+    async def test_add_completion_with_aliases(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+    ):
+        # Create input and version with aliases
+        agent_input = ExperimentInput(
+            messages=[Message.with_text("Test message")],
+            variables=None,
+            alias="test-input-alias",
+        )
+        version = ExperimentVersion(
+            model="gpt-4o",
+            alias="test-version-alias",
+        )
+
+        # Add them to the experiment
+        await experiment_storage.add_inputs(inserted_experiment.id, [agent_input])
+        await experiment_storage.add_versions(inserted_experiment.id, [version])
+
+        # Add completion using aliases instead of IDs
+        completion_id = uuid7()
+        inserted = await experiment_storage.add_completions(
+            inserted_experiment.id,
+            [
+                CompletionIDTuple(
+                    completion_id=completion_id,
+                    version_id="test-version-alias",  # Using alias instead of version.id
+                    input_id="test-input-alias",  # Using alias instead of agent_input.id
+                ),
+            ],
+        )
+        assert inserted == {completion_id}
+
+        # Verify the completion was added correctly by listing completions
+        completions = await experiment_storage.list_experiment_completions(
+            inserted_experiment.id,
+            include={"output"},
+        )
+        assert len(completions) == 1
+        assert completions[0].completion_id == completion_id
+        assert completions[0].version_id == "test-version-alias"
+        assert completions[0].input_id == "test-input-alias"
+
+    async def test_add_completion_with_nonexistent_aliases(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+    ):
+        # Try to add completion with non-existent aliases
+        completion_id = uuid7()
+        with pytest.raises(ObjectNotFoundError):
+            await experiment_storage.add_completions(
+                inserted_experiment.id,
+                [
+                    CompletionIDTuple(
+                        completion_id=completion_id,
+                        version_id="nonexistent-version-alias",
+                        input_id="nonexistent-input-alias",
+                    ),
+                ],
+            )
+
 
 class TestStartCompletion:
     async def test_start_then_double_start_raises(
@@ -1056,3 +1119,77 @@ async def test_output_flow(inserted_experiment: Experiment, experiment_storage: 
     outputs = await experiment_storage.list_experiment_completions(inserted_experiment.id)
     assert len(outputs) == 4
     assert [o.completion_id for o in outputs] == completion_id_list
+
+
+class TestInputUids:
+    async def test_input_uids_success_with_aliases(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+        purged_psql_tenant_conn: PoolConnectionProxy,
+    ):
+        # Insert inputs directly into database with aliases
+        input1 = ExperimentInput(
+            messages=[Message.with_text("I1")],
+            variables=None,
+            preview="I1",
+            alias="input_alias_1",
+        )
+        input2 = ExperimentInput(messages=None, variables={"x": 1}, preview="I2", alias="input_alias_2")
+        await experiment_storage.add_inputs(inserted_experiment.id, [input1, input2])
+
+        # Get experiment_uid
+        experiment_uid = await purged_psql_tenant_conn.fetchval(
+            "SELECT uid FROM experiments WHERE slug = $1",
+            inserted_experiment.id,
+        )
+
+        # Get the actual UIDs from the database
+        input1_uid = await purged_psql_tenant_conn.fetchval(
+            "SELECT uid FROM experiment_inputs WHERE input_id = $1",
+            input1.id,
+        )
+        input2_uid = await purged_psql_tenant_conn.fetchval(
+            "SELECT uid FROM experiment_inputs WHERE input_id = $1",
+            input2.id,
+        )
+
+        # Test success case with just the IDs (aliases should be included in the result)
+        input_uids = await experiment_storage._input_uids(
+            purged_psql_tenant_conn,
+            experiment_uid,
+            {input1.id, input2.id},
+        )
+
+        # Should return mapping for both IDs and aliases
+        expected = {
+            input1.id: input1_uid,
+            input2.id: input2_uid,
+            "input_alias_1": input1_uid,
+            "input_alias_2": input2_uid,
+        }
+        assert input_uids == expected
+
+    async def test_input_uids_failure_not_found(
+        self,
+        inserted_experiment: Experiment,
+        experiment_storage: PsqlExperimentStorage,
+        purged_psql_tenant_conn: PoolConnectionProxy,
+    ):
+        # Insert one input
+        input1 = ExperimentInput(messages=[Message.with_text("I1")], variables=None, preview="I1")
+        await experiment_storage.add_inputs(inserted_experiment.id, [input1])
+
+        # Get experiment_uid
+        experiment_uid = await purged_psql_tenant_conn.fetchval(
+            "SELECT uid FROM experiments WHERE slug = $1",
+            inserted_experiment.id,
+        )
+
+        # Test failure case with non-existent input IDs
+        with pytest.raises(ObjectNotFoundError, match="experiment_inputs not found"):
+            await experiment_storage._input_uids(
+                purged_psql_tenant_conn,
+                experiment_uid,
+                {input1.id, "non_existent_input_id"},
+            )
