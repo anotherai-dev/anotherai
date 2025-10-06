@@ -11,6 +11,7 @@ Today we're introducing a public preview of **AnotherAI**, a MCP server designed
 – deploy a new prompt or model without any code change [[docs](/use-cases/fundamentals/deployments)]
 
 Our work is available at:
+
 - https://anotherai.dev as a managed service, billed at the same cost as the underlying models (no markup).
 - https://github.com/anotherai-dev/anotherai under the Apache 2.0 license.
 
@@ -21,6 +22,7 @@ AnotherAI's MCP server exposes tools that let your AI assistant access over 100 
 [video]
 
 Some prompt examples:
+
 ```
 > can you compare Gemini 2.5 Flash, GPT-4o mini and Mistral Small for this agent "<agent_name>"?
 > can you find a model that is faster but keep the same quality and does not cost more?
@@ -37,6 +39,7 @@ Because your AI assistant can't always be trusted without a human in the loop, w
 Learning from production usage is a key step to improving any AI agent. To learn from production usage, we have implemented an OpenAI compatible API that logs all the completions data coming through, and then our MCP server exposes these logs to your AI assistant.
 
 Some prompt examples:
+
 ```
 > can you look at the last 20 completions for the agent "<agent_name>" and report back the ones that are not good?
 > can you understand why the customer "<customer_email>" had a bad experience with agent "<agent_name>"?
@@ -52,6 +55,7 @@ On top of the completions logs, collecting users' feedback is another key step t
 We believe that AI assistants are so good now that they are able to read users' feedback, identify issues, propose improvements, and run experiments to test changes using production data.
 
 Some prompt examples:
+
 ```
 > can you look at the users' feedback for the agent "<agent_name>" in the last week, and write a report with the most common issues?
 > based on the users' feedback, think about some improvements we can make to the agent "<agent_name>" and run an experiment to test them using the latest production data.
@@ -65,20 +69,24 @@ Learn more about how to use the MCP server to learn from users' feedback [here](
 One very popular feature of our previous product ([WorkflowAI](https://workflowai.com)) was the ability to update an agent's prompt or model without any code change. This feature enables faster iteration cycles, and fixing a prompt can be done without a PR and deployment. We've implemented the same feature in AnotherAI's MCP server, with a human confirmation step to prevent your AI assistant from making changes that are not intended.
 
 Some prompt examples:
+
 ```
 > can you update the deployment "<deployment_id>" to use the model "<model_name>"?
 > update the prompt from "<deployment_id>" to use the prompt from this version "<version_id>"?
 > ...
 ```
+
 Learn more about how to use the MCP server to deploy a new prompt or model without any code change [here](/use-cases/fundamentals/deployments).
 
 ## AI deep dives into metrics.
 
 Because our LLM gateway logs all the completions data, we wanted to give you and your AI assistant the best way to leverage this data. So we've designed two complementary components:
+
 - an MCP tool `query_completions(sql_query)` that allow your AI assistant to query the completions data using SQL queries. We've been really impressed by how good AI assistants are at transforming a natural language question into a complex SQL query. Using SQL instead of a predefined API allows the AI assistant to query the data in very powerful ways.
-- a web UI to view graphs and metrics about your agents. 
+- a web UI to view graphs and metrics about your agents.
 
 Some prompt examples:
+
 ```
 > what is our most expensive agent? can we run an experiment to find a cheaper model that keeps the same quality?
 > what is the p90, and p99 latency for the agent "<agent_name>"?

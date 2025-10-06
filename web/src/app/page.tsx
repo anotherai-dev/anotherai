@@ -17,4 +17,5 @@ export default function Home() {
 
 function RedirectToCompletions() {
   redirect("/completions");
+  return null; // This will never be reached due to redirect, but satisfies TypeScript
 }
