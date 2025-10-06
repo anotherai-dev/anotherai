@@ -1,8 +1,10 @@
 # ruff: noqa: S105
 
+from datetime import UTC, datetime
 from unittest.mock import Mock, patch
 
 import pytest
+from structlog.typing import EventDict
 
 from core.domain.events import EventRouter
 from core.domain.exceptions import InvalidTokenError, ObjectNotFoundError
@@ -178,6 +180,7 @@ class TestFindTenant:
         mock_verifier: Mock,
         mock_tenant_storage: Mock,
         sample_tenant: TenantData,
+        cap_structlogs: list[EventDict],
     ):
         token = "jwt-token-123"
         claims = {"sub": "user123", "org_id": "org456", "org_slug": "test-org"}
@@ -191,6 +194,7 @@ class TestFindTenant:
         mock_verifier.verify.assert_called_once_with(token)
         mock_tenant_storage.tenant_by_org_id.assert_called_once_with("org456")
         mock_tenant_storage.create_tenant_for_org_id.assert_not_called()
+        assert not cap_structlogs
 
     async def test_jwt_token_with_org_id_create_new(
         self,
@@ -198,11 +202,13 @@ class TestFindTenant:
         mock_verifier: Mock,
         mock_tenant_storage: Mock,
         sample_tenant: TenantData,
+        cap_structlogs: list[EventDict],
     ):
         token = "jwt-token-123"
         claims = {"sub": "user123", "org_id": "org456", "org_slug": "test-org"}
         mock_verifier.verify.return_value = claims
         mock_tenant_storage.tenant_by_org_id.side_effect = ObjectNotFoundError("tenant")
+        sample_tenant.created_at = datetime.now(UTC)
         mock_tenant_storage.create_tenant_for_org_id.return_value = sample_tenant
 
         result = await security_service.find_tenant(token)
@@ -211,6 +217,11 @@ class TestFindTenant:
         mock_verifier.verify.assert_called_once_with(token)
         mock_tenant_storage.tenant_by_org_id.assert_called_once_with("org456")
         mock_tenant_storage.create_tenant_for_org_id.assert_called_once_with("org456", "test-org", "user123")
+
+        analytics = [event["analytics"] for event in cap_structlogs if event.get("analytics")]
+
+        assert len(analytics) == 1
+        assert analytics[0] == "signup"
 
     async def test_jwt_token_with_org_id_no_slug(
         self,

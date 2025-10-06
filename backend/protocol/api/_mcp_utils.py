@@ -42,7 +42,7 @@ class BaseMiddleware(Middleware):
         context: MiddlewareContext[CallToolRequestParams],
         call_next: CallNext[CallToolRequestParams, ToolResult],
     ) -> ToolResult:
-        _log.info("on_call_tool", method=context.method)
+        _log.info("Tool call", method=context.method, analytics="tool_call")
         # Trying to deserialize JSON sent as a string
         # See https://github.com/jlowin/fastmcp/issues/932
         if context.message.arguments:
@@ -250,11 +250,6 @@ class CustomTokenVerifier(TokenVerifier):
     async def verify_token(self, token: str) -> AccessToken | None:
         deps = lifecycle_dependencies()
         tenant = await deps.security_service.find_tenant(token)
-        bind_contextvars(
-            tenant_org_id=tenant.org_id,
-            tenant_owner_id=tenant.owner_id,
-            tenant_slug=tenant.slug,
-        )
         return AccessToken(
             token=token,
             client_id="",

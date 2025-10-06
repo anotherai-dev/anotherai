@@ -213,6 +213,16 @@ class RunService:
                 base += f" Did you mean {suggested}?"
             raise BadRequestError(base) from None
 
+        _log.info(
+            "Create completion",
+            analytics="chat_completion",
+            agent_id=prepared_run.agent_id,
+            model=prepared_run.version.model,
+            uses_deployment=isinstance(agent_ref, _EnvironmentRef),
+            uses_variables=bool(request.input),
+            uses_structured_output=bool(request.response_format),
+        )
+
         if request.metadata:
             prepared_run.metadata.update(request.metadata)
 
