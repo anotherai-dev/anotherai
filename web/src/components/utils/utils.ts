@@ -333,12 +333,13 @@ export function getPriceAndLatencyPerVersion(
   }));
 }
 
+export const IGNORED_VERSION_KEYS: string[] = ["id", "alias"];
+
 export function getDifferingVersionKeys(versions: Version[]): string[] {
   if (versions.length <= 1) return Object.keys([]);
 
   const keysToShow: string[] = [];
   const keysToAlwaysShow: string[] = ["model"];
-  const blackListedKeys: string[] = ["id"];
 
   // Gather all unique keys from all versions
   const allKeys = new Set<string>();
@@ -347,7 +348,7 @@ export function getDifferingVersionKeys(versions: Version[]): string[] {
   });
 
   const filteredKeys = Array.from(allKeys).filter(
-    (key) => !keysToAlwaysShow.includes(key) && !blackListedKeys.includes(key)
+    (key) => !keysToAlwaysShow.includes(key) && !IGNORED_VERSION_KEYS.includes(key)
   );
 
   for (const key of filteredKeys) {
@@ -462,8 +463,6 @@ export function getVersionWithDefaults(version: Version): ExtendedVersion {
 export function getVersionKeys(versions: Version[]): string[] {
   if (versions.length === 0) return [];
 
-  const blackListedKeys: string[] = ["id"];
-
   // Apply defaults to all versions
   const versionsWithDefaults = versions.map(getVersionWithDefaults);
 
@@ -474,7 +473,7 @@ export function getVersionKeys(versions: Version[]): string[] {
   });
 
   // Return all keys except blacklisted ones
-  return Array.from(allKeys).filter((key) => !blackListedKeys.includes(key));
+  return Array.from(allKeys).filter((key) => !IGNORED_VERSION_KEYS.includes(key));
 }
 
 // Helper function to normalize objects and arrays for order-independent comparison
@@ -530,7 +529,7 @@ export function normalizeForComparison(value: unknown): string {
   return String(value);
 }
 
-export function getMatchingVersionKeys(versions: Version[], blackListedKeys: string[] = ["id"]): string[] {
+export function getMatchingVersionKeys(versions: Version[], blackListedKeys: string[] = ["id", "alias"]): string[] {
   // For single version, return all keys (including defaults) except blacklisted ones
   if (versions.length === 1) {
     const versionWithDefaults = getVersionWithDefaults(versions[0]);

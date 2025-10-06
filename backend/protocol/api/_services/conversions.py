@@ -428,8 +428,7 @@ def input_from_domain[T: Input](agent_input: DomainInput, t: type[T] = Input, **
 
 
 def experiment_input_from_domain(input: DomainExperimentInput) -> ExperimentInput:
-    test = input_from_domain(input, ExperimentInput, alias=input.alias)
-    return test
+    return input_from_domain(input, ExperimentInput, alias=input.alias)
 
 
 def input_to_domain(agent_input: Input) -> DomainInput:

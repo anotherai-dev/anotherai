@@ -227,8 +227,8 @@ export interface Experiment {
   result?: string;
   agent_id: string;
   completions?: ExperimentCompletion[];
-  versions?: Version[];
-  inputs?: Input[];
+  versions?: (Version & { alias?: string })[];
+  inputs?: (Input & { alias?: string })[];
   annotations?: Annotation[];
   metadata?: Record<string, unknown>;
 }
