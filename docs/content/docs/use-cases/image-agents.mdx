@@ -16,294 +16,141 @@ Before you begin, make sure you have the AnotherAI MCP server configured with yo
 Need an extra hand with building agents? We're happy to help. Reach us at [team@workflowai.support](mailto:team@workflowai.support) or on [Slack](https://join.slack.com/t/anotherai-dev/shared_invite/zt-3av2prezr-Lz10~8o~rSRQE72m_PyIJA).
 </Callout>
 
+In this guide, we'll walk through the process of building an image-based AI agent that analyzes food photos and provides calorie information. Our goal with this agent's flow is to give it an image of a food or meal and have it return a structured list of detected foods with their respective calorie counts.
 
-## Specifying Agent Behavior and Requirements
+<Steps>
+<Step>
+### Prepare Your Test Data
 
-The easiest way to create a new agent is to ask your preferred AI assistant to build it for you.
+For text-based agents, it's quite simple for your AI assistant to generate data for you, however for image-based agents, AI assistants are inconsistent about generating valid image URLs as input. Therefore, to produce useful results, we strongly recommend that you use your own images for testing. 
 
-#### Basic Agent Creation
+**Types of Image Input Data:**
 
-Start by describing what your agent should do:
+When it comes to using image data as input, the inputs can be either:
+- Local files (ex. `/Users/username/images/pizza-margherita.jpg`)
+- Public URLs (ex. `https://example.com/pizza-margherita.jpg`)
 
-For image agents, we recommend including a few examples of the images you want to use as input to the agent in your initial prompt. You can learn more about how to work with image test data [here](/use-cases/image-agents#data-for-image-experiments).
+Additionally, these formats can either be:
+- Standalone files (generally recommended when starting the agent development process) 
+- Part of a [dataset](/use-cases/fundamentals/evaluating#using-datasets-to-evaluate-your-agents) (generally more complex to put together and used later on as part of [agent evaluations](/use-cases/fundamentals/evaluating)).
+
+Here is the process for using each type of image as input when creating your agent:
+
+<Accordions>
+<Accordion title="Public URLs">
+**Quickest Usage Option:** 
+
+If you want to use the images immediately for testing and aren't interested in saving the URLs in your codebase or in a dataset for later use (or don't have access to your codebase), simply include the image URL(s) in your [agent creation prompt](/use-cases/image-agents#creating-your-agent) and request that they are used as inputs in the AnotherAI experiment:
 
 ```
 Create an AnotherAI agent that provides a list of detected foods and their approximate 
-calorie count from a given image. Use the content of @food-analysis-dataset.json as inputs 
-to test the agent with an AnotherAI experiment.
+calorie count from a given image. Use the content of https://example.com/pizza-margherita.jpg 
+as an input to test the agent with an AnotherAI experiment.
 ```
 
-#### Adding Performance Requirements
+**If you want to save the URLs for later use:**
+1. Create a file in your project for your input image URLs.
+   - Using a JSON file is common, but if there is another format you'd prefer to use (.csv, .txt, etc.), you can use that instead. If you're unsure how to format your dataset, ask your AI assistant to help you.
+   ```
+   I have a bunch of image URLs that I want to use as inputs to test my agent. 
+   Help me create a dataset file to store them.
+   ```
 
-If you have other criteria or constraints for your agent, you can include them in your prompt and your AI assistant will use AnotherAI to help you optimize for them.
-
-**For customer-facing agents that need fast responses:**
-
-```
-Create a new AnotherAI agent that provides a list of detected foods and their approximate calorie 
-count from a given image where the average response time is less than 4 seconds. Use the content of 
-@food-analysis-dataset.json as inputs to test the agent with an AnotherAI experiment.
-```
-
-**For high-volume agents that need to be cost-effective:**
+2. Paste the image URL(s) directly into your AI assistant's chat and ask them to add it to your file.
 
 ```
-Create a new AnotherAI agent that provides a list of detected foods and their approximate calorie 
-count from a given image that costs less than $5 for 1000 requests. Use the content of 
-@food-analysis-dataset.json as inputs to test the agent with an AnotherAI experiment.
+Add https://example.com/pizza-margherita.jpg as an input to my food-analysis-dataset.json.
 ```
-
-Your AI assistant will be able to construct the agent's code, and will be able to use AnotherAI to access 100+ different models to find the best configuration to help you achieve your goals.
-
-
-#### Adding Metadata
-
-You can also add custom metadata to your agents to help organize and track them. Common use cases include:
-
-- **Workflow tracking**: include a trace_id and workflow_name key. (Learn more about workflows [here](/use-cases/connecting-agents))
-- **User identification**: include a user_id customer_email key. 
+3. Your AI assistant will be able to add the URL to your dataset using the correct formatting.
+4. If you want to include an expected output for your URL input (for example, a description of the image), you can also ask your AI assistant to view the content and extract the information you need.
 
 ```
-Create a new AnotherAI agent that provides a list of detected foods and their approximate calorie 
-count from a given image and include a customer_id metadata key. Use the content of 
-@food-analysis-dataset.json as inputs to test the agent with an AnotherAI experiment.
+Add https://example.com/pizza-margherita.jpg to my food-analysis-dataset.json as input.
+Then view the content of this URL, analyze the food items and their calorie counts,
+and add it to the dataset as the input's expected output.
+```
+</Accordion>
+
+<Accordion title="Local Images">
+If the images you want to use are available via local files and you're in an IDE like Cursor:
+1. Create a folder for the images in your project.
+2. Locate the local files on your computer that you want to use as inputs
+3. Drag and drop the images directly into the folder you created
+
+<iframe src="https://customer-turax1sz4f7wbpuv.cloudflarestream.com/204ccbb4b1c3a0db9525c71ef2e2e9e3/iframe" width="100%"
+height="400" style={{border: 0}} allowFullScreen></iframe>
+4. From there, you can reference the image in your [agent creation prompt](/use-cases/image-agents#creating-your-agent) (either by `@[file_name]` or by dragging and dropping it into the chatbox) or subsequent prompts for additional testing. 
+5. (Optional) Or, if you want to have corresponding expected outputs for your inputs, you can also ask your AI assistant to view the content and extract the information you need, before proceeding with creating your agent.
+
+```
+View each image in /Developer/anotherai/datasets/food-images, analyze the food items
+and their calorie counts, then create a dataset that contains the image file name as
+the input and the food items and their calorie counts that you've detectedas the
+expected output.
 ```
 
-**Agent IDs in Metadata**
+<Callout type="info">
+**A note about image files: Do not drag and drop a local images into your AI assistant's chat without adding them to a folder in your project first.** 
 
-When your AI assistant creates an agent, it automatically assigns an `agent_id` in the metadata. In code it would look something like `"agent_id": "email-summarizer"`, and in the AnotherAI web app it would look like `anotherai/agent/email-summarizer`. The agent ID helps AnotherAI organize completions by agent and enables you to reference specific agents when chatting with your AI assistant.
+If you drop the images into the chat directly, the chat will be able to see the images, but it will not be able to reference them by their file path, meaning it cannot correctly add the files to your dataset or as inputs to an AnotherAI experiment.
+</Callout>
+</Accordion>
 
-You might ask your AI assistant a question about a specific agent, like:
+<Accordion title="Existing Local Datasets">
+If you already have a dataset you want to use, and you're using an IDE like Cursor:
+1. Create a new folder for your dataset in your project.
+2. Drag and drop the existing dataset file into the folder you created in step 1.
+3. From there, you can reference your dataset in your AI assistant chat and request it use some - or all - of the dataset as inputs to test your agent in your agent [creation prompt](/use-cases/image-agents#creating-your-agent) or subsequent prompts for additional testing. For example:
+
 ```
-How much is anotherai/agent/food-analyzer costing me this month?
+Create a new experiment of anotherai/agent/food-analyzer and use the content
+of @food-analysis-dataset.json as inputs to the experiment.
 ```
-(if you're curious about costs of agents, see our [metrics](/use-cases/fundamentals/metrics) page!)
+</Accordion>
+</Accordions>
 
-If you prefer to build manually or want to understand the configuration details, see our [OpenAI SDK Integration](/integrations/openai) guide.
+You can learn more about building and using datasets [here](/use-cases/fundamentals/evaluating#using-datasets-to-evaluate-your-agents).
+</Step>
 
-## Testing your Agent
+<Step>
+### Creating your Agent
+
+After preparing your test data, you can move on to building your agent. The easiest way to create a new agent is to ask your preferred AI assistant to build it for you.
+
+**Basic Agent Creation**
+
+Start by describing what your agent should do:
+
+For image agents, we recommend referencing your test data images that you want to use as input to the agent in your initial prompt.
+
+```
+Create an AnotherAI agent that provides a list of detected foods and their approximate 
+calorie count from a given image. Use the content of /Developer/anotherai/datasets/food-images 
+as inputs to test the agent with an AnotherAI experiment.
+```
+
+**Adding Performance Requirements**
+
+If you have other criteria or constraints for your agent, you can include them in your prompt and your AI assistant will use AnotherAI to help you optimize for them. Learn more about different performance requirements and how to include them in your prompt [here](/use-cases/fundamentals/building#adding-performance-requirements).
+
+**Adding Metadata**
+
+You can also add custom metadata to your agents to help organize and track them. Learn more about adding metadata and how metadata can be used [here](/use-cases/fundamentals/building#adding-metadata).
+</Step>
+
+<Step>
+### Testing your Agent
 
 As part of the process of creating your agent with AnotherAI, your AI assistant will automatically create an initial experiment to test your agent's performance. Experiments allow you to systematically compare each of these different parameters of your agent to find the optimal setup for your use case across one or more inputs. You can use experiments to:
 - Compare performance across different models (GPT-4, Claude, Gemini, etc.)
 - Test multiple prompt variations to find the most effective approach
 - Optimize for specific metrics like cost, speed, and accuracy. 
 
-In the cases above where certain constraints were specified, your AI assistant will automatically create several versions of your agent to assess which one matches your requirements best.
+If you find there is additional criteria you want to test, you can always ask your AI assistant to create additional experiments. The most common parameters to experiment with are [prompts](/use-cases/fundamentals/experiments#prompts) and [models](/use-cases/fundamentals/experiments#models), however you can also experiment with changes to [other parameters like temperature](/use-cases/fundamentals/experiments#other-parameters).
 
-For the prompt requesting a fast agent:
+Learn more about experiments [here](/use-cases/fundamentals/experiments).
 
-![Fast models experiment](/images/fast-models-experiment-food-analyzer.png)
-
-For the prompt requesting a cost-effective agent:
-
-![Cost-effective models experiment](/images/cost-optimization-experiment-food-analyzer.png)
-
-If you find there is additional criteria you want to test, you can always ask your AI assistant to create additional experiments. The most common parameters to experiment with are prompts and models, however you can also experiment with changes to other parameters like temperature. 
-
-### Data for Image Experiments
-
-For text-based agents, it's quite simple for your AI assistant to generate data for you, however for image-based agents, AI assistants are inconsistent about generating valid image URLs as input. Therefore, to produce useful results, we strongly recommend that you use your own images for testing. There are a couple ways to do this:
-
-#### Using a Dataset
-
-A dataset is a collection of images - either local files or public URLs - stored in a structured format (like a folder of images, or a JSON file with image URLs and optional expected outputs) that you can use to test your agent. Datasets can contain expected outputs, but do not need to. 
-
-Datasets can be useful for several reasons:
-- They give you a consistent set of data to test different versions of your agent against.
-- They allow you to make a large number of images easily available in one file or folder, so you don't need to reference each image individually to your AI assistant each time you want to test your agent. 
-- If working in an IDE like Cursor, you can commit the dataset file to your codebase to make it accessible to your team. 
-
-Example dataset with expected outputs:
-```json
-[
-  {
-    "image_url": "https://example.com/images/meal1.jpg",
-    "expected_output": [
-      {"name": "grilled chicken breast", "calories": 165},
-      {"name": "steamed broccoli", "calories": 55},
-      {"name": "brown rice", "calories": 215}
-    ]
-  },
-  {
-    "image_url": "https://example.com/images/meal2.jpg",
-    "expected_output": [
-      {"name": "salmon fillet", "calories": 280},
-      {"name": "asparagus", "calories": 40},
-      {"name": "quinoa", "calories": 220}
-    ]
-  },
-  {
-    "image_url": "https://example.com/images/meal3.jpg",
-    "expected_output": [
-      {"name": "scrambled eggs", "calories": 180},
-      {"name": "whole wheat toast", "calories": 140},
-      {"name": "avocado", "calories": 120}
-    ]
-  }
-]
-```
-
-Example dataset with images only:
-```json
-[
-  {
-    "image_url": "https://example.com/images/photo1.jpg"
-  },
-  {
-    "image_url": "https://example.com/images/photo2.jpg"
-  },
-  {
-    "image_url": "https://example.com/images/photo3.jpg"
-  }
-]
-```
-
-You can learn more about datasets and how to use them [here](/use-cases/fundamentals/evaluating#using-datasets-to-evaluate-your-agents).
-
-#### Using Individual Images
-
-If you have a small number of images to test that you can also upload them individually to your AI assistant. Since images uploaded this way aren't stored in a persistent dataset, this approach is best suited for ad-hoc testing rather than systematic experimentation.  While any completions created using these images will be stored in AnotherAI and can be reused in future experiments, if you wanted to test any specific images again at a later date, you would need to provide links to the specific completions that used those images. 
-
-Refer to the next section below to learn how to upload and reference images properly for use in AnotherAI.
-
-#### How to reference images properly for use in AnotherAI
-When it comes to using image data as input, the inputs can be either local files (ex. `/Users/username/documents/george-washington.png`) or public URLs (ex. `https://cdn.britannica.com/43/173043-050-957816CE/oil-George-Washington-canvas-Gilbert-Stuart-Washington.jpg`). Here is the process for using each type of image as input:
-
-**Public URLs**
-
-If the images you want to use are available via public URLs and you're building your dataset in an IDE like Cursor:
-1. Create a file in your project for your dataset input URLs and - optionally - expected outputs.
-   - Using a JSON file is common, but if there is another format you'd prefer to use (.csv, .txt, etc.), you can use that instead. If you're unsure how to format your dataset, you can ask your AI assistant to help you.
-2. Paste the image URL(s) directly into your AI assistant's chat and ask them to add it to your dataset.
-
-```
-Add https://cdn.britannica.com/43/173043-050-957816CE/oil-George-Washington-canvas-Gilbert-Stuart-Washington.jpg 
-as an input to my us-presidents.json dataset.
-```
-3. Your AI assistant will be able to add the URL to your dataset using the correct formatting.
-4. If you want to include an expected output for your URL input (for example, a description of the image), you can also ask your AI assistant to view the content and extract the information you need.
-
-```
-Add https://cdn.britannica.com/43/173043-050-957816CE/oil-George-Washington-canvas-Gilbert-Stuart-Washington.jpg 
-to my us-presidents.json dataset as input. 
-Then view the content of this URL, write a description of the image and add it to the dataset 
-as the input's expected output.
-```
-
-**Local Images**
-
-If the images you want to use are available via local files and you're building your dataset in an IDE like Cursor:
-1. Create a folder in your for your dataset in your project. 
-2. Locate the local files on your computer that you want to use as inputs
-3. Drag and drop the images directly into the folder you created for your dataset
-
-<iframe src="https://customer-turax1sz4f7wbpuv.cloudflarestream.com/204ccbb4b1c3a0db9525c71ef2e2e9e3/iframe" width="100%"
-height="400" style={{border: 0}} allowFullScreen></iframe>
-4. From there, you can reference the image in your AI assistant chat freely (either by `@[file_name]` or by dragging and dropping it into the chatbox). Your AI assistant will be able to access the image to provide a ground-truth expected output, or add it as an input to an AnotherAI experiment. 
-
-```
-Create a new experiment of anotherai/agent/image-identifier and find the fastest model 
-that can correctly identify this image:
-/Developer/anotherai/datasets/us-presidents/george-washington.png
-
-```
-
-<Callout type="info">
-**A note about image files:** Do not drag and drop a local images into your AI assistant's chat and ask the assistant to add them to your dataset for you. While the chat will be able to see the images, it will not be able to reference them by their file path, meaning it cannot correctly add the files to your dataset or as inputs to an AnotherAI experiment.
-</Callout>
-
-**Using Existing Datasets**
-
-If you already have a dataset you want to use, and you're using an IDE like Cursor:
-1. Create a new folder for your dataset in your project. 
-2. Drag and drop the existing dataset file into the folder you created in step 1.
-3. From there, you can reference your dataset in your AI assistant chat and request it use some - or all - of the dataset as inputs to test your agent.
-
-```
-Create a new experiment of anotherai/agent/image-identifier and use the content 
-of @us-presidents.json as inputs to the experiment.
-```
-### Prompts
-
-Comparing different prompts is one of the most effective ways to improve your agent's performance. Small changes in wording, structure, or examples can lead to significant improvements. If you notice an issue with an existing prompt, you can even ask your AI assistant to generate prompt variations to use in the experiment. 
-
-Example:
-
-```
-Look at the prompt of anotherai/agent/food-analyzer and create an experiment in AnotherAI 
-that compares the current prompt with a new prompt that ensures the food is listed from largest 
-to smallest detected quantity. Use the content of @food-analysis-dataset.json as inputs to 
-test the agent with an AnotherAI experiment.
-```
-
-Your AI assistant will create the experiment and give you an initial analysis of the results and well as a URL to view the results in the AnotherAI web app.
-
-![Terminal output showing experiment creation](/images/experiment-prompt-enhancement-terminal-food-analyzer.png)
-
-You can use the provided URL to view the results in the AnotherAI web app to perform manual analysis of the results.
-
-![Experiment prompts comparison](/images/experiment-prompts-comparison-food-analyzer.png)
-
-### Models
-
-Different models excel at different tasks. AnotherAI supports over 100 different models, and experiments can help you choose the right model for your agent, depending on its needs.
-
-Example:
-
-```
-Create an AnotherAI experiment to help me find a faster model for anotherai/agent/food-analyzer,
-but still maintains the clear and accurate analysis as my current model. Use the content of 
-@food-analysis-dataset.json as inputs to test the agent with an AnotherAI experiment.
-```
-
-If you have a specific model in mind that you want to try - **for example, a newly released model** - you can ask your AI assistant to help you test that model against your existing agent version. You can always request that your AI assistant uses inputs from existing completions, to ensure that you're testing with real, production data. 
-
-Example:
-
-```
-Can you retry the last 5 completions of anotherai/agent/food-analyzer and compare the outputs with
-GPT 5 mini?
-```
-
-![Model comparison experiment](/images/model-comparison-experiment-food-analyzer.png)
-
-### Other Parameters
-
-Beyond prompts and models, adjusting other parameters can impact your agent's behavior and output quality. Temperature in particular can have a significant impact on the quality of the output.
-
-<Accordions>
-<Accordion title="What is Temperature?">
-Temperature is the most important parameter to experiment with after prompts and models. It controls the randomness of the model's output:
-
-- **Low temperature (0.0 - 0.3)**: More deterministic, consistent outputs. Best for:
-  - Data extraction tasks
-  - Classification
-  - Structured output generation
-  - Tasks requiring high accuracy and repeatability
-
-- **Medium temperature (0.4 - 0.7)**: Balanced creativity and consistency. Best for:
-  - General purpose assistants
-  - Question answering
-  - Summary generation
-
-- **High temperature (0.8 - 1.0)**: More creative, varied outputs. Best for:
-  - Creative writing
-  - Brainstorming
-  - Generating diverse options
-
-</Accordion>
-</Accordions>
-
-Example:
-
-```
-Test my food-analyzer agent with temperatures 0.2, 0.5, and 0.8 to find
-the right balance between creativity and professionalism
-```
-
-![Food Analyzer Temperature Experiment](/images/temperature-experiment-food-analyzer.png)
-
-### Managing Large Experiments with Claude Code
+<Callout type="info" title="Managing Large Experiments with Claude Code">
 If you're testing an agent that has a large system prompt and/or very long inputs, you may encounter token limit issues with the `get_experiment` MCP tool that impacts Claude Code's ability to provide accurate insights on your agent.
 
 ![Claude Code Token Limit Error](/images/claude-code-token-limit-error.png)
@@ -327,71 +174,23 @@ echo 'export MAX_MCP_OUTPUT_TOKENS=150000' >> ~/.bashrc && source ~/.bashrc
 export MAX_MCP_OUTPUT_TOKENS=150000
 ```
 
-Notes: 
-- If you forget or don't realize you need to set a higher limit, you can quit your existing session, run the command to increase the limit, and then use `claude --resume` to continue your previous session with the increased limit applied. 
+**Note:** If you forget or don't realize you need to set a higher limit, you can quit your existing session, run the command to increase the limit, and then use `claude --resume` to continue your previous session with the increased limit applied.
 
 You can learn more about tool output limits for Claude Code in their [documentation](https://docs.claude.com/en/docs/claude-code/mcp#mcp-output-limits-and-warnings).
+</Callout>
+</Step>
 
-## Adding Feedback to your Experiments
+<Step>
+### Adding Feedback to your Experiments
 
 When reviewing the results of experiments, you can add feedback (annotations) to help your AI coding agent understand what is working and what is not. Your AI coding agent can then use this feedback to create additional experiments with improved versions of your agent. 
 
-You can add annotations to completions from experiments directly in AnotherAI web app. Annotations can be added for both entire completions and individual fields within the output (when the output is structured).
-
-To add annotations:
-
-<Steps>
-<Step>
-When your coding agent creates an experiment for you, it will automatically send you a URL to the experiment. Use that URL to open the page for the experiments. 
-
-Or if adding annotations to an experiment later:
-- Go to [anotherai.dev/experiments](https://anotherai.dev/experiments)
-- Select the experiment you want to add annotations to
+Learn more about how annotations can be used to improve your agent [here](/use-cases/fundamentals/annotations).
 </Step>
 
 <Step>
-Locate the "Add Annotation" button under each completion's output. Select the button to open a text box where you can add your feedback about the content of that specific completion.
+### Debugging Image Agents
 
-![Add Annotation Button on Completion Output](/images/add-annotation-completion-output.png)
-</Step>
-
-<Step>
-To annotate individual fields within the output, hover over the field you want to annotate and select the "Add Annotation" button.
-
-![Add Annotation on Individual Field](/images/add-annotation-individual-field.png)
-</Step>
-
-<Step>
-You can also add annotations to the model, prompt, output schema (if structured output is enabled for the agent), and other parameters like temperature, top_p, etc.
-
-![Add Annotation on Parameters](/images/add-annotation-parameters.png)
-</Step>
-
-<Step>
-Add specific feedback about what's working and what isn't. For example:
-- "Perfect tone match - captured the enthusiastic style requested. All responses should be this high quality."
-- "Too formal - should be more conversational for this email type"  
-- "The rewrite is too long - original was concise and this adds unnecessary words"
-</Step>
-
-<Step>
-Once you've added annotations, ask your AI assistant to review them and improve your agent:
-
-```
-Review the annotations I added in anotherai/experiment/01997ccb-643a-72e2-8dbd-accfb903f42b 
-and update the prompt to address the issues I identified.
-```
-
-Your AI assistant will analyze your feedback and create an improved version of your agent based on your specific guidance.
+The process of debugging image agents is the same as debugging text-based agents. Learn more about debugging agents [here](/use-cases/fundamentals/debugging).
 </Step>
 </Steps>
-
-To learn more about how annotations can be used to improve your agent, see our [Improving an Agent with Annotations](/use-cases/fundamentals/annotations) page.
-
-<Callout type="info">
-Images can currently only be processed as input to agents. Image generation as output is not yet supported.
-</Callout>
-
-## Debugging Image Agents
-
-The process of debugging image agents is the same as debugging text-based agents. You can learn more about debugging agents in our [Debugging guide](/use-cases/fundamentals/debugging).
