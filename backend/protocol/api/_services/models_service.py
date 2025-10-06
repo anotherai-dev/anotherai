@@ -1,11 +1,14 @@
-from collections.abc import Iterator
-from typing import cast
+from collections.abc import Iterable, Iterator
+from typing import Any, cast
 
 from core.domain.models.model_data import FinalModelData, LatestModel
 from core.domain.models.model_data_mapping import MODEL_DATAS
 from core.domain.models.models import Model as ModelID
-from protocol.api._api_models import Model
-from protocol.api._services.conversions import model_response_from_domain, model_response_from_domain_mcp
+from protocol.api._api_models import Model, ModelField
+from protocol.api._services.conversions import (
+    model_response_filter,
+    model_response_from_domain,
+)
 
 
 def _model_data_iterator() -> Iterator[Model]:
@@ -24,27 +27,10 @@ def _model_data_iterator() -> Iterator[Model]:
         yield model_response_from_domain(model.value, final_data)
 
 
-def _model_data_iterator_mcp() -> Iterator[Model]:
-    """Iterator for MCP responses that excludes icon_url to reduce context window usage."""
-    for model in ModelID:
-        data = MODEL_DATAS[model]
-        final_data: FinalModelData | LatestModel
-        if isinstance(data, LatestModel):
-            final_data = cast(FinalModelData, MODEL_DATAS[data.model])
-        elif isinstance(data, FinalModelData):
-            final_data = data
-        else:
-            # Skipping deprecated models
-            continue
-        if not final_data.providers:
-            continue
-        yield model_response_from_domain_mcp(model.value, final_data)
-
-
 async def list_models() -> list[Model]:
     return list(_model_data_iterator())
 
 
-async def list_models_mcp() -> list[Model]:
+async def list_models_mcp(fields: Iterable[ModelField] | None = None) -> list[dict[str, Any]]:
     """List models for MCP responses, excluding icon_url to reduce context window usage."""
-    return list(_model_data_iterator_mcp())
+    return list(model_response_filter(fields, _model_data_iterator()))

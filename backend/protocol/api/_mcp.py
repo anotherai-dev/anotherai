@@ -20,7 +20,7 @@ from protocol.api._api_models import (
     Deployment,
     Experiment,
     Input,
-    Model,
+    ModelField,
     Page,
     QueryCompletionResponse,
     SearchDocumentationResponse,
@@ -232,7 +232,9 @@ async def get_experiment(
 
 
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
-async def list_models() -> list[Model]:
+async def list_models(
+    include: list[ModelField] | None = None,
+) -> list[dict[str, Any]]:
     """List all available AI models with their capabilities, pricing, and metadata.
 
     Returns a list of Model objects containing:
@@ -247,10 +249,10 @@ async def list_models() -> list[Model]:
     - pricing: Cost information per token (input_token_usd, output_token_usd)
     - release_date: When the model was released on the platform
     - reasoning: Optional reasoning configuration with token budgets for different effort levels
-
-    Use this tool before calling playground() to see available model IDs and their capabilities.
+    - context_window: Context window and output token limits for the model.
+    - speed_index: Speed index of the model.
     """
-    return await models_service.list_models_mcp()
+    return await models_service.list_models_mcp(include)
 
 
 # ------------------------------------------------------------
