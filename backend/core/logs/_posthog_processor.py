@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from typing import Any
 
 from posthog import Posthog
@@ -50,10 +51,15 @@ class PostHogProcessor:
         """Send analytics event to PostHog."""
         user_id = event_dict.get("user_id") or event_dict.get("tenant") or "anonymous"
 
+        ts = event_dict.get("timestamp")
+        if isinstance(ts, str):
+            ts = datetime.fromisoformat(ts)
+            ts.replace(tzinfo=UTC)
+
         self._posthog.capture(
             distinct_id=str(user_id),
             event=event_name,
-            timestamp=event_dict.get("timestamp"),
+            timestamp=ts,
             properties=self._build_event_properties(event_dict),
         )
 

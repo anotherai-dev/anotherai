@@ -79,7 +79,7 @@ class BaseMiddleware(Middleware):
     async def on_message(self, context: MiddlewareContext[Any], call_next: CallNext[Any, Any]) -> Any:
         tool_name = getattr(context.message, "name", None)
         bind_contextvars(tool_name=tool_name)
-        _log.debug("on_message", method=context.method)
+        _log.debug("on_message", _method=context.method)
         try:
             return await call_next(context)
         except ToolError as e:
