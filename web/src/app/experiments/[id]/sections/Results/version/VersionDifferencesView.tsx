@@ -18,7 +18,6 @@ type VersionDifferencesViewProps = {
 export function VersionDifferencesView(props: VersionDifferencesViewProps) {
   const { version, differingKeys, annotations, experimentId, completionId, index } = props;
   const [showAddForm, setShowAddForm] = useState<string | null>(null);
-  console.log("version", version);
 
   const handleAddAnnotation = (key: string) => (e?: React.MouseEvent) => {
     e?.preventDefault();
@@ -44,8 +43,6 @@ export function VersionDifferencesView(props: VersionDifferencesViewProps) {
         return true;
       });
   }, [version, differingKeys]);
-
-  console.log("keysAndValuesToShow", keysAndValuesToShow);
 
   if (keysAndValuesToShow.length === 0) {
     return null;
