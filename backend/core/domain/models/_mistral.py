@@ -152,9 +152,7 @@ def mistral_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             icon_url="https://workflowai.blob.core.windows.net/workflowai-public/mistral.svg",
             release_date=date(2024, 10, 24),
             quality_data=QualityData(mmlu=63.4, gpqa=33.8),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2182, duration_seconds=13),
-            ),
+            speed_data=SpeedData.from_tps(value=196),
             provider_name=DisplayedProvider.MISTRAL_AI.value,
             supports_tool_calling=True,
             fallback=ModelFallback.default("cheapest"),
@@ -178,9 +176,7 @@ def mistral_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             icon_url="https://workflowai.blob.core.windows.net/workflowai-public/mistral.svg",
             release_date=date(2025, 6, 11),
             quality_data=QualityData(mmlu=52.9, gpqa=33.8),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2293, duration_seconds=20),
-            ),
+            speed_data=SpeedData.from_tps(value=124),
             provider_name=DisplayedProvider.MISTRAL_AI.value,
             supports_tool_calling=True,
             latest_model=Model.MISTRAL_SMALL_LATEST,
@@ -199,9 +195,7 @@ def mistral_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             icon_url="https://workflowai.blob.core.windows.net/workflowai-public/mistral.svg",
             release_date=date(2025, 3, 17),
             quality_data=QualityData(mmlu=52.9, gpqa=33.8),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2293, duration_seconds=20),
-            ),
+            speed_data=SpeedData.from_tps(value=124),
             provider_name=DisplayedProvider.MISTRAL_AI.value,
             supports_tool_calling=True,
             latest_model=Model.MISTRAL_SMALL_LATEST,
@@ -220,9 +214,7 @@ def mistral_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             icon_url="https://workflowai.blob.core.windows.net/workflowai-public/mistral.svg",
             release_date=date(2025, 1, 13),
             quality_data=QualityData(mmlu=52.9, gpqa=33.8),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2289, duration_seconds=17),
-            ),
+            speed_data=SpeedData.from_tps(value=175),
             provider_name=DisplayedProvider.MISTRAL_AI.value,
             supports_tool_calling=True,
             latest_model=Model.MISTRAL_SMALL_LATEST,
@@ -241,9 +233,7 @@ def mistral_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             icon_url="https://workflowai.blob.core.windows.net/workflowai-public/mistral.svg",
             release_date=date(2024, 9, 24),
             quality_data=QualityData(mmlu=52.9, gpqa=33.8),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2407, duration_seconds=17.5),
-            ),
+            speed_data=SpeedData.from_tps(value=203),
             provider_name=DisplayedProvider.MISTRAL_AI.value,
             supports_tool_calling=True,
             latest_model=Model.MISTRAL_SMALL_LATEST,
@@ -266,9 +256,7 @@ def mistral_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             icon_url="https://workflowai.blob.core.windows.net/workflowai-public/mistral.svg",
             release_date=date(2025, 1, 13),
             quality_data=QualityData(mmlu=63.47, gpqa=38.35),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2218, duration_seconds=20),
-            ),
+            speed_data=SpeedData.from_tps(value=206),
             provider_name=DisplayedProvider.MISTRAL_AI.value,
             supports_tool_calling=True,
             fallback=ModelFallback.default("cheap"),
@@ -287,9 +275,7 @@ def mistral_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             icon_url="https://workflowai.blob.core.windows.net/workflowai-public/mistral.svg",
             release_date=date(2025, 1, 13),
             quality_data=QualityData(mmlu=63.47, gpqa=38.35),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2218, duration_seconds=20),
-            ),
+            speed_data=SpeedData.from_tps(value=206),
             provider_name=DisplayedProvider.MISTRAL_AI.value,
             supports_tool_calling=True,
             fallback=ModelFallback.default("cheap"),
@@ -316,9 +302,7 @@ def mistral_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
                 gpqa_diamond=57.1,
                 source="https://mistral.ai/news/mistral-medium-3",
             ),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2479, duration_seconds=32.9),
-            ),
+            speed_data=SpeedData.from_tps(value=76),
             provider_name=DisplayedProvider.MISTRAL_AI.value,
             supports_tool_calling=True,
             fallback=ModelFallback.default("cheap"),
@@ -341,9 +325,7 @@ def mistral_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
                 gpqa_diamond=57.1,
                 source="https://mistral.ai/news/mistral-medium-3",
             ),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2479, duration_seconds=32.9),
-            ),
+            speed_data=SpeedData.from_tps(value=93),
             provider_name=DisplayedProvider.MISTRAL_AI.value,
             supports_tool_calling=True,
             fallback=ModelFallback.default("cheap"),
@@ -365,9 +347,7 @@ def mistral_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
                 gpqa_diamond=68.18,
                 source="https://huggingface.co/mistralai/Magistral-Small-2506",
             ),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2500, duration_seconds=74),
-            ),
+            speed_data=SpeedData.from_tps(value=213),
             provider_name=DisplayedProvider.MISTRAL_AI.value,
             supports_tool_calling=True,
             # Magistral does not support configuring a reasoning budget or effort
@@ -390,9 +370,7 @@ def mistral_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
                 gpqa_diamond=68.18,
                 source="https://huggingface.co/mistralai/Magistral-Small-2506",
             ),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2500, duration_seconds=74),
-            ),
+            speed_data=SpeedData.from_tps(value=214),
             provider_name=DisplayedProvider.MISTRAL_AI.value,
             supports_tool_calling=True,
             # Magistral does not support configuring a reasoning budget or effort
@@ -415,9 +393,7 @@ def mistral_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
                 gpqa_diamond=68.18,
                 source="https://huggingface.co/mistralai/Magistral-Small-2506",
             ),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2500, duration_seconds=74),
-            ),
+            speed_data=SpeedData.from_tps(value=215),
             provider_name=DisplayedProvider.MISTRAL_AI.value,
             supports_tool_calling=True,
             # Magistral does not support configuring a reasoning budget or effort
@@ -441,9 +417,7 @@ def mistral_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
                 gpqa_diamond=79.8,
                 source="https://mistral.ai/news/magistral",
             ),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2500, duration_seconds=85),
-            ),
+            speed_data=SpeedData.from_tps(value=146),
             provider_name=DisplayedProvider.MISTRAL_AI.value,
             supports_tool_calling=True,
             # Magistral does not support configuring a reasoning budget or effort
@@ -466,9 +440,7 @@ def mistral_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
                 gpqa_diamond=79.8,
                 source="https://mistral.ai/news/magistral",
             ),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2500, duration_seconds=85),
-            ),
+            speed_data=SpeedData.from_tps(value=146),
             provider_name=DisplayedProvider.MISTRAL_AI.value,
             supports_tool_calling=True,
             # Magistral does not support configuring a reasoning budget or effort
@@ -491,9 +463,7 @@ def mistral_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
                 gpqa_diamond=79.8,
                 source="https://mistral.ai/news/magistral",
             ),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2500, duration_seconds=85),
-            ),
+            speed_data=SpeedData.from_tps(value=146),
             provider_name=DisplayedProvider.MISTRAL_AI.value,
             supports_tool_calling=True,
             # Magistral does not support configuring a reasoning budget or effort
