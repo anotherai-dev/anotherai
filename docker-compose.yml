@@ -93,6 +93,7 @@ services:
       ANOTHERAI_API_URL: http://api:8000
     volumes:
       - ./web:/app/web
+      - ./docs:/app/docs
     depends_on:
       - api
 
