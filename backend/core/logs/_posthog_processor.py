@@ -55,7 +55,7 @@ class PostHogProcessor:
         # Posthog supposedly accepts strings but it creates an error if it's not a datetime
         if isinstance(ts, str):
             ts = datetime.fromisoformat(ts)
-            ts.replace(tzinfo=UTC)
+            ts = ts.replace(tzinfo=UTC)
 
         self._posthog.capture(
             distinct_id=str(user_id),

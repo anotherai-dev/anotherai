@@ -1,5 +1,6 @@
 # pyright: reportPrivateUsage=false
 
+from datetime import UTC, datetime
 from unittest.mock import Mock, patch
 
 import pytest
@@ -99,7 +100,7 @@ class TestSendAnalyticsEvent:
 
         mock_posthog.capture.assert_called_once()
         call_args = mock_posthog.capture.call_args
-        assert call_args[1]["timestamp"] == "2023-01-01T00:00:00Z"
+        assert call_args[1]["timestamp"] == datetime(2023, 1, 1, 0, 0, 0, tzinfo=UTC)
         properties = call_args[1]["properties"]
 
         assert properties["some_data"] == "value"
