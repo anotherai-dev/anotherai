@@ -1,5 +1,6 @@
-export interface ModelWithID {
+export interface IDAndAlias {
   id: string;
+  alias?: string;
 }
 
 // Payment-related types
@@ -193,8 +194,8 @@ export interface Annotation {
 
 export interface ExperimentCompletion {
   id: string;
-  input: ModelWithID;
-  version: ModelWithID;
+  input: IDAndAlias;
+  version: IDAndAlias;
   output: Output;
   cost_usd: number;
   duration_seconds: number;

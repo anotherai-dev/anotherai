@@ -755,8 +755,8 @@ class TestAddCompletions:
             [
                 CompletionIDTuple(
                     completion_id=completion_id,
-                    version_id="test-version-alias",  # Using alias instead of version.id
-                    input_id="test-input-alias",  # Using alias instead of agent_input.id
+                    version_id=version.id,  # Using alias instead of version.id
+                    input_id=agent_input.id,  # Using alias instead of agent_input.id
                 ),
             ],
         )
@@ -769,8 +769,10 @@ class TestAddCompletions:
         )
         assert len(completions) == 1
         assert completions[0].completion_id == completion_id
-        assert completions[0].version_id == "test-version-alias"
-        assert completions[0].input_id == "test-input-alias"
+        assert completions[0].version_id == "4f587b3e7b88ca33be108c6d0ffd8f22"
+        assert completions[0].version_alias == "test-version-alias"
+        assert completions[0].input_id == "593541ca26ef741e6b3d0089dc810559"
+        assert completions[0].input_alias == "test-input-alias"
 
     async def test_add_completion_with_nonexistent_aliases(
         self,
@@ -969,8 +971,10 @@ class TestListExperimentCompletions:
         # List completions and verify aliases are returned
         completions = await experiment_storage.list_experiment_completions(inserted_experiment.id)
         assert len(completions) == 1
-        assert completions[0].input_id == "test-input-alias"
-        assert completions[0].version_id == "test-version-alias"
+        assert completions[0].input_id == "e4536f7d4f771857884c64a659f9b101"
+        assert completions[0].input_alias == "test-input-alias"
+        assert completions[0].version_id == "4f587b3e7b88ca33be108c6d0ffd8f22"
+        assert completions[0].version_alias == "test-version-alias"
 
     async def test_list_experiment_completions_falls_back_to_ids_when_no_aliases(
         self,
