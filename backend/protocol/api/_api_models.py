@@ -3,6 +3,7 @@ Do not include validation or conversion logic here. Logic should be included eit
 or in the conversion layer."""
 
 from datetime import date, datetime
+from enum import StrEnum
 from typing import Annotated, Any, Literal
 from uuid import UUID
 
@@ -604,6 +605,15 @@ class ModelContextWindow(BaseModel):
     max_output_tokens: int = Field(
         description="The maximum number of tokens that the model can output.",
     )
+
+
+class ModelField(StrEnum):
+    supports = "supports"
+    pricing = "pricing"
+    reasoning = "reasoning"
+    speed_index = "speed_index"
+    context_window = "context_window"
+    release_date = "release_date"
 
 
 class Model(BaseModel):

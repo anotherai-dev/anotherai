@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from datetime import UTC, datetime
 from typing import Any, Literal
 from uuid import UUID
@@ -65,6 +66,7 @@ from protocol.api._api_models import (
     Message,
     Model,
     ModelContextWindow,
+    ModelField,
     ModelPricing,
     ModelReasoning,
     ModelSupports,
@@ -586,6 +588,17 @@ def model_response_from_domain(model_id: str, model: FinalModelData) -> Model:
         context_window=model_context_window_from_domain(model.max_tokens_data),
         speed_index=model.speed_index,
     )
+
+
+def model_response_filter(fields: Iterable[ModelField] | None, models: Iterable[Model]) -> Iterable[dict[str, Any]]:
+    """Convert model data for MCP responses, excluding icon_url to reduce context window usage."""
+    include = {"id", "display_name"}
+    if fields is None:
+        include.update(ModelField)
+    else:
+        include.update(fields)
+    for model in models:
+        yield model.model_dump(include=include, exclude_none=True)
 
 
 def _sanitized_completion_id(completion_id: str) -> UUID:
