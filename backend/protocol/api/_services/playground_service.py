@@ -373,7 +373,7 @@ def _version_request_with_override(base: VersionRequest, override: dict[str, Any
     try:
         return VersionRequest.model_validate(
             {
-                **base.model_dump(exclude_unset=True, exclude_none=True),
+                **base.model_dump(exclude_unset=True, exclude_none=True, exclude={"alias"}),
                 **override,
             },
         )
