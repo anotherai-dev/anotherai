@@ -542,7 +542,7 @@ async def test_playground_ordering(test_api_client: IntegrationTestClient):
         },
     )
     assert "completions" in exp
-    assert [(c["version"]["id"], c["input"]["id"]) for c in exp["completions"]] == [
+    assert [(c["version"]["alias"], c["input"]["alias"]) for c in exp["completions"]] == [
         ("version_1", "input_1"),
         ("version_2", "input_1"),
         ("version_1", "input_2"),
@@ -558,7 +558,7 @@ async def test_playground_ordering(test_api_client: IntegrationTestClient):
             "input_ids": ["input_2", "input_1"],
         },
     )
-    assert [(c["version"]["id"], c["input"]["id"]) for c in exp["completions"]] == [
+    assert [(c["version"]["alias"], c["input"]["alias"]) for c in exp["completions"]] == [
         ("version_2", "input_2"),
         ("version_1", "input_2"),
         ("version_2", "input_1"),
