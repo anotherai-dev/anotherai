@@ -554,6 +554,42 @@ class TestCreateOrReplaceView:
         assert row["title"] == "Updated Title"
         assert row["query"] == "SELECT 1"
 
+    async def test_folder_and_title_not_updated_if_falsy(
+        self,
+        view_storage: PsqlViewStorage,
+        purged_psql_tenant_conn,
+    ):
+        # Insert test folder and view
+        folder_uid = await purged_psql_tenant_conn.fetchval(
+            "INSERT INTO view_folders (slug, name) VALUES ($1, $2) RETURNING uid",
+            "test-folder",
+            "Test Folder",
+        )
+        await purged_psql_tenant_conn.execute(
+            "INSERT INTO views (slug, title, query, folder_uid) VALUES ($1, $2, $3, $4)",
+            "test-view",
+            "Original Title",
+            "SELECT 0",
+            folder_uid,
+        )
+
+        view = View(
+            id="test-view",
+            query="SELECT 1",
+        )
+
+        await view_storage.create_or_replace_view(view)
+
+        # Verify view was updated
+        row = await purged_psql_tenant_conn.fetchrow(
+            "SELECT title, query, folder_uid FROM views WHERE slug = $1",
+            "test-view",
+        )
+        assert row is not None
+        assert row["title"] == "Original Title"
+        assert row["folder_uid"] == folder_uid
+        assert row["query"] == "SELECT 1"
+
 
 class TestRetrieveView:
     async def test_retrieve_view_without_folder(

@@ -132,16 +132,18 @@ class PsqlViewStorage(PsqlBaseStorage, ViewStorage):
                 )
 
             view_row = _ViewRow.from_domain(view, folder_uid)
+            # Query and graph are always updated
+            update_on_conflict = ["query","graph_type","graph"]
+            if view.title:
+                update_on_conflict.append("title")
+            if folder_uid:
+                update_on_conflict.append("folder_uid")
+
+            on_conflict_str = ",".join(f"{c} = EXCLUDED.{c}" for c in update_on_conflict)
             _ = await self._insert(
                 connection,
                 view_row,
-                on_conflict="""ON CONFLICT (tenant_uid, slug) DO UPDATE
-    SET updated_at = CURRENT_TIMESTAMP,
-    title = EXCLUDED.title,
-    query = EXCLUDED.query,
-    folder_uid = EXCLUDED.folder_uid,
-    graph_type = EXCLUDED.graph_type,
-    graph = EXCLUDED.graph""",
+                on_conflict=f"""ON CONFLICT (tenant_uid, slug) DO UPDATE SET {on_conflict_str}""",
                 table="views",
             )
 
