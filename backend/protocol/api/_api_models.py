@@ -239,6 +239,13 @@ class ExperimentInput(Input):
     )
 
 
+class ExperimentVersion(Version):
+    alias: str | None = Field(
+        default=None,
+        description="An alias for the version. Allows to easily identify the version within an experiment.",
+    )
+
+
 class Output(BaseModel):
     messages: list[Message] | None = Field(
         default=None,
@@ -471,9 +478,9 @@ class Experiment(BaseModel):
     result: str | None = Field(default=None, description="A user defined result of the experiment.")
     agent_id: str = Field(description="The agent that created the experiment.")
 
-    versions: list[Version] | None = None
+    versions: list[ExperimentVersion] | None = None
 
-    inputs: list[Input] | None = None
+    inputs: list[ExperimentInput] | None = None
 
     metadata: dict[str, Any] | None = Field(
         default=None,
