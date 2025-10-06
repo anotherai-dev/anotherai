@@ -132,15 +132,18 @@ export function MetricItem({
             formatValue={formatValue}
           />
         }
-        position="topRightAlignedNew"
+        position="topRightAligned"
         popoverClassName="bg-gray-800 text-white rounded-[4px]"
         className=""
       >
         <div
-          className={cx("flex justify-between items-center px-2 py-1 rounded text-xs cursor-pointer", badgeInfo.color)}
+          className={cx(
+            "flex justify-between items-start px-2 py-1 rounded text-xs cursor-pointer gap-2 min-w-0",
+            badgeInfo.color
+          )}
         >
           <span className="text-gray-600 capitalize">{displayLabel}</span>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-wrap min-w-0 justify-end text-right">
             {metricType && badgeInfo.relativeText && badgeInfo.isBest && (
               <span className="text-xs text-gray-500">{badgeInfo.relativeText}</span>
             )}
@@ -150,7 +153,7 @@ export function MetricItem({
                 {badgeInfo.showArrow && <ArrowUp size={12} />}
               </span>
             )}
-            <span className="font-medium">{formatValue(average)}</span>
+            <span className="font-medium break-all">{formatValue(average)}</span>
           </div>
         </div>
       </HoverPopover>
@@ -158,9 +161,9 @@ export function MetricItem({
   }
 
   return (
-    <div className={cx("flex justify-between items-center px-2 py-1 rounded text-xs", badgeInfo.color)}>
+    <div className={cx("flex justify-between items-start px-2 py-1 rounded text-xs gap-2 min-w-0", badgeInfo.color)}>
       <span className="text-gray-600 capitalize">{displayLabel}</span>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 flex-wrap min-w-0 justify-end text-right">
         {metricType && badgeInfo.relativeText && badgeInfo.isBest && (
           <span className="text-xs text-gray-500">{badgeInfo.relativeText}</span>
         )}

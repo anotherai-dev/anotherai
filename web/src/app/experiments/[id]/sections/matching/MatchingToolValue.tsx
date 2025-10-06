@@ -18,7 +18,6 @@ type MatchingToolValueProps = {
     | "topRight"
     | "topRightAligned"
     | "topLeftAligned"
-    | "topRightAlignedNew"
     | "rightOverlap"
     | "bottomLeft";
 };

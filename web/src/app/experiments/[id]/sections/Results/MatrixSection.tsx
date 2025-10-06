@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocalStorage } from "usehooks-ts";
 import { TableComponent } from "@/components/TableComponent";
 import {
   findCompletionForInputAndVersion,
@@ -10,6 +11,7 @@ import {
   getValidCosts,
   getValidDurations,
 } from "@/components/utils/utils";
+import { useColumnWidths } from "@/hooks/useColumnWidths";
 import { useVersionHiding } from "@/hooks/useVersionHiding";
 import { Annotation, ExperimentWithLookups } from "@/types/models";
 import {
@@ -42,6 +44,16 @@ export function MatrixSection(props: Props) {
 
   // Version hiding hook
   const { hiddenVersionIds, hideVersion, showAllHiddenVersions, hasHiddenVersions } = useVersionHiding(experiment.id);
+
+  // Column widths hook
+  const visibleVersionIds = useMemo(() => {
+    return columnOrder.filter((versionId) => !hiddenVersionIds.includes(versionId));
+  }, [columnOrder, hiddenVersionIds]);
+
+  const { setColumnWidth, widthsArray, hasCustomWidths } = useColumnWidths(experiment.id, visibleVersionIds, 400);
+
+  // First column width management
+  const [firstColumnWidth, setFirstColumnWidth] = useLocalStorage<number>(`first-column-width-${experiment.id}`, 240);
 
   // Update column order when sorted versions change
   useEffect(() => {
@@ -150,6 +162,9 @@ export function MatrixSection(props: Props) {
 
       // Find the original index of this version in the sorted versions array
       const originalIndex = sortedVersions.findIndex((v) => v.id === version.id);
+      const nextVersionId = dragIndex < orderedVersions.length - 1 ? orderedVersions[dragIndex + 1]?.id : undefined;
+      const isLastColumn = dragIndex === orderedVersions.length - 1;
+
       return (
         <VersionHeader
           key={version.id}
@@ -169,6 +184,10 @@ export function MatrixSection(props: Props) {
           onReorderColumns={reorderColumns}
           dragIndex={dragIndex}
           onHideVersion={hideVersion}
+          columnWidth={widthsArray[dragIndex]}
+          onColumnWidthChange={setColumnWidth}
+          nextVersionId={nextVersionId}
+          isLastColumn={isLastColumn}
         />
       );
     });
@@ -231,6 +250,8 @@ export function MatrixSection(props: Props) {
     reorderColumns,
     sortedVersions,
     hideVersion,
+    setColumnWidth,
+    widthsArray,
   ]);
 
   return (
@@ -257,6 +278,13 @@ export function MatrixSection(props: Props) {
           minColumnWidth={400}
           hideScrollbar={false}
           stickyHeaderData={stickyHeaderData}
+          columnWidths={
+            !hasCustomWidths
+              ? undefined // Let TableComponent auto-size using available space
+              : widthsArray
+          }
+          firstColumnWidth={firstColumnWidth}
+          onFirstColumnWidthChange={setFirstColumnWidth}
         />
       ) : (
         <div className="bg-gray-50 border border-gray-200 rounded-[10px]">

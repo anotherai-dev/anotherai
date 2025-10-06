@@ -41,7 +41,7 @@ export default function ExperimentDetailPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto py-8 px-4">
         <PageHeader
           breadcrumbs={[{ label: "Experiments", href: "/experiments" }, { label: experiment.id }]}
           title={experiment.title}

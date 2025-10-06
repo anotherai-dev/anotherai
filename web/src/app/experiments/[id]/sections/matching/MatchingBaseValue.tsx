@@ -19,7 +19,6 @@ type MatchingBaseValueProps = {
     | "topRight"
     | "topRightAligned"
     | "topLeftAligned"
-    | "topRightAlignedNew"
     | "rightOverlap"
     | "bottomLeft";
 };
