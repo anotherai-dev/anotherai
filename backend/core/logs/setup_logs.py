@@ -66,7 +66,9 @@ def _processors(*extras: Processor) -> Iterable[Processor]:
         yield sentry
     if posthog := posthog_processor():
         yield posthog
+
     yield from extras
+    yield _renderer()
 
 
 def setup_logs(
