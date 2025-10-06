@@ -484,6 +484,37 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             reasoning=ModelReasoningBudget(),
             speed_data=SpeedData.from_tps(value=172),
         ),
+        Model.GPT_5_PRO: ModelData(
+            display_name="GPT-5 Pro",
+            supports_json_mode=False,
+            supports_input_image=True,
+            supports_input_pdf=False,
+            supports_input_audio=False,
+            supports_structured_output=True,
+            supports_temperature=False,
+            supports_top_p=False,
+            supports_presence_penalty=False,
+            supports_frequency_penalty=False,
+            max_tokens_data=MaxTokensData(
+                max_tokens=400_000,
+                max_output_tokens=272_000,
+                source="https://platform.openai.com/docs/models/gpt-5-pro",
+            ),
+            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/openai.svg",
+            release_date=date(2024, 9, 30),
+            quality_data=QualityData(
+                # Highest reasoning capability model
+                equivalent_to=(Model.O3_2025_04_16, 1),
+            ),
+            provider_name=DisplayedProvider.OPEN_AI.value,
+            supports_tool_calling=True,
+            supports_parallel_tool_calls=False,
+            fallback=_openai_fallback("expensive"),
+            reasoning=ModelReasoningBudget(disabled=None),
+            speed_data=SpeedData(
+                index=SpeedIndex(value=1),  # Slowest model - uses more compute
+            ),
+        ),
         Model.GPT_OSS_20B: ModelData(
             display_name="GPT-OSS 20B",
             supports_json_mode=True,

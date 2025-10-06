@@ -233,6 +233,14 @@ OPENAI_PROVIDER_DATA: ProviderDataByModel = {
             source="https://openai.com/api/pricing/",
         ),
     ),
+    Model.GPT_5_PRO: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=15 * ONE_MILLION_TH,
+            prompt_cached_tokens_discount=0.5,
+            completion_cost_per_token=120 * ONE_MILLION_TH,
+            source="https://openai.com/api/pricing/",
+        ),
+    ),
 }
 
 
@@ -722,6 +730,14 @@ AZURE_PROVIDER_DATA: ProviderDataByModel = {
             prompt_cost_per_token=0.05 * ONE_MILLION_TH,
             prompt_cached_tokens_discount=0.9,
             completion_cost_per_token=0.4 * ONE_MILLION_TH,
+            source="https://openai.com/api/pricing/",
+        ),
+    ),
+    Model.GPT_5_PRO: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=15 * ONE_MILLION_TH,
+            prompt_cached_tokens_discount=0.5,
+            completion_cost_per_token=120 * ONE_MILLION_TH,
             source="https://openai.com/api/pricing/",
         ),
     ),
