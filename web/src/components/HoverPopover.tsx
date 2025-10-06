@@ -100,20 +100,19 @@ export function HoverPopover({
         // Adjust if popover would be cut off by right edge
         setTimeout(() => {
           if (popoverRef.current) {
+            const popoverRect = popoverRef.current.getBoundingClientRect();
             const viewportWidth = window.innerWidth;
 
             // Check if the popover extends beyond the right edge
-            const popoverRight = rect.right;
-            if (popoverRight + 8 > viewportWidth) {
-              // Shift left just enough to fit within viewport
-              const overflow = popoverRight + 8 - viewportWidth;
+            if (popoverRect.right > viewportWidth - 8) {
+              const overflow = popoverRect.right - (viewportWidth - 8);
               setPopoverPosition((prev) => ({
                 ...prev,
                 left: prev.left - overflow,
               }));
             }
           }
-        }, 0);
+        }, 16); // One frame delay for Safari
         break;
       case "topLeftAligned":
         top = rect.top - 8; // Initial offset, will be adjusted after popover is rendered
