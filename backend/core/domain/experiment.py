@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any
+from typing import Any, override
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -15,13 +15,31 @@ from core.utils.fields import datetime_zero
 class ExperimentOutput(BaseModel):
     completion_id: UUID
     version_id: str
+    version_alias: str | None
     input_id: str
+    input_alias: str | None
     created_at: datetime = Field(default_factory=datetime_zero)
     started_at: datetime | None
     completed_at: datetime | None
     output: AgentOutput | None
     cost_usd: float | None
     duration_seconds: float | None
+
+
+class ExperimentVersion(Version):
+    alias: str | None = None
+
+    @override
+    def _excluded_fields(self):
+        return {"id", "alias"}
+
+
+class ExperimentInput(AgentInput):
+    alias: str | None = None
+
+    @override
+    def _excluded_fields(self):
+        return {"id", "preview", "alias"}
 
 
 class Experiment(BaseModel):
@@ -43,8 +61,8 @@ class Experiment(BaseModel):
 
     metadata: dict[str, Any] | None = None
 
-    versions: list[Version] | None = None
+    versions: list[ExperimentVersion] | None = None
 
-    inputs: list[AgentInput] | None = None
+    inputs: list[ExperimentInput] | None = None
 
     outputs: list[ExperimentOutput] | None = None

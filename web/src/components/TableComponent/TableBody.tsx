@@ -4,10 +4,11 @@ interface TableBodyProps {
   rowHeaders: ReactNode[];
   data: ReactNode[][];
   headerRowWidth: string;
-  columnWidth: number;
+  columnWidth: number; // For backwards compatibility
+  columnWidths?: number[]; // Individual column widths
 }
 
-export function TableBody({ rowHeaders, data, headerRowWidth, columnWidth }: TableBodyProps) {
+export function TableBody({ rowHeaders, data, headerRowWidth, columnWidth, columnWidths }: TableBodyProps) {
   return (
     <tbody className="bg-white divide-y divide-gray-200">
       {rowHeaders.map((rowHeader, rowIndex) => (
@@ -20,25 +21,29 @@ export function TableBody({ rowHeaders, data, headerRowWidth, columnWidth }: Tab
               width: headerRowWidth,
               maxWidth: headerRowWidth,
               height: "300px",
+              flexShrink: 0,
             }}
           >
             <div className="px-4 py-4">{rowHeader}</div>
           </td>
 
           {/* Data cells */}
-          {data[rowIndex]?.map((cellContent, columnIndex) => (
-            <td
-              key={columnIndex}
-              className="px-4 py-4 text-sm border-r border-gray-200 last:border-r-0 align-top"
-              style={{
-                width: `${columnWidth}px`,
-                minWidth: `${columnWidth}px`,
-                maxWidth: `${columnWidth}px`,
-              }}
-            >
-              <div className="h-full">{cellContent}</div>
-            </td>
-          )) || null}
+          {data[rowIndex]?.map((cellContent, columnIndex) => {
+            const width = columnWidths?.[columnIndex] || columnWidth;
+            return (
+              <td
+                key={columnIndex}
+                className="px-4 py-4 text-sm border-r border-gray-200 align-top"
+                style={{
+                  width: `${width}px`,
+                  minWidth: `${width}px`,
+                  maxWidth: `${width}px`,
+                }}
+              >
+                <div className="h-full">{cellContent}</div>
+              </td>
+            );
+          }) || null}
         </tr>
       ))}
     </tbody>
