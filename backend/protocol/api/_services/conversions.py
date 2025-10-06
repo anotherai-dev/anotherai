@@ -63,6 +63,7 @@ from protocol.api._api_models import (
     Error,
     Experiment,
     ExperimentInput,
+    ExperimentVersion,
     Graph,
     InferenceUsage,
     Input,
@@ -279,8 +280,8 @@ def version_to_domain(version: Version) -> DomainVersion:
     )
 
 
-def version_from_domain(version: DomainVersion) -> Version:
-    return Version(
+def version_from_domain[T: Version](version: DomainVersion, t: type[T] = Version, **kwargs: Any) -> T:
+    return t(
         id=version.id,
         model=version.model or "",
         temperature=version.temperature,
@@ -298,7 +299,12 @@ def version_from_domain(version: DomainVersion) -> Version:
         frequency_penalty=version.frequency_penalty,
         use_structured_generation=version.use_structured_generation,
         provider=version.provider,
+        **kwargs,
     )
+
+
+def experiment_version_from_domain(version: DomainExperimentVersion) -> ExperimentVersion:
+    return version_from_domain(version, ExperimentVersion, alias=version.alias)
 
 
 def _sanitize_json_schema(json_schema: dict[str, Any]) -> DomainVersion.OutputSchema:
@@ -412,12 +418,18 @@ def version_request_from_domain(version: DomainVersion) -> VersionRequest:
     )
 
 
-def input_from_domain(agent_input: DomainInput) -> Input:
-    return Input(
+def input_from_domain[T: Input](agent_input: DomainInput, t: type[T] = Input, **kwargs: Any) -> T:
+    return t(
         id=agent_input.id,
         messages=[message_from_domain(m) for m in agent_input.messages] if agent_input.messages else None,
         variables=agent_input.variables or None,
+        **kwargs,
     )
+
+
+def experiment_input_from_domain(input: DomainExperimentInput) -> ExperimentInput:
+    test = input_from_domain(input, ExperimentInput, alias=input.alias)
+    return test
 
 
 def input_to_domain(agent_input: Input) -> DomainInput:
@@ -499,8 +511,8 @@ def experiment_from_domain(
         description=experiment.description,
         result=experiment.result,
         completions=[experiment_completion_from_domain(c) for c in experiment.outputs] if experiment.outputs else None,
-        versions=[version_from_domain(v) for v in experiment.versions] if experiment.versions else None,
-        inputs=[input_from_domain(i) for i in experiment.inputs] if experiment.inputs else None,
+        versions=[experiment_version_from_domain(v) for v in experiment.versions] if experiment.versions else None,
+        inputs=[experiment_input_from_domain(i) for i in experiment.inputs] if experiment.inputs else None,
         annotations=[annotation_from_domain(a) for a in annotations] if annotations else None,
         metadata=experiment.metadata or None,
         url=experiments_url(experiment.id),

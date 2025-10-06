@@ -82,6 +82,7 @@ async def test_playground_tool(test_api_client: IntegrationTestClient):
 
     assert sorted((i for i in exp["inputs"]), key=lambda i: i["id"]) == [
         {
+            "alias": "Toulouse",
             "id": "901cd050e54511e4ef4065ddf3ddbdfd",
             "variables": {"name": "Toulouse"},
         },
