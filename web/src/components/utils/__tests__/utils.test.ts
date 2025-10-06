@@ -10,11 +10,15 @@ import {
   getMetricBadgeColor,
   getMetricBadgeWithRelative,
   getSharedPartsOfPrompts,
+  getValidCosts,
+  getValidDurations,
   getVersionKeyDisplayName,
   getVersionWithDefaults,
   isDateValue,
   parseJSONValue,
   resolveRef,
+  shouldIncludeCostMetric,
+  shouldIncludeDurationMetric,
   sortVersionKeys,
   stripMarkdown,
   transformCompletionsData,
@@ -100,7 +104,7 @@ describe("Metric Badge Functions", () => {
     it("calculates relative text for best value when lower is better", () => {
       const result = getMetricBadgeWithRelative(1, [1, 2, 4]);
       expect(result.isBest).toBe(true);
-      expect(result.relativeText).toBe("4.0x better");
+      expect(result.relativeText).toBe("4.0x");
     });
 
     it("calculates relative text for non-best values when lower is better", () => {
@@ -112,15 +116,15 @@ describe("Metric Badge Functions", () => {
     it("calculates relative text for best value when higher is better", () => {
       const result = getMetricBadgeWithRelative(4, [1, 2, 4], true);
       expect(result.isBest).toBe(true);
-      expect(result.relativeText).toBe("4.0x better");
+      expect(result.relativeText).toBe("4.0x");
     });
   });
 });
 
 describe("Formatting Functions", () => {
   describe("formatCurrency", () => {
-    it("formats currency with default multiplier", () => {
-      expect(formatCurrency(0.001)).toBe("$1.00");
+    it("formats currency with 1000 multiplier", () => {
+      expect(formatCurrency(0.001, 1000)).toBe("$1.00");
     });
 
     it("formats currency with custom multiplier", () => {
@@ -128,7 +132,7 @@ describe("Formatting Functions", () => {
     });
 
     it("handles zero value", () => {
-      expect(formatCurrency(0)).toBe("$0.00");
+      expect(formatCurrency(0, 1000)).toBe("$0.00");
     });
   });
 
@@ -209,13 +213,99 @@ describe("Formatting Functions", () => {
   });
 });
 
+describe("Error-based Filtering Functions", () => {
+  describe("shouldIncludeCostMetric", () => {
+    it("returns true for valid cost", () => {
+      const completion = mockExperimentCompletion(5, 10);
+      expect(shouldIncludeCostMetric(completion)).toBe(true);
+    });
+
+    it("returns false for undefined completion", () => {
+      expect(shouldIncludeCostMetric(undefined)).toBe(false);
+    });
+
+    it("returns false for zero cost with error", () => {
+      const completion = {
+        ...mockExperimentCompletion(0, 10),
+        output: { error: { error: "Some error" }, messages: [] },
+      };
+      expect(shouldIncludeCostMetric(completion)).toBe(false);
+    });
+
+    it("returns true for zero cost without error", () => {
+      const completion = mockExperimentCompletion(0, 10);
+      expect(shouldIncludeCostMetric(completion)).toBe(true);
+    });
+  });
+
+  describe("shouldIncludeDurationMetric", () => {
+    it("returns true for valid duration", () => {
+      const completion = mockExperimentCompletion(5, 10);
+      expect(shouldIncludeDurationMetric(completion)).toBe(true);
+    });
+
+    it("returns false for undefined completion", () => {
+      expect(shouldIncludeDurationMetric(undefined)).toBe(false);
+    });
+
+    it("returns false for zero duration with error", () => {
+      const completion = {
+        ...mockExperimentCompletion(5, 0),
+        output: { error: { error: "Some error" }, messages: [] },
+      };
+      expect(shouldIncludeDurationMetric(completion)).toBe(false);
+    });
+
+    it("returns true for zero duration without error", () => {
+      const completion = mockExperimentCompletion(5, 0);
+      expect(shouldIncludeDurationMetric(completion)).toBe(true);
+    });
+  });
+
+  describe("getValidCosts", () => {
+    it("filters out invalid costs", () => {
+      const completions = [
+        mockExperimentCompletion(5, 10),
+        { ...mockExperimentCompletion(0, 10), output: { error: { error: "Some error" }, messages: [] } },
+        mockExperimentCompletion(3, 5),
+        undefined,
+      ];
+
+      const result = getValidCosts(completions);
+      expect(result).toEqual([5, 3]);
+    });
+
+    it("handles empty array", () => {
+      expect(getValidCosts([])).toEqual([]);
+    });
+  });
+
+  describe("getValidDurations", () => {
+    it("filters out invalid durations", () => {
+      const completions = [
+        mockExperimentCompletion(5, 10),
+        { ...mockExperimentCompletion(5, 0), output: { error: { error: "Some error" }, messages: [] } },
+        mockExperimentCompletion(3, 7),
+        undefined,
+      ];
+
+      const result = getValidDurations(completions);
+      expect(result).toEqual([10, 7]);
+    });
+
+    it("handles empty array", () => {
+      expect(getValidDurations([])).toEqual([]);
+    });
+  });
+});
+
 describe("Calculation Functions", () => {
   describe("calculateAverageMetrics", () => {
     it("handles empty completions array", () => {
       const result = calculateAverageMetrics([]);
       expect(result).toEqual({
-        avgCost: 0,
-        avgDuration: 0,
+        avgCost: undefined,
+        avgDuration: undefined,
         costs: [],
         durations: [],
       });

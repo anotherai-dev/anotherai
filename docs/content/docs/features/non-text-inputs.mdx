@@ -1,0 +1,173 @@
+---
+title: Non-Text Inputs (Images, PDFs, Audio)
+summary: Explanation on how different modalities are supported by AnotherAI
+---
+
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+
+
+Just like OpenAI, AnotherAI supports passing images and audio to the completion endpoint. AnotherAI also supports passing PDFs (although OpenAI models do not support processing PDFs, other models including ones from Gemini, Claude, and Mistral do).
+
+### Handling Images
+
+Images can be passed using the `image_url` field, which accepts both public URLs and base64-encoded data.
+
+<Tabs items={["OpenAI SDK (js)", "OpenAI SDK (Python)"]}>
+<Tab>
+```js
+const response = await openai.chat.completions.create({
+  model: "gpt-4o-mini",
+  messages: [
+    {
+      role: "user",
+      content: [
+        { type: "text", text: "What's in this image?" },
+        { type: "image_url", image_url: { url: "https://example.com/image.png" } }
+      ]
+    }
+  ]
+});
+```
+</Tab>
+<Tab>
+```python
+response = openai.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "What's in this image?"},
+                {"type": "image_url", "image_url": {"url": "https://example.com/image.png"}}
+            ]
+        }
+    ]
+)
+```
+</Tab>
+</Tabs>
+
+### Handling Audio Files
+
+Audio can be passed using the `input_audio` field, which accepts both public URLs and base64-encoded data. When using a URL, simply pass it in the data field and the format parameter will be ignored.
+
+<Tabs items={["OpenAI SDK (js)"]}>
+<Tab>
+```js
+const response = await openai.chat.completions.create({
+  model: "gpt-4o-mini",
+  messages: [
+    {
+      role: "user",
+      content: [{ type: "input_audio", input_audio: { 
+        data: "https://example.com/audio.mp3", // just pass a URL in the data field
+        format: "mp3" // when the data field is a URL, the format is ignored
+    } }]
+    }
+  ]
+});
+```
+</Tab>
+</Tabs>
+
+### Non-Text Inputs Usage in Templates
+
+As described in the [Input Variables](/observability/input-variables) section, it is possible to separate static instructions from dynamic data by using Jinja2 variables in the text content of messages.
+
+**For non-text inputs (images, audio, PDFs), template variables must be passed as their specific content type in a separate content field, not embedded in text strings.** For example, for images, the template variable goes in the `image_url` field of the image content object:
+
+<Tabs items={["OpenAI SDK (Python)", "OpenAI SDK (js)"]}>
+<Tab>
+```python
+completion = openai.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "Please describe this image:"},
+                {"type": "image_url", "image_url": {"url": "{{image_url}}"}}
+            ]
+        }
+    ],
+    extra_body={
+        "input": {
+            "image_url": "https://example.com/image.png"
+        }
+    }
+)
+```
+</Tab>
+<Tab>
+```js
+const response = await openai.chat.completions.create({
+  model: "gpt-4o-mini",
+  messages: [
+    {
+      role: "user",
+      content: [
+        { type: "text", text: "Please describe this image:" },
+        { type: "image_url", image_url: { url: "{{image_url}}" } }
+      ]
+    }
+  ],
+  extra_body: {
+    input: {
+      image_url: "https://example.com/image.png",
+    },
+  },
+});
+```
+</Tab>
+</Tabs>
+
+**Important Note:** Attempting to use template variables for modalities directly in text strings will not work. The following approach is incorrect and will result in your AI Agent being unable to access the content properly.
+
+<Accordions>
+<Accordion title="Example of Incorrect Format">
+<Tabs items={["OpenAI SDK (Python)", "OpenAI SDK (js)"]}>
+<Tab>
+```python
+# INCORRECT - Will not work for image inputs
+completion = openai.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[
+        {
+            "role": "user",
+            "content": "Please describe {{image_url}}"  # Wrong - treats as text
+        }
+    ],
+    extra_body={
+        "input": {
+            "image_url": "https://example.com/image.png"
+        }
+    }
+)
+```
+</Tab>
+<Tab>
+```js
+// INCORRECT - Will not work for image inputs
+const response = await openai.chat.completions.create({
+  model: "gpt-4o-mini",
+  messages: [
+    {
+      role: "user",
+      content: "Please describe {{image_url}}"  // Wrong - treats as text
+    }
+  ],
+  extra_body: {
+    input: {
+      image_url: "https://example.com/image.png"
+    }
+  }
+});
+```
+</Tab>
+</Tabs>
+</Accordion>
+</Accordions>
+
+
+

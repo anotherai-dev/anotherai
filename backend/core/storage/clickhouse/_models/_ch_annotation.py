@@ -25,7 +25,7 @@ class ClickhouseAnnotation(BaseModel):
     def from_domain(cls, tenant_uid: int, annotation: Annotation):
         if not annotation.target or not annotation.target.completion_id:
             raise ValueError("Annotation is required to target a completion")
-        completion_id = UUID(annotation.target.completion_id)
+        completion_id = annotation.target.completion_id
         metric_name, metric_value_float, metric_value_str, metric_value_bool = _extract_metric(annotation.metric)
 
         return cls(

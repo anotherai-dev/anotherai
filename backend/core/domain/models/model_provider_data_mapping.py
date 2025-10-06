@@ -1,8 +1,11 @@
+import datetime
+
 from core.domain.models import Model, Provider
 from core.providers.google.google_provider_domain import GOOGLE_CHARS_PER_TOKEN
 
 from .model_provider_data import (
     AudioPricePerToken,
+    LifecycleData,
     ModelDataSupportsOverride,
     ModelProviderData,
     TextPricePerToken,
@@ -15,6 +18,17 @@ ONE_MILLION_TH = 0.000_001
 
 GOOGLE_PROVIDER_DATA: ProviderDataByModel = {
     Model.GEMINI_2_5_FLASH: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=0.30 * ONE_MILLION_TH,
+            completion_cost_per_token=2.50 * ONE_MILLION_TH,
+            source="https://ai.google.dev/gemini-api/docs/pricing#gemini-2.5-flash",
+            prompt_cached_tokens_discount=0.75,
+        ),
+        audio_price=AudioPricePerToken(
+            audio_input_cost_per_token=1.0 * ONE_MILLION_TH,
+        ),
+    ),
+    Model.GEMINI_2_5_FLASH_PREVIEW_0925: ModelProviderData(
         text_price=TextPricePerToken(
             prompt_cost_per_token=0.30 * ONE_MILLION_TH,
             completion_cost_per_token=2.50 * ONE_MILLION_TH,
@@ -41,6 +55,17 @@ GOOGLE_PROVIDER_DATA: ProviderDataByModel = {
         ),
     ),
     Model.GEMINI_2_5_FLASH_LITE: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=0.1 * ONE_MILLION_TH,
+            completion_cost_per_token=0.40 * ONE_MILLION_TH,
+            prompt_cached_tokens_discount=0.75,
+            source="https://ai.google.dev/gemini-api/docs/pricing#gemini-2.5-flash-lite",
+        ),
+        audio_price=AudioPricePerToken(
+            audio_input_cost_per_token=0.3 * ONE_MILLION_TH,
+        ),
+    ),
+    Model.GEMINI_2_5_FLASH_LITE_PREVIEW_0925: ModelProviderData(
         text_price=TextPricePerToken(
             prompt_cost_per_token=0.1 * ONE_MILLION_TH,
             completion_cost_per_token=0.40 * ONE_MILLION_TH,
@@ -242,27 +267,15 @@ AMAZON_BEDROCK_PROVIDER_DATA: ProviderDataByModel = {
             supports_input_pdf=False,
         ),
     ),
-    Model.CLAUDE_3_5_SONNET_20241022: ModelProviderData(
-        text_price=TextPricePerToken(
-            prompt_cost_per_token=3 * ONE_MILLION_TH,
-            completion_cost_per_token=15 * ONE_MILLION_TH,
-            source="https://aws.amazon.com/bedrock/pricing/",
-        ),
-        supports_override=ModelDataSupportsOverride(
-            supports_input_pdf=False,
-        ),
-    ),
-    Model.CLAUDE_3_5_SONNET_20240620: ModelProviderData(
-        text_price=TextPricePerToken(
-            prompt_cost_per_token=3 * ONE_MILLION_TH,
-            completion_cost_per_token=15 * ONE_MILLION_TH,
-            source="https://aws.amazon.com/bedrock/pricing/",
-        ),
-    ),
     Model.CLAUDE_3_OPUS_20240229: ModelProviderData(
         text_price=TextPricePerToken(
             prompt_cost_per_token=15 * ONE_MILLION_TH,
             completion_cost_per_token=75 * ONE_MILLION_TH,
+            source="https://aws.amazon.com/bedrock/pricing/",
+        ),
+        lifecycle_data=LifecycleData(
+            sunset_date=datetime.date(year=2026, month=1, day=5),
+            post_sunset_replacement_model=Model.CLAUDE_4_OPUS_20250514,
             source="https://aws.amazon.com/bedrock/pricing/",
         ),
     ),
@@ -320,27 +333,6 @@ AMAZON_BEDROCK_PROVIDER_DATA: ProviderDataByModel = {
             source="https://aws.amazon.com/bedrock/pricing/",
         ),
     ),
-    # Model.LLAMA_3_2_90B: ModelProviderData(
-    #     text_price=TextPricePerToken(
-    #         prompt_cost_per_token=0.000_000_72,
-    #         completion_cost_per_token=0.000_000_72,
-    #         source="https://aws.amazon.com/bedrock/pricing/",
-    #     ),
-    # ),
-    # Model.LLAMA_3_2_11B: ModelProviderData(
-    #     text_price=TextPricePerToken(
-    #         prompt_cost_per_token=0.000_000_16,
-    #         completion_cost_per_token=0.000_000_16,
-    #         source="https://aws.amazon.com/bedrock/pricing/",
-    #     ),
-    # ),
-    # Model.LLAMA_3_2_3B: ModelProviderData(
-    #     text_price=TextPricePerToken(
-    #         prompt_cost_per_token=0.15 * ONE_MILLION_TH,
-    #         completion_cost_per_token=0.15 * ONE_MILLION_TH,
-    #         source="https://aws.amazon.com/bedrock/pricing/",
-    #     ),
-    # ),
     Model.LLAMA_3_3_70B: ModelProviderData(
         text_price=TextPricePerToken(
             prompt_cost_per_token=0.72 * ONE_MILLION_TH,
@@ -348,13 +340,6 @@ AMAZON_BEDROCK_PROVIDER_DATA: ProviderDataByModel = {
             source="https://aws.amazon.com/bedrock/pricing/",
         ),
     ),
-    # Model.LLAMA_3_2_1B: ModelProviderData(
-    #     text_price=TextPricePerToken(
-    #         prompt_cost_per_token=0.000_000_1,
-    #         completion_cost_per_token=0.000_000_1,
-    #         source="https://aws.amazon.com/bedrock/pricing/",
-    #     ),
-    # ),
 }
 
 GROQ_PROVIDER_DATA: ProviderDataByModel = {
@@ -471,6 +456,13 @@ MISTRAL_PROVIDER_DATA: ProviderDataByModel = {
             source="https://mistral.ai/products/la-plateforme#pricing",
         ),
     ),
+    Model.MISTRAL_SMALL_2506: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=0.1 * ONE_MILLION_TH,
+            completion_cost_per_token=0.3 * ONE_MILLION_TH,
+            source="https://mistral.ai/products/la-plateforme#pricing",
+        ),
+    ),
     Model.MISTRAL_LARGE_2_2407: ModelProviderData(
         text_price=TextPricePerToken(
             prompt_cost_per_token=2.0 * ONE_MILLION_TH,
@@ -499,7 +491,21 @@ MISTRAL_PROVIDER_DATA: ProviderDataByModel = {
             source="https://mistral.ai/products/la-plateforme#pricing",
         ),
     ),
+    Model.CODESTRAL_2508: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=0.3 * ONE_MILLION_TH,
+            completion_cost_per_token=0.9 * ONE_MILLION_TH,
+            source="https://mistral.ai/products/la-plateforme#pricing",
+        ),
+    ),
     Model.MISTRAL_MEDIUM_2505: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=0.4 * ONE_MILLION_TH,
+            completion_cost_per_token=2 * ONE_MILLION_TH,
+            source="https://mistral.ai/products/la-plateforme#pricing",
+        ),
+    ),
+    Model.MISTRAL_MEDIUM_2508: ModelProviderData(
         text_price=TextPricePerToken(
             prompt_cost_per_token=0.4 * ONE_MILLION_TH,
             completion_cost_per_token=2 * ONE_MILLION_TH,
@@ -513,7 +519,35 @@ MISTRAL_PROVIDER_DATA: ProviderDataByModel = {
             source="https://mistral.ai/pricing#api-pricing",
         ),
     ),
+    Model.MAGISTRAL_SMALL_2507: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=0.5 * ONE_MILLION_TH,
+            completion_cost_per_token=1.5 * ONE_MILLION_TH,
+            source="https://mistral.ai/pricing#api-pricing",
+        ),
+    ),
+    Model.MAGISTRAL_SMALL_2509: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=0.5 * ONE_MILLION_TH,
+            completion_cost_per_token=1.5 * ONE_MILLION_TH,
+            source="https://mistral.ai/pricing#api-pricing",
+        ),
+    ),
     Model.MAGISTRAL_MEDIUM_2506: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=2.0 * ONE_MILLION_TH,
+            completion_cost_per_token=5.0 * ONE_MILLION_TH,
+            source="https://mistral.ai/pricing#api-pricing",
+        ),
+    ),
+    Model.MAGISTRAL_MEDIUM_2507: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=2.0 * ONE_MILLION_TH,
+            completion_cost_per_token=5.0 * ONE_MILLION_TH,
+            source="https://mistral.ai/pricing#api-pricing",
+        ),
+    ),
+    Model.MAGISTRAL_MEDIUM_2509: ModelProviderData(
         text_price=TextPricePerToken(
             prompt_cost_per_token=2.0 * ONE_MILLION_TH,
             completion_cost_per_token=5.0 * ONE_MILLION_TH,
@@ -527,20 +561,6 @@ ANTHROPIC_PROVIDER_DATA: ProviderDataByModel = {
         text_price=TextPricePerToken(
             prompt_cost_per_token=0.80 * ONE_MILLION_TH,
             completion_cost_per_token=4.00 * ONE_MILLION_TH,
-            source="https://docs.anthropic.com/en/docs/about-claude/models/all-models#model-comparison-table",
-        ),
-    ),
-    Model.CLAUDE_3_5_SONNET_20241022: ModelProviderData(
-        text_price=TextPricePerToken(
-            prompt_cost_per_token=3.0 * ONE_MILLION_TH,
-            completion_cost_per_token=15 * ONE_MILLION_TH,
-            source="https://docs.anthropic.com/en/docs/about-claude/models/all-models#model-comparison-table",
-        ),
-    ),
-    Model.CLAUDE_3_5_SONNET_20240620: ModelProviderData(
-        text_price=TextPricePerToken(
-            prompt_cost_per_token=3.00 * ONE_MILLION_TH,
-            completion_cost_per_token=15.00 * ONE_MILLION_TH,
             source="https://docs.anthropic.com/en/docs/about-claude/models/all-models#model-comparison-table",
         ),
     ),
@@ -558,6 +578,13 @@ ANTHROPIC_PROVIDER_DATA: ProviderDataByModel = {
             source="https://docs.anthropic.com/en/docs/about-claude/models/all-models#model-comparison-table",
         ),
     ),
+    Model.CLAUDE_4_5_SONNET_20250929: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=3 * ONE_MILLION_TH,
+            completion_cost_per_token=15 * ONE_MILLION_TH,
+            source="https://docs.anthropic.com/en/docs/about-claude/models/all-models#model-comparison-table",
+        ),
+    ),
     Model.CLAUDE_4_SONNET_20250514: ModelProviderData(
         text_price=TextPricePerToken(
             prompt_cost_per_token=3 * ONE_MILLION_TH,
@@ -570,6 +597,11 @@ ANTHROPIC_PROVIDER_DATA: ProviderDataByModel = {
             prompt_cost_per_token=15 * ONE_MILLION_TH,
             completion_cost_per_token=15 * ONE_MILLION_TH,
             source="https://docs.anthropic.com/en/docs/about-claude/models/all-models#model-comparison-table",
+        ),
+        lifecycle_data=LifecycleData(
+            sunset_date=datetime.date(year=2026, month=1, day=5),
+            post_sunset_replacement_model=Model.CLAUDE_4_OPUS_20250514,
+            source="https://aws.amazon.com/bedrock/pricing/",
         ),
     ),
     Model.CLAUDE_3_HAIKU_20240307: ModelProviderData(
@@ -707,6 +739,17 @@ GOOGLE_GEMINI_API_PROVIDER_DATA: ProviderDataByModel = {
             audio_input_cost_per_token=1.0 * ONE_MILLION_TH,
         ),
     ),
+    Model.GEMINI_2_5_FLASH_PREVIEW_0925: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=0.30 * ONE_MILLION_TH,
+            completion_cost_per_token=2.50 * ONE_MILLION_TH,
+            source="https://ai.google.dev/gemini-api/docs/pricing#gemini-2.5-flash-preview",
+            prompt_cached_tokens_discount=0.75,
+        ),
+        audio_price=AudioPricePerToken(
+            audio_input_cost_per_token=1.0 * ONE_MILLION_TH,
+        ),
+    ),
     Model.GEMINI_2_5_PRO: ModelProviderData(
         text_price=TextPricePerToken(
             prompt_cost_per_token=1.25 * ONE_MILLION_TH,
@@ -728,6 +771,17 @@ GOOGLE_GEMINI_API_PROVIDER_DATA: ProviderDataByModel = {
             completion_cost_per_token=0.40 * ONE_MILLION_TH,
             prompt_cached_tokens_discount=0.75,
             source="https://ai.google.dev/gemini-api/docs/pricing#gemini-2.5-flash-lite",
+        ),
+        audio_price=AudioPricePerToken(
+            audio_input_cost_per_token=0.3 * ONE_MILLION_TH,
+        ),
+    ),
+    Model.GEMINI_2_5_FLASH_LITE_PREVIEW_0925: ModelProviderData(
+        text_price=TextPricePerToken(
+            prompt_cost_per_token=0.1 * ONE_MILLION_TH,
+            completion_cost_per_token=0.40 * ONE_MILLION_TH,
+            prompt_cached_tokens_discount=0.75,
+            source="https://ai.google.dev/gemini-api/docs/pricing#gemini-2.5-flash-lite-preview",
         ),
         audio_price=AudioPricePerToken(
             audio_input_cost_per_token=0.3 * ONE_MILLION_TH,

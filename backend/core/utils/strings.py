@@ -132,3 +132,7 @@ _URL_REGEXP = re.compile(r"^https?:\/\/[^\s]+[\r\n]*")
 
 def remove_urls(input_str: str) -> str:
     return _URL_REGEXP.sub("https://***", input_str)
+
+
+def is_http_url(input_str: str) -> bool:
+    return _URL_REGEXP.match(input_str) is not None

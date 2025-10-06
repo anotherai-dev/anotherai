@@ -17,7 +17,7 @@ from core.domain.agent_input import AgentInput
 from core.domain.agent_output import AgentOutput
 from core.domain.annotation import Annotation
 from core.domain.error import Error
-from core.domain.exceptions import BadRequestError, InvalidQueryError, ObjectNotFoundError
+from core.domain.exceptions import InvalidQueryError, ObjectNotFoundError
 from core.domain.experiment import Experiment
 from core.domain.message import Message
 from core.domain.version import Version
@@ -56,7 +56,7 @@ class TestStoreAnnotation:
     async def test_store_annotation_basic(self, client: ClickhouseClient):
         """Test storing a basic annotation successfully"""
         annotation = fake_annotation(
-            target=Annotation.Target(completion_id=str(uuid7(ms=lambda: 0, rand=lambda: 1))),
+            target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 1)),
         )
 
         # This should not raise any exceptions
@@ -65,7 +65,7 @@ class TestStoreAnnotation:
     async def test_store_annotation_with_float_metric(self, client: ClickhouseClient):
         """Test storing annotation with float metric value"""
         annotation = fake_annotation(
-            target=Annotation.Target(completion_id=str(uuid7(ms=lambda: 0, rand=lambda: 2))),
+            target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 2)),
             metric=Annotation.Metric(name="accuracy", value=0.95),
         )
 
@@ -74,7 +74,7 @@ class TestStoreAnnotation:
     async def test_store_annotation_with_string_metric(self, client: ClickhouseClient):
         """Test storing annotation with string metric value"""
         annotation = fake_annotation(
-            target=Annotation.Target(completion_id=str(uuid7(ms=lambda: 0, rand=lambda: 3))),
+            target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 3)),
             metric=Annotation.Metric(name="category", value="positive"),
         )
 
@@ -83,7 +83,7 @@ class TestStoreAnnotation:
     async def test_store_annotation_with_bool_metric(self, client: ClickhouseClient):
         """Test storing annotation with boolean metric value"""
         annotation = fake_annotation(
-            target=Annotation.Target(completion_id=str(uuid7(ms=lambda: 0, rand=lambda: 4))),
+            target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 4)),
             metric=Annotation.Metric(name="approved", value=True),
         )
 
@@ -92,7 +92,7 @@ class TestStoreAnnotation:
     async def test_store_annotation_with_no_metric(self, client: ClickhouseClient):
         """Test storing annotation without any metric"""
         annotation = fake_annotation(
-            target=Annotation.Target(completion_id=str(uuid7(ms=lambda: 0, rand=lambda: 5))),
+            target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 5)),
             metric=None,
         )
 
@@ -101,7 +101,7 @@ class TestStoreAnnotation:
     async def test_store_annotation_with_custom_metadata(self, client: ClickhouseClient):
         """Test storing annotation with custom metadata"""
         annotation = fake_annotation(
-            target=Annotation.Target(completion_id=str(uuid7(ms=lambda: 0, rand=lambda: 6))),
+            target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 6)),
             metadata={"user_id": "analyst_123", "tags": "review", "priority": "high"},
         )
 
@@ -126,7 +126,7 @@ class TestStoreAnnotation:
     async def test_store_annotation_with_no_context(self, client: ClickhouseClient):
         """Test storing annotation without context"""
         annotation = fake_annotation(
-            target=Annotation.Target(completion_id=str(uuid7(ms=lambda: 0, rand=lambda: 7))),
+            target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 7)),
             context=None,
         )
 
@@ -135,7 +135,7 @@ class TestStoreAnnotation:
     async def test_store_annotation_with_no_metadata(self, client: ClickhouseClient):
         """Test storing annotation with None metadata"""
         annotation = fake_annotation(
-            target=Annotation.Target(completion_id=str(uuid7(ms=lambda: 0, rand=lambda: 8))),
+            target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 8)),
             metadata=None,
         )
 
@@ -192,12 +192,12 @@ class TestStoreExperiment:
             fake_annotation(
                 id="ann-1",
                 text="First annotation",
-                target=Annotation.Target(completion_id=str(uuid7(ms=lambda: 0, rand=lambda: 11))),
+                target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 11)),
             ),
             fake_annotation(
                 id="ann-2",
                 text="Second annotation",
-                target=Annotation.Target(completion_id=str(uuid7(ms=lambda: 0, rand=lambda: 12))),
+                target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 12)),
             ),
         ]
         experiment = fake_experiment(annotations=annotations)
@@ -252,25 +252,10 @@ class TestCompletionsByIds:
 
     async def test_completions_by_ids_nonexistent_id(self, client: ClickhouseClient):
         # Use a valid UUID that doesn't exist in the database
-        nonexistent_id = str(UUID(int=12345))
+        nonexistent_id = UUID(int=12345)
         result = await client.completions_by_ids([nonexistent_id])
 
         assert result == []
-
-    async def test_completions_by_ids_invalid_uuid(self, client: ClickhouseClient):
-        # Test with invalid UUID
-        with pytest.raises(BadRequestError, match="Invalid UUIDs"):
-            _ = await client.completions_by_ids(["invalid-uuid"])
-
-    async def test_completions_by_ids_mixed_valid_invalid(self, client: ClickhouseClient):
-        completion = fake_completion()
-
-        # Store one completion
-        _ = await client.store_completion(completion, _insert_settings)
-
-        # Test with mix of valid and invalid UUIDs
-        with pytest.raises(BadRequestError, match="Invalid UUIDs"):
-            _ = await client.completions_by_ids([completion.id, "invalid-uuid"])
 
 
 class TestCompletionById:
@@ -305,15 +290,10 @@ class TestCompletionById:
 
     async def test_completions_by_id_nonexistent_id(self, client: ClickhouseClient):
         # Use a valid UUID that doesn't exist in the database
-        nonexistent_id = str(UUID(int=12345))
+        nonexistent_id = UUID(int=12345)
 
         with pytest.raises(ObjectNotFoundError):
             _ = await client.completions_by_id(nonexistent_id)
-
-    async def test_completions_by_id_invalid_uuid(self, client: ClickhouseClient):
-        # Test with invalid UUID
-        with pytest.raises(BadRequestError, match="Invalid UUID"):
-            _ = await client.completions_by_id("invalid-uuid")
 
     async def test_completions_by_id_with_agent_id_included(self, client: ClickhouseClient):
         completion = fake_completion()
@@ -775,7 +755,7 @@ class TestAddCompletionToExperiment:
         await client.store_experiment(experiment, _insert_settings)
 
         # Generate a completion ID
-        completion_id = str(uuid7(ms=lambda: 0, rand=lambda: 1))
+        completion_id = uuid7(ms=lambda: 0, rand=lambda: 1)
 
         # Add completion to experiment
         await client.add_completion_to_experiment("test-experiment-123", completion_id, {"mutations_sync": 1})
@@ -794,17 +774,17 @@ class TestAddCompletionToExperiment:
 
         assert len(result.result_rows) == 1
         completion_ids = result.result_rows[0][0]  # First row, first column
-        assert completion_id in [str(cid) for cid in completion_ids]
+        assert completion_id in completion_ids
 
     async def test_add_completion_to_experiment_duplicate_ignored(self, client: ClickhouseClient):
         """Test that adding the same completion ID twice doesn't create duplicates."""
-        completion_id = str(uuid7(ms=lambda: 0, rand=lambda: 2))
+        completion_id = uuid7(ms=lambda: 0, rand=lambda: 2)
 
         # Create a test experiment with an existing completion ID
         experiment = fake_experiment(
             id="test-experiment-456",
             agent_id="test-agent",
-            run_ids=[completion_id],  # Start with one completion
+            run_ids=[str(completion_id)],  # Start with one completion
         )
 
         # Store the experiment first
@@ -828,13 +808,7 @@ class TestAddCompletionToExperiment:
 
         assert len(result.result_rows) == 1
         completion_ids = result.result_rows[0][0]  # First row, first column
-        completion_id_strings = [str(cid) for cid in completion_ids]
-        assert completion_id_strings.count(completion_id) == 1
-
-    async def test_add_completion_to_experiment_invalid_uuid(self, client: ClickhouseClient):
-        """Test that providing an invalid UUID raises BadRequestError."""
-        with pytest.raises(BadRequestError, match="Invalid completion UUID"):
-            await client.add_completion_to_experiment("test-experiment", "invalid-uuid")
+        assert completion_ids.count(completion_id) == 1
 
 
 class TestGetVersionById:
@@ -940,7 +914,7 @@ class TestGetVersionById:
         wrong_agent_id = "agent-2"
 
         with pytest.raises(ObjectNotFoundError, match="version"):
-            await client.get_version_by_id(wrong_agent_id, completion1.id)
+            await client.get_version_by_id(wrong_agent_id, "bla")
 
 
 class TestCachedOutput:

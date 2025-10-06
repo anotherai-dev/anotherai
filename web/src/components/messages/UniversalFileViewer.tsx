@@ -1,10 +1,11 @@
 import { XCircle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FileView } from "@/components/messages/FileView";
 import { File } from "@/types/models";
 
 interface UniversalFileViewerProps {
   url: string;
+  addMargin?: boolean;
 }
 
 interface FileInfo {
@@ -92,12 +93,20 @@ async function downloadAndAnalyzeFile(url: string): Promise<FileInfo> {
   }
 }
 
-export function UniversalFileViewer({ url }: UniversalFileViewerProps) {
+export function UniversalFileViewer({ url, addMargin = false }: UniversalFileViewerProps) {
   const [fileInfo, setFileInfo] = useState<FileInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Check if the URL is a variable in the format {{variable_name}}
+  const variableMatch = useMemo(() => url.match(/^\{\{(.+)\}\}$/), [url]);
+
   useEffect(() => {
+    // Don't run the effect for variables
+    if (variableMatch) {
+      return;
+    }
+
     let isCancelled = false;
 
     const analyzeFile = async () => {
@@ -127,7 +136,15 @@ export function UniversalFileViewer({ url }: UniversalFileViewerProps) {
     return () => {
       isCancelled = true;
     };
-  }, [url]);
+  }, [url, variableMatch]);
+
+  if (variableMatch) {
+    return (
+      <div className="inline-block px-2 py-1 bg-gray-50 border border-gray-200 rounded-[2px] text-gray-900 font-bold text-xs">
+        {url}
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -155,5 +172,7 @@ export function UniversalFileViewer({ url }: UniversalFileViewerProps) {
     url: fileInfo?.dataUrl ?? fileInfo?.url ?? url,
   };
 
-  return <FileView file={enhancedFile} />;
+  const fileView = <FileView file={enhancedFile} />;
+
+  return addMargin ? <div className="mt-2">{fileView}</div> : fileView;
 }

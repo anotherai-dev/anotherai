@@ -3,10 +3,8 @@ from datetime import datetime
 from typing import Literal, NamedTuple, Protocol
 from uuid import UUID
 
-from core.domain.agent_input import AgentInput
 from core.domain.agent_output import AgentOutput
-from core.domain.experiment import Experiment, ExperimentOutput
-from core.domain.version import Version
+from core.domain.experiment import Experiment, ExperimentInput, ExperimentOutput, ExperimentVersion
 
 type ExperimentFields = Literal[
     "agent_id",
@@ -40,7 +38,7 @@ class ExperimentStorage(Protocol):
     async def set_result(self, experiment_id: str, result: str) -> None: ...
 
     # TODO: deprecate
-    async def add_run_id(self, experiment_id: str, run_id: str) -> None: ...
+    async def add_run_id(self, experiment_id: str, run_id: UUID) -> None: ...
 
     async def delete(self, experiment_id: str) -> None: ...
 
@@ -62,11 +60,11 @@ class ExperimentStorage(Protocol):
         input_ids: Collection[str] | None = None,
     ) -> Experiment: ...
 
-    async def add_inputs(self, experiment_id: str, inputs: list[AgentInput]) -> set[str]:
+    async def add_inputs(self, experiment_id: str, inputs: list[ExperimentInput]) -> set[str]:
         """Adds the inputs to the experiment. Returns a list of the input ids that were inserted"""
         ...
 
-    async def add_versions(self, experiment_id: str, versions: list[Version]) -> set[str]:
+    async def add_versions(self, experiment_id: str, versions: list[ExperimentVersion]) -> set[str]:
         """Adds the versions to the experiment. Returns a list of the version ids that were inserted"""
         ...
 

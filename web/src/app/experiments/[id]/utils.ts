@@ -60,7 +60,7 @@ export function findAllMetricKeysAndAverages(annotations: Annotation[]): Array<{
  * @param annotations - Array of annotations to analyze (optional)
  * @returns Object where key is version ID and value is array of metric key/average pairs, or undefined if no annotations
  */
-export function getMetricsPerVersion(
+export function getAveragedMetricsPerVersion(
   experiment: ExperimentWithLookups,
   annotations?: Annotation[]
 ): Record<string, Array<{ key: string; average: number }>> | undefined {
@@ -89,6 +89,76 @@ export function getMetricsPerVersion(
   });
 
   return metricsPerVersion;
+}
+
+/**
+ * Gets raw metric values (not averages) per version for percentile calculations.
+ *
+ * @param experiment - The experiment with completions and versions
+ * @param annotations - Array of annotations containing metric data
+ * @returns Object mapping version ID to object mapping metric keys to arrays of raw values
+ */
+export function getRawMetricsPerVersionPerKey(
+  experiment: ExperimentWithLookups,
+  annotations?: Annotation[]
+): Record<string, Record<string, number[]>> | undefined {
+  if (!annotations) {
+    return undefined;
+  }
+
+  const versionMetricsPerKey: Record<string, Record<string, number[]>> = {};
+
+  // Use existing utility to get completions grouped by version
+  const completionsPerVersion = getCompletionsPerVersion(experiment);
+
+  completionsPerVersion.forEach(({ versionId, completions }) => {
+    // Get completion IDs for this version
+    const completionIds = completions.map((completion) => completion.id);
+
+    // Filter annotations that belong to completions of this version
+    const annotationsForVersion = annotations.filter(
+      (annotation) => annotation.target?.completion_id && completionIds.includes(annotation.target.completion_id)
+    );
+
+    // Group raw metric values by key
+    const metricsMap = new Map<string, number[]>();
+    annotationsForVersion.forEach((annotation) => {
+      if (annotation.metric?.name && typeof annotation.metric.value === "number") {
+        const key = annotation.metric.name;
+        const value = annotation.metric.value;
+
+        if (metricsMap.has(key)) {
+          metricsMap.get(key)!.push(value);
+        } else {
+          metricsMap.set(key, [value]);
+        }
+      }
+    });
+
+    // Convert Map to object
+    const metricsForVersion: Record<string, number[]> = {};
+    metricsMap.forEach((values, key) => {
+      metricsForVersion[key] = values;
+    });
+
+    versionMetricsPerKey[versionId] = metricsForVersion;
+  });
+
+  return versionMetricsPerKey;
+}
+
+/**
+ * Extracts metric values for a specific version from the version metrics data.
+ *
+ * @param versionMetricsData - The complete version metrics data from getRawMetricsPerVersionPerKey
+ * @param versionId - The ID of the version to extract metrics for
+ * @returns Object mapping metric keys to arrays of raw values for the specified version
+ */
+export function getRawMetricsForSingleVersion(
+  versionMetricsData: Record<string, Record<string, number[]>> | undefined,
+  versionId: string
+): Record<string, number[]> | undefined {
+  return versionMetricsData?.[versionId];
 }
 
 /**
@@ -168,9 +238,11 @@ export function getAllMetricsPerKeyForRow(
   const metricsPerKeyForRow: Record<string, number[]> = {};
 
   // Get all completions for this input across all versions
-  const completionsForInput = experiment.versions
+  const completionsForInput = (experiment.versions ?? [])
     .map((version) => {
-      const completion = experiment.completions.find((c) => c.input.id === inputId && c.version.id === version.id);
+      const completion = (experiment.completions ?? []).find(
+        (c) => c.input.id === inputId && c.version.id === version.id
+      );
       return completion;
     })
     .filter(Boolean) as ExperimentCompletion[];

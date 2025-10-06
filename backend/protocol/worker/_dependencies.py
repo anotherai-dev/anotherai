@@ -85,6 +85,7 @@ CompletionStorerDep = Annotated[CompletionStorer, TaskiqDepends(_completion_stor
 def _payment_service(event: EventDep, dependencies: LifecycleDependenciesDep) -> PaymentService:
     return PaymentService(
         tenant_storage=dependencies.storage_builder.tenants(event.tenant_uid),
+        payment_handler=dependencies.payment_handler(event.tenant_uid),
     )
 
 

@@ -1,18 +1,26 @@
 import os
+from collections.abc import Awaitable
+from datetime import UTC, datetime, timedelta
 from typing import final
 
 from pydantic import BaseModel, Field, ValidationError
+from structlog import get_logger
+from structlog.contextvars import bind_contextvars
 
 from core.consts import ANOTHERAI_APP_URL
 from core.domain.events import EventRouter, UserConnectedEvent
 from core.domain.exceptions import InvalidTokenError, ObjectNotFoundError
-from core.domain.tenant_data import TenantData
+from core.domain.tenant_data import TenantData, User
 from core.services.user_manager import UserManager
 from core.storage.tenant_storage import TenantStorage
 from core.storage.user_storage import UserStorage
+from core.utils.coroutines import capture_errors
 from core.utils.signature_verifier import SignatureVerifier
 
 NO_AUTHORIZATION_ALLOWED = os.getenv("NO_AUTHORIZATION_ALLOWED") == "true"
+
+
+_log = get_logger(__name__)
 
 
 @final
@@ -48,14 +56,29 @@ class SecurityService:
             return await self._tenant_storage.tenant_by_org_id(org_id)
         except ObjectNotFoundError:
             # org id is not found but we have a valid claims so we can create a new tenant
-            return await self._tenant_storage.create_tenant_for_org_id(org_id, claims.org_slug or org_id, claims.sub)
+            return await self._registration(
+                self._tenant_storage.create_tenant_for_org_id(org_id, claims.org_slug or org_id, claims.sub),
+            )
 
     async def _tenant_from_owner_id(self, owner_id: str) -> TenantData:
         try:
             return await self._tenant_storage.tenant_by_owner_id(owner_id)
         except ObjectNotFoundError:
             # owner id is not found but we have a valid claims so we can create a new tenant
-            return await self._tenant_storage.create_tenant_for_owner_id(owner_id)
+            return await self._registration(self._tenant_storage.create_tenant_for_owner_id(owner_id))
+
+    async def _registration(self, coro: Awaitable[TenantData]):
+        tenant = await coro
+        # Check if tenant was just created, could be that it was migrated from a personal tenant to an organization
+        with capture_errors(get_logger(__name__), "Failed to check if tenant was just created"):
+            if tenant.created_at and tenant.created_at.replace(tzinfo=UTC) > datetime.now(UTC) - timedelta(minutes=1):
+                _log.info(
+                    "Tenant created",
+                    analytics="signup",
+                    tenant=tenant,
+                    org_id=tenant.org_id,
+                )
+        return tenant
 
     def token_from_header(self, authorization: str) -> str:
         if not authorization or not authorization.startswith("Bearer "):
@@ -73,12 +96,14 @@ class SecurityService:
     async def _oauth_tenant(self, token: str) -> TenantData:
         user_id = await self._user_manager.validate_oauth_token(token)
         try:
-            return await self._user_storage.last_used_organization(user_id)
+            data = await self._user_storage.last_used_organization(user_id)
         except ObjectNotFoundError:
             # If the user is not found, we auto create a tenant for the user
-            return await self._tenant_from_owner_id(user_id)
+            data = await self._tenant_from_owner_id(user_id)
+        data.user = User(sub=user_id, email=None)  # TODO: email
+        return data
 
-    async def find_tenant(self, token: str) -> TenantData:
+    async def _find_tenant(self, token: str) -> TenantData:
         if not token:
             # Shortcut to allow avoiding authentication alltogether
             # We basically create a tenant 0
@@ -104,8 +129,21 @@ class SecurityService:
             tenant = await self._tenant_from_org_id(claims.org_id, claims)
         else:
             tenant = await self._tenant_from_owner_id(claims.sub)
+        tenant.user = User(
+            sub=claims.sub,
+            email=claims.email,
+        )
 
-        self._event_router(UserConnectedEvent(user_id=claims.sub, organization_id=claims.org_id))
+        return tenant
+
+    async def find_tenant(self, token: str) -> TenantData:
+        tenant = await self._find_tenant(token)
+        if tenant.user:
+            self._event_router(UserConnectedEvent(user_id=tenant.user.sub, organization_id=tenant.org_id))
+        bind_contextvars(
+            tenant=tenant.slug,
+            user_email=tenant.user.email if tenant.user else None,
+        )
         return tenant
 
 
@@ -113,6 +151,7 @@ class _Claims(BaseModel):
     sub: str = Field(min_length=1)
     org_id: str | None = None
     org_slug: str | None = None
+    email: str | None = None
 
 
 def is_api_key(token: str) -> bool:

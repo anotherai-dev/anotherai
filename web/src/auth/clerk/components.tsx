@@ -5,11 +5,17 @@ import {
   SignInButton as ClerkSignInButton,
   SignUp as ClerkSignUp,
   SignUpButton as ClerkSignUpButton,
+  useAuth as useClerkAuth,
 } from "@clerk/nextjs";
 import type { AuthComponentProps } from "../base";
 
 export { SignedIn, SignedOut } from "@clerk/nextjs";
 export { UserButton } from "./UserButton";
+
+// Unified auth hook that wraps Clerk's useAuth
+export function useAuth() {
+  return useClerkAuth();
+}
 
 export { ApiKeysButton } from "@/components/auth/ApiKeysButton";
 

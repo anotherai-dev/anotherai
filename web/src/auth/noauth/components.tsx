@@ -39,3 +39,12 @@ export function SignIn({}: { redirect?: string }) {
 export function SignUp({}: { redirect?: string }) {
   return null;
 }
+
+// Unified auth hook for no-auth mode
+export function useAuth() {
+  return {
+    isLoaded: true,
+    isSignedIn: true,
+    userId: "no-auth-user",
+  };
+}

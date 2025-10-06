@@ -1,6 +1,7 @@
-import { Copy } from "lucide-react";
+import { Copy, EyeOff } from "lucide-react";
 import { memo, useMemo, useState } from "react";
 import { HoverPopover } from "@/components/HoverPopover";
+import MetricsDisplay from "@/components/MetricsDisplay";
 import { useToast } from "@/components/ToastProvider";
 import { DeployVersionInstructions } from "@/components/experiment/DeployVersionInstructions";
 import {
@@ -12,9 +13,7 @@ import { Annotation, ExperimentWithLookups, Message, Version } from "@/types/mod
 import { HeaderMatchingSection } from "../../matching/HeaderMatchingSection";
 import { DraggableColumnWrapper } from "./DraggableColumnWrapper";
 import { VersionDifferencesView } from "./VersionDifferencesView";
-import VersionHeaderMetrics from "./VersionHeaderMetrics";
 import VersionHeaderModel from "./VersionHeaderModel";
-import VersionHeaderPriceAndLatency from "./VersionHeaderPriceAndLatency";
 import { VersionHeaderPrompt } from "./VersionHeaderPrompt";
 import { VersionHeaderSchema } from "./VersionHeaderSchema";
 import { VersionHeaderSharedPromptAndSchema } from "./VersionHeaderSharedPromptAndSchema";
@@ -23,14 +22,6 @@ type VersionHeaderProps = {
   version: Version;
   optionalKeysToShow: string[];
   index: number;
-  priceAndLatency?: {
-    avgCost: number;
-    avgDuration: number;
-    allCosts: number[];
-    allDurations: number[];
-    versionCosts: number[];
-    versionDurations: number[];
-  };
   versions?: Version[];
   sharedPartsOfPrompts?: Message[];
   sharedKeypathsOfSchemas?: string[];
@@ -39,12 +30,20 @@ type VersionHeaderProps = {
   completionId?: string;
   metrics?: { key: string; average: number }[];
   allMetricsPerKey?: Record<string, number[]>;
+  versionMetricsPerKey?: Record<string, number[]>;
   showAvgPrefix?: boolean;
   agentId?: string;
   experiment?: ExperimentWithLookups;
   // Drag and drop props
   onReorderColumns?: (fromIndex: number, toIndex: number) => void;
   dragIndex?: number;
+  // Hide version functionality
+  onHideVersion?: (versionId: string) => void;
+  // Column width props
+  columnWidth?: number;
+  onColumnWidthChange?: (versionId: string, width: number) => void;
+  nextVersionId?: string;
+  isLastColumn?: boolean;
 };
 
 function VersionHeader(props: VersionHeaderProps) {
@@ -52,7 +51,6 @@ function VersionHeader(props: VersionHeaderProps) {
     version,
     optionalKeysToShow,
     index,
-    priceAndLatency,
     versions,
     sharedPartsOfPrompts,
     sharedKeypathsOfSchemas,
@@ -61,11 +59,17 @@ function VersionHeader(props: VersionHeaderProps) {
     completionId,
     metrics,
     allMetricsPerKey,
+    versionMetricsPerKey,
     showAvgPrefix = true,
     agentId,
     experiment,
     onReorderColumns,
     dragIndex,
+    onHideVersion,
+    columnWidth,
+    onColumnWidthChange,
+    nextVersionId,
+    isLastColumn,
   } = props;
 
   const [isHovered, setIsHovered] = useState(false);
@@ -79,6 +83,13 @@ function VersionHeader(props: VersionHeaderProps) {
     } catch (err) {
       console.error("Failed to copy: ", err);
       showToast("Failed to copy");
+    }
+  };
+
+  const handleHideVersion = () => {
+    if (onHideVersion) {
+      onHideVersion(version.id);
+      showToast("Version hidden");
     }
   };
 
@@ -132,24 +143,42 @@ function VersionHeader(props: VersionHeaderProps) {
       dragIndex={dragIndex}
       versionId={version.id}
       className="firefox-version-header"
+      columnWidth={columnWidth}
+      onColumnWidthChange={onColumnWidthChange}
+      nextVersionId={nextVersionId}
+      isLastColumn={isLastColumn}
     >
       <div className="firefox-version-content">
         <div onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
           <div className="flex items-center gap-2 mb-2">
             <div className="text-gray-800 font-semibold text-sm">Version {index + 1}</div>
             {isHovered && (
-              <HoverPopover
-                content={<div className="text-xs">Copy Version ID</div>}
-                position="top"
-                popoverClassName="bg-gray-800 text-white rounded-[4px] px-2 py-1"
-              >
-                <button
-                  onClick={handleCopyVersion}
-                  className="bg-white border border-gray-200 text-gray-900 hover:bg-gray-100 cursor-pointer h-5 w-5 rounded-[2px] flex items-center justify-center"
+              <div className="flex items-center gap-1">
+                <HoverPopover
+                  content={<div className="text-xs">Copy Version ID</div>}
+                  position="top"
+                  popoverClassName="bg-gray-800 text-white rounded-[4px] px-2 py-1"
                 >
-                  <Copy size={12} />
-                </button>
-              </HoverPopover>
+                  <button
+                    onClick={handleCopyVersion}
+                    className="bg-white border border-gray-200 text-gray-900 hover:bg-gray-100 cursor-pointer h-5 w-5 rounded-[2px] flex items-center justify-center"
+                  >
+                    <Copy size={12} />
+                  </button>
+                </HoverPopover>
+                <HoverPopover
+                  content={<div className="text-xs">Hide Version</div>}
+                  position="top"
+                  popoverClassName="bg-gray-800 text-white rounded-[4px] px-2 py-1"
+                >
+                  <button
+                    onClick={handleHideVersion}
+                    className="bg-white border border-gray-200 text-gray-900 hover:bg-gray-100 cursor-pointer h-5 w-5 rounded-[2px] flex items-center justify-center"
+                  >
+                    <EyeOff size={12} />
+                  </button>
+                </HoverPopover>
+              </div>
             )}
           </div>
           <VersionHeaderModel
@@ -227,11 +256,17 @@ function VersionHeader(props: VersionHeaderProps) {
       </div>
 
       <div className="firefox-version-metrics">
-        {(priceAndLatency || metrics) && (
+        {metrics && metrics.length > 0 && (
           <>
             <div className="pt-2 mt-3 border-t border-gray-200" />
-            <VersionHeaderPriceAndLatency priceAndLatency={priceAndLatency} showAvgPrefix={showAvgPrefix} />
-            <VersionHeaderMetrics metrics={metrics} allMetricsPerKey={allMetricsPerKey} showAvgPrefix={showAvgPrefix} />
+            <MetricsDisplay
+              metrics={metrics}
+              allMetricsPerKey={allMetricsPerKey}
+              versionMetricsPerKey={versionMetricsPerKey}
+              showAvgPrefix={showAvgPrefix}
+              className="space-y-1 mt-1"
+              usePer1kMultiplier={false}
+            />
           </>
         )}
       </div>
@@ -288,24 +323,6 @@ function areMessageArraysEqual(prev?: Message[], next?: Message[]): boolean {
   return true;
 }
 
-// Helper function to compare priceAndLatency objects
-function arePriceAndLatencyEqual(
-  prev?: VersionHeaderProps["priceAndLatency"],
-  next?: VersionHeaderProps["priceAndLatency"]
-): boolean {
-  if (prev === next) return true;
-  if (!prev || !next) return false;
-
-  return (
-    prev.avgCost === next.avgCost &&
-    prev.avgDuration === next.avgDuration &&
-    prev.allCosts === next.allCosts &&
-    prev.allDurations === next.allDurations &&
-    prev.versionCosts === next.versionCosts &&
-    prev.versionDurations === next.versionDurations
-  );
-}
-
 // Helper function to compare metrics arrays
 function areMetricsEqual(
   prev?: { key: string; average: number }[],
@@ -342,7 +359,6 @@ export default memo(VersionHeader, (prevProps, nextProps) => {
     areVersionsEqual(prevProps.version, nextProps.version) &&
     areStringArraysEqual(prevProps.optionalKeysToShow, nextProps.optionalKeysToShow) &&
     prevProps.index === nextProps.index &&
-    arePriceAndLatencyEqual(prevProps.priceAndLatency, nextProps.priceAndLatency) &&
     areVersionArraysEqual(prevProps.versions, nextProps.versions) &&
     areMessageArraysEqual(prevProps.sharedPartsOfPrompts, nextProps.sharedPartsOfPrompts) &&
     areStringArraysEqual(prevProps.sharedKeypathsOfSchemas || [], nextProps.sharedKeypathsOfSchemas || []) &&
@@ -353,6 +369,6 @@ export default memo(VersionHeader, (prevProps, nextProps) => {
     prevProps.dragIndex === nextProps.dragIndex &&
     areAnnotationsEqual(prevProps.annotations, nextProps.annotations) &&
     areMetricsEqual(prevProps.metrics, nextProps.metrics)
-    // Note: onReorderColumns, allMetricsPerKey, and experiment are not compared as they should be stable or are complex objects
+    // Note: onReorderColumns, onHideVersion, allMetricsPerKey, versionMetricsPerKey, and experiment are not compared as they should be stable or are complex objects
   );
 });

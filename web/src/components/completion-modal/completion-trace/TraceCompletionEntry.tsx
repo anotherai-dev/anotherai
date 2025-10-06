@@ -1,4 +1,5 @@
 import { ArrowSwap16Regular } from "@fluentui/react-icons";
+import { formatNumber } from "@/components/universal-charts/utils";
 
 type TraceCompletionEntryProps = {
   completion: Record<string, unknown>;
@@ -16,7 +17,7 @@ export function TraceCompletionEntry(props: TraceCompletionEntryProps) {
   const formatCost = (costMillionthUsd: number | undefined) => {
     if (costMillionthUsd === undefined || costMillionthUsd === null) return "N/A";
     const costUsd = costMillionthUsd / 1000000;
-    return `$${costUsd.toFixed(4)}`;
+    return `$${formatNumber(costUsd)}`;
   };
 
   const formatDuration = (durationDs: number | undefined) => {

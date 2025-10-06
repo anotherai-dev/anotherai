@@ -1,6 +1,11 @@
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
-import { getMatchingVersionKeys, getVersionWithDefaults, sortVersionKeys } from "@/components/utils/utils";
+import {
+  IGNORED_VERSION_KEYS,
+  getMatchingVersionKeys,
+  getVersionWithDefaults,
+  sortVersionKeys,
+} from "@/components/utils/utils";
 import { Annotation, ExperimentWithLookups } from "@/types/models";
 import { HeaderMatchingRow } from "./HeaderMatchingRow";
 
@@ -19,7 +24,7 @@ export function HeaderMatchingSection(props: Props) {
     if (!experiment?.versions || !Array.isArray(experiment.versions) || experiment.versions.length === 0) {
       return [];
     }
-    const keys = getMatchingVersionKeys(experiment.versions, ["id", "model"]);
+    const keys = getMatchingVersionKeys(experiment.versions, [...IGNORED_VERSION_KEYS, "model"]);
     return sortVersionKeys(keys);
   }, [experiment?.versions]);
 

@@ -9,7 +9,7 @@
     "reasoning",
     "caching",
     "cost",
-    "modalities",
+    "non-text-inputs",
     "api-keys"
   ]
 }

@@ -1,5 +1,10 @@
 import { useMemo } from "react";
-import { getMatchingVersionKeys, getVersionWithDefaults, sortVersionKeys } from "@/components/utils/utils";
+import {
+  IGNORED_VERSION_KEYS,
+  getMatchingVersionKeys,
+  getVersionWithDefaults,
+  sortVersionKeys,
+} from "@/components/utils/utils";
 import { Annotation, ExperimentWithLookups } from "@/types/models";
 import MatchingRow from "./MatchingRow";
 
@@ -14,12 +19,12 @@ export function MatchingSection(props: Props) {
   const { experiment, annotations, experimentId, completionId } = props;
 
   const matchingContentKeys = useMemo(() => {
-    const keys = getMatchingVersionKeys(experiment.versions, ["id", "model"]);
+    const keys = getMatchingVersionKeys(experiment.versions ?? [], [...IGNORED_VERSION_KEYS, "model"]);
     return sortVersionKeys(keys);
   }, [experiment.versions]);
 
   const versionWithDefaults = useMemo(() => {
-    if (experiment.versions.length === 0) return null;
+    if (!experiment.versions || experiment.versions.length === 0) return null;
     return getVersionWithDefaults(experiment.versions[0]);
   }, [experiment.versions]);
 

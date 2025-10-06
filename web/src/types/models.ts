@@ -1,5 +1,58 @@
-export interface ModelWithID {
+export interface IDAndAlias {
   id: string;
+  alias?: string;
+}
+
+// Payment-related types
+export interface PaymentMethodResponse {
+  payment_method_id: string;
+  payment_method_currency?: string;
+  last4: string;
+  brand: string;
+  exp_month: number;
+  exp_year: number;
+}
+
+export interface PaymentMethodRequest {
+  payment_method_id: string;
+  payment_method_currency?: string;
+}
+
+export interface PaymentMethodIdResponse {
+  payment_method_id: string;
+}
+
+export interface CreatePaymentIntentRequest {
+  amount: number;
+}
+
+export interface PaymentIntentCreatedResponse {
+  client_secret: string;
+  payment_intent_id: string;
+}
+
+export interface AutomaticPaymentRequest {
+  opt_in: boolean;
+  threshold?: number | null;
+  balance_to_maintain?: number | null;
+}
+
+export interface PaymentFailure {
+  failure_date: string;
+  failure_code: "payment_failed" | "internal";
+  failure_reason: string;
+}
+
+export interface AutomaticPayment {
+  threshold: number;
+  balance_to_maintain: number;
+}
+
+export interface Tenant {
+  id: string;
+  current_credits_usd?: number;
+  automatic_payment?: AutomaticPayment | null | undefined;
+  payment_failure?: PaymentFailure | null | undefined;
 }
 
 export interface Tool {
@@ -141,8 +194,8 @@ export interface Annotation {
 
 export interface ExperimentCompletion {
   id: string;
-  input: ModelWithID;
-  version: ModelWithID;
+  input: IDAndAlias;
+  version: IDAndAlias;
   output: Output;
   cost_usd: number;
   duration_seconds: number;
@@ -151,6 +204,7 @@ export interface ExperimentCompletion {
 export interface Completion {
   id: string;
   agent_id: string;
+  created_at?: string;
   version: Version;
   conversation_id?: string;
   input: Input;
@@ -172,9 +226,9 @@ export interface Experiment {
   description: string;
   result?: string;
   agent_id: string;
-  completions: ExperimentCompletion[];
-  versions: Version[];
-  inputs: Input[];
+  completions?: ExperimentCompletion[];
+  versions?: (Version & { alias?: string })[];
+  inputs?: (Input & { alias?: string })[];
   annotations?: Annotation[];
   metadata?: Record<string, unknown>;
 }
@@ -200,9 +254,23 @@ export type ExperimentWithLookups = Experiment & {
 
 // Helper function to create lookup maps for efficient access
 export function createExperimentWithLookups(experiment: Experiment): ExperimentWithLookups {
-  const versionMap = new Map(experiment.versions.map((v) => [v.id, v]));
-  const inputMap = new Map(experiment.inputs.map((i) => [i.id, i]));
-  const completionMap = new Map(experiment.completions.map((c) => [c.id, c]));
+  // Ensure we have valid arrays or default to empty arrays
+  const versions =
+    experiment.versions !== null && experiment.versions !== undefined && Array.isArray(experiment.versions)
+      ? experiment.versions
+      : [];
+  const inputs =
+    experiment.inputs !== null && experiment.inputs !== undefined && Array.isArray(experiment.inputs)
+      ? experiment.inputs
+      : [];
+  const completions =
+    experiment.completions !== null && experiment.completions !== undefined && Array.isArray(experiment.completions)
+      ? experiment.completions
+      : [];
+
+  const versionMap = new Map(versions.map((v) => [v.id, v]));
+  const inputMap = new Map(inputs.map((i) => [i.id, i]));
+  const completionMap = new Map(completions.map((c) => [c.id, c]));
 
   return {
     ...experiment,

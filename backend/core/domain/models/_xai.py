@@ -38,7 +38,7 @@ def xai_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             supports_tool_calling=True,
             supports_structured_output=True,
             fallback=ModelFallback.default("cheap"),
-            speed_data=SpeedData(index=SpeedIndex.from_tpm(tpm=2_000_000)),
+            speed_data=SpeedData.from_tps(value=268),
             reasoning=ModelReasoningBudget(disabled=None, medium=None),
         ),
         Model.GROK_4_FAST: ModelData(
@@ -63,7 +63,7 @@ def xai_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             supports_tool_calling=True,
             supports_structured_output=True,
             fallback=ModelFallback.default("cheap", context_exceeded="no"),
-            speed_data=SpeedData(index=SpeedIndex.from_tpm(tpm=4_000_000)),
+            speed_data=SpeedData.from_tps(value=191),
             reasoning=ModelReasoningBudget(disabled=0, medium=None),
         ),
         Model.GROK_4_0709: ModelData(
@@ -87,10 +87,7 @@ def xai_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             supports_tool_calling=True,
             supports_structured_output=True,
             fallback=ModelFallback.default("medium"),
-            speed_data=SpeedData(
-                # TODO: speed data
-                index=SpeedIndex.from_experiment(output_tokens=2300, duration_seconds=42),
-            ),
+            speed_data=SpeedData.from_tps(value=42),
         ),
         Model.GROK_3_BETA: ModelData(
             display_name="Grok 3 (beta)",
@@ -160,9 +157,7 @@ def xai_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
                 gpqa=79,
                 source="https://www.vals.ai/models/grok_grok-3-mini-fast-beta-high-reasoning",
             ),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2140, duration_seconds=16),
-            ),
+            speed_data=SpeedData.from_tps(value=100),
             provider_name=DisplayedProvider.X_AI.value,
             supports_tool_calling=True,
             supports_structured_output=True,
@@ -186,9 +181,7 @@ def xai_models() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
                 gpqa=79,
                 source="https://www.vals.ai/models/grok_grok-3-mini-fast-beta-high-reasoning",
             ),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2076, duration_seconds=14.9),
-            ),
+            speed_data=SpeedData.from_tps(value=155),
             provider_name=DisplayedProvider.X_AI.value,
             supports_tool_calling=True,
             supports_structured_output=True,

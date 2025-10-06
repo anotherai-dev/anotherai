@@ -86,6 +86,7 @@ dependencies = [
     { name = "jsonschema" },
     { name = "mcp" },
     { name = "openai" },
+    { name = "posthog" },
     { name = "pydantic" },
     { name = "pydub" },
     { name = "pyjwt" },
@@ -93,6 +94,7 @@ dependencies = [
     { name = "sentry-sdk", extra = ["fastapi"] },
     { name = "sqlparse" },
     { name = "starlette" },
+    { name = "stripe" },
     { name = "structlog" },
     { name = "taskiq" },
     { name = "taskiq-redis" },
@@ -132,6 +134,7 @@ requires-dist = [
     { name = "jsonschema", specifier = ">=4.24.0" },
     { name = "mcp", specifier = ">=1.14.0" },
     { name = "openai", specifier = ">=1.93.1" },
+    { name = "posthog", specifier = ">=3.7.2" },
     { name = "pydantic", specifier = ">=2.0.0" },
     { name = "pydub", specifier = ">=0.25.1" },
     { name = "pyjwt", specifier = ">=2.9.0" },
@@ -139,6 +142,7 @@ requires-dist = [
     { name = "sentry-sdk", extras = ["fastapi"], specifier = ">=2.37.1" },
     { name = "sqlparse", specifier = ">=0.5.3" },
     { name = "starlette", specifier = ">=0.27.0" },
+    { name = "stripe", specifier = ">=12.5.1" },
     { name = "structlog", specifier = ">=25.4.0" },
     { name = "taskiq", specifier = ">=0.11.17" },
     { name = "taskiq-redis", specifier = ">=1.0.9" },
@@ -308,6 +312,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/96/95/3e3414491ce45025a1cde107b6ae72bf72049e6021597c201cd6a3029b9a/azure_storage_blob-12.26.0.tar.gz", hash = "sha256:5dd7d7824224f7de00bfeb032753601c982655173061e242f13be6e26d78d71f", size = 583332, upload-time = "2025-07-16T21:34:07.644Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5b/64/63dbfdd83b31200ac58820a7951ddfdeed1fbee9285b0f3eae12d1357155/azure_storage_blob-12.26.0-py3-none-any.whl", hash = "sha256:8c5631b8b22b4f53ec5fff2f3bededf34cfef111e2af613ad42c9e6de00a77fe", size = 412907, upload-time = "2025-07-16T21:34:09.367Z" },
+]
+
+[[package]]
+name = "backoff"
+version = "2.2.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/47/d7/5bbeb12c44d7c4f2fb5b56abce497eb5ed9f34d85701de869acedd602619/backoff-2.2.1.tar.gz", hash = "sha256:03f829f5bb1923180821643f8753b0502c3b682293992485b0eef2807afa5cba", size = 17001, upload-time = "2022-10-05T19:19:32.061Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/df/73/b6e24bd22e6720ca8ee9a85a0c4a2971af8497d8f3193fa05390cbd46e09/backoff-2.2.1-py3-none-any.whl", hash = "sha256:63579f9a0628e06278f7e47b7d7d5b6ce20dc65c5e96a6f3ca99a6adca0396e8", size = 15148, upload-time = "2022-10-05T19:19:30.546Z" },
 ]
 
 [[package]]
@@ -1476,6 +1489,23 @@ wheels = [
 ]
 
 [[package]]
+name = "posthog"
+version = "6.7.6"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "backoff" },
+    { name = "distro" },
+    { name = "python-dateutil" },
+    { name = "requests" },
+    { name = "six" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e2/ce/11d6fa30ab517018796e1d675498992da585479e7079770ec8fa99a61561/posthog-6.7.6.tar.gz", hash = "sha256:ee5c5ad04b857d96d9b7a4f715e23916a2f206bfcf25e5a9d328a3d27664b0d3", size = 119129, upload-time = "2025-09-22T18:11:12.365Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/de/84/586422d8861b5391c8414360b10f603c0b7859bb09ad688e64430ed0df7b/posthog-6.7.6-py3-none-any.whl", hash = "sha256:b09a7e65a042ec416c28874b397d3accae412a80a8b0ef3fa686fbffc99e4d4b", size = 137348, upload-time = "2025-09-22T18:11:10.807Z" },
+]
+
+[[package]]
 name = "pre-commit"
 version = "4.3.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2207,6 +2237,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/15/b9/cc3017f9a9c9b6e27c5106cc10cc7904653c3eec0729793aec10479dd669/starlette-0.47.3.tar.gz", hash = "sha256:6bc94f839cc176c4858894f1f8908f0ab79dfec1a6b8402f6da9be26ebea52e9", size = 2584144, upload-time = "2025-08-24T13:36:42.122Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ce/fd/901cfa59aaa5b30a99e16876f11abe38b59a1a2c51ffb3d7142bb6089069/starlette-0.47.3-py3-none-any.whl", hash = "sha256:89c0778ca62a76b826101e7c709e70680a1699ca7da6b44d38eb0a7e61fe4b51", size = 72991, upload-time = "2025-08-24T13:36:40.887Z" },
+]
+
+[[package]]
+name = "stripe"
+version = "12.5.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/bd/92/f1b72783e13662026efc7d3f0fc201230edab55edd1604326a97162d8ce4/stripe-12.5.1.tar.gz", hash = "sha256:5407d092c355c31393e767d2dcb2d5a8c3980caa9a073acb32d0ccb3c01b04b5", size = 1432826, upload-time = "2025-09-05T13:27:07.976Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1d/8d/f4c2f047eedc943aea573cb56af2c9481b2d97ee8de9819f8c5d87e9ba34/stripe-12.5.1-py2.py3-none-any.whl", hash = "sha256:39b47b331dfe933ce6cf6bd654e0ae9ba082caa9d1dd8d0ae9ae48293975f115", size = 1664067, upload-time = "2025-09-05T13:27:05.559Z" },
 ]
 
 [[package]]
