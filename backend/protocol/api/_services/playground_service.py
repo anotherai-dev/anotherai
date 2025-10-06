@@ -1,7 +1,7 @@
 import itertools
 import json
 import time
-from collections.abc import Iterable
+from collections.abc import Collection, Iterable
 from typing import Any, final
 from uuid import UUID
 
@@ -27,11 +27,11 @@ from core.storage.agent_storage import AgentStorage
 from core.storage.completion_storage import CompletionStorage
 from core.storage.deployment_storage import DeploymentStorage
 from core.storage.experiment_storage import CompletionIDTuple, CompletionOutputTuple, ExperimentStorage
-from core.utils.hash import hash_model, is_hash_32
+from core.utils.hash import hash_model
 from core.utils.uuid import uuid7
-from protocol.api._api_models import Input, VersionRequest
+from protocol.api._api_models import ExperimentInput, VersionRequest
 from protocol.api._services.conversions import (
-    input_to_domain,
+    experiment_input_to_domain,
     version_request_from_domain,
     version_request_to_domain,
 )
@@ -68,8 +68,8 @@ class PlaygroundService:
                 except ValidationError as e:
                     raise BadRequestError(f"Invalid version: {e}") from e
 
-            # Not sure what this is so we check if it's a hash
-            id_type = IDType.VERSION if is_hash_32(id) else IDType.DEPLOYMENT
+            # Not sure what this is so we assume it's a version
+            id_type = IDType.VERSION
 
         match id_type:
             case IDType.VERSION:
@@ -125,7 +125,7 @@ class PlaygroundService:
     async def add_inputs_to_experiment(
         self,
         experiment_id: str,
-        inputs: list[Input] | None,
+        inputs: list[ExperimentInput] | None,
         input_query: str | None,
     ) -> list[str]:
         experiment = await self._experiment_storage.get_experiment(experiment_id, include={"versions"})
@@ -137,7 +137,7 @@ class PlaygroundService:
         elif not inputs:
             raise BadRequestError("Exactly one of inputs and input_query must be provided")
 
-        domain_inputs = [input_to_domain(input) for input in inputs]
+        domain_inputs = [experiment_input_to_domain(input) for input in inputs]
         for input in domain_inputs:
             assign_input_preview(input)
         self._check_compatibility(experiment.versions, domain_inputs)
@@ -243,7 +243,7 @@ class PlaygroundService:
             cost_usd=completion.cost_usd,
         )
 
-    async def _extract_inputs_from_query(self, query: str) -> list[Input]:
+    async def _extract_inputs_from_query(self, query: str) -> list[ExperimentInput]:
         # Replacing wildcard
         query = query.replace("SELECT * FROM completions", "SELECT input_variables, input_messages FROM completions")
         rows = await self._completion_storage.raw_query(query)
@@ -252,7 +252,7 @@ class PlaygroundService:
         first_row = rows[0]
         if "input_variables" not in first_row and "input_messages" not in first_row:
             raise BadRequestError("Completion query must return input_variables and input_messages columns")
-        out: list[Input] = []
+        out: list[ExperimentInput] = []
         input_hashes: set[str] = set()
 
         def _load_raw_json(s: str) -> Any:
@@ -261,7 +261,7 @@ class PlaygroundService:
             return json.loads(s)
 
         for row in rows:
-            _input = Input.model_validate(
+            _input = ExperimentInput.model_validate(
                 {
                     "variables": _load_raw_json(row["input_variables"]),
                     "messages": _load_raw_json(row["input_messages"]),
@@ -274,7 +274,7 @@ class PlaygroundService:
             out.append(_input)
         return out
 
-    def _check_compatibility(self, versions: list[DomainVersion] | None, inputs: list[AgentInput] | None):
+    def _check_compatibility(self, versions: Collection[DomainVersion] | None, inputs: Collection[AgentInput] | None):
         # check for empty prompt and messages
         # If at least one version has no prompt AND at least one input has no messages, raise an error
         if not versions or not inputs:
@@ -373,7 +373,7 @@ def _version_request_with_override(base: VersionRequest, override: dict[str, Any
     try:
         return VersionRequest.model_validate(
             {
-                **base.model_dump(exclude_unset=True, exclude_none=True),
+                **base.model_dump(exclude_unset=True, exclude_none=True, exclude={"alias"}),
                 **override,
             },
         )

@@ -469,7 +469,7 @@ class PaymentIntent(NamedTuple):
 
 
 class _BaseMetadata(BaseModel):
-    app: str | None = "anotherai"
+    app: str | None = None
     tenant: str
     tenant_uid: int
     webhook_ignore: str | None = None
@@ -486,7 +486,12 @@ class _BaseMetadata(BaseModel):
         return v
 
 
-class _CustomerMetadata(_BaseMetadata):
+class _AnotherAIMetadata(_BaseMetadata):
+    # Change default value
+    app: str | None = "anotherai"
+
+
+class _CustomerMetadata(_AnotherAIMetadata):
     organization_id: str | None = None
     owner_id: str | None = None
 

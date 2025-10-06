@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from datetime import UTC, datetime
 from typing import Any, Literal
 from uuid import UUID
@@ -18,7 +19,9 @@ from core.domain.deployment import Deployment as DomainDeployment
 from core.domain.error import Error as DomainError
 from core.domain.exceptions import BadRequestError, JSONSchemaValidationError
 from core.domain.experiment import Experiment as DomainExperiment
+from core.domain.experiment import ExperimentInput as DomainExperimentInput
 from core.domain.experiment import ExperimentOutput
+from core.domain.experiment import ExperimentVersion as DomainExperimentVersion
 from core.domain.file import File
 from core.domain.inference_usage import CompletionUsage as DomainCompletionUsage
 from core.domain.inference_usage import InferenceUsage as DomainInferenceUsage
@@ -59,12 +62,14 @@ from protocol.api._api_models import (
     Deployment,
     Error,
     Experiment,
+    ExperimentInput,
     Graph,
     InferenceUsage,
     Input,
     Message,
     Model,
     ModelContextWindow,
+    ModelField,
     ModelPricing,
     ModelReasoning,
     ModelSupports,
@@ -360,13 +365,14 @@ def _sanitize_output_json_schema(output_json_schema: dict[str, Any] | None) -> D
     return _sanitize_json_schema(schema)
 
 
-def version_request_to_domain(version: VersionRequest) -> DomainVersion:
+def version_request_to_domain(version: VersionRequest) -> DomainExperimentVersion:
     if version.prompt is not None:
         input_variables_schema, _ = json_schema_for_template([message_to_domain(m) for m in version.prompt], {})
     else:
         input_variables_schema = None
 
-    return DomainVersion(
+    return DomainExperimentVersion(
+        alias=version.alias,
         model=version.model,
         temperature=version.temperature,
         top_p=version.top_p,
@@ -418,6 +424,14 @@ def input_to_domain(agent_input: Input) -> DomainInput:
     return DomainInput(
         messages=[message_to_domain(m) for m in agent_input.messages] if agent_input.messages else None,
         variables=agent_input.variables or None,
+    )
+
+
+def experiment_input_to_domain(experiment_input: ExperimentInput) -> DomainExperimentInput:
+    return DomainExperimentInput(
+        messages=[message_to_domain(m) for m in experiment_input.messages] if experiment_input.messages else None,
+        variables=experiment_input.variables or None,
+        alias=experiment_input.alias,
     )
 
 
@@ -586,6 +600,17 @@ def model_response_from_domain(model_id: str, model: FinalModelData) -> Model:
         context_window=model_context_window_from_domain(model.max_tokens_data),
         speed_index=model.speed_index,
     )
+
+
+def model_response_filter(fields: Iterable[ModelField] | None, models: Iterable[Model]) -> Iterable[dict[str, Any]]:
+    """Convert model data for MCP responses, excluding icon_url to reduce context window usage."""
+    include = {"id", "display_name"}
+    if fields is None:
+        include.update(ModelField)
+    else:
+        include.update(fields)
+    for model in models:
+        yield model.model_dump(include=include, exclude_none=True)
 
 
 def _sanitized_completion_id(completion_id: str) -> UUID:
