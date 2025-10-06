@@ -437,6 +437,7 @@ class _TenantRow(BaseModel):
         return TenantData(
             uid=self.uid,
             slug=self.slug,
+            created_at=self.created_at,
             org_id=self.org_id,
             owner_id=self.owner_id,
             current_credits_usd=self.current_credits_usd,
