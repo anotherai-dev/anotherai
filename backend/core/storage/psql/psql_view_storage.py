@@ -133,7 +133,7 @@ class PsqlViewStorage(PsqlBaseStorage, ViewStorage):
 
             view_row = _ViewRow.from_domain(view, folder_uid)
             # Query and graph are always updated
-            update_on_conflict = ["query","graph_type","graph"]
+            update_on_conflict = ["query", "graph_type", "graph"]
             if view.title:
                 update_on_conflict.append("title")
             if folder_uid:
@@ -143,7 +143,7 @@ class PsqlViewStorage(PsqlBaseStorage, ViewStorage):
             _ = await self._insert(
                 connection,
                 view_row,
-                on_conflict=f"""ON CONFLICT (tenant_uid, slug) DO UPDATE SET {on_conflict_str}""",
+                on_conflict=f"""ON CONFLICT (tenant_uid, slug) DO UPDATE SET updated_at = CURRENT_TIMESTAMP, {on_conflict_str}""",
                 table="views",
             )
 

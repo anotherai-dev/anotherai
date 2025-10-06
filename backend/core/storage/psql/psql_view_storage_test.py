@@ -547,12 +547,13 @@ class TestCreateOrReplaceView:
 
         # Verify view was updated
         row = await purged_psql_tenant_conn.fetchrow(
-            "SELECT title, query FROM views WHERE slug = $1",
+            "SELECT title, query, updated_at FROM views WHERE slug = $1",
             "test-view",
         )
         assert row is not None
         assert row["title"] == "Updated Title"
         assert row["query"] == "SELECT 1"
+        assert row["updated_at"] is not None
 
     async def test_folder_and_title_not_updated_if_falsy(
         self,
