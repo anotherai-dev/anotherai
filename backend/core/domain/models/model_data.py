@@ -129,6 +129,11 @@ class SpeedData(BaseModel):
         # TODO: we should not have a default value here
         return 500
 
+    @classmethod
+    def from_tps(cls, value: float) -> Self:
+        """When value comes from https://artificialanalysis.ai/models#output-speed"""
+        return cls(index=SpeedIndex(value=value))
+
 
 class MaxTokensData(SourcedBaseModel):
     max_tokens: int = Field(
