@@ -250,11 +250,6 @@ class CustomTokenVerifier(TokenVerifier):
     async def verify_token(self, token: str) -> AccessToken | None:
         deps = lifecycle_dependencies()
         tenant = await deps.security_service.find_tenant(token)
-        bind_contextvars(
-            tenant_org_id=tenant.org_id,
-            tenant_owner_id=tenant.owner_id,
-            tenant_slug=tenant.slug,
-        )
         return AccessToken(
             token=token,
             client_id="",
