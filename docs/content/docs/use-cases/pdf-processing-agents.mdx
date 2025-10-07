@@ -18,6 +18,8 @@ Need an extra hand with building agents? We're happy to help. Reach us at [team@
 
 In this guide, we'll walk through the process of building a PDF processing AI agent that extracts key information from PDF documents. Our goal with this agent's flow is to give it a PDF document and have it return structured data with the extracted information.
 
+This is just one example of a PDF processing agent. The same process can be applied to PDF processing agents that perform other tasks as well. 
+
 <Steps>
 <Step>
 ### Prepare Your Test Data
@@ -62,7 +64,7 @@ Add https://example.com/documents/subscription-invoice.pdf
 as an input to my pdf-extraction-dataset.json.
 ```
 3. Your AI assistant will be able to add the URL to your dataset using the correct formatting.
-4. If you want to include an expected output for your URL input, you can also ask your AI assistant to view the content and extract the information you need.
+4. (Optional) If you want to include an expected output for your URL input, you can also ask your AI assistant to view the content and extract the information you need.
 
 ```
 Add https://example.com/documents/subscription-invoice.pdf to my pdf-extraction-dataset.json as input.
@@ -142,13 +144,20 @@ You can also add custom metadata to your agents to help organize and track them.
 ### Testing your Agent
 
 As part of the process of creating your agent with AnotherAI, your AI assistant will automatically create an initial experiment to test your agent's performance. Experiments allow you to systematically compare each of these different parameters of your agent to find the optimal setup for your use case across one or more inputs. You can use experiments to:
-- Compare performance across different models (GPT-4, Claude, Gemini, etc.)
+- Compare performance across different models (ex. GPT-5, Claude 4.5 sonnet, Gemini 2.0 flash, etc.)
 - Test multiple prompt variations to find the most effective approach
 - Optimize for specific metrics like cost, speed, and accuracy.
 
 If you find there is additional criteria you want to test, you can always ask your AI assistant to create additional experiments. The most common parameters to experiment with are [prompts](/use-cases/fundamentals/experiments#prompts) and [models](/use-cases/fundamentals/experiments#models), however you can also experiment with changes to [other parameters like temperature](/use-cases/fundamentals/experiments#other-parameters).
 
-Learn more about experiments [here](/use-cases/fundamentals/experiments).
+Here's an example of a prompt you might use to find a faster model for your agent:
+
+```
+Create an AnotherAI experiment to help me find a faster model for anotherai/agent/pdf-extractor,
+but still maintains the same tone and succinct output as my current model.
+```
+
+Learn more about experiments and see more examples [here](/use-cases/fundamentals/experiments).
 
 <Callout type="info" title="Managing Large Experiments with Claude Code">
 If you're testing an agent that has a large system prompt and/or very long inputs, you may encounter token limit issues with the `get_experiment` MCP tool that impacts Claude Code's ability to provide accurate insights on your agent.

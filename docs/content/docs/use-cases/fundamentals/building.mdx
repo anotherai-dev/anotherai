@@ -55,7 +55,7 @@ Your AI assistant will be able to construct the agent's code, and will be able t
 You can also add custom metadata to your agents to help organize and track them. Common use cases include:
 
 - **Workflow tracking**: include a trace_id and workflow_name key. (Learn more about workflows [here](/use-cases/connecting-agents))
-- **User identification**: include a user_id customer_email key. 
+- **User identification**: include a user_id or customer_email key. 
 
 ```
 Create a new AnotherAI agent that summarizes emails and include a customer_id metadata key.
@@ -76,7 +76,7 @@ If you prefer to build manually or want to understand the configuration details,
 ## Testing your Agent
 
 As part of the process of creating your agent with AnotherAI, your AI assistant will automatically create an initial experiment to test your agent's performance. Experiments allow you to systematically compare each of these different parameters of your agent to find the optimal setup for your use case across one or more inputs. You can use experiments to:
-- Compare performance across different models (GPT-4, Claude, Gemini, etc.)
+- Compare performance across different models (ex. GPT-5, Claude 4.5 sonnet, Gemini 2.0 flash, etc.)
 - Test multiple prompt variations to find the most effective approach
 - Optimize for specific metrics like cost, speed, and accuracy. 
 

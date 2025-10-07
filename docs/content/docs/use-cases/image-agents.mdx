@@ -18,6 +18,8 @@ Need an extra hand with building agents? We're happy to help. Reach us at [team@
 
 In this guide, we'll walk through the process of building an image-based AI agent that analyzes food photos and provides calorie information. Our goal with this agent's flow is to give it an image of a food or meal and have it return a structured list of detected foods with their respective calorie counts.
 
+This is just one example of an image-based agent. The same process can be applied to image-based agents that perform other tasks as well. 
+
 <Steps>
 <Step>
 ### Prepare Your Test Data
@@ -62,7 +64,7 @@ as an input to test the agent with an AnotherAI experiment.
 Add https://example.com/pizza-margherita.jpg as an input to my food-analysis-dataset.json.
 ```
 3. Your AI assistant will be able to add the URL to your dataset using the correct formatting.
-4. If you want to include an expected output for your URL input (for example, a description of the image), you can also ask your AI assistant to view the content and extract the information you need.
+4. (Optional) If you want to include an expected output for your URL input (for this example, the food items and their calorie counts), you can also ask your AI assistant to view the content and extract the information you need.
 
 ```
 Add https://example.com/pizza-margherita.jpg to my food-analysis-dataset.json as input.
@@ -85,14 +87,14 @@ height="400" style={{border: 0}} allowFullScreen></iframe>
 ```
 View each image in /Developer/anotherai/datasets/food-images, analyze the food items
 and their calorie counts, then create a dataset that contains the image file name as
-the input and the food items and their calorie counts that you've detectedas the
+the input and the food items and their calorie counts that you've detected as the
 expected output.
 ```
 
 <Callout type="info">
 **A note about image files: Do not drag and drop a local images into your AI assistant's chat without adding them to a folder in your project first.** 
 
-If you drop the images into the chat directly, the chat will be able to see the images, but it will not be able to reference them by their file path, meaning it cannot correctly add the files to your dataset or as inputs to an AnotherAI experiment.
+If you drop the images into the chat directly from your computer file system, the chat will be able to see the images, but it will not be able to reference them by their file path, meaning it cannot correctly add the files to your dataset or as inputs to an AnotherAI experiment.
 </Callout>
 </Accordion>
 
@@ -109,7 +111,6 @@ of @food-analysis-dataset.json as inputs to the experiment.
 </Accordion>
 </Accordions>
 
-You can learn more about building and using datasets [here](/use-cases/fundamentals/evaluating#using-datasets-to-evaluate-your-agents).
 </Step>
 
 <Step>
@@ -142,13 +143,20 @@ You can also add custom metadata to your agents to help organize and track them.
 ### Testing your Agent
 
 As part of the process of creating your agent with AnotherAI, your AI assistant will automatically create an initial experiment to test your agent's performance. Experiments allow you to systematically compare each of these different parameters of your agent to find the optimal setup for your use case across one or more inputs. You can use experiments to:
-- Compare performance across different models (GPT-4, Claude, Gemini, etc.)
+- Compare performance across different models (ex. GPT-5, Claude 4.5 sonnet, Gemini 2.0 flash, etc.)
 - Test multiple prompt variations to find the most effective approach
 - Optimize for specific metrics like cost, speed, and accuracy. 
 
 If you find there is additional criteria you want to test, you can always ask your AI assistant to create additional experiments. The most common parameters to experiment with are [prompts](/use-cases/fundamentals/experiments#prompts) and [models](/use-cases/fundamentals/experiments#models), however you can also experiment with changes to [other parameters like temperature](/use-cases/fundamentals/experiments#other-parameters).
 
-Learn more about experiments [here](/use-cases/fundamentals/experiments).
+Here's an example of a prompt you might use to find a faster model for your agent:
+
+```
+Create an AnotherAI experiment to help me find a faster model for anotherai/agent/food-analyzer,
+but still maintains the same calorie counting accuracy as my current model.
+```
+
+Learn more about experiments and see more examples [here](/use-cases/fundamentals/experiments).
 
 <Callout type="info" title="Managing Large Experiments with Claude Code">
 If you're testing an agent that has a large system prompt and/or very long inputs, you may encounter token limit issues with the `get_experiment` MCP tool that impacts Claude Code's ability to provide accurate insights on your agent.
