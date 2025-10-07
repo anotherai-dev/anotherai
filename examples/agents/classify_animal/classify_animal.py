@@ -37,7 +37,7 @@ class AnimalClassificationOutput(BaseModel):
 
 
 async def classify_animal(image_url: str, model: str = "gpt-4.1-mini") -> AnimalClassificationOutput:
-    response = await client.beta.chat.completions.parse(
+    response = await client.chat.completions.parse(
         model=model,
         messages=[
             {

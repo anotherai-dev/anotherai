@@ -324,7 +324,7 @@ class SummaryEvaluation(BaseModel):
 
 async def create_summary_judge(client, original_email, summary):
     """Judge the quality of an email summary"""
-    return await client.beta.chat.completions.parse(
+    return await client.chat.completions.parse(
         model="gpt-4o-mini",  # Use consistent model for fair evaluation
         messages=[{
             "role": "system",
