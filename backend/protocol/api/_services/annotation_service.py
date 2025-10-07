@@ -35,9 +35,8 @@ class AnnotationService:
         if completion_id:
             target_completion_ids.add(UUID(completion_id))
         if experiment_id:
-            # When querying via experiment_id we also include annotations for any run in the experiment
-            experiment = await self.experiment_storage.get_experiment(experiment_id)
-            target_completion_ids.update(map(UUID, experiment.run_ids))  # TODO
+            # TODO:When querying via experiment_id we also include annotations for any run in the experiment
+            pass
 
         target = TargetFilter(
             experiment_id={experiment_id} if experiment_id else None,
@@ -86,26 +85,7 @@ class AnnotationService:
             await self._assign_agent_id(annotation)
         await self.annotation_storage.create(annotation)
 
-        if (
-            annotation.context
-            and annotation.context.experiment_id
-            and annotation.target
-            and annotation.target.completion_id
-        ):
-            # We are in the case of an annotation that targets a completion within the context of an experiment,
-            # so we need to add the completion to the experiment
-            await self.experiment_storage.add_run_id(
-                annotation.context.experiment_id,
-                annotation.target.completion_id,
-            )
-            add_background_task(
-                self.completion_storage.add_completion_to_experiment(
-                    annotation.context.experiment_id,
-                    annotation.target.completion_id,
-                ),
-            )
-
-        # TODO: fix the n+1
+        # TODO: insert all annotations at once
         if annotation.target and annotation.target.completion_id:
             add_background_task(self.completion_storage.store_annotation(annotation))
 

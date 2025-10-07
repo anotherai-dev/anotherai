@@ -181,7 +181,6 @@ def fake_experiment(**kwargs: Any):
         description="A test experiment",
         result=None,
         agent_id="test-agent",
-        run_ids=[],
         metadata={"key": "value"},
     )
     return Experiment.model_validate(
