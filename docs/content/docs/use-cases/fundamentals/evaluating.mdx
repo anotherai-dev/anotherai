@@ -291,6 +291,99 @@ of @food-analysis-dataset.json as inputs to the experiment.
 
 ## Evaluating the Results of Running Your Dataset
 
+### Identifying Failure Modes
+
+The following process is adapated from Shreya Shankar and Hamel Husain's AI evaluation process. To learn more, see [this podcast](https://www.youtube.com/watch?v=BsWxPI9UM4c).
+
+**What is a Failure Mode?**
+
+A failure mode is specific category of error that your agent is prone to making. Identifying specific failure modes allows you to build evalation scripts that handle evaluating your agent's outputs based on a single scope. Writing an evaluation (either a script or an LLM-as-a-judge) that handles a single failure mode is much easier than writing one that handles all failure modes.
+
+Here is the recommended process for identifying failure modes:
+
+<Steps>
+<Step>
+**Annotate your agent's completions** 
+
+The first step in this process is to review your agent's completions and provide specific feedback about what isn't working well. All completions from your agents are saved in the AnotherAI. You can access them at any time:
+1. Open https://anotherai.dev/
+2. Select `Agents` from the left sidebar
+3. Select the name of the agent you want to review completions for
+4. Scroll down the page and select `View all Completions`
+
+It's important for you, a human, to add these initial annotations (instead of asking your AI assistant to do it for you) in order to provide the correct guidance and level of specificity needed for AI to effectively assist you later in the process. 
+
+**Tips**
+- We highly recommend starting by annotating 100 completions, in order to provide a representative sample of the agent's performance and potential issues.
+- Don't overthink your annotations; they don't need to capture every possible area of improvement. Focus on the most important issues first.
+- Be specific. Saying that an output simply is "bad" does not provide information about the specific problem areas that need to be addressed.
+
+</Step>
+<Step>
+**Use an LLM to identify common themes in the annotations (finding axial codes)**
+
+Once you have your 100 completions annotated, you can ask your AI assistant to analyze the annotations and identify common themes:
+
+```
+Review each completion from anotherai/agent/email-rewriter that had an annotation added
+to it in the last 2 hours. The completions have annotations that contain open codes for
+analysis of LLM logs that we are conducting. Please extract all of the open codes. From
+the annotations left, propose 5-6 categories that we can create axial codes from.
+```
+Your AI assistant will extract the open codes from the annotations and provide you with a list of categories that you can create axial codes from:
+
+![Extracted Open Codes from Annotations](/images/extracted-open-codes-annotations.png)
+
+</Step>
+
+<Step>
+**Finalize Axial Codes**
+
+It's very likely that the first draft of the axial codes will need some refinement; in our experience AI assistant's first draft will contain categories that are too general and not actionable. Manually refine or continue to work with your AI assistant to polish the category names so that their scope is immediately understandable at a glance and the scope is specific enough to focus improvement efforts on. 
+
+Example of a bad axial code:
+- `Quality of Question`: This is too broad and not actionable - is there one specific issue with the question? Is the quality good or bad?
+
+Example of an improvement for the above axial code:
+- `Appropriateness of Questions for Enhancing a Product Briefing`: This is more specific - it states what the question is being evaluated on (how fitting the question is) and in what context (the scope of enhancing a product briefing).
+</Step>
+
+<Step>
+**Categorize completions by Axial Codes**
+
+Once you have the axial codes finalized, you can ask your AI assistant to help categorize each annotation into the appropriate axial code.
+
+```
+Categorize each of the annotations you extracted from anotherai/agent/email-rewriter into 
+one of our axial code categories.
+```
+
+If you're interested in using Google sheets and the AI funciton to help with this categorization, you can refer to [the podcast](https://www.youtube.com/watch?v=BsWxPI9UM4c) this method originated from, for a clear demo. 
+
+</Step>
+
+<Step>
+**Review failure modes and decide if evaluations are needed**
+
+Review the categorizations performed by your AI assistant. 
+
+You will probably want to create an eval for the following types:
+- Severe failure modes: these are failures that have the largest impact on your user's experience with your agent. These might be aspects of your agent's outputs where accuracy is essential (ex. an output field returning whether an input food product contains an allergen), or failure modes that occur frequently enough to a significate number of individual users are impacted.
+- Subjective, nuanced failure modes: these are failures modes where there isn't one, correct answer. For example, if evaluating responses of a chatbot agent, there isn't always a single, correct answer to when the chatboth should connect the user with a live customer support agent.
+
+If you want to create a process for regularly evaluating the agent's performance on a given failure mode, keep reading to get more details on your possible evaluation approaches!
+
+<Callout type="info">
+**Not all failure modes require evaluations**
+
+Some failure modes are due to simple engineering oversights that can be fixed directly. For example, if you wanted your output to always contain the same fields, you can simply update your agent's output schema to use structured output. Once you've added structured output, you likely do not need to write an evaluation to regularly assess whether the output contains the correct fields.
+</Callout>
+</Step>
+</Steps>
+
+
+### Evaluation Options
+
 To evaluate your agent's outputs from running your dataset, you have two approaches:
 
 1. **Deterministic evaluation (using code)**
