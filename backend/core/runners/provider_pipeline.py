@@ -250,7 +250,7 @@ class ProviderPipeline:
             try:
                 provider = next(providers)
             except StopIteration:
-                return self._raise_no_provider_supporting_model()
+                return
             yield from self._iter_with_structured_gen(provider, model_data)
 
             # No point in retrying on the same provider if the last error code was not a rate limit
@@ -328,33 +328,28 @@ class ProviderPipeline:
                 # If we should not retry on a different provider, we just break the pipeline
                 break
 
-        if not self.errors:
-            _logger.warning(
-                "Reached the end of the provider iterator without errors",
-                extra={"model": self._original_model_data.model},
-            )
-            return
+        if self.errors:
+            # Yielding the final model fallback
+            # We only yield in case of an error. We could have no error if there were no providers
+            while fallback_model_data := self._pick_fallback_model(self.errors[-1]):
+                if not self._has_used_model_fallback:
+                    # First time only we send a metric to count model fallback
+                    send_counter(
+                        "model_fallback",
+                        1,
+                        original_model=self._original_model_data.model,
+                        fallback_model=fallback_model_data.model,
+                        error_code=self.errors[-1].code if self.errors else None,
+                    )
+                self._has_used_model_fallback = True
 
-        # Yielding the final model fallback
-        while fallback_model_data := self._pick_fallback_model(self.errors[-1]):
-            if not self._has_used_model_fallback:
-                # First time only we send a metric to count model fallback
-                send_counter(
-                    "model_fallback",
-                    1,
-                    original_model=self._original_model_data.model,
-                    fallback_model=fallback_model_data.model,
-                    error_code=self.errors[-1].code if self.errors else None,
+                provider, provider_data = fallback_model_data.providers[0]
+                provider_model_data = provider_data.override(fallback_model_data)
+                yield from self._single_provider_iterator(
+                    providers=self._factory.get_providers(provider),
+                    model_data=provider_model_data,
+                    provider_type=provider,
                 )
-            self._has_used_model_fallback = True
-
-            provider, provider_data = fallback_model_data.providers[0]
-            provider_model_data = provider_data.override(fallback_model_data)
-            yield from self._single_provider_iterator(
-                providers=self._factory.get_providers(provider),
-                model_data=provider_model_data,
-                provider_type=provider,
-            )
 
         # If we have reached here we should just raise the first error since it would mean that there is no more
         # provider to try
