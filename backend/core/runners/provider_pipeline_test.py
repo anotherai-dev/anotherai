@@ -144,6 +144,31 @@ def _build_pipeline(
         )
 
 
+async def _run_pipeline(
+    pipeline: ProviderPipeline,
+    raise_at_end: bool = False,
+    return_full_data: bool = False,
+    stop_on_success: bool = True,
+):
+    yielded: list[tuple[Provider, Any, ModelData]] | list[tuple[Provider, Model]] = []
+
+    for provider, provider_data, model_data in pipeline.provider_iterator(raise_at_end=raise_at_end):
+        if return_full_data:
+            yielded.append((provider.name(), provider_data, model_data))  # type: ignore
+        else:
+            yielded.append((provider.name(), model_data.model))  # type: ignore
+
+        with pipeline.wrap_provider_call(provider):
+            try:
+                await cast(Mock, provider).complete()
+                if stop_on_success:
+                    break
+            except Exception:
+                raise
+
+    return yielded
+
+
 # TODO: The tests are based on the real model data, we should patch
 class TestProviderIterator:
     def test_claude_ordering_and_support(self, provider_builder: Mock):
@@ -161,7 +186,7 @@ class TestProviderIterator:
         )
 
         # List all providers
-        providers = list(pipeline.provider_iterator())
+        providers = list(pipeline.provider_iterator(raise_at_end=False))
         assert len(providers) == 2
 
         assert provider_builder.call_count == 2
@@ -329,32 +354,20 @@ class TestProviderIterator:
         provider_4 = provider_builder.call_args_list[3].args[0]
         assert {provider_3, provider_4} == {mock_provider3, mock_provider4}
 
-    def test_custom_configs_with_unsupported_provider(self, provider_builder: Mock, mock_provider_factory: Mock):
+    async def test_custom_configs_with_unsupported_provider(self, provider_builder: Mock, mock_provider_factory: Mock):
         """Check that a custom config is not returned if the provider is not supported"""
         mock_provider_factory.build_provider.side_effect = lambda *args, **kwargs: _mock_provider(args[0].provider)  # type: ignore
         mock_provider_factory.get_providers.side_effect = lambda provider: [_mock_provider(provider)]  # type: ignore
-
-        pipeline = ProviderPipeline(
-            agent_id="",
-            version=Version(
-                model=Model.GPT_4O_MINI_2024_07_18,
-                provider=None,
-                use_structured_generation=None,
-            ),
+        pipeline = _build_pipeline(
+            provider_builder,
+            mock_provider_factory,
             custom_configs=[
                 _provider_settings(Provider.GROQ),
                 _provider_settings(Provider.OPEN_AI),
             ],
-            builder=provider_builder,
-            factory=mock_provider_factory,
-            typology=IOTypology(input=Typology()),
-            use_fallback=None,
         )
-
-        providers = list(pipeline.provider_iterator())
-        assert len(providers) == 3
-        names = [p[0].name() for p in providers]
-        assert names == [Provider.OPEN_AI, Provider.AZURE_OPEN_AI, Provider.OPEN_AI]
+        providers = await _run_pipeline(pipeline, raise_at_end=False, stop_on_success=False)
+        assert [p[0] for p in providers] == [Provider.OPEN_AI, Provider.OPEN_AI, Provider.AZURE_OPEN_AI]
 
     @pytest.mark.parametrize(
         ("use_fallback", "extra_yield"),
@@ -521,31 +534,6 @@ class TestProviderIterator:
         ]
         mock_provider1.complete.assert_not_called()
 
-    async def _run_pipeline(
-        self,
-        pipeline: ProviderPipeline,
-        raise_at_end: bool = False,
-        return_full_data: bool = False,
-        stop_on_success: bool = True,
-    ):
-        yielded: list[tuple[Provider, Any, ModelData]] | list[tuple[Provider, Model]] = []
-
-        for provider, provider_data, model_data in pipeline.provider_iterator(raise_at_end=raise_at_end):
-            if return_full_data:
-                yielded.append((provider.name(), provider_data, model_data))  # type: ignore
-            else:
-                yielded.append((provider.name(), model_data.model))  # type: ignore
-
-            with pipeline.wrap_provider_call(provider):
-                try:
-                    await cast(Mock, provider).complete()
-                    if stop_on_success:
-                        break
-                except Exception:
-                    raise
-
-        return yielded
-
     async def test_no_infinite_loop_on_fallback_model_failure(
         self,
         provider_builder: Mock,
@@ -572,7 +560,7 @@ class TestProviderIterator:
 
         mock_provider_factory.get_providers.side_effect = _get_providers
 
-        yielded = await self._run_pipeline(pipeline)
+        yielded = await _run_pipeline(pipeline)
 
         # Should try:
         # 1. GPT-4 on OpenAI (fails with rate limit)
@@ -598,7 +586,7 @@ class TestProviderIterator:
         mock_provider_factory.provider_type.side_effect = lambda provider: LocalProviderFactory.PROVIDER_TYPES[provider]  # type: ignore
 
         with pytest.raises(NoProviderSupportingModelError) as e:
-            await self._run_pipeline(pipeline, raise_at_end=True)
+            await _run_pipeline(pipeline, raise_at_end=True)
         assert (
             str(e.value)
             == """There are no configured provider supporting model 'gpt-4o-mini-2024-07-18'.
@@ -608,3 +596,23 @@ The possible providers and their associated environment variables are:
 - openai (OPENAI_API_KEY)
 - azure_openai (AZURE_OPENAI_CONFIG)"""
         )
+
+    async def test_with_missing_primary_provider(
+        self,
+        provider_builder: Mock,
+        mock_provider_factory: Mock,
+    ):
+        def _get_providers(provider_type: Provider) -> list[AbstractProvider[Any, Any]]:
+            if provider_type == Provider.OPEN_AI:
+                return [_mock_provider(provider_type)]
+            return []
+
+        mock_provider_factory.get_providers.side_effect = _get_providers
+        pipeline = _build_pipeline(
+            provider_builder,
+            mock_provider_factory,
+            providers=[Provider.AZURE_OPEN_AI, Provider.OPEN_AI],
+        )
+
+        providers = await _run_pipeline(pipeline, raise_at_end=False)
+        assert providers == [(Provider.OPEN_AI, Model.GPT_4O_MINI_2024_07_18)]
