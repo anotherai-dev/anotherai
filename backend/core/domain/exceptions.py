@@ -287,7 +287,8 @@ class InvalidTokenError(DefaultError):
     def from_invalid_api_key(cls, api_key: str):
         return cls(
             f"""Invalid API key provided: {obfuscate(api_key, 5)}.
-Grab a fresh one (plus $5 in free LLM credits for new users) at {ANOTHERAI_APP_URL}/keys 🚀""",
+Grab a fresh one (plus $1 in free LLM credits for new users) at {ANOTHERAI_APP_URL}/keys 🚀
+or create a new one with the create_api_key MCP tool""",
         )
 
     @classmethod

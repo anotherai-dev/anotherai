@@ -265,7 +265,7 @@ function VersionHeader(props: VersionHeaderProps) {
               versionMetricsPerKey={versionMetricsPerKey}
               showAvgPrefix={showAvgPrefix}
               className="space-y-1 mt-1"
-              usePer1kMultiplier={false}
+              usePer1kMultiplier={true}
             />
           </>
         )}

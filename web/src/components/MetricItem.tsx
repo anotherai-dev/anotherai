@@ -114,10 +114,10 @@ export function MetricItem({
   }, [metricType, usePer1kMultiplier]);
 
   const displayLabel = showAvgPrefix
-    ? `Average ${metricKey === "cost" ? (usePer1kMultiplier ? "cost (Per 1k completions)" : "cost") : metricKey.replace(/_/g, " ")}`
+    ? `Average ${metricKey === "cost" ? (usePer1kMultiplier ? "cost (per 1K)" : "cost") : metricKey.replace(/_/g, " ")}`
     : metricKey === "cost"
       ? usePer1kMultiplier
-        ? "cost (Per 1k completions)"
+        ? "cost (per 1K)"
         : "cost"
       : metricKey.replace(/_/g, " ");
 
