@@ -136,7 +136,7 @@ class SentimentAnalysis(BaseModel):
     sentiment: Sentiment
     explanation: str  # Why this sentiment was determined
 
-completion = client.beta.chat.completions.parse(
+completion = client.chat.completions.parse(
     model="gpt-4o",
     messages=[{
         "role": "user", 

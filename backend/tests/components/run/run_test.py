@@ -72,7 +72,7 @@ async def test_structured_output(test_case: ProviderTestCase, test_api_client: I
 
     client = test_api_client.openai_client()
 
-    response = await client.beta.chat.completions.parse(
+    response = await client.chat.completions.parse(
         model=test_case.model(),
         messages=[{"role": "user", "content": "Hello, world!"}],
         response_format=Output,

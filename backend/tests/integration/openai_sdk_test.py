@@ -30,7 +30,7 @@ async def test_structured_output(provider: Provider, model: Model, openai_client
         capital: str
         country: str
 
-    res = await openai_client.beta.chat.completions.parse(
+    res = await openai_client.chat.completions.parse(
         model=model,
         messages=[
             {"role": "system", "content": "Given a city, give the country it belongs to and its capital."},

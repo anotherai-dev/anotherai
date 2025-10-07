@@ -85,7 +85,7 @@ A key benefit of using AnotherAI's inference API is that structured outputs are 
   To get structured output using the `openai` Python library with AnotherAI:
 
   1.  Define your desired output structure as a Pydantic `BaseModel`.
-  2.  Use the `client.beta.chat.completions.parse()` method (note the `.parse()` instead of `.create()`).
+  2.  Use the `client.chat.completions.parse()` method (note the `.parse()` instead of `.create()`).
   3.  Pass your Pydantic class directly to the `response_format` parameter.
   4.  Access the parsed Pydantic object directly from `response.choices[0].message.parsed`.
 
@@ -103,7 +103,8 @@ from pydantic import BaseModel
 
 def get_country(city: str):
     # Use the `.parse()` method for structured output with Pydantic
-    completion = client.beta.chat.completions.parse( # [!code highlight]
+    # `client.beta.chat` in older versions of the SDK
+    completion = client.chat.completions.parse( # [!code highlight]
       model="gpt-4o",
       messages=[
         {"role": "system", "content": "You are a helpful assistant that extracts geographical information."},
@@ -133,7 +134,7 @@ The `openai` TypeScript library provides structured output support using [Zod](h
 To get structured output using the `openai` TypeScript library with AnotherAI:
 
 1. Define your desired output structure using Zod schema.
-2. Use the `client.beta.chat.completions.parse()` method.
+2. Use the `client.chat.completions.parse()` method.
 3. Pass your Zod schema using `zodResponseFormat()` helper to the `response_format` parameter.
 4. Access the parsed object directly from `response.choices[0].message.parsed`.
 
@@ -152,8 +153,10 @@ const CountryInfo = z.object({ // [!code highlight]
 }); // [!code highlight]
 
 async function getCountry(city: string) {
+  
   // Use the `.parse()` method for structured output with Zod
-  const completion = await client.beta.chat.completions.parse({ // [!code highlight]
+  // `client.beta.chat` in older versions of the SDK
+  const completion = await client.chat.completions.parse({ // [!code highlight]
     model: "gpt-4o",
     messages: [
       {role: "system", content: "You are a helpful assistant that extracts geographical information."},
@@ -420,7 +423,7 @@ Here are common examples showing how to migrate from traditional JSON prompting 
       agenda: Optional[str] = Field(None, description="Meeting agenda or main topics") # [!code highlight]
 
   def extract_meeting_info(text: str):
-      completion = client.beta.chat.completions.parse( # [!code highlight]
+      completion = client.chat.completions.parse( # [!code highlight]
           model="gpt-4o",
           messages=[
               {"role": "system", "content": "Extract meeting information from the provided text."},
@@ -482,7 +485,8 @@ Here are common examples showing how to migrate from traditional JSON prompting 
   }); // [!code highlight]
 
   async function extractMeetingInfo(text: string) {
-      const completion = await client.beta.chat.completions.parse({
+
+      const completion = await client.chat.completions.parse({
           model: "gpt-4o",
           messages: [
               {role: "system", content: "Extract meeting information from the provided text."},
@@ -541,7 +545,7 @@ Here are common examples showing how to migrate from traditional JSON prompting 
       summary: str = Field(description="Brief summary of the review in 1-2 sentences")
 
   def analyze_review(review_text: str):
-      completion = client.beta.chat.completions.parse(
+      completion = client.chat.completions.parse(
           model="gpt-4o",
           messages=[
               {"role": "system", "content": "Analyze the product review sentiment and key points."},
@@ -595,7 +599,7 @@ Here are common examples showing how to migrate from traditional JSON prompting 
   });
 
   async function analyzeReview(reviewText: string) {
-      const completion = await client.beta.chat.completions.parse({
+      const completion = await client.chat.completions.parse({
           model: "gpt-4o",
           messages: [
               {role: "system", content: "Analyze the product review sentiment and key points."},
@@ -670,7 +674,7 @@ Here are common examples showing how to migrate from traditional JSON prompting 
       education: List[Education] = Field(description="Educational background entries")
 
   def parse_resume(resume_text: str):
-      completion = client.beta.chat.completions.parse(
+      completion = client.chat.completions.parse(
           model="gpt-4o",
           messages=[
               {"role": "system", "content": "Extract structured information from the resume."},
@@ -743,7 +747,7 @@ Here are common examples showing how to migrate from traditional JSON prompting 
   });
 
   async function parseResume(resumeText: string) {
-      const completion = await client.beta.chat.completions.parse({
+      const completion = await client.chat.completions.parse({
           model: "gpt-4o",
           messages: [
               {role: "system", content: "Extract structured information from the resume."},
@@ -818,7 +822,7 @@ Here are common examples showing how to migrate from traditional JSON prompting 
       tags: List[str] = Field(default_factory=list, description="Recipe tags (e.g., 'vegetarian', 'gluten-free')")
 
   def parse_recipe(recipe_text: str):
-      completion = client.beta.chat.completions.parse(
+      completion = client.chat.completions.parse(
           model="gpt-4o",
           messages=[
               {"role": "system", "content": "Extract recipe information in a structured format."},
@@ -891,7 +895,7 @@ Here are common examples showing how to migrate from traditional JSON prompting 
   });
 
   async function parseRecipe(recipeText: string) {
-      const completion = await client.beta.chat.completions.parse({
+      const completion = await client.chat.completions.parse({
           model: "gpt-4o",
           messages: [
               {role: "system", content: "Extract recipe information in a structured format."},
@@ -972,7 +976,7 @@ Here are common examples showing how to migrate from traditional JSON prompting 
       currency: str = Field(default="USD", description="Currency code (e.g., USD, EUR)")
 
   def extract_invoice_data(invoice_text: str):
-      completion = client.beta.chat.completions.parse(
+      completion = client.chat.completions.parse(
           model="gpt-4o",
           messages=[
               {"role": "system", "content": "Extract structured invoice data from the provided text."},
@@ -1043,7 +1047,7 @@ Here are common examples showing how to migrate from traditional JSON prompting 
   });
 
   async function extractInvoiceData(invoiceText: string) {
-      const completion = await client.beta.chat.completions.parse({
+      const completion = await client.chat.completions.parse({
           model: "gpt-4o",
           messages: [
               {role: "system", content: "Extract structured invoice data from the provided text."},

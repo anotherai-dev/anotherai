@@ -8,7 +8,7 @@ class ModelSuggestionOutput(BaseModel):
 
 
 async def suggest_model(model: str, available_models: list[str]) -> str | None:
-    completion = await client.beta.chat.completions.parse(
+    completion = await client.chat.completions.parse(
         model="suggest-model/gemini-2.5-flash",
         messages=[
             {
