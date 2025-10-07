@@ -388,7 +388,7 @@ class AbstractProvider[ProviderConfigVar: ProviderConfigInterface, ProviderReque
         cls,
         raw_completion: RawCompletion,
         llm_completion: LLMCompletion,
-        error: ProviderError | None = None,
+        error: ProviderError | None,
     ):
         llm_completion.duration_seconds = round((datetime_factory() - raw_completion.start_time).total_seconds(), 2)
         llm_completion.response = raw_completion.response
@@ -579,7 +579,7 @@ class AbstractProvider[ProviderConfigVar: ProviderConfigInterface, ProviderReque
     ) -> RunnerOutput:
         request, raw = await self._prepare_completion_and_add_to_ctx(messages, options, stream=False)
         # raw_completion cannot be in the ProviderOutput because it should still be used on raise
-        raw_completion = RawCompletion(response="", usage=raw.usage)
+        raw_completion = RawCompletion(response=None, usage=raw.usage)
         try:
             async with self._wrap_for_metric(options.model, options.tenant):
                 output = await self._single_complete(
@@ -588,11 +588,11 @@ class AbstractProvider[ProviderConfigVar: ProviderConfigInterface, ProviderReque
                     raw_completion=raw_completion,
                     options=options,
                 )
-            self._assign_raw_completion(raw_completion, raw)
+            self._assign_raw_completion(raw_completion, raw, None)
             return output
         except ProviderError as e:
             _ = self._prepare_provider_error(e, options)
-            self._assign_raw_completion(raw_completion, raw)
+            self._assign_raw_completion(raw_completion, raw, e)
             retries = max_attempts - 1 if max_attempts is not None else e.max_attempt_count - 1
             if not e.retry or retries <= 0:
                 raise e
@@ -643,7 +643,7 @@ class AbstractProvider[ProviderConfigVar: ProviderConfigInterface, ProviderReque
 
         while max_attempts is None or max_attempts >= 1:
             kwargs, raw = await self._prepare_completion_and_add_to_ctx(messages, options, stream=True)
-            raw_completion = RawCompletion(response="", usage=raw.usage)
+            raw_completion = RawCompletion(response=None, usage=raw.usage)
             try:
                 async with self._wrap_for_metric(options.model, options.tenant):
                     async for output in self._single_stream(
@@ -653,12 +653,12 @@ class AbstractProvider[ProviderConfigVar: ProviderConfigInterface, ProviderReque
                         options=options,
                     ):
                         yield output
-                self._assign_raw_completion(raw_completion, raw)
+                self._assign_raw_completion(raw_completion, raw, None)
                 return
             except ProviderError as e:
                 _ = self._prepare_provider_error(e, options)
                 stream_exc = e
-                self._assign_raw_completion(raw_completion, raw)
+                self._assign_raw_completion(raw_completion, raw, e)
                 if not e.retry:
                     break
                 max_attempts = max_attempts - 1 if max_attempts is not None else e.max_attempt_count - 1
