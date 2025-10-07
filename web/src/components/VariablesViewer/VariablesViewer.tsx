@@ -29,9 +29,10 @@ const getTextSizeStyle = (textSize: "xs" | "sm" | "base" | string = "xs") => {
 const renderValueBadge = (
   value: unknown,
   textSize: "xs" | "sm" | "base" | string = "xs",
-  showSeeMore: boolean = false
+  showSeeMore: boolean = false,
+  key?: string
 ) => {
-  return <ValueDisplay value={value} textSize={textSize} showSeeMore={showSeeMore} />;
+  return <ValueDisplay value={value} textSize={textSize} showSeeMore={showSeeMore} keyName={key} />;
 };
 
 const renderProperty = (
@@ -154,7 +155,7 @@ const renderProperty = (
             {!!key && ":"}
           </span>
         </div>
-        <div>{renderValueBadge(value, textSize, showSeeMore)}</div>
+        <div>{renderValueBadge(value, textSize, showSeeMore, key)}</div>
       </HoverContainer>
     </div>
   );
@@ -268,7 +269,7 @@ function CollapsibleArray({
                           annotations={annotations}
                           onKeypathSelect={onKeypathSelect}
                         >
-                          {renderValueBadge(item, textSize, showSeeMore)}
+                          {renderValueBadge(item, textSize, showSeeMore, undefined)}
                         </HoverContainer>
                       )}
                     </div>

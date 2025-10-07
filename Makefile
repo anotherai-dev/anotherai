@@ -33,3 +33,8 @@ check_models:
 .PHONY: add_mcp_claude
 add_mcp_claude:
 	claude mcp add --scope user --transport http anotherai http://localhost:8000/mcp --header "Authorization: Bearer $${ANOTHERAI_API_KEY}"
+
+
+.PHONY: mpc.publish
+mcp.publish:
+	mcp-publisher login dns --domain ${MCP_DOMAIN:-anotherai.dev} --private-key $(openssl pkey -in ${PEM_PATH:-~/.ssh/anotherai-dev.pem} -noout -text | grep -A3 "priv:" | tail -n +2 | tr -d ' :\n') && mcp-publisher publish

@@ -7,6 +7,7 @@ import asyncpg
 import pytest
 from clickhouse_connect.driver.asyncclient import AsyncClient
 from freezegun.api import freeze_time
+from structlog.testing import capture_logs
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -307,3 +308,22 @@ def mock_provider_factory():
     from core.providers.factory.abstract_provider_factory import AbstractProviderFactory
 
     return Mock(spec=AbstractProviderFactory)
+
+
+@pytest.fixture
+def cap_structlogs():
+    with capture_logs() as cap_logs:
+        yield cap_logs
+
+
+@pytest.fixture
+def mock_lifecycle_dependencies(mock_storage_builder: Mock, mock_event_router: Mock, mock_provider_factory: Mock):
+    from protocol._common.lifecycle import LifecycleDependencies
+    from protocol.api._services.security_service import SecurityService
+
+    mock = Mock(spec=LifecycleDependencies)
+    mock.storage_builder = mock_storage_builder
+    mock.security_service = Mock(spec=SecurityService)
+
+    with patch.object(LifecycleDependencies, "shared", new=mock):
+        yield mock

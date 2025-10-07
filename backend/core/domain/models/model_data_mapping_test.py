@@ -335,6 +335,7 @@ class TestModelFallback:
         # These models are super cheap so they fallback to a Gemini Flash lite which is alqo on google
         Model.GEMINI_1_5_FLASH_8B,
         Model.GEMINI_2_5_FLASH,
+        Model.GEMINI_2_5_FLASH_PREVIEW_0925,
         Model.GEMINI_2_5_FLASH_PREVIEW_0520,
     }
 

@@ -23,7 +23,7 @@ export function ActivityIndicator(props: Props) {
 
   if (isActive) {
     const popoverText =
-      completionsLast3Days === 1 ? "1 run in last 3 days" : `${completionsLast3Days} runs in last 3 days`;
+      completionsLast3Days === 1 ? "1 completion in last 3 days" : `${completionsLast3Days} completions in last 3 days`;
 
     return (
       <HoverPopover content={popoverText} position="top" popoverClassName="bg-gray-800 rounded-[2px]">

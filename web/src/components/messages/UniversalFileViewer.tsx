@@ -1,11 +1,12 @@
 import { XCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { FileView } from "@/components/messages/FileView";
-import { File } from "@/types/models";
+import { File, MessageContent } from "@/types/models";
 
 interface UniversalFileViewerProps {
   url: string;
   addMargin?: boolean;
+  item?: MessageContent;
 }
 
 interface FileInfo {
@@ -42,6 +43,24 @@ function detectContentTypeFromExtension(url: string): string | null {
     md: "text/markdown",
   };
   return extension ? extensionMap[extension] || null : null;
+}
+
+function getDisplayType(item?: MessageContent): string | undefined {
+  // First check if item has a file with content_type
+  if (item?.file?.content_type) {
+    return item.file.content_type;
+  }
+
+  // Then check if item has image_url or audio_url and use those as type
+  if (item?.image_url) {
+    return "image_url";
+  }
+
+  if (item?.audio_url) {
+    return "audio_url";
+  }
+
+  return undefined;
 }
 
 async function downloadAndAnalyzeFile(url: string): Promise<FileInfo> {
@@ -93,13 +112,16 @@ async function downloadAndAnalyzeFile(url: string): Promise<FileInfo> {
   }
 }
 
-export function UniversalFileViewer({ url, addMargin = false }: UniversalFileViewerProps) {
+export function UniversalFileViewer({ url, addMargin = false, item }: UniversalFileViewerProps) {
   const [fileInfo, setFileInfo] = useState<FileInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Check if the URL is a variable in the format {{variable_name}}
   const variableMatch = useMemo(() => url.match(/^\{\{(.+)\}\}$/), [url]);
+
+  // Get display type using useMemo
+  const displayType = useMemo(() => getDisplayType(item), [item]);
 
   useEffect(() => {
     // Don't run the effect for variables
@@ -139,7 +161,25 @@ export function UniversalFileViewer({ url, addMargin = false }: UniversalFileVie
   }, [url, variableMatch]);
 
   if (variableMatch) {
-    return <strong>{url}</strong>;
+    if (displayType) {
+      return (
+        <div className="inline-block pl-2 pr-1 py-2 bg-gray-50 border border-gray-200 rounded-[2px] text-gray-900 font-semibold text-xs">
+          {variableMatch[1]}
+          <span>
+            :{" "}
+            <span className="px-2 py-1 bg-white border border-gray-200 rounded-[2px] text-gray-900 ml-1">
+              {displayType}
+            </span>
+          </span>
+        </div>
+      );
+    } else {
+      return (
+        <div className="inline-block px-2 py-1 bg-gray-50 border border-gray-200 rounded-[2px] text-gray-900 font-bold text-xs">
+          {url}
+        </div>
+      );
+    }
   }
 
   if (isLoading) {

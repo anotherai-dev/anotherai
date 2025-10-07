@@ -4,6 +4,7 @@ from typing import Any, Protocol, final
 
 from structlog import get_logger
 
+from core.consts import ANOTHERAI_APP_URL
 from core.domain.events import EventRouter
 from core.domain.exceptions import PaymentRequiredError
 from core.domain.tenant_data import TenantData
@@ -85,7 +86,7 @@ class LifecycleDependencies:
 
 def _raise_for_negative_credits(tenant: TenantData) -> None:
     if tenant.current_credits_usd < 0:
-        raise PaymentRequiredError("Insufficient credits.")
+        raise PaymentRequiredError(f"Insufficient credits. Please visit {ANOTHERAI_APP_URL}/credits to add credits.")
 
 
 def _ignore_negative_credits(tenant: TenantData) -> None:

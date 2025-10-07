@@ -3,6 +3,7 @@ Do not include validation or conversion logic here. Logic should be included eit
 or in the conversion layer."""
 
 from datetime import date, datetime
+from enum import StrEnum
 from typing import Annotated, Any, Literal
 from uuid import UUID
 
@@ -43,8 +44,9 @@ class Agent(BaseModel):
     created_at: datetime
 
 
-class ModelWithID(BaseModel):
+class IDAndAlias(BaseModel):
     id: str
+    alias: str | None = None
 
 
 class Tool(BaseModel):
@@ -142,6 +144,11 @@ class _BaseVersion(BaseModel):
 class VersionRequest(_BaseVersion):
     model_config = ConfigDict(revalidate_instances="always", extra="forbid")
 
+    alias: str | None = Field(
+        default=None,
+        description="An alias for the version. Allows to easily identify the version within an experiment.",
+    )
+
     # Here we are trying to be as flexible as possible
     # Models will likely send a response_format field
     output_json_schema: dict[str, Any] | None = Field(
@@ -223,6 +230,20 @@ class Input(BaseModel):
     variables: dict[str, Any] | None = Field(
         default=None,
         description="Optional, variables used to template the prompt when the prompt is a template",
+    )
+
+
+class ExperimentInput(Input):
+    alias: str | None = Field(
+        default=None,
+        description="An alias for the input. Allows to easily identify the input within an experiment.",
+    )
+
+
+class ExperimentVersion(Version):
+    alias: str | None = Field(
+        default=None,
+        description="An alias for the version. Allows to easily identify the version within an experiment.",
     )
 
 
@@ -458,9 +479,9 @@ class Experiment(BaseModel):
     result: str | None = Field(default=None, description="A user defined result of the experiment.")
     agent_id: str = Field(description="The agent that created the experiment.")
 
-    versions: list[Version] | None = None
+    versions: list[ExperimentVersion] | None = None
 
-    inputs: list[Input] | None = None
+    inputs: list[ExperimentInput] | None = None
 
     metadata: dict[str, Any] | None = Field(
         default=None,
@@ -470,8 +491,8 @@ class Experiment(BaseModel):
     class Completion(BaseModel):
         id: UUID
         # Only IDs are provided here but they have the same format as in the full object (completion.input.id)
-        input: ModelWithID
-        version: ModelWithID
+        input: IDAndAlias
+        version: IDAndAlias
         output: Output
         cost_usd: float
         duration_seconds: float
@@ -604,6 +625,15 @@ class ModelContextWindow(BaseModel):
     max_output_tokens: int = Field(
         description="The maximum number of tokens that the model can output.",
     )
+
+
+class ModelField(StrEnum):
+    supports = "supports"
+    pricing = "pricing"
+    reasoning = "reasoning"
+    speed_index = "speed_index"
+    context_window = "context_window"
+    release_date = "release_date"
 
 
 class Model(BaseModel):

@@ -376,7 +376,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             display_name="o3 (2025-04-16)",
             supports_json_mode=True,
             supports_input_image=True,
-            supports_input_pdf=True,
+            supports_input_pdf=False,
             supports_input_audio=False,
             supports_structured_output=True,
             release_date=date(2025, 4, 16),
@@ -433,10 +433,8 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             supports_tool_calling=True,
             fallback=_openai_fallback("cheap"),
             reasoning=ModelReasoningBudget(),
-            speed_data=SpeedData(
-                # TODO: fix
-                equivalent_to=(Model.GPT_41_2025_04_14, 0),
-            ),
+            # https://artificialanalysis.ai/models?models=gpt-5-medium#output-speed
+            speed_data=SpeedData.from_tps(value=201),
         ),
         Model.GPT_5_MINI_2025_08_07: ModelData(
             display_name="GPT-5 Mini (2025-08-07)",
@@ -460,10 +458,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             supports_tool_calling=True,
             fallback=_openai_fallback("cheapest"),
             reasoning=ModelReasoningBudget(),
-            speed_data=SpeedData(
-                # TODO: fix
-                equivalent_to=(Model.GPT_41_MINI_2025_04_14, 0),
-            ),
+            speed_data=SpeedData.from_tps(value=75),
         ),
         Model.GPT_5_NANO_2025_08_07: ModelData(
             display_name="GPT-5 Nano (2025-08-07)",
@@ -487,10 +482,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             supports_tool_calling=True,
             fallback=_openai_fallback("cheapest"),
             reasoning=ModelReasoningBudget(),
-            speed_data=SpeedData(
-                # TODO: fix
-                equivalent_to=(Model.GPT_41_NANO_2025_04_14, 0),
-            ),
+            speed_data=SpeedData.from_tps(value=172),
         ),
         Model.GPT_OSS_20B: ModelData(
             display_name="GPT-OSS 20B",
@@ -520,10 +512,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             supports_top_p=True,
             supports_presence_penalty=True,
             supports_frequency_penalty=True,
-            speed_data=SpeedData(
-                # TODO: fix
-                equivalent_to=(Model.GPT_41_2025_04_14, 0),
-            ),
+            speed_data=SpeedData.from_tps(value=233),
         ),
         Model.GPT_OSS_120B: ModelData(
             display_name="GPT-OSS 120B",
@@ -553,10 +542,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             supports_top_p=True,
             supports_presence_penalty=True,
             supports_frequency_penalty=True,
-            speed_data=SpeedData(
-                # TODO: fix
-                equivalent_to=(Model.GPT_41_2025_04_14, 0),
-            ),
+            speed_data=SpeedData.from_tps(value=308),
         ),
         Model.GEMINI_1_5_PRO_PREVIEW_0514: DeprecatedModel(replacement_model=Model.GEMINI_2_5_PRO),
         Model.GEMINI_2_0_FLASH_LITE_PREVIEW_2502: DeprecatedModel(replacement_model=Model.GEMINI_2_0_FLASH_LITE_001),
@@ -575,9 +561,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             icon_url="https://workflowai.blob.core.windows.net/workflowai-public/google.svg",
             release_date=date(2025, 2, 5),
             quality_data=QualityData(mmlu=83.5, gpqa=51.5),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=1821, duration_seconds=13),
-            ),
+            speed_data=SpeedData.from_tps(value=370),
             provider_name=DisplayedProvider.GOOGLE.value,
             supports_tool_calling=True,
             fallback=ModelFallback.default(
@@ -602,9 +586,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             release_date=date(2025, 2, 5),
             latest_model=Model.GEMINI_2_0_FLASH_LATEST,
             quality_data=QualityData(mmlu=76.4, gpqa=74.2),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=1805, duration_seconds=14),
-            ),
+            speed_data=SpeedData.from_tps(value=187),
             provider_name=DisplayedProvider.GOOGLE.value,
             supports_tool_calling=True,
             fallback=ModelFallback.default(
@@ -637,9 +619,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
                 mmlu=88.4,
                 source="https://deepmind.google/models/gemini/flash/",
             ),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2821, duration_seconds=13.4),
-            ),
+            speed_data=SpeedData.from_tps(value=196),
             provider_name=DisplayedProvider.GOOGLE.value,
             supports_tool_calling=True,
             fallback=ModelFallback.default(
@@ -650,6 +630,41 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             ),
             is_default=True,
             reasoning=ModelReasoningBudget(disabled=0, min=1, max=24576),
+        ),
+        Model.GEMINI_2_5_FLASH_PREVIEW_0925: ModelData(
+            display_name="Gemini 2.5 Flash (preview 09-2025)",
+            supports_json_mode=True,
+            supports_input_image=True,
+            supports_input_pdf=True,
+            supports_input_audio=True,
+            supports_structured_output=True,
+            max_tokens_data=MaxTokensData(
+                max_tokens=1_048_576 + 65_536,
+                max_output_tokens=65_536,
+                source="https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-5-flash",
+            ),
+            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/google.svg",
+            release_date=date(2025, 9, 25),
+            quality_data=QualityData(
+                gpqa=82.8,
+                mmlu=88.4,
+                source="https://deepmind.google/models/gemini/flash/",
+            ),
+            speed_data=SpeedData.from_tps(value=261),
+            provider_name=DisplayedProvider.GOOGLE.value,
+            supports_tool_calling=True,
+            fallback=ModelFallback.default(
+                "cheapest",
+                content_moderation=Model.GPT_41_NANO_LATEST,
+                rate_limit=Model.GEMINI_2_0_FLASH_001,
+                context_exceeded="no",
+            ),
+            is_default=True,
+            reasoning=ModelReasoningBudget(disabled=0, min=1, max=24576),
+            aliases=[
+                "gemini-2.5-flash-latest",
+                "gemini-flash-latest",
+            ],
         ),
         Model.GEMINI_2_5_FLASH_THINKING_PREVIEW_0417: DeprecatedModel(replacement_model=Model.GEMINI_2_5_FLASH),
         Model.GEMINI_2_5_FLASH_THINKING_PREVIEW_0520: DeprecatedModel(replacement_model=Model.GEMINI_2_5_FLASH),
@@ -672,9 +687,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
                 mmlu=89.2,
                 source="https://deepmind.google/models/gemini/pro/",
             ),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=1890, duration_seconds=73),
-            ),
+            speed_data=SpeedData.from_tps(value=150),
             provider_name=DisplayedProvider.GOOGLE.value,
             supports_tool_calling=True,
             fallback=ModelFallback.default(
@@ -704,9 +717,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
                 mmlu=84.5,
                 source="https://deepmind.google/models/gemini/flash-lite/",
             ),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2900, duration_seconds=9),
-            ),
+            speed_data=SpeedData.from_tps(value=548),
             provider_name=DisplayedProvider.GOOGLE.value,
             supports_tool_calling=True,
             fallback=ModelFallback.default(
@@ -716,6 +727,40 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             ),
             # https://cloud.google.com/vertex-ai/generative-ai/docs/thinking
             reasoning=ModelReasoningBudget(disabled=0, min=512, max=24_576),
+        ),
+        Model.GEMINI_2_5_FLASH_LITE_PREVIEW_0925: ModelData(
+            display_name="Gemini 2.5 Flash Lite (preview 09-2025)",
+            supports_json_mode=True,
+            supports_input_image=True,
+            supports_input_pdf=True,
+            supports_input_audio=True,
+            supports_structured_output=True,
+            max_tokens_data=MaxTokensData(
+                max_tokens=1_048_576 + 65_536,
+                max_output_tokens=65_536,
+                source="https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-5-flash-lite",
+            ),
+            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/google.svg",
+            release_date=date(2025, 9, 25),
+            quality_data=QualityData(
+                gpqa_diamond=66.7,
+                mmlu=84.5,
+                source="https://deepmind.google/models/gemini/flash-lite/",
+            ),
+            speed_data=SpeedData.from_tps(value=735),
+            provider_name=DisplayedProvider.GOOGLE.value,
+            supports_tool_calling=True,
+            fallback=ModelFallback.default(
+                "cheapest",
+                content_moderation=Model.GPT_41_NANO_LATEST,
+                context_exceeded="no",
+            ),
+            # https://cloud.google.com/vertex-ai/generative-ai/docs/thinking
+            reasoning=ModelReasoningBudget(disabled=0, min=512, max=24_576),
+            aliases=[
+                "gemini-2.5-flash-lite-latest",
+                "gemini-flash-lite-latest",
+            ],
         ),
         Model.GEMINI_2_5_FLASH_LITE_PREVIEW_0617: DeprecatedModel(replacement_model=Model.GEMINI_2_5_FLASH_LITE),
         Model.GEMINI_2_5_PRO_PREVIEW_0605: DeprecatedModel(replacement_model=Model.GEMINI_2_5_PRO),
@@ -784,9 +829,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             # https://www.anthropic.com/news/claude-4
             # We only have the gpqa_diamond for now...
             quality_data=QualityData(gpqa_diamond=70),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2648, duration_seconds=32),
-            ),
+            speed_data=SpeedData.from_tps(value=50),
             latest_model=Model.CLAUDE_4_SONNET_LATEST,
             provider_name=DisplayedProvider.ANTHROPIC.value,
             supports_tool_calling=True,
@@ -796,6 +839,39 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
                 max=32000,
             ),  # Claude docs mention that reasoning tokens 32k are rarely used.
             # https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking
+        ),
+        Model.CLAUDE_4_5_SONNET_20250929: ModelData(
+            display_name="Claude 4 Sonnet (2025-09-29)",
+            supports_json_mode=False,
+            supports_input_image=True,
+            supports_input_pdf=True,
+            supports_input_audio=False,
+            max_tokens_data=MaxTokensData(
+                max_tokens=200_000,
+                # See https://docs.anthropic.com/en/docs/about-claude/models/all-models
+                max_output_tokens=64_000,
+                source="https://docs.anthropic.com/en/docs/about-claude/models",
+            ),
+            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/anthropic.svg",
+            release_date=date(2025, 9, 29),
+            # https://www.anthropic.com/news/claude-4
+            # We only have the gpqa_diamond for now...
+            quality_data=QualityData(gpqa_diamond=83.4),
+            # https://artificialanalysis.ai/models?speed-tab=overview&models=claude-4-1-opus-thinking%2Cclaude-4-sonnet-thinking%2Cclaude-4-5-sonnet-thinking%2Cclaude-4-opus-thinking#output-speed
+            speed_data=SpeedData.from_tps(value=60),
+            provider_name=DisplayedProvider.ANTHROPIC.value,
+            supports_tool_calling=True,
+            fallback=ModelFallback.default("medium"),
+            reasoning=ModelReasoningBudget(
+                min=1024,
+                # Claude docs mention that reasoning tokens 32k are rarely used.
+                # https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking
+                max=32000,
+            ),
+            aliases=[
+                "claude-4-5-sonnet",
+                "claude-4-5-sonnet-latest",
+            ],
         ),
         Model.CLAUDE_4_1_OPUS_20250805: ModelData(
             display_name="Claude 4.1 Opus (2025-08-05)",
@@ -820,10 +896,8 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             provider_name=DisplayedProvider.ANTHROPIC.value,
             supports_tool_calling=True,
             fallback=ModelFallback.default("expensive"),
-            speed_data=SpeedData(
-                # TODO: fix
-                equivalent_to=(Model.CLAUDE_4_OPUS_20250514, 0),
-            ),
+            # https://artificialanalysis.ai/models?speed-tab=overview&models=claude-4-1-opus-thinking%2Cclaude-4-sonnet-thinking%2Cclaude-4-5-sonnet-thinking%2Cclaude-4-opus-thinking#output-speed
+            speed_data=SpeedData.from_tps(value=42),
         ),
         Model.CLAUDE_4_OPUS_LATEST: LatestModel(
             model=Model.CLAUDE_4_OPUS_20250514,
@@ -847,9 +921,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             # https://www.anthropic.com/news/claude-4
             # We only have the mmmlu for now...
             quality_data=QualityData(gpqa_diamond=74.9),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2648, duration_seconds=56.6),
-            ),
+            speed_data=SpeedData.from_tps(value=5),
             latest_model=Model.CLAUDE_4_OPUS_LATEST,
             provider_name=DisplayedProvider.ANTHROPIC.value,
             supports_tool_calling=True,
@@ -894,28 +966,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             ),  # Claude docs mention that reasoning tokens 32k are rarely used.
             # https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking
         ),
-        Model.CLAUDE_3_5_SONNET_20241022: ModelData(
-            display_name="Claude 3.5 Sonnet (2024-10-22)",
-            supports_json_mode=False,
-            supports_input_image=True,
-            supports_input_pdf=True,
-            supports_input_audio=False,
-            max_tokens_data=MaxTokensData(
-                max_tokens=200000,
-                max_output_tokens=8192,
-                source="https://docs.anthropic.com/en/docs/about-claude/models",
-            ),
-            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/anthropic.svg",
-            release_date=date(2024, 10, 22),
-            quality_data=QualityData(mmlu=86, gpqa=68),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=543, duration_seconds=11),
-            ),
-            latest_model=Model.CLAUDE_3_5_SONNET_LATEST,
-            provider_name=DisplayedProvider.ANTHROPIC.value,
-            supports_tool_calling=True,
-            fallback=ModelFallback.default("medium"),
-        ),
+        Model.CLAUDE_3_5_SONNET_20241022: DeprecatedModel(replacement_model=Model.CLAUDE_3_7_SONNET_20250219),
         Model.GEMINI_1_5_FLASH_002: DeprecatedModel(
             replacement_model=Model.GEMINI_2_5_FLASH,
             reasoning_effort=ReasoningEffort.DISABLED,
@@ -936,10 +987,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             replacement_model=Model.GEMINI_2_5_PRO,
             reasoning_effort=ReasoningEffort.LOW,
         ),
-        Model.CLAUDE_3_5_SONNET_LATEST: LatestModel(
-            model=Model.CLAUDE_3_5_SONNET_20241022,
-            display_name="Claude 3.5 Sonnet (latest)",
-        ),
+        Model.CLAUDE_3_5_SONNET_LATEST: DeprecatedModel(replacement_model=Model.CLAUDE_3_7_SONNET_20250219),
         Model.O1_2024_12_17: ModelData(
             display_name="o1 (2024-12-17)",
             supports_json_mode=True,
@@ -969,28 +1017,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             supports_presence_penalty=False,
             supports_frequency_penalty=False,
         ),
-        Model.CLAUDE_3_5_SONNET_20240620: ModelData(
-            display_name="Claude 3.5 Sonnet (2024-06-20)",
-            supports_json_mode=False,
-            supports_input_image=True,
-            supports_input_pdf=False,
-            supports_input_audio=False,
-            max_tokens_data=MaxTokensData(
-                max_tokens=200000,
-                max_output_tokens=4096,
-                source="https://docs.anthropic.com/en/docs/about-claude/models",
-            ),
-            icon_url="https://workflowai.blob.core.windows.net/workflowai-public/anthropic.svg",
-            latest_model=Model.CLAUDE_3_5_SONNET_LATEST,
-            release_date=date(2024, 6, 20),
-            quality_data=QualityData(mmlu=88.3, gpqa=59.4),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2655, duration_seconds=40),
-            ),
-            provider_name=DisplayedProvider.ANTHROPIC.value,
-            supports_tool_calling=True,
-            fallback=ModelFallback.default("medium"),
-        ),
+        Model.CLAUDE_3_5_SONNET_20240620: DeprecatedModel(replacement_model=Model.CLAUDE_3_7_SONNET_20250219),
         Model.CLAUDE_3_OPUS_20240229: ModelData(
             display_name="Claude 3 Opus (2024-02-29)",
             supports_json_mode=False,
@@ -1012,7 +1039,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             supports_tool_calling=True,
             fallback=ModelFallback.default("medium"),
         ),
-        Model.CLAUDE_3_SONNET_20240229: DeprecatedModel(replacement_model=Model.CLAUDE_3_5_SONNET_20241022),
+        Model.CLAUDE_3_SONNET_20240229: DeprecatedModel(replacement_model=Model.CLAUDE_3_7_SONNET_20250219),
         Model.CLAUDE_3_HAIKU_20240307: ModelData(
             display_name="Claude 3 Haiku (2024-03-07)",
             supports_json_mode=False,
@@ -1175,9 +1202,8 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             icon_url="https://workflowai.blob.core.windows.net/workflowai-public/qwen.svg",
             release_date=date(2025, 4, 29),
             quality_data=QualityData(mmlu=87.8, gpqa=70, source="https://qwenlm.github.io/blog/qwen3/"),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2120, duration_seconds=49),
-            ),
+            # https://artificialanalysis.ai/models?speed-tab=overview&models=qwen3-235b-a22b-instruct-2507-reasoning#output-speed
+            speed_data=SpeedData.from_tps(value=82),
             provider_name=DisplayedProvider.FIREWORKS.value,
             supports_tool_calling=True,
             fallback=ModelFallback.default("cheap"),
@@ -1196,9 +1222,8 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             icon_url="https://workflowai.blob.core.windows.net/workflowai-public/qwen.svg",
             release_date=date(2025, 4, 29),
             quality_data=QualityData(mmlu=80, gpqa=62, source="https://qwenlm.github.io/blog/qwen3/"),
-            speed_data=SpeedData(
-                index=SpeedIndex.from_experiment(output_tokens=2300, duration_seconds=45),
-            ),
+            # https://artificialanalysis.ai/models?speed-tab=overview&models=qwen3-235b-a22b-instruct-2507-reasoning%2Cqwen3-30b-a3b-2507-reasoning#output-speed
+            speed_data=SpeedData.from_tps(value=100),
             provider_name=DisplayedProvider.FIREWORKS.value,
             supports_tool_calling=True,
             fallback=ModelFallback.default("cheapest"),
@@ -1222,10 +1247,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             provider_name=DisplayedProvider.GROQ.value,
             supports_tool_calling=True,
             fallback=ModelFallback.default("cheap"),
-            speed_data=SpeedData(
-                # TPS: 400 tokens per second from 32b doc
-                index=SpeedIndex(value=400),
-            ),
+            speed_data=SpeedData.from_tps(value=57),
         ),
         Model.LLAMA_3_2_11B_VISION: DeprecatedModel(
             replacement_model=Model.LLAMA_4_MAVERICK_BASIC,
@@ -1418,10 +1440,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             icon_url="https://workflowai.blob.core.windows.net/workflowai-public/moonshot.svg",
             release_date=date(2025, 8, 7),
             quality_data=QualityData(gpqa=71.5),
-            speed_data=SpeedData(
-                # TODO: fix
-                equivalent_to=(Model.GPT_41_MINI_2025_04_14, 0),
-            ),
+            speed_data=SpeedData.from_tps(value=56),
             provider_name=DisplayedProvider.GROQ.value,
             supports_tool_calling=True,
             supports_structured_output=True,
@@ -1441,10 +1460,7 @@ def _raw_model_data() -> dict[Model, ModelData | LatestModel | DeprecatedModel]:
             icon_url="https://workflowai.blob.core.windows.net/workflowai-public/moonshot.svg",
             release_date=date(2025, 9, 5),
             quality_data=QualityData(mmlu_pro=82, gpqa_diamond=76.7),
-            speed_data=SpeedData(
-                # TODO: fix
-                equivalent_to=(Model.GPT_41_MINI_2025_04_14, 0),
-            ),
+            speed_data=SpeedData.from_tps(value=61),
             provider_name=DisplayedProvider.GROQ.value,
             supports_tool_calling=True,
             supports_structured_output=True,

@@ -19,8 +19,8 @@ from protocol.api._api_models import (
     CreateViewResponse,
     Deployment,
     Experiment,
-    Input,
-    Model,
+    ExperimentInput,
+    ModelField,
     Page,
     QueryCompletionResponse,
     SearchDocumentationResponse,
@@ -171,7 +171,7 @@ Returns the ids of the added inputs.""",
 async def add_inputs_to_experiment(
     experiment_id: _mcp_utils.ExperimentID,
     inputs: Annotated[
-        list[Input] | None,
+        list[ExperimentInput] | None,
         Field(
             description="""The inputs to use for the playground. A completion will be generated per input per version.
             An input can include a set of variables used in the templated prompt or a list of messages to be appended
@@ -232,13 +232,14 @@ async def get_experiment(
 
 
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
-async def list_models() -> list[Model]:
+async def list_models(
+    include: list[ModelField] | None = None,
+) -> list[dict[str, Any]]:
     """List all available AI models with their capabilities, pricing, and metadata.
 
     Returns a list of Model objects containing:
     - id: Model identifier to use in the 'models' parameter of playground/API calls (corresponds to version_model in query_completions)
     - display_name: Human-readable name of the model
-    - icon_url: URL to the model's icon image
     - supports: Capabilities including:
       - input/output modalities (text, image, audio, pdf support)
       - parallel_tool_calls: Whether model can make multiple tool calls in one inference
@@ -248,10 +249,10 @@ async def list_models() -> list[Model]:
     - pricing: Cost information per token (input_token_usd, output_token_usd)
     - release_date: When the model was released on the platform
     - reasoning: Optional reasoning configuration with token budgets for different effort levels
-
-    Use this tool before calling playground() to see available model IDs and their capabilities.
+    - context_window: Context window and output token limits for the model.
+    - speed_index: Speed index of the model.
     """
-    return await models_service.list_models()
+    return await models_service.list_models_mcp(include)
 
 
 # ------------------------------------------------------------
@@ -436,6 +437,11 @@ async def query_completions(
     """
     Exposes the clickhouse database to the user. The tool validates your SQL query and returns a URL to view the results in the web interface.
     Avoid using the query_completions tool to then pass the inputs to the playground tool. Instead, use the completion_query parameter of the playground tool.
+
+    **Debugging completions with non-text inputs:**
+    When investigating issues with a completion that contains image_url, audio_url, or PDF inputs ALWAYS
+    immediately load and view the actual content to verify the model's analysis. This is critical for debugging and should be done
+    proactively without waiting for the user to explicitly ask.
 
     The completion table structured is defined below (in doubt, you can retrieve the structure using DESCRIBE TABLE completions).
 

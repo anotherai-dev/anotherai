@@ -19,8 +19,6 @@ _log = get_logger(__name__)
 def _default_resource_ids():
     return {
         Model.CLAUDE_3_7_SONNET_20250219: "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
-        Model.CLAUDE_3_5_SONNET_20241022: "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
-        Model.CLAUDE_3_5_SONNET_20240620: "us.anthropic.claude-3-5-sonnet-20240620-v1:0",
         Model.CLAUDE_3_OPUS_20240229: "us.anthropic.claude-3-opus-20240229-v1:0",
         Model.CLAUDE_3_5_HAIKU_20241022: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
         Model.CLAUDE_3_HAIKU_20240307: "us.anthropic.claude-3-haiku-20240307-v1:0",

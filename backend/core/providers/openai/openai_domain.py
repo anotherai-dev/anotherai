@@ -14,7 +14,7 @@ from core.domain.models import Model
 from core.domain.tool import Tool as DomainTool
 from core.domain.tool_choice import ToolChoice, ToolChoiceFunction
 from core.providers._base.llm_usage import LLMUsage
-from core.providers._base.provider_error import FailedGenerationError, ModelDoesNotSupportModeError
+from core.providers._base.provider_error import FailedGenerationError
 from core.providers._base.streaming_context import ParsedResponse
 from core.providers.google.google_provider_domain import (
     internal_tool_name_to_native_tool_call,
@@ -22,6 +22,7 @@ from core.providers.google.google_provider_domain import (
 )
 from core.runners.runner_output import ToolCallRequestDelta
 from core.utils.dicts import TwoWayDict
+from core.utils.hash import hash_string
 from core.utils.json_utils import safe_extract_dict_from_json
 from core.utils.token_utils import tokens_from_string
 
@@ -53,6 +54,25 @@ class ImageContent(BaseModel):
     @classmethod
     def from_file(cls, file: File) -> Self:
         return cls(image_url=ImageContent.URL(url=file.to_url(default_content_type="image/*")))
+
+
+# https://platform.openai.com/docs/api-reference/chat/create#chat-create-messages-user-message-content-array-of-content-parts-file-content-part-file
+class FileContent(BaseModel):
+    type: Literal["file"] = "file"
+
+    class _File(BaseModel):
+        file_data: str
+        filename: str
+
+    file: _File
+
+    @classmethod
+    def from_file(cls, file: File) -> Self:
+        if not file.data:
+            raise InternalError("File's data is required.", file=file)
+        return cls(
+            file=cls._File(file_data=f"data:{file.content_type};base64,{file.data}", filename=hash_string(file.data)),
+        )
 
 
 class AudioContent(BaseModel):
@@ -183,7 +203,7 @@ class OpenAIToolMessage(BaseModel):
 
 class OpenAIMessage(BaseModel):
     role: OpenAIRole | None = None
-    content: str | list[TextContent | ImageContent | AudioContent]
+    content: str | list[TextContent | ImageContent | AudioContent | FileContent]
     tool_calls: list[ToolCallResult] | None = None
 
     @classmethod
@@ -193,17 +213,17 @@ class OpenAIMessage(BaseModel):
         if not message.files and not message.tool_call_requests:
             return cls(content=message.content, role=role)
 
-        content: list[TextContent | ImageContent | AudioContent] = []
+        content: list[TextContent | ImageContent | AudioContent | FileContent] = []
 
         if message.content:
             content.append(TextContent(text=message.content))
         for file in message.files or []:
-            if file.is_image is False and file.is_audio is False:
-                raise ModelDoesNotSupportModeError("OpenAI only supports image and audio files in messages")
             if file.is_audio:
                 content.append(AudioContent.from_file(file))
-            else:
+            elif file.is_image:
                 content.append(ImageContent.from_file(file))
+            else:
+                content.append(FileContent.from_file(file))
 
         tool_calls: list[ToolCallResult] | None = None
         if message.tool_call_requests:

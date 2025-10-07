@@ -102,6 +102,7 @@ def test_assign_raw_completion():
     AbstractProvider._assign_raw_completion(  # pyright: ignore [reportPrivateUsage]
         raw_completion,
         llm_completion,
+        None,
     )
     assert llm_completion.usage == usage
 
@@ -257,6 +258,21 @@ class TestComplete:
         assert builder_context.llm_completions[0].duration_seconds is not None
         # TODO: make sure messages are set
 
+    async def test_complete_with_error(self, mocked_provider: _MockedProvider, builder_context: BuilderInterface):
+        mocked_provider.mock._single_complete.side_effect = ProviderError(
+            "Test exception",
+            provider_status_code=400,
+        )
+        with pytest.raises(ProviderError):
+            _ = await mocked_provider.complete(
+                messages=[],
+                options=ProviderOptions(model=Model.GPT_4O_2024_05_13),
+                output_factory=_output_factory,
+            )
+        assert builder_context.llm_completions[0].response is None
+        assert builder_context.llm_completions[0].duration_seconds is not None
+        assert builder_context.llm_completions[0].error is not None
+
 
 class TestStream:
     async def test_retry_stream(self, mocked_provider: _MockedProvider):
@@ -293,6 +309,22 @@ class TestStream:
         #     "status": "unknown_provider_error",
         #     "config": "workflowai_0",
         # }
+
+    async def test_stream_with_error(self, mocked_provider: _MockedProvider, builder_context: BuilderInterface):
+        mocked_provider.mock._single_stream.side_effect = ProviderError(
+            "Test exception",
+            provider_status_code=400,
+        )
+        with pytest.raises(ProviderError):
+            async for _ in mocked_provider.stream(
+                messages=[],
+                options=ProviderOptions(model=Model.GPT_4O_2024_05_13),
+                output_factory=_output_factory,
+            ):
+                pass
+        assert builder_context.llm_completions[0].response is None
+        assert builder_context.llm_completions[0].duration_seconds is not None
+        assert builder_context.llm_completions[0].error is not None
 
 
 class TestCostComputation:
@@ -348,3 +380,25 @@ class TestDefaultModel:
         # We just check that it exists
         # The default model is used to test configurations
         assert mocked_provider.default_model()
+
+
+class TestErrorIncursCost:
+    @pytest.mark.parametrize(
+        ("error", "expected"),
+        [
+            pytest.param(ProviderError(provider_status_code=400), False, id="provider 400"),
+            pytest.param(ProviderError(provider_status_code=200), True, id="provider_200"),
+            pytest.param(
+                ProviderError(provider_status_code=200, status_code=400),
+                True,
+                id="provider_200_status_code_400",
+            ),
+            pytest.param(
+                ProviderError(provider_status_code=400, status_code=200),
+                False,
+                id="provider_400_status_code_200",
+            ),
+        ],
+    )
+    def test_error_incurs_cost(self, error: ProviderError, expected: bool):
+        assert AbstractProvider.error_incurs_cost(error) is expected

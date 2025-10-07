@@ -16,7 +16,7 @@ import DeploymentsBaseCell from "./DeploymentsBaseCell";
 export const DEPLOYMENTS_COLUMNS = {
   AGENT_ID: "Agent Id",
   NAME: "Deployment Id",
-  RUNS_LAST_7_DAYS: "Runs (Last 7d)",
+  RUNS_LAST_7_DAYS: "Completions (Last 7d)",
   TOTAL_COST: "Total Cost (Last 7d)",
   CREATED_AT: "Created at",
   UPDATED_AT: "Updated at",
@@ -134,7 +134,7 @@ export function DeploymentsTable(props: DeploymentsTableProps) {
         onRowClick={handleRowClick}
         minCellWidth={120}
         cellVerticalAlign="middle"
-        columnWidths={["auto", "auto", "120px", "140px", "180px"]}
+        columnWidths={["auto", "auto", "120px", "160px", "180px"]}
         className="border-0 rounded-none"
       />
 

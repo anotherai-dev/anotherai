@@ -27,6 +27,9 @@ from protocol.api._services.conversions import (
     annotation_to_domain,
     completion_from_domain,
     deployment_from_domain,
+    experiment_from_domain,
+    experiment_input_from_domain,
+    experiment_version_from_domain,
     experiments_url,
     graph_from_domain,
     graph_to_domain,
@@ -42,7 +45,16 @@ from protocol.api._services.conversions import (
     view_to_domain,
     view_url,
 )
-from tests.fake_models import fake_completion, fake_deployment, fake_graph, fake_version, fake_view
+from tests.fake_models import (
+    fake_completion,
+    fake_deployment,
+    fake_experiment,
+    fake_experiment_input,
+    fake_experiment_version,
+    fake_graph,
+    fake_version,
+    fake_view,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -778,3 +790,32 @@ class TestDeploymentFromDomain:
         domain_deployment = fake_deployment()
         converted = deployment_from_domain(domain_deployment)
         assert converted.id == "test-deployment"  # not prefixed
+
+
+class TestExperimentInputFromDomain:
+    def test_aliases(self):
+        input = fake_experiment_input(alias="input_1")
+        converted = experiment_input_from_domain(input)
+        assert converted.alias == "input_1"
+
+
+class TestExperimentVersionFromDomain:
+    def test_aliases(self):
+        version = fake_experiment_version(alias="version_1")
+        converted = experiment_version_from_domain(version)
+        assert converted.alias == "version_1"
+
+
+class TestExperimentFromDomain:
+    def test_aliases(self):
+        experiment = fake_experiment(
+            versions=[fake_experiment_version(alias="version_1"), fake_experiment_version(alias="version_2")],
+            inputs=[fake_experiment_input(alias="input_1"), fake_experiment_input(alias="input_2")],
+        )
+        converted = experiment_from_domain(experiment, annotations=[])
+        assert converted.versions is not None
+        assert converted.versions[0].alias == "version_1"
+        assert converted.versions[1].alias == "version_2"
+        assert converted.inputs is not None
+        assert converted.inputs[0].alias == "input_1"
+        assert converted.inputs[1].alias == "input_2"

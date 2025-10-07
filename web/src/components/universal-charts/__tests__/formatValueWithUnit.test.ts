@@ -54,7 +54,7 @@ describe("formatValueWithUnit", () => {
 
   it("should format values with count units with spaces", () => {
     expect(formatValueWithUnit("5", "count")).toBe("5 count");
-    expect(formatValueWithUnit("1234", "runs")).toBe("1.23k runs");
+    expect(formatValueWithUnit("1234", "completions")).toBe("1.23k completions");
     expect(formatValueWithUnit("2.5", "tokens")).toBe("2.5 tokens");
   });
 

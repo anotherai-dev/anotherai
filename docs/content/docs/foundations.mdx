@@ -131,7 +131,7 @@ Building an AI agent is the process of picking the right value for each paramete
 <Tab value="Python (OpenAI SDK)">
 
 ```python
-completion = client.chat.completions.create(  # or client.beta.chat.completions.parse for structured outputs
+completion = client.chat.completions.create(  # or client.chat.completions.parse for structured outputs
     model="..",
     messages=[...],
     metadata={
@@ -298,7 +298,8 @@ class UserInfo(BaseModel):
     age: int
     email: str
 
-completion = client.beta.chat.completions.parse(
+# `client.beta.chat` before OpenAI v2
+completion = client.chat.completions.parse(
     model="gpt-4o-mini",
     messages=[{"role": "user", "content": "Extract user info: John Doe, 30, john@example.com"}],
     response_format=UserInfo  # Guarantees valid UserInfo object
@@ -369,7 +370,8 @@ completion = client.chat.completions.create(...)
 content = completion.choices[0].message.content
 
 # for structured outputs
-completion = client.beta.chat.completions.parse(..., response_format=...)
+# `client.beta.chat` in older versions of the SDK
+completion = client.chat.completions.parse(..., response_format=...)
 parsed_output = completion.choices[0].message.parsed
 ```
 </Tab>
