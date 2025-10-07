@@ -26,7 +26,6 @@ async def test_experiment(experiment_storage: PsqlExperimentStorage, test_agent:
     experiment = fake_experiment(
         id=f"test-experiment-{uuid.uuid4().hex[:8]}",
         agent_id=test_agent.id,
-        run_ids=["00000000-0000-0007-0000-000000000001"],
     )
     await experiment_storage.create(experiment)
     return experiment

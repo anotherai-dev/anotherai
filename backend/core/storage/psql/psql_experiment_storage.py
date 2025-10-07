@@ -6,7 +6,6 @@ from uuid import UUID
 import asyncpg
 import structlog
 from asyncpg.pool import PoolConnectionProxy
-from pydantic import Field
 
 from core.domain.agent_output import AgentOutput
 from core.domain.cache_usage import CacheUsage
@@ -625,8 +624,6 @@ class _ExperimentRow(AgentLinkedRow, WithUpdatedAtRow):
     result: str | None = None
     metadata: JSONDict | None = None
     use_cache: str | None = None
-
-    run_ids: list[str] = Field(default_factory=list, deprecated="Should not be used anymore")
 
     def _use_cache_to_domain(self) -> CacheUsage | None:
         if self.use_cache is None:
