@@ -1,0 +1,62 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "dev.anotherai/anotherai",
+  "displayName": "AnotherAI",
+  "version": "0.1.0",
+  "description": "MCP server for building and testing AI agents with multi-model experimentation and insights.",
+  "icon": "https://raw.githubusercontent.com/anotherai-dev/anotherai/main/docs/public/images/logo.png",
+  "homepage": "https://github.com/anotherai-dev/anotherai",
+  "license": {
+    "type": "MIT",
+    "url": "https://github.com/anotherai-dev/anotherai/blob/main/LICENSE"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://api.anotherai.dev/mcp"
+    }
+  ],
+  "deployment": {
+    "type": "remote",
+    "remote": {
+      "url": "https://api.anotherai.dev/mcp"
+    }
+  },
+  "categories": ["development", "api", "data-analysis"],
+  "sourceCode": {
+    "url": "https://github.com/anotherai-dev/anotherai",
+    "path": "backend/protocol/api/_mcp.py"
+  },
+  "documentation": {
+    "url": "https://github.com/anotherai-dev/anotherai/blob/main/README.md"
+  },
+  "capabilities": {
+    "tools": true,
+    "resources": false,
+    "prompts": false
+  },
+  "examples": [
+    {
+      "title": "Compare Models",
+      "description": "Create an experiment to compare how different models extract sentiment from product reviews",
+      "prompt": "Create an experiment in AnotherAI that compares how GPT-5 mini and GPT-4 mini extract the sentiment from an input product review."
+    },
+    {
+      "title": "Find Fastest Model",
+      "description": "Use AnotherAI to find the model that can summarize articles the fastest",
+      "prompt": "Use AnotherAI to help me find the model that can summarize a long article the fastest."
+    },
+    {
+      "title": "Test Model Quality",
+      "description": "Test how clearly and accurately different models can answer complex STEM questions",
+      "prompt": "Use AnotherAI to test how clearly and accurately 5 different models can answer complex STEM questions."
+    }
+  ],
+  "metadata": {
+    "tags": ["ai", "agents", "llm", "openai", "anthropic", "google", "experimentation", "logging", "analytics"],
+    "publisher": {
+      "name": "AnotherAI Team",
+      "url": "https://github.com/anotherai-dev"
+    }
+  }
+}
