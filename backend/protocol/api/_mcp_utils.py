@@ -11,6 +11,7 @@ from fastmcp.server.middleware import CallNext, Middleware, MiddlewareContext
 from fastmcp.tools.tool import Tool, ToolResult
 from mcp.types import CallToolRequestParams, ListToolsRequest
 from pydantic import BeforeValidator, Field, ValidationError
+from starlette.authentication import AuthenticationError
 from structlog import get_logger
 from structlog.contextvars import bind_contextvars
 
@@ -249,7 +250,10 @@ async def deployment_service() -> DeploymentService:
 class CustomTokenVerifier(TokenVerifier):
     async def verify_token(self, token: str) -> AccessToken | None:
         deps = lifecycle_dependencies()
-        tenant = await deps.security_service.find_tenant(token)
+        try:
+            tenant = await deps.security_service.find_tenant(token)
+        except InvalidTokenError as e:
+            raise AuthenticationError(str(e)) from e
         return AccessToken(
             token=token,
             client_id="",
