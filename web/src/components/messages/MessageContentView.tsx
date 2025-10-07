@@ -98,11 +98,11 @@ export function MessageContentView(props: MessageContentViewProps) {
                 )}
               </div>
             )}
-            {item.image_url && <UniversalFileViewer url={item.image_url} addMargin={true} />}
+            {item.image_url && <UniversalFileViewer url={item.image_url} item={item} addMargin={true} />}
             {item.file && (item.file.url || item.file.storage_url) && (
-              <UniversalFileViewer url={item.file.storage_url || item.file.url || ""} />
+              <UniversalFileViewer url={item.file.storage_url || item.file.url || ""} item={item} />
             )}
-            {item.audio_url && <UniversalFileViewer url={item.audio_url} />}
+            {item.audio_url && <UniversalFileViewer url={item.audio_url} item={item} />}
             {item.tool_call_request && <ToolCallRequestView toolCallRequest={item.tool_call_request} />}
             {item.tool_call_result && <ToolCallResultView toolCallResult={item.tool_call_result} />}
           </div>
