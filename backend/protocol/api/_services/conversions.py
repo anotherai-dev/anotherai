@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from datetime import UTC, datetime
 from typing import Any, Literal
 from uuid import UUID
@@ -18,7 +19,9 @@ from core.domain.deployment import Deployment as DomainDeployment
 from core.domain.error import Error as DomainError
 from core.domain.exceptions import BadRequestError, JSONSchemaValidationError
 from core.domain.experiment import Experiment as DomainExperiment
+from core.domain.experiment import ExperimentInput as DomainExperimentInput
 from core.domain.experiment import ExperimentOutput
+from core.domain.experiment import ExperimentVersion as DomainExperimentVersion
 from core.domain.file import File
 from core.domain.inference_usage import CompletionUsage as DomainCompletionUsage
 from core.domain.inference_usage import InferenceUsage as DomainInferenceUsage
@@ -59,16 +62,19 @@ from protocol.api._api_models import (
     Deployment,
     Error,
     Experiment,
+    ExperimentInput,
+    ExperimentVersion,
     Graph,
+    IDAndAlias,
     InferenceUsage,
     Input,
     Message,
     Model,
     ModelContextWindow,
+    ModelField,
     ModelPricing,
     ModelReasoning,
     ModelSupports,
-    ModelWithID,
     Output,
     OutputSchema,
     SupportsModality,
@@ -274,8 +280,8 @@ def version_to_domain(version: Version) -> DomainVersion:
     )
 
 
-def version_from_domain(version: DomainVersion) -> Version:
-    return Version(
+def version_from_domain[T: Version](version: DomainVersion, t: type[T] = Version, **kwargs: Any) -> T:
+    return t(
         id=version.id,
         model=version.model or "",
         temperature=version.temperature,
@@ -293,7 +299,12 @@ def version_from_domain(version: DomainVersion) -> Version:
         frequency_penalty=version.frequency_penalty,
         use_structured_generation=version.use_structured_generation,
         provider=version.provider,
+        **kwargs,
     )
+
+
+def experiment_version_from_domain(version: DomainExperimentVersion) -> ExperimentVersion:
+    return version_from_domain(version, ExperimentVersion, alias=version.alias)
 
 
 def _sanitize_json_schema(json_schema: dict[str, Any]) -> DomainVersion.OutputSchema:
@@ -360,13 +371,14 @@ def _sanitize_output_json_schema(output_json_schema: dict[str, Any] | None) -> D
     return _sanitize_json_schema(schema)
 
 
-def version_request_to_domain(version: VersionRequest) -> DomainVersion:
+def version_request_to_domain(version: VersionRequest) -> DomainExperimentVersion:
     if version.prompt is not None:
         input_variables_schema, _ = json_schema_for_template([message_to_domain(m) for m in version.prompt], {})
     else:
         input_variables_schema = None
 
-    return DomainVersion(
+    return DomainExperimentVersion(
+        alias=version.alias,
         model=version.model,
         temperature=version.temperature,
         top_p=version.top_p,
@@ -406,18 +418,31 @@ def version_request_from_domain(version: DomainVersion) -> VersionRequest:
     )
 
 
-def input_from_domain(agent_input: DomainInput) -> Input:
-    return Input(
+def input_from_domain[T: Input](agent_input: DomainInput, t: type[T] = Input, **kwargs: Any) -> T:
+    return t(
         id=agent_input.id,
         messages=[message_from_domain(m) for m in agent_input.messages] if agent_input.messages else None,
         variables=agent_input.variables or None,
+        **kwargs,
     )
+
+
+def experiment_input_from_domain(input: DomainExperimentInput) -> ExperimentInput:
+    return input_from_domain(input, ExperimentInput, alias=input.alias)
 
 
 def input_to_domain(agent_input: Input) -> DomainInput:
     return DomainInput(
         messages=[message_to_domain(m) for m in agent_input.messages] if agent_input.messages else None,
         variables=agent_input.variables or None,
+    )
+
+
+def experiment_input_to_domain(experiment_input: ExperimentInput) -> DomainExperimentInput:
+    return DomainExperimentInput(
+        messages=[message_to_domain(m) for m in experiment_input.messages] if experiment_input.messages else None,
+        variables=experiment_input.variables or None,
+        alias=experiment_input.alias,
     )
 
 
@@ -485,8 +510,8 @@ def experiment_from_domain(
         description=experiment.description,
         result=experiment.result,
         completions=[experiment_completion_from_domain(c) for c in experiment.outputs] if experiment.outputs else None,
-        versions=[version_from_domain(v) for v in experiment.versions] if experiment.versions else None,
-        inputs=[input_from_domain(i) for i in experiment.inputs] if experiment.inputs else None,
+        versions=[experiment_version_from_domain(v) for v in experiment.versions] if experiment.versions else None,
+        inputs=[experiment_input_from_domain(i) for i in experiment.inputs] if experiment.inputs else None,
         annotations=[annotation_from_domain(a) for a in annotations] if annotations else None,
         metadata=experiment.metadata or None,
         url=experiments_url(experiment.id),
@@ -586,6 +611,17 @@ def model_response_from_domain(model_id: str, model: FinalModelData) -> Model:
         context_window=model_context_window_from_domain(model.max_tokens_data),
         speed_index=model.speed_index,
     )
+
+
+def model_response_filter(fields: Iterable[ModelField] | None, models: Iterable[Model]) -> Iterable[dict[str, Any]]:
+    """Convert model data for MCP responses, excluding icon_url to reduce context window usage."""
+    include = {"id", "display_name"}
+    if fields is None:
+        include.update(ModelField)
+    else:
+        include.update(fields)
+    for model in models:
+        yield model.model_dump(include=include, exclude_none=True)
 
 
 def _sanitized_completion_id(completion_id: str) -> UUID:
@@ -878,8 +914,8 @@ def trace_to_domain(trace: Trace) -> DomainTrace:
 def experiment_completion_from_domain(completion: ExperimentOutput) -> Experiment.Completion:
     return Experiment.Completion(
         id=completion.completion_id,
-        version=ModelWithID(id=completion.version_id),
-        input=ModelWithID(id=completion.input_id),
+        version=IDAndAlias(id=completion.version_id, alias=completion.version_alias),
+        input=IDAndAlias(id=completion.input_id, alias=completion.input_alias),
         output=output_from_domain(completion.output) if completion.output else Output(),
         cost_usd=completion.cost_usd or 0.0,
         duration_seconds=completion.duration_seconds or 0.0,

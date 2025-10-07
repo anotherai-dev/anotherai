@@ -171,7 +171,8 @@ export type AnalyzeBookCharactersTaskOutput = z.infer<typeof AnalyzeBookCharacte
 
 export async function analyzeBookCharacters(input: AnalyzeBookCharactersTaskInput): Promise<AnalyzeBookCharactersTaskOutput> {
   // Use .parse() instead of .create() when using the beta client
-  const completion = await client.beta.chat.completions.parse({
+  // `client.beta.chat` in older versions of the SDK
+  const completion = await client.chat.completions.parse({
       model: "anotherai/deployment/analyze-book-characters:production#1", // use the "anotherai/deployment/<deployment_id>" id here
       messages: [], // messages should remain empty since the prompt is stored in AnotherAI
       response_format: zodTextFormat(AnalyzeBookCharactersTaskOutputSchema, "AnalyzeBookCharactersTaskOutput"),

@@ -145,7 +145,7 @@ class TravelAdvice(BaseModel):
     tips: list[str]
     warnings: list[str]
 
-completion = client.beta.chat.completions.parse(
+completion = client.chat.completions.parse(
   model="gpt-4o-mini",
   messages=[
     {"role": "user", "content": "Give me travel advice for Tokyo"}

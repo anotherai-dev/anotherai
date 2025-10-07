@@ -5,6 +5,8 @@ import httpx
 import pytest
 from pydantic import BaseModel
 
+from core.domain.models.models import Model
+from core.domain.models.providers import Provider
 from tests.components._common import IntegrationTestClient
 from tests.components.run._base import GroqTestCase, OpenAITestCase, ProviderTestCase
 
@@ -27,6 +29,7 @@ async def test_string_completion(test_case: ProviderTestCase, test_api_client: I
     response = await client.chat.completions.create(
         model=test_case.model(),
         messages=[{"role": "user", "content": "Hello, world!"}],
+        extra_body={"provider": test_case.provider()},
     )
 
     assert response.choices[0].message.content == "The meaning of life is 42"
@@ -72,7 +75,7 @@ async def test_structured_output(test_case: ProviderTestCase, test_api_client: I
 
     client = test_api_client.openai_client()
 
-    response = await client.beta.chat.completions.parse(
+    response = await client.chat.completions.parse(
         model=test_case.model(),
         messages=[{"role": "user", "content": "Hello, world!"}],
         response_format=Output,
@@ -239,3 +242,31 @@ async def test_parameters(test_case: ProviderTestCase, test_api_client: Integrat
     reqs = test_api_client.get_provider_requests(test_case.provider(), test_case.model())
     assert len(reqs) == 2
     _check(reqs[1])
+
+
+async def test_disabled_fallback_keeps_provider_fallback(test_api_client: IntegrationTestClient):
+    # The test setup for Azure only supports gpt-5 and gpt-5-nano
+    # So trying with 4.1 will fallback to OAI automatically
+    test_api_client.mock_provider_call(
+        Provider.OPEN_AI,
+        Model.GPT_41_2025_04_14,
+        f"{Provider.OPEN_AI}/completion.json",
+    )
+
+    client = test_api_client.openai_client()
+
+    response = await client.chat.completions.create(
+        model=Model.GPT_41_2025_04_14,
+        messages=[{"role": "user", "content": "Hello, world!"}],
+        extra_body={"use_fallback": "never"},
+    )
+
+    assert response.choices[0].message.content == "The meaning of life is 42"
+
+    await test_api_client.wait_for_background()
+
+    completion = await test_api_client.get(f"/v1/completions/{response.id}")
+    traces = completion["traces"]
+    assert len(traces) == 2
+    assert traces[0]["provider"] == Provider.AZURE_OPEN_AI
+    assert traces[1]["provider"] == Provider.OPEN_AI

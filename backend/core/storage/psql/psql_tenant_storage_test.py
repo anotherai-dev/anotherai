@@ -169,6 +169,7 @@ class TestCreateTenant:
         assert created_tenant.owner_id == "owner123"
         assert created_tenant.org_id is None
         assert created_tenant.current_credits_usd == 1
+        assert created_tenant.created_at is not None
 
     async def test_success_with_org_id(
         self,

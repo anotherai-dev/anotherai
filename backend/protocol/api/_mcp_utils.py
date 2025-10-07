@@ -11,6 +11,7 @@ from fastmcp.server.middleware import CallNext, Middleware, MiddlewareContext
 from fastmcp.tools.tool import Tool, ToolResult
 from mcp.types import CallToolRequestParams, ListToolsRequest
 from pydantic import BeforeValidator, Field, ValidationError
+from starlette.authentication import AuthenticationError
 from structlog import get_logger
 from structlog.contextvars import bind_contextvars
 
@@ -42,7 +43,7 @@ class BaseMiddleware(Middleware):
         context: MiddlewareContext[CallToolRequestParams],
         call_next: CallNext[CallToolRequestParams, ToolResult],
     ) -> ToolResult:
-        _log.info("on_call_tool", method=context.method)
+        _log.info("Tool call", method=context.method, analytics="tool_call")
         # Trying to deserialize JSON sent as a string
         # See https://github.com/jlowin/fastmcp/issues/932
         if context.message.arguments:
@@ -79,7 +80,7 @@ class BaseMiddleware(Middleware):
     async def on_message(self, context: MiddlewareContext[Any], call_next: CallNext[Any, Any]) -> Any:
         tool_name = getattr(context.message, "name", None)
         bind_contextvars(tool_name=tool_name)
-        _log.debug("on_message", method=context.method)
+        _log.debug("on_message", _method=context.method)
         try:
             return await call_next(context)
         except ToolError as e:
@@ -249,12 +250,10 @@ async def deployment_service() -> DeploymentService:
 class CustomTokenVerifier(TokenVerifier):
     async def verify_token(self, token: str) -> AccessToken | None:
         deps = lifecycle_dependencies()
-        tenant = await deps.security_service.find_tenant(token)
-        bind_contextvars(
-            tenant_org_id=tenant.org_id,
-            tenant_owner_id=tenant.owner_id,
-            tenant_slug=tenant.slug,
-        )
+        try:
+            tenant = await deps.security_service.find_tenant(token)
+        except InvalidTokenError as e:
+            raise AuthenticationError(str(e)) from e
         return AccessToken(
             token=token,
             client_id="",

@@ -1,9 +1,17 @@
 [project]
 name = "another-ai"
 version = "0.1.0"
-description = "Add your description here"
+description = "A powerful MCP server that helps AI agents build and test other AI agents. Features include multi-model experimentation, completion logging, and insights generation."
 readme = "README.md"
 requires-python = ">=3.13"
+keywords = ["mcp", "mcp-server", "ai", "agents", "llm", "openai", "anthropic"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+]
 dependencies = [
     "aiohttp>=3.12.14",
     "asyncpg>=0.30.0",
@@ -19,7 +27,8 @@ dependencies = [
     "jinja2>=3.0.0",
     "jsonschema>=4.24.0",
     "mcp>=1.14.0",
-    "openai>=1.93.1",
+    "openai>=2.2.0",
+    "posthog>=3.7.2",
     "pydantic>=2.0.0",
     "pydub>=0.25.1",
     "pyjwt>=2.9.0",

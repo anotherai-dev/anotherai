@@ -296,9 +296,10 @@ class TestSkipWebhook:
     @pytest.mark.parametrize(
         ("metadata", "expected"),
         [
-            pytest.param({}, False, id="default"),
+            pytest.param({}, True, id="empty"),  # app is not set
             pytest.param({"webhook_ignore": "true"}, True, id="webhook_ignore"),
             pytest.param({"app": "workflowai"}, True, id="another app"),
+            pytest.param({"app": "anotherai"}, False, id="anotherai"),
         ],
     )
     async def test_skip_webhook(self, metadata: dict[str, Any], expected: bool):

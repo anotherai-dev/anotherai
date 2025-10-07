@@ -407,7 +407,7 @@ async def test_response_formats(test_api_client: IntegrationTestClient):
         name: str
         age: int
 
-    res6 = await client.beta.chat.completions.parse(
+    res6 = await client.chat.completions.parse(
         model="anotherai/deployment/test-agent:production#1",
         messages=[{"role": "user", "content": "Hello, world!"}],
         response_format=Output,
