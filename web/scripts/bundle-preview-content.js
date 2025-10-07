@@ -1,0 +1,70 @@
+#!/usr/bin/env node
+
+const fs = require("fs");
+const path = require("path");
+
+// Paths
+const sourcePath = path.join(__dirname, "..", "src", "content", "preview.mdx");
+const outputPath = path.join(__dirname, "..", "src", "app", "home", "components", "bundled-content.ts");
+
+try {
+  // Read the preview.mdx file
+  const content = fs.readFileSync(sourcePath, "utf8");
+
+  // Parse frontmatter and content
+  const frontmatterRegex = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
+  const match = content.match(frontmatterRegex);
+
+  let frontmatter = {};
+  let mdxContent = content;
+
+  if (match) {
+    // Parse YAML frontmatter
+    const frontmatterText = match[1];
+    const lines = frontmatterText.split("\n");
+    lines.forEach((line) => {
+      const [key, ...valueParts] = line.split(":");
+      if (key && valueParts.length > 0) {
+        const value = valueParts
+          .join(":")
+          .trim()
+          .replace(/^["']|["']$/g, "");
+        frontmatter[key.trim()] = value;
+      }
+    });
+    mdxContent = match[2];
+  }
+
+  // Generate TypeScript file
+  const tsContent = `// This file is auto-generated from src/content/preview.mdx
+// Do not edit manually - changes will be overwritten on build
+
+export interface BundledPreviewData {
+  frontmatter: Record<string, string>;
+  content: string;
+}
+
+export const bundledPreviewContent: BundledPreviewData = {
+  frontmatter: ${JSON.stringify(frontmatter, null, 2)},
+  content: ${JSON.stringify(mdxContent, null, 2)},
+};
+`;
+
+  // Ensure output directory exists
+  const outputDir = path.dirname(outputPath);
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
+
+  // Write the TypeScript file
+  fs.writeFileSync(outputPath, tsContent);
+
+  console.log("✅ Preview content bundled successfully!");
+  console.log(`📁 Source: ${sourcePath}`);
+  console.log(`📄 Output: ${outputPath}`);
+  console.log(`📊 Frontmatter keys: ${Object.keys(frontmatter).join(", ")}`);
+  console.log(`📝 Content length: ${mdxContent.length} characters`);
+} catch (error) {
+  console.error("❌ Failed to bundle preview content:", error.message);
+  process.exit(1);
+}
