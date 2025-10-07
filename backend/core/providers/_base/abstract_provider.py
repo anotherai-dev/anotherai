@@ -378,10 +378,10 @@ class AbstractProvider[ProviderConfigVar: ProviderConfigInterface, ProviderReque
 
     @classmethod
     def error_incurs_cost(cls, error: ProviderError) -> bool | None:
-        if not error.status_code:
+        if not error.provider_status_code:
             return None
         # Usually providers return 200 for errors that incur cost
-        return error.status_code == 200
+        return error.provider_status_code == 200
 
     @classmethod
     def _assign_raw_completion(

@@ -380,3 +380,25 @@ class TestDefaultModel:
         # We just check that it exists
         # The default model is used to test configurations
         assert mocked_provider.default_model()
+
+
+class TestErrorIncursCost:
+    @pytest.mark.parametrize(
+        ("error", "expected"),
+        [
+            pytest.param(ProviderError(provider_status_code=400), False, id="provider 400"),
+            pytest.param(ProviderError(provider_status_code=200), True, id="provider_200"),
+            pytest.param(
+                ProviderError(provider_status_code=200, status_code=400),
+                True,
+                id="provider_200_status_code_400",
+            ),
+            pytest.param(
+                ProviderError(provider_status_code=400, status_code=200),
+                False,
+                id="provider_400_status_code_200",
+            ),
+        ],
+    )
+    def test_error_incurs_cost(self, error: ProviderError, expected: bool):
+        assert AbstractProvider.error_incurs_cost(error) is expected
