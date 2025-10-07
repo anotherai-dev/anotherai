@@ -1,7 +1,12 @@
 # pyright: reportPrivateUsage=false
 
+from unittest.mock import Mock
 
-from protocol.api._mcp_utils import _add_string_to_property_type
+import pytest
+from starlette.authentication import AuthenticationError
+
+from core.domain.exceptions import InvalidTokenError
+from protocol.api._mcp_utils import CustomTokenVerifier, _add_string_to_property_type
 
 
 class TestAddStringToPropertyType:
@@ -238,3 +243,11 @@ class TestAddStringToPropertyType:
             ],
             "description": "Complex union type",
         }
+
+
+class TestCustomTokenVerifier:
+    async def test_invalid_token(self, mock_lifecycle_dependencies: Mock):
+        verifier = CustomTokenVerifier()
+        mock_lifecycle_dependencies.security_service.find_tenant.side_effect = InvalidTokenError("Invalid token")
+        with pytest.raises(AuthenticationError):
+            await verifier.verify_token("invalid")
