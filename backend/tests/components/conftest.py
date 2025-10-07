@@ -119,7 +119,7 @@ def setup_environment(test_jwk: dict[str, Any]):
             "STRIPE_API_KEY": "sk-proj-123",
             "OPENAI_API_KEY": "sk-proj-123",
             "GROQ_API_KEY": "gsk-proj-123",
-            "AZURE_OPENAI_CONFIG": '{"deployments": {"eastus": { "url": "https://anotherai.openai.azure.com/openai/deployments/", "api_key": "sk-proj-123", "models": ["gpt-4o-2024-11-20", "gpt-4o-mini-2024-07-18"]}}, "default_region": "eastus"}',
+            "AZURE_OPENAI_CONFIG": '{"deployments": {"eastus": { "url": "https://anotherai.openai.azure.com/openai/deployments/", "api_key": "sk-proj-123", "models": ["gpt-5-mini-2025-08-07", "gpt-5-nano-2025-08-07"]}}, "default_region": "eastus"}',
             "GOOGLE_VERTEX_AI_PROJECT_ID": "worfklowai",
             "GOOGLE_VERTEX_AI_LOCATION": "us-central1",
             "GOOGLE_VERTEX_AI_CREDENTIALS": '{"type":"service_account","project_id":"worfklowai"}',
