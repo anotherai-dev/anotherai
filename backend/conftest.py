@@ -314,3 +314,16 @@ def mock_provider_factory():
 def cap_structlogs():
     with capture_logs() as cap_logs:
         yield cap_logs
+
+
+@pytest.fixture
+def mock_lifecycle_dependencies(mock_storage_builder: Mock, mock_event_router: Mock, mock_provider_factory: Mock):
+    from protocol._common.lifecycle import LifecycleDependencies
+    from protocol.api._services.security_service import SecurityService
+
+    mock = Mock(spec=LifecycleDependencies)
+    mock.storage_builder = mock_storage_builder
+    mock.security_service = Mock(spec=SecurityService)
+
+    with patch.object(LifecycleDependencies, "shared", new=mock):
+        yield mock
