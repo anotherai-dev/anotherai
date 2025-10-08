@@ -24,6 +24,7 @@ async def test_create_and_retrieve_annotation(test_api_client: IntegrationTestCl
             },
         ],
     )
+    experiment_id = res["id"]
 
     # This will create a single completion
     assert len(res["completions"]) == 1, "sanity"
@@ -38,6 +39,7 @@ async def test_create_and_retrieve_annotation(test_api_client: IntegrationTestCl
             "annotations": [
                 {
                     "target": {"completion_id": completion_id},
+                    "context": {"experiment_id": experiment_id},
                     "text": "This is a test annotation",
                     "author_name": "user",
                 },
@@ -60,3 +62,38 @@ async def test_create_and_retrieve_annotation(test_api_client: IntegrationTestCl
         },
     )
     assert len(anns["items"]) == 1
+
+    # Check that it's also available in Clickhouse
+    res = await test_api_client.call_tool(
+        "query_completions",
+        {
+            "query": "SELECT * FROM annotations WHERE agent_id = 'test-agent'",
+        },
+    )
+    assert res
+    assert len(res["rows"]) == 1
+    assert res["rows"][0]["agent_id"] == "test-agent"
+    assert res["rows"][0]["completion_id"] == completion_id, "completion_id mismatch"
+    assert res["rows"][0]["experiment_id"] == experiment_id, "experiment_id mismatch"
+
+    # Let's add an annotation to the experiment
+    await test_api_client.call_tool(
+        "add_annotations",
+        {
+            "annotations": [{"target": {"experiment_id": experiment_id}, "text": "Ann XP", "author_name": "user"}],
+        },
+    )
+    await test_api_client.wait_for_background()
+
+    res = await test_api_client.call_tool(
+        "query_completions",
+        {
+            "query": "SELECT completion_id, experiment_id FROM annotations WHERE agent_id = 'test-agent'",
+        },
+    )
+    assert res
+    assert len(res["rows"]) == 2
+
+    # If I get the experiment I should get both
+    exp = await test_api_client.get(f"/v1/experiments/{experiment_id}")
+    assert len(exp["annotations"]) == 2

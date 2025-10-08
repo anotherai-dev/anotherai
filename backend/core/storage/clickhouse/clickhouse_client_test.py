@@ -23,7 +23,7 @@ from core.domain.version import Version
 from core.storage.clickhouse._models._ch_annotation import ClickhouseAnnotation
 from core.storage.clickhouse._models._ch_completion import ClickhouseCompletion
 from core.storage.clickhouse._models._ch_experiment import ClickhouseExperiment
-from core.storage.clickhouse._models._ch_field_utils import data_and_columns
+from core.storage.clickhouse._models._ch_field_utils import data_and_columns, zip_columns
 from core.storage.clickhouse.clickhouse_client import (
     _CACHED_OUTPUT_QUERY,
     ClickhouseClient,
@@ -88,6 +88,13 @@ class TestStoreAnnotation:
 
         await client.store_annotation(annotation, _insert_settings)
 
+        res = await client._client.query("SELECT * FROM annotations")
+        rows = zip_columns(res.column_names, res.result_rows)
+        assert len(rows) == 1
+        assert rows[0]["completion_id"] == uuid7(ms=lambda: 0, rand=lambda: 4)
+        assert rows[0]["metric_name"] == "approved"
+        assert rows[0]["metric_value_bool"] is True
+
     async def test_store_annotation_with_no_metric(self, client: ClickhouseClient):
         """Test storing annotation without any metric"""
         annotation = fake_annotation(
@@ -106,21 +113,11 @@ class TestStoreAnnotation:
 
         await client.store_annotation(annotation, _insert_settings)
 
-    async def test_store_annotation_without_target_completion_id(self, client: ClickhouseClient):
-        """Test that storing annotation without target completion_id raises ValueError"""
-        annotation = fake_annotation(
-            target=Annotation.Target(completion_id=None, experiment_id="exp-123"),
-        )
-
-        with pytest.raises(ValueError, match="Annotation is required to target a completion"):
-            await client.store_annotation(annotation, _insert_settings)
-
-    async def test_store_annotation_without_target(self, client: ClickhouseClient):
-        """Test that storing annotation without target raises ValueError"""
-        annotation = fake_annotation(target=None)
-
-        with pytest.raises(ValueError, match="Annotation is required to target a completion"):
-            await client.store_annotation(annotation, _insert_settings)
+        res = await client._client.query("SELECT * FROM annotations")
+        rows = zip_columns(res.column_names, res.result_rows)
+        assert len(rows) == 1
+        assert rows[0]["completion_id"] == uuid7(ms=lambda: 0, rand=lambda: 6)
+        assert rows[0]["metadata"] == {"user_id": "analyst_123", "tags": "review", "priority": "high"}
 
     async def test_store_annotation_with_no_context(self, client: ClickhouseClient):
         """Test storing annotation without context"""
@@ -131,6 +128,13 @@ class TestStoreAnnotation:
 
         await client.store_annotation(annotation, _insert_settings)
 
+        res = await client._client.query("SELECT * FROM annotations")
+        rows = zip_columns(res.column_names, res.result_rows)
+        assert len(rows) == 1
+        assert rows[0]["completion_id"] == uuid7(ms=lambda: 0, rand=lambda: 7)
+        assert rows[0]["experiment_id"] == ""
+        assert rows[0]["agent_id"] == ""
+
     async def test_store_annotation_with_no_metadata(self, client: ClickhouseClient):
         """Test storing annotation with None metadata"""
         annotation = fake_annotation(
@@ -139,6 +143,26 @@ class TestStoreAnnotation:
         )
 
         await client.store_annotation(annotation, _insert_settings)
+        res = await client._client.query("SELECT * FROM annotations")
+        rows = zip_columns(res.column_names, res.result_rows)
+        assert len(rows) == 1
+        assert rows[0]["completion_id"] == uuid7(ms=lambda: 0, rand=lambda: 8)
+        assert rows[0]["experiment_id"] == ""
+
+    async def test_store_annotation_with_experiment_id(self, client: ClickhouseClient):
+        """Test storing annotation with experiment_id"""
+        annotation = fake_annotation(
+            target=Annotation.Target(experiment_id="test-experiment"),
+        )
+
+        await client.store_annotation(annotation, _insert_settings)
+
+        # Check that the experiment_id is stored
+        res = await client._client.query("SELECT * FROM annotations")
+        rows = zip_columns(res.column_names, res.result_rows)
+        assert len(rows) == 1
+        assert rows[0]["experiment_id"] == "test-experiment"
+        assert rows[0]["completion_id"] == UUID(int=0)
 
 
 class TestStoreExperiment:

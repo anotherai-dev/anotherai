@@ -62,7 +62,10 @@ class AnnotationService:
             return
 
         if annotation.target.experiment_id:
-            experiment = await self.experiment_storage.get_experiment(annotation.target.experiment_id)
+            experiment = await self.experiment_storage.get_experiment(
+                annotation.target.experiment_id,
+                include={"agent_id"},
+            )
             annotation.set_context_agent_id(experiment.agent_id)
             return
 
@@ -72,12 +75,15 @@ class AnnotationService:
         await self.annotation_storage.create(annotation)
 
         # TODO: insert all annotations at once
-        if annotation.target and annotation.target.completion_id:
+        if annotation.target:
+            # TODO: use actual event
             add_background_task(self.completion_storage.store_annotation(annotation))
 
     async def add_annotations(self, annotations: list[Annotation]) -> None:
         if not annotations:
             return
+
+        # TODO: automatically add context if annotation targets a completion ?
 
         domain_annotations = [annotation_to_domain(annotation) for annotation in annotations]
         # Create one annotation at a time, n+1 is ok because we rarely add more than 1 annotation at
