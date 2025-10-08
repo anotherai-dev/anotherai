@@ -7,7 +7,7 @@ from asyncpg.pool import PoolConnectionProxy
 
 from core.domain.annotation import Annotation
 from core.domain.exceptions import ObjectNotFoundError
-from core.storage.annotation_storage import AnnotationStorage, ContextFilter, TargetFilter
+from core.storage.annotation_storage import AnnotationStorage
 from core.storage.psql._psql_base_storage import JSONDict, PsqlBaseRow, PsqlBaseStorage, WithUpdatedAtRow
 from core.utils.fields import datetime_zero
 from core.utils.uuid import uuid7
@@ -62,11 +62,12 @@ class PsqlAnnotationStorage(PsqlBaseStorage, AnnotationStorage):
 
             _ = await self._insert(connection, row)
 
-    async def _where_annotations(  # noqa: C901
+    async def _where_annotations(
         self,
         connection: PoolConnectionProxy,
-        target: TargetFilter | None,
-        context: ContextFilter | None,
+        experiment_id: str | None,
+        completion_id: UUID | None,
+        agent_id: str | None,
         since: datetime | None,
     ) -> tuple[list[str], list[Any]]:
         where: list[str] = ["deleted_at IS NULL"]
@@ -76,53 +77,36 @@ class PsqlAnnotationStorage(PsqlBaseStorage, AnnotationStorage):
             where.append(f"created_at > ${len(arguments) + 1}")
             arguments.append(since)
 
-        experiment_ids = set[str]()
-        if target and target.experiment_id:
-            experiment_ids.update(target.experiment_id)
-        if context and context.experiment_id:
-            experiment_ids.update(context.experiment_id)
+        if experiment_id is not None:
+            experiment_uid_map = await self._experiment_uids(connection, {experiment_id})
+            where.append(
+                f"(target_experiment_uid = ${len(arguments) + 1} OR context_experiment_uid = ${len(arguments) + 1})",
+            )
+            arguments.append(experiment_uid_map[experiment_id])
 
-        experiment_uid_map = await self._experiment_uids(connection, experiment_ids)
+        if completion_id is not None:
+            where.append(f"target_completion_id = ${len(arguments) + 1}")
+            arguments.append(str(completion_id))
 
-        if target:
-            target_filter: list[str] = []
-            if target.experiment_id:
-                target_experiment_uids = [experiment_uid_map.get(e) for e in target.experiment_id]
-                target_filter.append(f"target_experiment_uid = ANY(${len(arguments) + 1})")
-                arguments.append(target_experiment_uids)
-            if target.completion_id:
-                target_filter.append(f"target_completion_id = ANY(${len(arguments) + 1})")
-                arguments.append([str(c) for c in target.completion_id])
-            if len(target_filter) == 1:
-                where.append(target_filter[0])
-            elif target_filter:
-                where.append("(" + " OR ".join(target_filter) + ")")
-        if context:
-            if context.experiment_id is not None:
-                if context.experiment_id:
-                    context_experiment_uids = [experiment_uid_map.get(e) for e in context.experiment_id]
-                    where.append(f"context_experiment_uid = ANY(${len(arguments) + 1})")
-                    arguments.append(context_experiment_uids)
-                else:
-                    where.append("context_experiment_uid IS NULL")
-            if context.agent_id:
-                agent_uids = await self._agent_uids(connection, context.agent_id)
-                where.append(f"context_agent_uid = ANY(${len(arguments) + 1})")
-                arguments.append(set(agent_uids.values()))
+        if agent_id is not None:
+            agent_uids = await self._agent_uids(connection, {agent_id})
+            where.append(f"context_agent_uid = ${len(arguments) + 1}")
+            arguments.append(agent_uids[agent_id])
 
         return where, arguments
 
     @override
     async def list(
         self,
-        target: TargetFilter | None,
-        context: ContextFilter | None,
-        since: datetime | None,
-        limit: int,
+        experiment_id: str | None = None,
+        completion_id: UUID | None = None,
+        agent_id: str | None = None,
+        since: datetime | None = None,
+        limit: int = 100,
     ) -> list[Annotation]:
         # Convert experiment IDs to UIDs for filtering
         async with self._connect() as connection:
-            where, arguments = await self._where_annotations(connection, target, context, since)
+            where, arguments = await self._where_annotations(connection, experiment_id, completion_id, agent_id, since)
             query = f"""
             SELECT *
             FROM annotations

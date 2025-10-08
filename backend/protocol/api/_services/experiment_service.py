@@ -86,8 +86,13 @@ class ExperimentService:
 
         annotations: list[Annotation] = []
         if include is None or "annotations" in include:
-            # TODO: get annotations for the experiment
-            annotations = []
+            annotations = await self.annotation_storage.list(
+                experiment_id=experiment_id,
+                completion_id=None,
+                agent_id=None,
+                since=None,
+                limit=100,
+            )
 
         # getting annotations as needed
         return experiment_from_domain(exp, annotations)
