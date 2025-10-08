@@ -1,4 +1,3 @@
-from collections.abc import Collection
 from typing import Any, Literal, Protocol
 from uuid import UUID
 
@@ -16,8 +15,6 @@ class CompletionStorage(Protocol):
     async def store_annotation(self, annotation: Annotation): ...
 
     async def store_experiment(self, experiment: Experiment): ...
-
-    async def add_completions_to_experiment(self, experiment_id: str, completion_ids: Collection[UUID]): ...
 
     async def completions_by_ids(
         self,

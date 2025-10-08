@@ -1,5 +1,5 @@
 import re
-from collections.abc import Collection, Iterable, Iterator, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from typing import Any, NamedTuple, cast, final, override
 from uuid import UUID
 
@@ -61,30 +61,6 @@ class ClickhouseClient(CompletionStorage):
     async def store_experiment(self, experiment: Experiment, settings: dict[str, Any] | None = None):
         stored_model = ClickhouseExperiment.from_domain(self.tenant_uid, experiment)
         await self._insert("experiments", stored_model, settings)
-
-    @override
-    async def add_completions_to_experiment(
-        self,
-        experiment_id: str,
-        completion_ids: Collection[UUID],
-        settings: dict[str, Any] | None = None,
-    ):
-        # Use ALTER TABLE to update the completion_ids array
-        # Since we're using ReplacingMergeTree, we need to update the updated_at as well
-        # Convert UUIDs to strings as clickhouse_connect expects string representation
-        completion_ids_str = [str(uuid) for uuid in completion_ids]
-        await self._client.command(
-            """
-            ALTER TABLE experiments UPDATE
-                completion_ids = arrayDistinct(arrayConcat(completion_ids, {completion_ids:Array(UUID)}))
-            WHERE id = {experiment_id:String}
-            """,
-            parameters={
-                "completion_ids": completion_ids_str,
-                "experiment_id": experiment_id,
-            },
-            settings=settings or {},
-        )
 
     @override
     async def store_completion(
