@@ -48,8 +48,8 @@ export async function getPreviewContent(): Promise<PreviewContentData | null> {
           );
         },
         h3: ({ children }) => <h3 className="text-xl font-normal text-gray-900 mt-6 mb-3">{children}</h3>,
-        ul: ({ children }) => <ul className="space-y-1 text-gray-600 mb-4 text-base">{children}</ul>,
-        li: ({ children }) => <li>– {children}</li>,
+        ul: ({ children }) => <ul className="space-y-1 text-gray-600 mb-4 text-base list-disc pl-6">{children}</ul>,
+        li: ({ children }) => <li>{children}</li>,
         a: ({ href, children }) => (
           <a href={href} className="text-blue-600 hover:underline">
             {children}
@@ -82,8 +82,8 @@ export async function getPreviewContent(): Promise<PreviewContentData | null> {
           return (
             <div className="bg-gray-100 border border-gray-200 rounded mb-6 relative group">
               <CopyButton text={textToCopy} />
-              <div className="p-4 overflow-x-auto">
-                <pre className="text-sm font-mono text-gray-800 whitespace-pre">{children}</pre>
+              <div className="p-4">
+                <pre className="text-sm font-mono text-gray-800 whitespace-pre-wrap">{children}</pre>
               </div>
             </div>
           );
