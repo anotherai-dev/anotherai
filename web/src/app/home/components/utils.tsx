@@ -50,11 +50,24 @@ export async function getPreviewContent(): Promise<PreviewContentData | null> {
         h3: ({ children }) => <h3 className="text-xl font-normal text-gray-900 mt-6 mb-3">{children}</h3>,
         ul: ({ children }) => <ul className="space-y-1 text-gray-600 mb-4 text-base list-disc pl-6">{children}</ul>,
         li: ({ children }) => <li>{children}</li>,
-        a: ({ href, children }) => (
-          <a href={href} className="text-blue-600 hover:underline">
-            {children}
-          </a>
-        ),
+        a: ({ href, children }) => {
+          // Check if the link is external (starts with http/https or is absolute)
+          const isExternal =
+            href && (href.startsWith("http://") || href.startsWith("https://") || href.startsWith("//"));
+
+          return (
+            <a
+              href={href}
+              className="text-blue-600 hover:underline"
+              {...(isExternal && {
+                target: "_blank",
+                rel: "noopener noreferrer",
+              })}
+            >
+              {children}
+            </a>
+          );
+        },
         strong: ({ children }) => <strong className="font-medium">{children}</strong>,
         code: ({ children }) => (
           <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono text-gray-800">{children}</code>

@@ -13,6 +13,8 @@ export function Header() {
           <nav className="hidden md:flex items-center gap-8">
             <a
               href="https://docs.anotherai.dev"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
             >
               Documentation
