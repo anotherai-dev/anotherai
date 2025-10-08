@@ -1,9 +1,10 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from core.domain.annotation import Annotation
+from core.utils.uuid import uuid_zero
 
 
 class ClickhouseAnnotation(BaseModel):
@@ -12,8 +13,8 @@ class ClickhouseAnnotation(BaseModel):
     id: str
     updated_at: datetime
     agent_id: str
-    completion_id: UUID | None = None
-    experiment_id: str | None = None
+    completion_id: UUID = Field(default_factory=uuid_zero)
+    experiment_id: str = ""
     text: str | None = None
     metric_name: str | None = None
     metric_value_float: float | None = None
@@ -46,7 +47,7 @@ class ClickhouseAnnotation(BaseModel):
             id=annotation.id,
             updated_at=annotation.updated_at or annotation.created_at,
             agent_id=agent_id,
-            completion_id=completion_id,
+            completion_id=completion_id or uuid_zero(),
             text=annotation.text,
             metric_name=metric_name,
             metric_value_float=metric_value_float,
@@ -54,7 +55,7 @@ class ClickhouseAnnotation(BaseModel):
             metric_value_bool=metric_value_bool,
             metadata=annotation.metadata or {},
             author_name=annotation.author_name,
-            experiment_id=experiment_id,
+            experiment_id=experiment_id or "",
         )
 
 
