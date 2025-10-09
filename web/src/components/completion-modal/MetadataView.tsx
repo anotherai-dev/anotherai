@@ -1,5 +1,7 @@
+import { Copy } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { memo, useCallback } from "react";
+import { memo, useCallback, useState } from "react";
+import { useCopy } from "../../hooks/useCopy";
 import { buildQuery } from "../../utils/queries";
 
 type InfoRowProps = {
@@ -9,14 +11,37 @@ type InfoRowProps = {
 };
 
 const InfoRow = memo(function InfoRow({ title, value, onClick }: InfoRowProps) {
+  const { copyToClipboard } = useCopy();
+  const [isHovered, setIsHovered] = useState(false);
+
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering the onClick for deeplink
+    await copyToClipboard(value);
+  };
+
+  const showCopyButton = isHovered;
+
   return (
     <div
-      className={`bg-white border border-gray-200 rounded-[2px] p-2 ${onClick ? "cursor-pointer hover:bg-gray-50 hover:border-gray-300" : ""}`}
+      className={`bg-white border border-gray-200 rounded-[2px] ${isHovered ? "px-2 py-1.5" : "p-2"} ${onClick ? "cursor-pointer hover:bg-gray-50 hover:border-gray-200" : ""}`}
       onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <div className="flex justify-between items-center">
         <span className="text-xs font-medium text-gray-700">{title}</span>
-        <span className="text-xs text-gray-900 text-right">{value}</span>
+        <div className="flex items-center gap-1">
+          <span className="text-xs text-gray-900 text-right">{value}</span>
+          {showCopyButton && (
+            <button
+              onClick={handleCopy}
+              className="bg-white border border-gray-200 text-gray-900 hover:bg-gray-100 cursor-pointer h-5 w-5 rounded-[2px] flex items-center justify-center ml-1"
+              title="Copy to clipboard"
+            >
+              <Copy size={12} />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

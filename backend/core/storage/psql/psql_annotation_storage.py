@@ -160,7 +160,7 @@ LIMIT ${len(arguments) + 1}
                 """
                 UPDATE annotations
                 SET deleted_at = CURRENT_TIMESTAMP
-                WHERE slug = $2
+                WHERE slug = $1
                 """,
                 annotation_id,
             )
