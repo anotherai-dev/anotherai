@@ -73,7 +73,6 @@ class TestCreate:
             description="A test experiment",
             result=None,
             agent_id="nonexistent-agent",
-            run_ids=[],
             metadata={},
         )
 
@@ -117,48 +116,6 @@ class TestSetResult:
         await experiment_storage.set_result("nonexistent-experiment", "some result")
 
 
-class TestAddRunId:
-    async def test_add_run_id(
-        self,
-        experiment_storage: PsqlExperimentStorage,
-        sample_experiment: Experiment,
-    ):
-        await experiment_storage.create(sample_experiment)
-
-        run_id = uuid.uuid4()
-        await experiment_storage.add_run_id(sample_experiment.id, run_id)
-
-        retrieved = await experiment_storage.get_experiment(sample_experiment.id)
-        assert retrieved.run_ids == [str(run_id)]
-
-        # Add it again to make sure it's not added again
-        await experiment_storage.add_run_id(sample_experiment.id, run_id)
-        retrieved = await experiment_storage.get_experiment(sample_experiment.id)
-        assert retrieved.run_ids == [str(run_id)]
-
-    async def test_add_multiple_run_ids(
-        self,
-        experiment_storage: PsqlExperimentStorage,
-        sample_experiment: Experiment,
-    ):
-        await experiment_storage.create(sample_experiment)
-
-        run_ids = [uuid7(), uuid7(), uuid7()]
-        for run_id in run_ids:
-            await experiment_storage.add_run_id(sample_experiment.id, run_id)
-
-        retrieved = await experiment_storage.get_experiment(sample_experiment.id)
-        for run_id in run_ids:
-            assert str(run_id) in retrieved.run_ids
-
-    async def test_add_run_id_nonexistent_experiment(
-        self,
-        experiment_storage: PsqlExperimentStorage,
-    ):
-        # This should not raise an error - it's a valid operation that just doesn't match any rows
-        await experiment_storage.add_run_id("nonexistent-experiment", uuid7())
-
-
 class TestDelete:
     async def test_delete_experiment(
         self,
@@ -195,14 +152,9 @@ class TestListExperiments:
         # Create multiple experiments
         experiments: list[Experiment] = []
         for i in range(3):
-            experiment = Experiment(
+            experiment = fake_experiment(
                 id=f"test-experiment-{i}-{uuid.uuid4().hex[:8]}",
-                author_name="Test Author",
-                title=f"Test Experiment {i}",
-                description=f"A test experiment {i}",
-                result=None,
                 agent_id=test_agent.id,
-                run_ids=[],
                 metadata={"index": i},
             )
             experiments.append(experiment)
@@ -232,26 +184,8 @@ class TestListExperiments:
         await agent_storage.store_agent(agent2)
 
         # Create experiments for each agent
-        exp1 = Experiment(
-            id=f"exp-1-{uuid.uuid4().hex[:8]}",
-            author_name="Author",
-            title="Experiment 1",
-            description="Description 1",
-            result=None,
-            agent_id=agent1.id,
-            run_ids=[],
-            metadata={},
-        )
-        exp2 = Experiment(
-            id=f"exp-2-{uuid.uuid4().hex[:8]}",
-            author_name="Author",
-            title="Experiment 2",
-            description="Description 2",
-            result=None,
-            agent_id=agent2.id,
-            run_ids=[],
-            metadata={},
-        )
+        exp1 = fake_experiment(id=f"exp-1-{uuid.uuid4().hex[:8]}", agent_id=agent1.id)
+        exp2 = fake_experiment(id=f"exp-2-{uuid.uuid4().hex[:8]}", agent_id=agent2.id)
 
         await experiment_storage.create(exp1)
         await experiment_storage.create(exp2)
@@ -272,16 +206,8 @@ class TestListExperiments:
     ):
         # Create multiple experiments
         for i in range(5):
-            experiment = Experiment(
-                id=f"test-experiment-{i}-{uuid.uuid4().hex[:8]}",
-                author_name="Test Author",
-                title=f"Test Experiment {i}",
-                description=f"A test experiment {i}",
-                result=None,
-                agent_id=test_agent.id,
-                run_ids=[],
-                metadata={"index": i},
-            )
+            experiment = fake_experiment(id=f"test-experiment-{i}-{uuid.uuid4().hex[:8]}", agent_id=test_agent.id)
+
             await experiment_storage.create(experiment)
 
         # List with limit
@@ -298,15 +224,9 @@ class TestListExperiments:
         experiment_storage: PsqlExperimentStorage,
     ):
         # Create experiment in tenant 1
-        experiment = Experiment(
+        experiment = fake_experiment(
             id=f"test-experiment-{uuid.uuid4().hex[:8]}",
-            author_name="Test Author",
-            title="Test Experiment",
-            description="A test experiment",
-            result=None,
             agent_id=test_agent.id,
-            run_ids=[],
-            metadata={},
         )
         await experiment_storage.create(experiment)
 

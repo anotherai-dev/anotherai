@@ -1,5 +1,6 @@
 import re
 from enum import StrEnum
+from uuid import UUID
 
 from core.domain.exceptions import BadRequestError
 from core.utils.hash import HASH_REGEXP_32
@@ -63,3 +64,11 @@ def sanitize_id(value: str, expected_type: IDType) -> str:
 def sanitize_ids(ids: list[str], expected_type: IDType):
     for id in ids:
         yield sanitize_id(id, expected_type)
+
+
+def sanitized_completion_uuid(completion_id: str):
+    sanitized = sanitize_id(completion_id, IDType.COMPLETION)
+    try:
+        return UUID(sanitized)
+    except ValueError:
+        raise BadRequestError(f"Completion ID must be a UUID7: {completion_id}") from None

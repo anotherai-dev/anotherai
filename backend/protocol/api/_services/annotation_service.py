@@ -1,14 +1,14 @@
 from datetime import datetime
 from typing import final
-from uuid import UUID
 
 from core.domain.annotation import Annotation as DomainAnnotation
-from core.storage.annotation_storage import AnnotationStorage, ContextFilter, TargetFilter
+from core.storage.annotation_storage import AnnotationStorage
 from core.storage.completion_storage import CompletionStorage
 from core.storage.experiment_storage import ExperimentStorage
 from core.utils.background import add_background_task
 from protocol.api._api_models import Annotation, Page
 from protocol.api._services.conversions import annotation_from_domain, annotation_to_domain
+from protocol.api._services.ids_service import sanitized_completion_uuid
 
 
 @final
@@ -31,31 +31,16 @@ class AnnotationService:
         since: str | None = None,
         limit: int = 100,
     ) -> Page[Annotation]:
-        target_completion_ids = set[UUID]()
-        if completion_id:
-            target_completion_ids.add(UUID(completion_id))
-        if experiment_id:
-            # When querying via experiment_id we also include annotations for any run in the experiment
-            experiment = await self.experiment_storage.get_experiment(experiment_id)
-            target_completion_ids.update(map(UUID, experiment.run_ids))  # TODO
-
-        target = TargetFilter(
-            experiment_id={experiment_id} if experiment_id else None,
-            completion_id=target_completion_ids or None,
-        )
-        # Never filtering by experiment_id in the context
-        # Instead we just retrieve annotations for runs in the experiment
-        context = ContextFilter(
-            agent_id={agent_id} if agent_id else None,
-        )
-
         since_datetime = None
         if since:
             since_datetime = datetime.fromisoformat(since.rstrip("Z"))
 
+        sanitized_completion_id = sanitized_completion_uuid(completion_id) if completion_id else None
+
         domain_annotations = await self.annotation_storage.list(
-            target=target,
-            context=context,
+            experiment_id=experiment_id,
+            completion_id=sanitized_completion_id,
+            agent_id=agent_id,
             since=since_datetime,
             limit=limit,
         )
@@ -77,7 +62,10 @@ class AnnotationService:
             return
 
         if annotation.target.experiment_id:
-            experiment = await self.experiment_storage.get_experiment(annotation.target.experiment_id)
+            experiment = await self.experiment_storage.get_experiment(
+                annotation.target.experiment_id,
+                include={"agent_id"},
+            )
             annotation.set_context_agent_id(experiment.agent_id)
             return
 
@@ -86,32 +74,16 @@ class AnnotationService:
             await self._assign_agent_id(annotation)
         await self.annotation_storage.create(annotation)
 
-        if (
-            annotation.context
-            and annotation.context.experiment_id
-            and annotation.target
-            and annotation.target.completion_id
-        ):
-            # We are in the case of an annotation that targets a completion within the context of an experiment,
-            # so we need to add the completion to the experiment
-            await self.experiment_storage.add_run_id(
-                annotation.context.experiment_id,
-                annotation.target.completion_id,
-            )
-            add_background_task(
-                self.completion_storage.add_completion_to_experiment(
-                    annotation.context.experiment_id,
-                    annotation.target.completion_id,
-                ),
-            )
-
-        # TODO: fix the n+1
-        if annotation.target and annotation.target.completion_id:
+        # TODO: insert all annotations at once
+        if annotation.target:
+            # TODO: use actual event
             add_background_task(self.completion_storage.store_annotation(annotation))
 
     async def add_annotations(self, annotations: list[Annotation]) -> None:
         if not annotations:
             return
+
+        # TODO: automatically add context if annotation targets a completion ?
 
         domain_annotations = [annotation_to_domain(annotation) for annotation in annotations]
         # Create one annotation at a time, n+1 is ok because we rarely add more than 1 annotation at

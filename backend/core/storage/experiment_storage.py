@@ -37,9 +37,6 @@ class ExperimentStorage(Protocol):
 
     async def set_result(self, experiment_id: str, result: str) -> None: ...
 
-    # TODO: deprecate
-    async def add_run_id(self, experiment_id: str, run_id: UUID) -> None: ...
-
     async def delete(self, experiment_id: str) -> None: ...
 
     async def list_experiments(

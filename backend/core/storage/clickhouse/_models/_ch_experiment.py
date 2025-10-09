@@ -1,5 +1,4 @@
 from datetime import datetime
-from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -13,7 +12,6 @@ class ClickhouseExperiment(BaseModel):
     title: str
     description: str
     result: str | None
-    completion_ids: list[UUID]
     agent_id: str
     metadata: dict[str, str]
 
@@ -26,7 +24,6 @@ class ClickhouseExperiment(BaseModel):
             title=experiment.title,
             description=experiment.description,
             result=experiment.result,
-            completion_ids=[UUID(r) for r in experiment.run_ids],
             agent_id=experiment.agent_id,
             metadata=experiment.metadata or {},
         )

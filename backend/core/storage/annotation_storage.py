@@ -1,18 +1,8 @@
 from datetime import datetime
-from typing import NamedTuple, Protocol
+from typing import Protocol
 from uuid import UUID
 
 from core.domain.annotation import Annotation
-
-
-class TargetFilter(NamedTuple):
-    experiment_id: set[str] | None = None
-    completion_id: set[UUID] | None = None
-
-
-class ContextFilter(NamedTuple):
-    experiment_id: set[str] | None = None
-    agent_id: set[str] | None = None
 
 
 class AnnotationStorage(Protocol):
@@ -21,8 +11,9 @@ class AnnotationStorage(Protocol):
 
     async def list(
         self,
-        target: TargetFilter | None,
-        context: ContextFilter | None,
+        experiment_id: str | None,
+        completion_id: UUID | None,
+        agent_id: str | None,
         since: datetime | None,
         limit: int,
     ) -> list[Annotation]: ...

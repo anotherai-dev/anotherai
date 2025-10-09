@@ -39,6 +39,10 @@ class _Trace(BaseModel):
     tool_output_preview: str = ""
     duration_ds: int = 0
     cost_millionth_usd: int = 0
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    reasoning_tokens: int = 0
+    cached_tokens: int = 0
 
     @classmethod
     def from_domain(cls, trace: Trace):
@@ -51,6 +55,11 @@ class _Trace(BaseModel):
             base.model = trace.model
             base.provider = trace.provider
             base.usage = _stringify_json(trace.usage)
+            if trace.usage:
+                base.prompt_tokens = int(trace.usage.prompt.text_token_count or 0)
+                base.completion_tokens = int(trace.usage.completion.text_token_count or 0)
+                base.reasoning_tokens = int(trace.usage.completion.reasoning_token_count or 0)
+                base.cached_tokens = int(trace.usage.completion.cached_token_count or 0)
         elif isinstance(trace, ToolTrace):  # pyright: ignore [reportUnnecessaryIsInstance]
             base.name = trace.name
             base.tool_input_preview = trace.tool_input_preview
@@ -67,7 +76,6 @@ class _Trace(BaseModel):
                 cost_usd=cost_usd,
                 model=self.model,
                 provider=self.provider,
-                # TODO: make completion more accessible
                 usage=InferenceUsage.model_validate_json(self.usage) if self.usage else None,
             )
         if self.kind == "tool":

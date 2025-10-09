@@ -55,8 +55,6 @@ class Experiment(BaseModel):
 
     use_cache: CacheUsage | None = None
 
-    run_ids: list[str] = Field(default_factory=list)
-
     annotations: list[Annotation] = Field(default_factory=list)
 
     metadata: dict[str, Any] | None = None

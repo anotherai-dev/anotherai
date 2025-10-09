@@ -16,8 +16,6 @@ class CompletionStorage(Protocol):
 
     async def store_experiment(self, experiment: Experiment): ...
 
-    async def add_completion_to_experiment(self, experiment_id: str, completion_id: UUID): ...
-
     async def completions_by_ids(
         self,
         completions_ids: list[UUID],

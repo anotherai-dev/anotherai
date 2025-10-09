@@ -3,7 +3,9 @@
 import pytest
 
 from core.domain.annotation import Annotation
-from core.storage.clickhouse._models._ch_annotation import _extract_metric
+from core.storage.clickhouse._models._ch_annotation import ClickhouseAnnotation, _extract_metric
+from core.utils.uuid import uuid7
+from tests.fake_models import fake_annotation
 
 
 class TestExtractMetric:
@@ -54,3 +56,21 @@ class TestExtractMetric:
         metric = Annotation.Metric(name=expected[0], value=metric_value)
         result = _extract_metric(metric)
         assert result == expected
+
+
+class TestFromDomain:
+    def test_all_fields_set(self):
+        """Test that all fields are set correctly."""
+        annotation = fake_annotation()
+        ch_annotation = ClickhouseAnnotation.from_domain(1, annotation)
+        assert ch_annotation.model_fields_set == set(ClickhouseAnnotation.model_fields)
+
+    def test_experiment_id_set(self):
+        """Test that all fields are set correctly."""
+        annotation = fake_annotation(
+            target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 1)),
+            context=Annotation.Context(experiment_id="test-experiment"),
+        )
+        ch_annotation = ClickhouseAnnotation.from_domain(1, annotation)
+        assert ch_annotation.experiment_id == "test-experiment"
+        assert ch_annotation.completion_id == uuid7(ms=lambda: 0, rand=lambda: 1)

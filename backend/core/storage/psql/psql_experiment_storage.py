@@ -56,7 +56,6 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
                 title=experiment.title,
                 description=experiment.description,
                 result=experiment.result or None,
-                run_ids=experiment.run_ids or [],
                 metadata=experiment.metadata or {},
             )
 
@@ -72,19 +71,6 @@ class PsqlExperimentStorage(PsqlBaseStorage, ExperimentStorage):
                 WHERE slug = $2
                 """,
                 result,
-                experiment_id,
-            )
-
-    @override
-    async def add_run_id(self, experiment_id: str, run_id: UUID) -> None:
-        async with self._connect() as connection:
-            _ = await connection.execute(
-                """
-                UPDATE experiments
-                SET run_ids = array_append(run_ids, $1), updated_at = CURRENT_TIMESTAMP
-                WHERE slug = $2 AND NOT ($1 = ANY(run_ids))
-                """,
-                str(run_id),
                 experiment_id,
             )
 
@@ -636,7 +622,6 @@ class _ExperimentRow(AgentLinkedRow, WithUpdatedAtRow):
     title: str = ""
     description: str = ""
     result: str | None = None
-    run_ids: list[str] | None = None
     metadata: JSONDict | None = None
     use_cache: str | None = None
 
@@ -663,7 +648,6 @@ class _ExperimentRow(AgentLinkedRow, WithUpdatedAtRow):
             description=self.description,
             result=self.result,
             agent_id=self.agent_slug or "",
-            run_ids=self.run_ids or [],
             metadata=self.metadata or None,
             use_cache=self._use_cache_to_domain(),
             versions=versions,
