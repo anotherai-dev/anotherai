@@ -12,3 +12,8 @@ ADD COLUMN position INTEGER,
     ADD CONSTRAINT experiment_versions_alias_unique UNIQUE (experiment_uid, alias);
 CREATE UNIQUE INDEX experiment_versions_position_unique ON experiment_versions (experiment_uid, position)
 WHERE position IS NOT NULL;
+-- Fix annotation talbe to use uuids for completions
+ALTER TABLE annotations
+ALTER COLUMN target_completion_id
+TYPE UUID USING target_completion_id::UUID;
+

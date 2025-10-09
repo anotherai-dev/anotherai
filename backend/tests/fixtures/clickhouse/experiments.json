@@ -1,15 +1,12 @@
 [
   {
-    "id": "exp-billing-analysis",
+    "tenant_uid": 1,
     "created_at": "2025-01-20T09:00:00Z",
-    "updated_at": "2025-01-20T17:00:00Z",
-    "author_name": "experiment_manager",
+    "id": "exp-billing-analysis",
     "title": "Billing Issue Resolution Analysis",
     "description": "Analyzing how well the customer support agent handles billing-related inquiries",
     "result": "Agent successfully resolved 85% of billing issues with high customer satisfaction",
     "agent_id": "customer-support-agent",
-    "run_ids": ["01933b7c-b2a1-7000-8000-000000000001"],
-    "annotations": [],
     "metadata": {
       "experiment_type": "performance_analysis",
       "duration_days": "7",
@@ -17,16 +14,13 @@
     }
   },
   {
-    "id": "exp-code-quality",
+    "tenant_uid": 1,
     "created_at": "2025-01-20T08:00:00Z",
-    "updated_at": "2025-01-20T16:00:00Z",
-    "author_name": "engineering_lead",
+    "id": "exp-code-quality",
     "title": "Code Review Quality Assessment",
     "description": "Evaluating the effectiveness of AI-powered code review suggestions",
     "result": "Code review agent identified 92% of security vulnerabilities and 78% of performance issues",
     "agent_id": "code-review-agent",
-    "run_ids": ["01933b7c-b2a1-7000-8000-000000000002"],
-    "annotations": [],
     "metadata": {
       "experiment_type": "quality_assessment",
       "code_samples": "500",
@@ -34,16 +28,13 @@
     }
   },
   {
-    "id": "exp-data-analysis",
+    "tenant_uid": 1,
     "created_at": "2025-01-20T07:00:00Z",
-    "updated_at": "2025-01-20T19:00:00Z",
-    "author_name": "data_science_team",
+    "id": "exp-data-analysis",
     "title": "Data Analysis Accuracy Experiment",
     "description": "Testing the accuracy of data analysis and trend identification capabilities",
     "result": null,
     "agent_id": "data-analysis-agent",
-    "run_ids": ["01933b7c-b2a1-7000-8000-000000000003"],
-    "annotations": [],
     "metadata": {
       "experiment_type": "accuracy_testing",
       "dataset_size": "10000",
@@ -51,20 +42,13 @@
     }
   },
   {
-    "id": "exp-multi-agent-comparison",
+    "tenant_uid": 1,
     "created_at": "2025-01-19T10:00:00Z",
-    "updated_at": "2025-01-20T20:00:00Z",
-    "author_name": "research_team",
+    "id": "exp-multi-agent-comparison",
     "title": "Multi-Agent Performance Comparison",
     "description": "Comparing performance across different agent types on similar tasks",
     "result": "Customer support agent showed highest user satisfaction, code review agent had best accuracy on technical tasks",
     "agent_id": "multi-agent-comparison",
-    "run_ids": [
-      "01933b7c-b2a1-7000-8000-000000000001",
-      "01933b7c-b2a1-7000-8000-000000000002",
-      "01933b7c-b2a1-7000-8000-000000000003"
-    ],
-    "annotations": [],
     "metadata": {
       "experiment_type": "comparative_analysis",
       "agents_tested": "3",

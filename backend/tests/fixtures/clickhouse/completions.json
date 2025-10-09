@@ -1,323 +1,121 @@
 [
   {
+    "tenant_uid": 1,
+    "agent_id": "customer-support-agent",
     "id": "01933b7c-b2a1-7000-8000-000000000001",
-    "agent": {
-      "uid": 101,
-      "id": "customer-support-agent",
-      "name": "Customer Support Agent",
-      "created_at": "2025-01-20T10:00:00Z"
+    "updated_at": "2024-11-17T18:57:28.225000Z",
+    "version_id": "ad9568474746437dbe7f9f0cc9d6a5a0",
+    "version_model": "gpt-4o-mini",
+    "version": "{\"id\":\"ad9568474746437dbe7f9f0cc9d6a5a0\",\"model\":\"gpt-4o-mini\",\"provider\":\"openai\",\"temperature\":0.3,\"max_output_tokens\":500,\"use_structured_generation\":false,\"prompt\":[{\"role\":\"system\",\"content\":[{\"text\":\"You are a customer support agent for {{customer_name}}.\"}]}]}",
+    "input_id": "f0f00f31c1c9358090cc6f36685a9b9d",
+    "input_preview": "Customer inquiry about billing",
+    "input_messages": "[{\"role\":\"user\",\"content\":[{\"text\":\"Hi, I have a billing issue with my account.\"}]}]",
+    "input_variables": "{\"customer_name\":\"Alice Johnson\",\"ticket_id\":\"BILL-2025-001\"}",
+    "output_id": "96611af897a1138b7dd92a14d8df06ad",
+    "output_preview": "Billing issue resolution",
+    "output_messages": "[{\"role\":\"assistant\",\"content\":[{\"text\":\"I apologize for the billing error. I've initiated a refund for $29.99.\"}]}]",
+    "output_error": "",
+    "messages": "[{\"role\":\"system\",\"content\":[{\"text\":\"You are a customer support agent for {{customer_name}}.\"}]},{\"role\":\"user\",\"content\":[{\"text\":\"Hi, I have a billing issue with my account.\"}]}]",
+    "duration_ds": 22,
+    "cost_millionth_usd": 4500,
+    "metadata": {
+      "user_id": "user_001",
+      "department": "customer_support",
+      "priority": "high",
+      "anotherai/experiment_id": "exp-billing-analysis"
     },
-    "agent_input": {
-      "preview": "Customer inquiry about billing",
-      "variables": {
-        "customer_name": "Alice Johnson",
-        "ticket_id": "BILL-2025-001"
-      },
-      "messages": [
-        {
-          "role": "user",
-          "content": [
-            {
-              "text": "Hi, I have a billing issue with my account."
-            }
-          ]
-        }
-      ]
-    },
-    "agent_output": {
-      "preview": "Billing issue resolution",
-      "messages": [
-        {
-          "role": "assistant",
-          "content": [
-            {
-              "text": "I apologize for the billing error. I've initiated a refund for $29.99."
-            }
-          ]
-        }
-      ],
-      "error": null
-    },
-    "messages": [
-      {
-        "role": "system",
-        "content": [
-          {
-            "text": "You are a customer support agent for {{customer_name}}."
-          }
-        ]
-      },
-      {
-        "role": "user",
-        "content": [
-          {
-            "text": "Hi, I have a billing issue with my account."
-          }
-        ]
-      }
-    ],
-    "version": {
-      "model": "gpt-4o-mini",
-      "provider": "openai",
-      "temperature": 0.3,
-      "max_output_tokens": 500,
-      "use_structured_generation": false,
-      "tool_choice": null,
-      "prompt": [
-        {
-          "role": "system",
-          "content": [
-            {
-              "text": "You are a customer support agent for {{customer_name}}."
-            }
-          ]
-        }
-      ]
-    },
-    "status": "success",
-    "duration_seconds": 2.15,
-    "cost_usd": 0.0045,
-    "created_at": "2025-01-20T10:30:00Z",
+    "source": "api",
     "traces": [
       {
         "kind": "llm",
         "model": "gpt-4o-mini",
         "provider": "openai",
-        "duration_seconds": 2.15,
-        "cost_usd": 0.0045,
-        "usage": {
-          "prompt": {
-            "cached_token_count": 0,
-            "reasoning_token_count": 0,
-            "cost_usd": 0.002
-          },
-          "completion": {
-            "text_token_count": 95,
-            "cost_usd": 0.0025
-          }
-        }
+        "usage": "{\"prompt\":{\"cost_usd\":0.002},\"completion\":{\"text_token_count\":95.0,\"cost_usd\":0.0025}}",
+        "name": "",
+        "tool_input_preview": "",
+        "tool_output_preview": "",
+        "duration_ds": 22,
+        "cost_millionth_usd": 4500
       }
-    ],
-    "from_cache": false,
-    "source": "api",
-    "metadata": {
-      "user_id": "user_001",
-      "department": "customer_support",
-      "priority": "high"
-    }
+    ]
   },
   {
+    "tenant_uid": 1,
+    "agent_id": "code-review-agent",
     "id": "01933b7c-b2a1-7000-8000-000000000002",
-    "agent": {
-      "uid": 102,
-      "id": "code-review-agent",
-      "name": "Code Review Agent",
-      "created_at": "2025-01-20T10:30:00Z"
+    "updated_at": "2024-11-17T18:57:28.225000Z",
+    "version_id": "741ba66142d34816f0b2e10b4ffc3b48",
+    "version_model": "gpt-4o",
+    "version": "{\"id\":\"741ba66142d34816f0b2e10b4ffc3b48\",\"model\":\"gpt-4o\",\"provider\":\"openai\",\"temperature\":0.1,\"max_output_tokens\":800,\"use_structured_generation\":false,\"prompt\":[{\"role\":\"system\",\"content\":[{\"text\":\"You are a software engineer providing code reviews for {{language}}.\"}]}]}",
+    "input_id": "125ab480f2f2b526a7e7fc60e97b9221",
+    "input_preview": "Python code review",
+    "input_messages": "[{\"role\":\"user\",\"content\":[{\"text\":\"Please review this Python function.\"}]}]",
+    "input_variables": "{\"language\":\"python\",\"file_name\":\"data_processor.py\"}",
+    "output_id": "2b75bcc59be450de6b1b82bb918cad33",
+    "output_preview": "Code review with suggestions",
+    "output_messages": "[{\"role\":\"assistant\",\"content\":[{\"text\":\"I've reviewed your Python function and found several improvements.\"}]}]",
+    "output_error": "",
+    "messages": "[{\"role\":\"system\",\"content\":[{\"text\":\"You are a software engineer providing code reviews for {{language}}.\"}]},{\"role\":\"user\",\"content\":[{\"text\":\"Please review this Python function.\"}]}]",
+    "duration_ds": 34,
+    "cost_millionth_usd": 12000,
+    "metadata": {
+      "user_id": "dev_002",
+      "department": "engineering",
+      "priority": "medium",
+      "anotherai/experiment_id": "exp-code-quality"
     },
-    "agent_input": {
-      "preview": "Python code review",
-      "variables": {
-        "language": "python",
-        "file_name": "data_processor.py"
-      },
-      "messages": [
-        {
-          "role": "user",
-          "content": [
-            {
-              "text": "Please review this Python function."
-            }
-          ]
-        }
-      ]
-    },
-    "agent_output": {
-      "preview": "Code review with suggestions",
-      "messages": [
-        {
-          "role": "assistant",
-          "content": [
-            {
-              "text": "I've reviewed your Python function and found several improvements."
-            }
-          ]
-        }
-      ],
-      "error": null
-    },
-    "messages": [
-      {
-        "role": "system",
-        "content": [
-          {
-            "text": "You are a software engineer providing code reviews for {{language}}."
-          }
-        ]
-      },
-      {
-        "role": "user",
-        "content": [
-          {
-            "text": "Please review this Python function."
-          }
-        ]
-      }
-    ],
-    "version": {
-      "model": "gpt-4o",
-      "provider": "openai",
-      "temperature": 0.1,
-      "max_output_tokens": 800,
-      "use_structured_generation": false,
-      "tool_choice": null,
-      "prompt": [
-        {
-          "role": "system",
-          "content": [
-            {
-              "text": "You are a software engineer providing code reviews for {{language}}."
-            }
-          ]
-        }
-      ]
-    },
-    "status": "success",
-    "duration_seconds": 3.42,
-    "cost_usd": 0.012,
-    "created_at": "2025-01-20T11:15:00Z",
+    "source": "api",
     "traces": [
       {
         "kind": "llm",
         "model": "gpt-4o",
         "provider": "openai",
-        "duration_seconds": 3.42,
-        "cost_usd": 0.012,
-        "usage": {
-          "prompt": {
-            "cached_token_count": 0,
-            "reasoning_token_count": 0,
-            "cost_usd": 0.005
-          },
-          "completion": {
-            "text_token_count": 280,
-            "cost_usd": 0.007
-          }
-        }
+        "usage": "{\"prompt\":{\"cost_usd\":0.005},\"completion\":{\"text_token_count\":280.0,\"cost_usd\":0.007}}",
+        "name": "",
+        "tool_input_preview": "",
+        "tool_output_preview": "",
+        "duration_ds": 34,
+        "cost_millionth_usd": 12000
       }
-    ],
-    "from_cache": false,
-    "source": "api",
-    "metadata": {
-      "user_id": "dev_002",
-      "department": "engineering",
-      "priority": "medium"
-    }
+    ]
   },
   {
+    "tenant_uid": 1,
+    "agent_id": "data-analysis-agent",
     "id": "01933b7c-b2a1-7000-8000-000000000003",
-    "agent": {
-      "uid": 103,
-      "id": "data-analysis-agent",
-      "name": "Data Analysis Agent",
-      "created_at": "2025-01-20T09:00:00Z"
+    "updated_at": "2024-11-17T18:57:28.225000Z",
+    "version_id": "836bd2b5b94c28547eefac31d9142550",
+    "version_model": "claude-3-5-sonnet-20241022",
+    "version": "{\"id\":\"836bd2b5b94c28547eefac31d9142550\",\"model\":\"claude-3-5-sonnet-20241022\",\"provider\":\"anthropic\",\"temperature\":0.7,\"max_output_tokens\":1000,\"use_structured_generation\":false,\"prompt\":[{\"role\":\"system\",\"content\":[{\"text\":\"You are a data analyst analyzing {{quarter}} {{metric}} performance.\"}]}]}",
+    "input_id": "d7e405221518da0a060c1c636979d412",
+    "input_preview": "Q4 sales analysis",
+    "input_messages": "[{\"role\":\"user\",\"content\":[{\"text\":\"Analyze Q4 2024 sales data and provide insights.\"}]}]",
+    "input_variables": "{\"quarter\":\"Q4 2024\",\"metric\":\"revenue\"}",
+    "output_id": "9a8ae5ceaa50470d9298d6d8e6b7fd0b",
+    "output_preview": "Q4 2024 sales report",
+    "output_messages": "[{\"role\":\"assistant\",\"content\":[{\"text\":\"Q4 2024 Revenue: $2.4M (+15% YoY). Key insight: Enterprise segment drove 65% of growth.\"}]}]",
+    "output_error": "",
+    "messages": "[{\"role\":\"system\",\"content\":[{\"text\":\"You are a data analyst analyzing {{quarter}} {{metric}} performance.\"}]},{\"role\":\"user\",\"content\":[{\"text\":\"Analyze Q4 2024 sales data and provide insights.\"}]}]",
+    "duration_ds": 48,
+    "cost_millionth_usd": 25000,
+    "metadata": {
+      "user_id": "analyst_003",
+      "department": "business_intelligence",
+      "priority": "high"
     },
-    "agent_input": {
-      "preview": "Q4 sales analysis",
-      "variables": {
-        "quarter": "Q4 2024",
-        "metric": "revenue"
-      },
-      "messages": [
-        {
-          "role": "user",
-          "content": [
-            {
-              "text": "Analyze Q4 2024 sales data and provide insights."
-            }
-          ]
-        }
-      ]
-    },
-    "agent_output": {
-      "preview": "Q4 2024 sales report",
-      "messages": [
-        {
-          "role": "assistant",
-          "content": [
-            {
-              "text": "Q4 2024 Revenue: $2.4M (+15% YoY). Key insight: Enterprise segment drove 65% of growth."
-            }
-          ]
-        }
-      ],
-      "error": null
-    },
-    "messages": [
-      {
-        "role": "system",
-        "content": [
-          {
-            "text": "You are a data analyst analyzing {{quarter}} {{metric}} performance."
-          }
-        ]
-      },
-      {
-        "role": "user",
-        "content": [
-          {
-            "text": "Analyze Q4 2024 sales data and provide insights."
-          }
-        ]
-      }
-    ],
-    "version": {
-      "model": "claude-3-5-sonnet-20241022",
-      "provider": "anthropic",
-      "temperature": 0.7,
-      "max_output_tokens": 1000,
-      "use_structured_generation": false,
-      "tool_choice": null,
-      "prompt": [
-        {
-          "role": "system",
-          "content": [
-            {
-              "text": "You are a data analyst analyzing {{quarter}} {{metric}} performance."
-            }
-          ]
-        }
-      ]
-    },
-    "status": "success",
-    "duration_seconds": 4.78,
-    "cost_usd": 0.025,
-    "created_at": "2025-01-20T14:22:00Z",
+    "source": "web",
     "traces": [
       {
         "kind": "llm",
         "model": "claude-3-5-sonnet-20241022",
         "provider": "anthropic",
-        "duration_seconds": 4.78,
-        "cost_usd": 0.025,
-        "usage": {
-          "prompt": {
-            "cached_token_count": 0,
-            "reasoning_token_count": 0,
-            "cost_usd": 0.008
-          },
-          "completion": {
-            "text_token_count": 385,
-            "cost_usd": 0.017
-          }
-        }
+        "usage": "{\"prompt\":{\"cost_usd\":0.008},\"completion\":{\"text_token_count\":385.0,\"cost_usd\":0.017}}",
+        "name": "",
+        "tool_input_preview": "",
+        "tool_output_preview": "",
+        "duration_ds": 48,
+        "cost_millionth_usd": 25000
       }
-    ],
-    "from_cache": false,
-    "source": "web",
-    "metadata": {
-      "user_id": "analyst_003",
-      "department": "business_intelligence",
-      "priority": "high"
-    }
+    ]
   }
 ]

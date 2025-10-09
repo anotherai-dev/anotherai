@@ -63,28 +63,6 @@ class ClickhouseClient(CompletionStorage):
         await self._insert("experiments", stored_model, settings)
 
     @override
-    async def add_completion_to_experiment(
-        self,
-        experiment_id: str,
-        completion_id: UUID,
-        settings: dict[str, Any] | None = None,
-    ):
-        # Use ALTER TABLE to update the completion_ids array
-        # Since we're using ReplacingMergeTree, we need to update the updated_at as well
-        await self._client.command(
-            """
-            ALTER TABLE experiments UPDATE
-                completion_ids = arrayDistinct(arrayConcat(completion_ids, [{completion_id:UUID}]))
-            WHERE id = {experiment_id:String}
-            """,
-            parameters={
-                "completion_id": completion_id,
-                "experiment_id": experiment_id,
-            },
-            settings=settings or {},
-        )
-
-    @override
     async def store_completion(
         self,
         completion: AgentCompletion,
