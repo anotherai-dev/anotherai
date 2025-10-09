@@ -2,14 +2,13 @@ import asyncio
 import time
 from collections.abc import Collection
 from typing import Any, Literal, cast, final
-from uuid import UUID
 
 from core.domain.agent import Agent
 from core.domain.annotation import Annotation
 from core.domain.cache_usage import CacheUsage
 from core.domain.exceptions import ObjectNotFoundError
 from core.storage.agent_storage import AgentStorage
-from core.storage.annotation_storage import AnnotationStorage, TargetFilter
+from core.storage.annotation_storage import AnnotationStorage
 from core.storage.completion_storage import CompletionStorage
 from core.storage.experiment_storage import ExperimentFields, ExperimentStorage
 from core.utils.background import add_background_task
@@ -88,10 +87,11 @@ class ExperimentService:
         annotations: list[Annotation] = []
         if include is None or "annotations" in include:
             annotations = await self.annotation_storage.list(
-                target=TargetFilter(completion_id={UUID(run_id) for run_id in exp.run_ids}),
-                context=None,
+                experiment_id=experiment_id,
+                completion_id=None,
+                agent_id=None,
                 since=None,
-                limit=100,
+                limit=200,
             )
 
         # getting annotations as needed

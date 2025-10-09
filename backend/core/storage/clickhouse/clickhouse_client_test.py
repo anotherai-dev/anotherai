@@ -18,13 +18,12 @@ from core.domain.agent_output import AgentOutput
 from core.domain.annotation import Annotation
 from core.domain.error import Error
 from core.domain.exceptions import InvalidQueryError, ObjectNotFoundError
-from core.domain.experiment import Experiment
 from core.domain.message import Message
 from core.domain.version import Version
 from core.storage.clickhouse._models._ch_annotation import ClickhouseAnnotation
 from core.storage.clickhouse._models._ch_completion import ClickhouseCompletion
 from core.storage.clickhouse._models._ch_experiment import ClickhouseExperiment
-from core.storage.clickhouse._models._ch_field_utils import data_and_columns
+from core.storage.clickhouse._models._ch_field_utils import data_and_columns, zip_columns
 from core.storage.clickhouse.clickhouse_client import (
     _CACHED_OUTPUT_QUERY,
     ClickhouseClient,
@@ -89,6 +88,13 @@ class TestStoreAnnotation:
 
         await client.store_annotation(annotation, _insert_settings)
 
+        res = await client._client.query("SELECT * FROM annotations")
+        rows = zip_columns(res.column_names, res.result_rows)
+        assert len(rows) == 1
+        assert rows[0]["completion_id"] == uuid7(ms=lambda: 0, rand=lambda: 4)
+        assert rows[0]["metric_name"] == "approved"
+        assert rows[0]["metric_value_bool"] is True
+
     async def test_store_annotation_with_no_metric(self, client: ClickhouseClient):
         """Test storing annotation without any metric"""
         annotation = fake_annotation(
@@ -107,21 +113,11 @@ class TestStoreAnnotation:
 
         await client.store_annotation(annotation, _insert_settings)
 
-    async def test_store_annotation_without_target_completion_id(self, client: ClickhouseClient):
-        """Test that storing annotation without target completion_id raises ValueError"""
-        annotation = fake_annotation(
-            target=Annotation.Target(completion_id=None, experiment_id="exp-123"),
-        )
-
-        with pytest.raises(ValueError, match="Annotation is required to target a completion"):
-            await client.store_annotation(annotation, _insert_settings)
-
-    async def test_store_annotation_without_target(self, client: ClickhouseClient):
-        """Test that storing annotation without target raises ValueError"""
-        annotation = fake_annotation(target=None)
-
-        with pytest.raises(ValueError, match="Annotation is required to target a completion"):
-            await client.store_annotation(annotation, _insert_settings)
+        res = await client._client.query("SELECT * FROM annotations")
+        rows = zip_columns(res.column_names, res.result_rows)
+        assert len(rows) == 1
+        assert rows[0]["completion_id"] == uuid7(ms=lambda: 0, rand=lambda: 6)
+        assert rows[0]["metadata"] == {"user_id": "analyst_123", "tags": "review", "priority": "high"}
 
     async def test_store_annotation_with_no_context(self, client: ClickhouseClient):
         """Test storing annotation without context"""
@@ -132,14 +128,42 @@ class TestStoreAnnotation:
 
         await client.store_annotation(annotation, _insert_settings)
 
+        res = await client._client.query("SELECT * FROM annotations")
+        rows = zip_columns(res.column_names, res.result_rows)
+        assert len(rows) == 1
+        assert rows[0]["completion_id"] == uuid7(ms=lambda: 0, rand=lambda: 7)
+        assert rows[0]["experiment_id"] == ""
+        assert rows[0]["agent_id"] == ""
+
     async def test_store_annotation_with_no_metadata(self, client: ClickhouseClient):
         """Test storing annotation with None metadata"""
         annotation = fake_annotation(
             target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 8)),
+            context=None,
             metadata=None,
         )
 
         await client.store_annotation(annotation, _insert_settings)
+        res = await client._client.query("SELECT * FROM annotations")
+        rows = zip_columns(res.column_names, res.result_rows)
+        assert len(rows) == 1
+        assert rows[0]["completion_id"] == uuid7(ms=lambda: 0, rand=lambda: 8)
+        assert rows[0]["experiment_id"] == ""
+
+    async def test_store_annotation_with_experiment_id(self, client: ClickhouseClient):
+        """Test storing annotation with experiment_id"""
+        annotation = fake_annotation(
+            target=Annotation.Target(experiment_id="test-experiment"),
+        )
+
+        await client.store_annotation(annotation, _insert_settings)
+
+        # Check that the experiment_id is stored
+        res = await client._client.query("SELECT * FROM annotations")
+        rows = zip_columns(res.column_names, res.result_rows)
+        assert len(rows) == 1
+        assert rows[0]["experiment_id"] == "test-experiment"
+        assert rows[0]["completion_id"] == UUID(int=0)
 
 
 class TestStoreExperiment:
@@ -351,15 +375,14 @@ async def _load_file[D: BaseModel](
     clickhouse_client: AsyncClient,
     table: str,
     file: str,
-    domain_model: type[D],
-    conversion: Callable[[int, D], BaseModel],
+    model: type[BaseModel],
 ):
     _ = await clickhouse_client.command(f"TRUNCATE TABLE {table}")
     fixture: list[dict[str, Any]] = fixtures_json(f"clickhouse/{file}.json")
-    domain_models = [domain_model.model_validate(raw) for raw in fixture]
-    models = [conversion(1, model) for model in domain_models]
+
+    models = [model.model_validate({**raw, "tenant_uid": 1}) for raw in fixture]
     # Also duplicating for tenant_uid 2
-    models.append(conversion(2, domain_models[0]))
+    models.append(model.model_validate({**fixture[0], "tenant_uid": 2}))
 
     _, columns = data_and_columns(models[0], exclude_none=False)
     all_datas = [data_and_columns(model, exclude_none=False)[0] for model in models]
@@ -369,33 +392,28 @@ async def _load_file[D: BaseModel](
         data=all_datas,
         settings={"async_insert": 1, "wait_for_async_insert": 1},
     )
-    return domain_models
 
 
 class TestRawQuery:
     @pytest.fixture(scope="class")
     async def query_fn(self, clickhouse_client: AsyncClient):
-        # Truncate all tables
-        _ = await _load_file(
+        await _load_file(
             clickhouse_client,
             "completions",
             "completions",
-            AgentCompletion,
-            ClickhouseCompletion.from_domain,
+            ClickhouseCompletion,
         )
-        _ = await _load_file(
+        await _load_file(
             clickhouse_client,
             "annotations",
             "annotations",
-            Annotation,
-            ClickhouseAnnotation.from_domain,
+            ClickhouseAnnotation,
         )
-        _ = await _load_file(
+        await _load_file(
             clickhouse_client,
             "experiments",
             "experiments",
-            Experiment,
-            ClickhouseExperiment.from_domain,
+            ClickhouseExperiment,
         )
 
         async def query_fn(query: str, tenant_uid: int = 1):
@@ -527,8 +545,7 @@ class TestRawQuery:
         query_str = """
         SELECT c.id, c.output_preview
         FROM completions c
-        JOIN experiments e ON has(e.completion_ids, c.id)
-        WHERE e.id = 'exp-billing-analysis'
+        WHERE c.experiment_id = 'exp-billing-analysis'
         """
         result = await query_fn(query_str)
         assert len(result) == 1
@@ -555,23 +572,6 @@ class TestRawQuery:
         assert result[1]["quality_score"] == 8.1  # methodology_score from ann-006
         assert result[1]["agent_id"] == "data-analysis-agent"
 
-    async def test_experiments_with_completion_count(self, query_fn: Callable[[str], Awaitable[list[dict[str, Any]]]]):
-        """Get experiments with their completion counts"""
-        query_str = """
-        SELECT e.id, e.agent_id, length(e.completion_ids) as completion_count
-        FROM experiments e
-        ORDER BY completion_count DESC, e.id
-        """
-        result = await query_fn(query_str)
-        assert len(result) == 4
-        # Multi-agent experiment should have the most completions (3)
-        assert result[0]["id"] == "exp-multi-agent-comparison"
-        assert result[0]["completion_count"] == 3
-        # Other experiments should have 1 completion each, ordered by id
-        assert result[1]["completion_count"] == 1
-        assert result[2]["completion_count"] == 1
-        assert result[3]["completion_count"] == 1
-
     async def test_completions_with_security_annotations(
         self,
         query_fn: Callable[[str], Awaitable[list[dict[str, Any]]]],
@@ -594,30 +594,18 @@ class TestRawQuery:
         """Calculate average quality metrics per experiment"""
         query_str = """
         SELECT
-            e.id as experiment_id,
-            e.agent_id,
+            experiment_id,
+            c.agent_id,
             AVG(a.metric_value_float) as avg_quality_score,
             COUNT(a.id) as annotation_count
-        FROM experiments e
-        JOIN completions c ON has(e.completion_ids, c.id)
+        FROM completions c
         JOIN annotations a ON c.id = a.completion_id
         WHERE a.metric_value_float IS NOT NULL
-        GROUP BY e.id, e.agent_id
+        GROUP BY experiment_id, agent_id
         ORDER BY avg_quality_score DESC
         """
         result = await query_fn(query_str)
-        assert len(result) == 4
-        # Should include experiments with numeric metrics, ordered by avg score descending
-        # The actual values depend on which annotations belong to which experiments
-        for row in result:
-            assert row["avg_quality_score"] > 0
-            assert row["annotation_count"] > 0
-            assert row["experiment_id"] in [
-                "exp-billing-analysis",
-                "exp-code-quality",
-                "exp-data-analysis",
-                "exp-multi-agent-comparison",
-            ]
+        assert len(result) == 3
 
     async def test_recent_annotations_with_completion_context(
         self,
@@ -655,12 +643,11 @@ class TestRawQuery:
         SELECT DISTINCT
             c.id,
             c.agent_id,
-            e.id as experiment_id,
+            c.experiment_id,
             COUNT(a.id) as annotation_count
         FROM completions c
-        JOIN experiments e ON has(e.completion_ids, c.id)
         JOIN annotations a ON c.id = a.completion_id
-        GROUP BY c.id, c.agent_id, e.id
+        GROUP BY c.id, c.agent_id, c.experiment_id
         ORDER BY annotation_count DESC, c.id
         """
         result = await query_fn(query_str)
@@ -695,7 +682,7 @@ SELECT
     input_messages
 FROM completions
 WHERE
-    id IN (SELECT arrayJoin(completion_ids) FROM experiments WHERE id = 'exp-billing-analysis')
+    experiment_id = 'exp-billing-analysis'
 LIMIT 1 BY input_id
         """
         result = await query_fn(query_str)
@@ -739,76 +726,6 @@ LIMIT 1 BY input_id
             await client.raw_query(query)
         assert e.value.details["code"] == code
         assert e.value.details["error_type"] == error_type
-
-
-class TestAddCompletionToExperiment:
-    async def test_add_completion_to_experiment_basic(self, client: ClickhouseClient):
-        """Test adding a completion to an experiment updates the completion_ids array."""
-        # Create a test experiment
-        experiment = fake_experiment(
-            id="test-experiment-123",
-            agent_id="test-agent",
-            run_ids=[],  # Start with empty run_ids
-        )
-
-        # Store the experiment first
-        await client.store_experiment(experiment, _insert_settings)
-
-        # Generate a completion ID
-        completion_id = uuid7(ms=lambda: 0, rand=lambda: 1)
-
-        # Add completion to experiment
-        await client.add_completion_to_experiment("test-experiment-123", completion_id, {"mutations_sync": 1})
-
-        # Verify the completion was added by querying the database
-        result = await client._client.query(
-            """
-            SELECT completion_ids
-            FROM experiments
-            WHERE id = {experiment_id:String}
-            """,
-            parameters={
-                "experiment_id": "test-experiment-123",
-            },
-        )
-
-        assert len(result.result_rows) == 1
-        completion_ids = result.result_rows[0][0]  # First row, first column
-        assert completion_id in completion_ids
-
-    async def test_add_completion_to_experiment_duplicate_ignored(self, client: ClickhouseClient):
-        """Test that adding the same completion ID twice doesn't create duplicates."""
-        completion_id = uuid7(ms=lambda: 0, rand=lambda: 2)
-
-        # Create a test experiment with an existing completion ID
-        experiment = fake_experiment(
-            id="test-experiment-456",
-            agent_id="test-agent",
-            run_ids=[str(completion_id)],  # Start with one completion
-        )
-
-        # Store the experiment first
-        await client.store_experiment(experiment, _insert_settings)
-
-        # Add the same completion ID again
-        await client.add_completion_to_experiment("test-experiment-456", completion_id, {"mutations_sync": 1})
-
-        # Verify there's still only one instance of the completion ID
-        result = await client._client.query(
-            """
-            SELECT completion_ids
-            FROM experiments
-            WHERE tenant_uid = {tenant_uid:UInt32} AND id = {experiment_id:String}
-            """,
-            parameters={
-                "tenant_uid": client.tenant_uid,
-                "experiment_id": "test-experiment-456",
-            },
-        )
-
-        assert len(result.result_rows) == 1
-        completion_ids = result.result_rows[0][0]  # First row, first column
-        assert completion_ids.count(completion_id) == 1
 
 
 class TestGetVersionById:
