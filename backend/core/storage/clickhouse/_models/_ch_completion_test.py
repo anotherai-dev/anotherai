@@ -1,8 +1,10 @@
+# pyright: reportPrivateUsage=false
+
 from datetime import UTC, datetime
 from uuid import UUID
 
-from core.storage.clickhouse._models._ch_completion import DEFAULT_EXCLUDE, ClickhouseCompletion
-from tests.fake_models import fake_completion
+from core.storage.clickhouse._models._ch_completion import DEFAULT_EXCLUDE, ClickhouseCompletion, _Trace
+from tests.fake_models import fake_completion, fake_llm_trace
 
 
 class TestClickhouseCompletion:
@@ -132,7 +134,49 @@ class TestClickhouseCompletion:
             },
         }
 
+    def test_exhaustive(self):
+        completion = fake_completion()
+        ch_completion = ClickhouseCompletion.from_domain(1, completion)
+        assert ch_completion.model_fields_set == set(ClickhouseCompletion.model_fields)
+
 
 def test_default_exclude():
     field_names = set(ClickhouseCompletion.model_fields.keys())
     assert DEFAULT_EXCLUDE.issubset(field_names)
+
+
+class TestTrace:
+    def test_exhaustive(self):
+        trace = fake_llm_trace()
+        ch_trace = _Trace.from_domain(trace)
+        assert ch_trace.model_fields_set == set(_Trace.model_fields) - {
+            "name",
+            "tool_input_preview",
+            "tool_output_preview",
+        }
+
+    def test_sanity(self):
+        trace = fake_llm_trace()
+        ch_trace = _Trace.from_domain(trace)
+        domain = ch_trace.to_domain()
+        assert domain == trace
+
+    def test_model_validate(self):
+        # A static representation of the trace
+        # To make sure updates in the LLMUsage class don't break the validation
+        payload = {
+            "kind": "llm",
+            "model": "gpt-4o-mini",
+            "provider": "openai",
+            "usage": '{"prompt":{"cost_usd":1.0},"completion":{"text_token_count":100.0,"cost_usd":2.0,"cached_token_count":100.0,"reasoning_token_count":100.0}}',
+            "name": "",
+            "tool_input_preview": "",
+            "tool_output_preview": "",
+            "duration_ds": 10,
+            "cost_millionth_usd": 3000000,
+            "prompt_tokens": 10,
+            "completion_tokens": 100,
+            "reasoning_tokens": 100,
+            "cached_tokens": 100,
+        }
+        _Trace.model_validate(payload)
