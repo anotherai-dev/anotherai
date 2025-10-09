@@ -95,43 +95,43 @@ class TestCreate:
         assert created.metadata is None
 
 
-class TestList:
-    @pytest.fixture
-    async def inserted_annotations(
-        self,
-        annotation_storage: PsqlAnnotationStorage,
-        test_experiment: Experiment,
-        test_agent: Agent,
-    ):
-        annotations = [
-            # run target, no context
-            fake_annotation(
-                id="1",
-                target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 1)),
-                context=None,
-            ),
-            # run target, experiment context
-            fake_annotation(
-                id="2",
-                target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 1)),
-                context=Annotation.Context(experiment_id=test_experiment.id, agent_id=test_agent.id),
-            ),
-            # experiment target
-            fake_annotation(
-                id="3",
-                target=Annotation.Target(experiment_id=test_experiment.id),
-                context=None,
-            ),
-            # Another run
-            fake_annotation(
-                id="4",
-                target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 2)),
-                context=None,
-            ),
-        ]
-        _ = await gather(*[annotation_storage.create(a) for a in annotations])
-        return annotations
+@pytest.fixture
+async def inserted_annotations(
+    annotation_storage: PsqlAnnotationStorage,
+    test_experiment: Experiment,
+    test_agent: Agent,
+):
+    annotations = [
+        # run target, no context
+        fake_annotation(
+            id="1",
+            target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 1)),
+            context=None,
+        ),
+        # run target, experiment context
+        fake_annotation(
+            id="2",
+            target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 1)),
+            context=Annotation.Context(experiment_id=test_experiment.id, agent_id=test_agent.id),
+        ),
+        # experiment target
+        fake_annotation(
+            id="3",
+            target=Annotation.Target(experiment_id=test_experiment.id),
+            context=None,
+        ),
+        # Another run
+        fake_annotation(
+            id="4",
+            target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 2)),
+            context=None,
+        ),
+    ]
+    _ = await gather(*[annotation_storage.create(a) for a in annotations])
+    return annotations
 
+
+class TestList:
     async def test_no_filter(
         self,
         annotation_storage: PsqlAnnotationStorage,
@@ -253,3 +253,15 @@ class TestList:
             10,
         )
         assert len(retrieved) == 1, "sanity check"
+
+
+class TestDelete:
+    async def test_delete(
+        self,
+        annotation_storage: PsqlAnnotationStorage,
+        inserted_annotations: list[Annotation],
+    ):
+        await annotation_storage.delete(inserted_annotations[0].id)
+        retrieved = await annotation_storage.list(None, None, None, 10)
+        assert len(retrieved) == len(inserted_annotations) - 1
+        assert inserted_annotations[0].id not in {a.id for a in retrieved}
