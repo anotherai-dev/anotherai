@@ -58,7 +58,7 @@ services:
       # Overriding variables so that they are accessible from within the docker network
       PSQL_DSN: postgresql://default:admin@psql:5432/default
       CLICKHOUSE_DSN: clickhouse://default:admin@clickhouse:8123/default
-      FILE_STORAGE_DSN: "s3://minio:miniosecret@minio:9000/anotherai?secure=false"
+      FILE_STORAGE_DSN: "s3://minio:miniosecret@minio:9000/anotherai?secure=false&external_host=http://localhost:9000"
       MIGRATE_STORAGE_ON_STARTUP: "1"
     volumes:
       - ./backend/core:/app/core

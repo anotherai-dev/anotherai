@@ -1,40 +1,35 @@
 import asyncio
 import base64
 import hashlib
-import logging
 import mimetypes
-from typing import override
-from urllib.parse import urlparse
+from typing import NamedTuple, override
+from urllib.parse import parse_qs, urlparse
 
 import boto3
+import structlog
 from botocore.exceptions import ClientError
 
 from core.domain.file import File
 from core.storage.file_storage import CouldNotStoreFileError, FileStorage
 
+_log = structlog.get_logger(__name__)
+
 
 class S3FileStorage(FileStorage):
     def __init__(self, connection_string: str, tenant_uid: int):
-        parsed = urlparse(connection_string)
-        host = parsed.hostname
-        port = parsed.port
-        insecure = "secure=false" in parsed.query.lower()
-        self.host = f"{'http' if insecure else 'https'}://{host}"
-        if port:
-            self.host += f":{port}"
-        self.bucket_name = parsed.path.lstrip("/")
-        self._logger = logging.getLogger(__name__)
+        self._config = _parse_connection_string(connection_string)
+
         self._s3_client = boto3.client(
             "s3",
-            endpoint_url=self.host,
-            aws_access_key_id=parsed.username,
-            aws_secret_access_key=parsed.password,
+            endpoint_url=self._config.host,
+            aws_access_key_id=self._config.username,
+            aws_secret_access_key=self._config.password,
         )
         self._tenant_uid = tenant_uid
 
     def _put_object(self, key: str, body: bytes, content_type: str):
         self._s3_client.put_object(
-            Bucket=self.bucket_name,
+            Bucket=self._config.bucket_name,
             Key=f"{self._tenant_uid}/{key}",
             Body=body,
             ContentType=content_type,
@@ -63,6 +58,46 @@ class S3FileStorage(FileStorage):
                 file.content_type or "application/octet-stream",
             )
 
-            return f"{self.host}/{self.bucket_name}/{self._tenant_uid}/{key}"
+            return self._url(key)
         except ClientError as e:
             raise CouldNotStoreFileError("Failed to store file in S3") from e
+
+    def _url(self, key: str) -> str:
+        return f"{self._config.external_host}/{self._config.bucket_name}/{self._tenant_uid}/{key}"
+
+
+class _S3Config(NamedTuple):
+    host: str
+    bucket_name: str
+    username: str | None
+    password: str | None
+    external_host: str
+
+
+def _first_query_param(query_dict: dict[str, list[str]], param: str) -> str | None:
+    if p := query_dict.get(param):
+        return p[0]
+    return None
+
+
+def _parse_connection_string(connection_string: str) -> _S3Config:
+    parsed = urlparse(connection_string)
+    host = parsed.hostname
+    if not host:
+        raise ValueError("Host is required")
+    port = parsed.port
+
+    query_dict = parse_qs(parsed.query) if parsed.query else {}
+    insecure = _first_query_param(query_dict, "secure") == "false"
+
+    host = f"{'http' if insecure else 'https'}://{host}"
+    if port:
+        host += f":{port}"
+
+    return _S3Config(
+        host,
+        parsed.path.lstrip("/"),
+        username=parsed.username,
+        password=parsed.password,
+        external_host=_first_query_param(query_dict, "external_host") or host,
+    )
