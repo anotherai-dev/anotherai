@@ -77,31 +77,39 @@ def fake_experiment_input(**kwargs: Any):
     )
 
 
+def fake_llm_trace(**kwargs: Any):
+    traces = LLMTrace(
+        model="gpt-4o-mini",
+        provider="openai",
+        duration_seconds=1.0,
+        cost_usd=3.0,
+        usage=InferenceUsage(
+            prompt=TokenUsage(
+                cost_usd=1.0,
+            ),
+            completion=CompletionUsage(
+                cached_token_count=100,
+                reasoning_token_count=100,
+                text_token_count=100,
+                cost_usd=2.0,
+            ),
+        ),
+    )
+    return LLMTrace.model_validate(
+        {
+            **traces.model_dump(),
+            **kwargs,
+        },
+    )
+
+
 def fake_completion(agent: Agent | None = None, id_rand: int = 1, **kwargs: Any):
     base = AgentCompletion(
         agent=agent or Agent(uid=1, id="hello", name="hello", created_at=datetime(2025, 1, 1, 1, 1, 1, tzinfo=UTC)),
         id=uuid7(ms=lambda: 0, rand=lambda: id_rand),
         duration_seconds=1.0,
         cost_usd=1.0,
-        traces=[
-            LLMTrace(
-                model="gpt-4o-mini",
-                provider="openai",
-                duration_seconds=1.0,
-                cost_usd=3.0,
-                usage=InferenceUsage(
-                    prompt=TokenUsage(
-                        cost_usd=1.0,
-                    ),
-                    completion=CompletionUsage(
-                        cached_token_count=100,
-                        reasoning_token_count=100,
-                        text_token_count=100,
-                        cost_usd=2.0,
-                    ),
-                ),
-            ),
-        ],
+        traces=[fake_llm_trace()],
         from_cache=False,
         metadata={
             "user_id": "user_123",
