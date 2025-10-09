@@ -316,7 +316,7 @@ function ValueDisplay({ value, textSize, showSeeMore, keyName }: ValueDisplayPro
       <span
         ref={contentRef}
         className={cx(
-          "inline-block px-3 py-1.5 font-medium bg-white border border-gray-200 text-gray-800 rounded-[2px] relative break-all hyphens-auto",
+          "inline-block px-3 py-1.5 font-medium bg-white border border-gray-200 text-gray-800 rounded-[2px] relative break-words hyphens-auto",
           textSizeClass
         )}
         style={textSizeStyle}
@@ -324,7 +324,7 @@ function ValueDisplay({ value, textSize, showSeeMore, keyName }: ValueDisplayPro
         onMouseLeave={() => setIsHovered(false)}
       >
         <div
-          className={cx("py-1 break-all hyphens-auto", shouldTruncateByHeight && !isExpanded ? "overflow-hidden" : "")}
+          className={cx("py-1 break-words hyphens-auto", shouldTruncateByHeight && !isExpanded ? "overflow-hidden" : "")}
           style={shouldTruncateByHeight && !isExpanded ? { maxHeight: `${MAX_HEIGHT_PX - 30}px` } : {}}
         >
           {'"'}
