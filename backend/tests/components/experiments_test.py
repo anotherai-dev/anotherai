@@ -1,39 +1,20 @@
-from typing import Any
-
 import pytest
 from httpx import HTTPStatusError
 
 from tests.components._common import IntegrationTestClient
 
 
-# TODO:
-@pytest.mark.skip("Skipping for now")
 async def test_create_and_annotate_experiment(test_api_client: IntegrationTestClient):
-    # Create an experiment manually
-    exp = await test_api_client.post(
-        "/v1/experiments",
-        {
-            "title": "Test Experiment",
-            "description": "This is a test experiment",
-            "agent_id": "test-agent",
-            "author_name": "Test Author",
-        },
+    test_api_client.mock_provider_call("openai", "gpt-4.1", "openai/completion.json")
+    exp = await test_api_client.playground(
+        version={"model": "gpt-4.1", "prompt": [{"role": "user", "content": "Hello {{name}}!"}]},
+        inputs=[{"variables": {"name": "Toulouse"}}],
     )
     assert "id" in exp
-    assert not exp.get("completions")
 
-    # Now run a completion
-    test_api_client.mock_provider_call("openai", "gpt-4.1", "openai/completion.json")
-    client = test_api_client.openai_client()
-    response = await client.chat.completions.create(
-        model="gpt-4.1",
-        messages=[{"role": "user", "content": "Hello, world!"}],
-    )
-    completion_id = response.id
-    await test_api_client.wait_for_background()
-
-    exp = await test_api_client.get(f"/v1/experiments/{exp['id']}")
-    assert not exp.get("completions"), "sanity"
+    completions = exp["completions"]
+    assert len(completions) == 1
+    completion_id = completions[0]["id"]
 
     # If I add an annotation to the completion, but not the experiment, the 2 are not linked
     _ = await test_api_client.post(
@@ -48,8 +29,11 @@ async def test_create_and_annotate_experiment(test_api_client: IntegrationTestCl
             },
         ],
     )
+    await test_api_client.wait_for_background()
     exp = await test_api_client.get(f"/v1/experiments/{exp['id']}")
-    assert not exp.get("completions"), "completion should not be linked to the experiment"
+    annotations = exp["annotations"]
+    assert len(annotations) == 1
+    assert annotations[0]["target"]["completion_id"] == completion_id
 
     # Now try to add an annotation to the experiment
     _ = await test_api_client.post(
@@ -57,9 +41,6 @@ async def test_create_and_annotate_experiment(test_api_client: IntegrationTestCl
         [
             {
                 "target": {
-                    "completion_id": completion_id,
-                },
-                "context": {
                     "experiment_id": exp["id"],
                 },
                 "text": "This is a test annotation",
@@ -68,27 +49,19 @@ async def test_create_and_annotate_experiment(test_api_client: IntegrationTestCl
         ],
     )
 
-    # Now try to retrieve the experiment
     exp = await test_api_client.get(f"/v1/experiments/{exp['id']}")
-    assert len(exp["completions"]) == 1
-    assert exp["completions"][0]["id"] == completion_id
-    assert len(exp["annotations"]) == 2  # 2 annotations total
+    annotations = exp["annotations"]
+    assert len(annotations) == 2
 
-    await test_api_client.wait_for_background()
+    # Let's try and query the experiment
 
-    # Now let's try and query the completions
-    query_for_annotations = """SELECT id FROM completions JOIN annotations ON completions.id = annotations.completion_id WHERE annotations.author_name = 'Test Author'"""
-    result: list[dict[str, Any]] = await test_api_client.get(f"/v1/completions/query?query={query_for_annotations}")  # pyright: ignore [reportAssignmentType]
-    assert len(result) == 2
-
-    # Now let's try and query the experiments
-    query_for_experiments = f"""SELECT version_id FROM completions WHERE id IN (SELECT arrayJoin(completion_ids) FROM experiments WHERE id = '{exp["id"]}')"""  # noqa: S608
-    result = await test_api_client.get(f"/v1/completions/query?query={query_for_experiments}")  # pyright: ignore [reportAssignmentType]
-    assert len(result) == 1
-
-    # If I list all annotations for the experiment, I should get all the annotations
-    annotations = await test_api_client.get(f"/v1/annotations?experiment_id={exp['id']}")
-    assert len(annotations["items"]) == 2
+    exp = await test_api_client.call_tool(
+        "query_completions",
+        {
+            "query": f"SELECT id FROM completions JOIN annotations ON completions.id = annotations.completion_id WHERE completions.experiment_id = '{exp['id']}'",  # noqa: S608
+        },
+    )
+    assert len(exp["rows"]) == 1
 
 
 async def test_create_experiment_user_defined_id(test_api_client: IntegrationTestClient):
