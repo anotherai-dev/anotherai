@@ -291,9 +291,102 @@ of @food-analysis-dataset.json as inputs to the experiment.
 
 ## Evaluating the Results of Running Your Dataset
 
-To evaluate your agent's outputs from running your dataset, you have two approaches:
+There are multiple ways to automate the evaluation process of your agent with the help of AnotherAI. We've included examples of two types of evaluations here: single-dimension evaluations and multi-dimension evaluations.
 
-1. **Deterministic evaluation (using code)**
+### Single-Dimension Evaluations
+
+The following process is adapted from Shreya Shankar and Hamel Husain's AI evaluation process. To learn more, see [this podcast](https://www.youtube.com/watch?v=BsWxPI9UM4c). You may want to pick this option over a multi-dimension evaluation if you want a very strict, detailed evaluation and are okay spending a bit more time on the process.
+
+**What is a Failure Mode?**
+
+A failure mode is a specific category of error that your agent is prone to making. Identifying specific failure modes allows you to build evaluation scripts that handle evaluating your agent's outputs based on a single scope. Writing an evaluation (either a script or an LLM-as-a-judge) that handles a single failure mode is much easier than writing one that handles all failure modes.
+
+Here is the recommended process for identifying failure modes:
+
+#### Example: Creating a Single-Dimension Evaluation
+
+<Steps>
+<Step>
+**Annotate your agent's completions** 
+
+The first step in this process is to review your agent's completions and provide specific feedback about what isn't working well. All completions from your agents are saved in the AnotherAI. You can access them at any time:
+1. Open https://anotherai.dev/
+2. Select `Agents` from the left sidebar
+3. Select the name of the agent you want to review completions for
+4. Scroll down the page and select `View all Completions`
+
+It's important for you, a human, to add these initial annotations (instead of asking your AI assistant to do it for you) in order to provide the correct guidance and level of specificity needed for AI to effectively assist you later in the process. 
+
+**Tips**
+- We highly recommend starting by annotating 100 completions, in order to provide a representative sample of the agent's performance and potential issues.
+- Don't overthink your annotations; they don't need to capture every possible area of improvement. Focus on the most important issues first.
+- Be specific. Saying that an output simply is "bad" does not provide information about the specific problem areas that need to be addressed.
+
+</Step>
+<Step>
+**Use an LLM to identify common themes in the annotations (finding axial codes)**
+
+Once you have your 100 completions annotated, you can ask your AI assistant to analyze the annotations and identify common themes:
+
+```
+Review each completion from anotherai/agent/email-rewriter that had an annotation added
+to it in the last 2 hours. The completions have annotations that contain open codes for
+analysis of LLM logs that we are conducting. Please extract all of the open codes. From
+the annotations left, propose 5-6 categories that we can create axial codes from.
+```
+Your AI assistant will extract the open codes from the annotations and provide you with a list of categories that you can create axial codes from:
+
+![Extracted Open Codes from Annotations](/images/extracted-open-codes-annotations.png)
+
+</Step>
+
+<Step>
+**Finalize Axial Codes**
+
+It's very likely that the first draft of the axial codes will need some refinement; in our experience AI assistant's first draft will contain categories that are too general and not actionable. Manually refine or continue to work with your AI assistant to polish the category names so that their scope is immediately understandable at a glance and the scope is specific enough to focus improvement efforts on. 
+
+Example of a bad axial code:
+- `Quality of Question`: This is too broad and not actionable - is there one specific issue with the question? Is the quality good or bad?
+
+Example of an improvement for the above axial code:
+- `Appropriateness of Questions for Enhancing a Product Briefing`: This is more specific - it states what the question is being evaluated on (how fitting the question is) and in what context (the scope of enhancing a product briefing).
+</Step>
+
+<Step>
+**Categorize completions by Axial Codes**
+
+Once you have the axial codes finalized, you can ask your AI assistant to help categorize each annotation into the appropriate axial code.
+
+```
+Categorize each of the annotations you extracted from anotherai/agent/email-rewriter into 
+one of our axial code categories.
+```
+
+If you're interested in using Google sheets and the AI funciton to help with this categorization, you can refer to [the podcast](https://www.youtube.com/watch?v=BsWxPI9UM4c) this method originated from, for a clear demo. 
+
+</Step>
+
+<Step>
+**Review failure modes and decide if evaluations are needed**
+
+Review the categorizations performed by your AI assistant. 
+
+You will probably want to create an eval for the following types:
+- Severe failure modes: these are failures that have the largest impact on your user's experience with your agent. These might be aspects of your agent's outputs where accuracy is essential (ex. an output field returning whether an input food product contains an allergen), or failure modes that occur frequently enough to a significant number of individual users are impacted.
+- Subjective, nuanced failure modes: these are failures modes where there isn't one, correct answer. For example, if evaluating responses of a chatbot agent, there isn't always a single, correct answer to when the chatbot should connect the user with a live customer support agent.
+
+<Callout type="info">
+**Not all failure modes require evaluations**
+
+Some failure modes are due to simple engineering oversights that can be fixed directly. For example, if you wanted your output to always contain the same fields, you can simply update your agent's output schema to use structured output. Once you've added structured output, you likely do not need to write an evaluation to regularly assess whether the output contains the correct fields.
+</Callout>
+</Step>
+<Step>
+**Decide which *type* of evaluation you want to write**
+
+Your evals can either be deterministic scripts (ie. unit tests) or LLM-as-a-judge evals. 
+<Accordions>
+<Accordion title="Deterministic evaluation (using code)">
 
 This approach is best when there is one correct, expected output for each input. In these cases you can write a simple script to compare the actual and expected outputs and run the script to evaluate the results.
 
@@ -302,7 +395,10 @@ Types of agents that can usually be evaluated using deterministic evaluation:
 - Data extraction: Extracted JSON must match expected structure
 - Classification: Output must be one of specific categories
 
-2. **LLM-as-a-judge (automated)** 
+Since deterministic evaluation scripts are a well-known concept we are not highlighting the creation process of this type of eval here. If you have questions or need a hand with writing these types of evaluations, please reach out to us at [team@workflowai.support](mailto:team@workflowai.support) or on [Slack](https://join.slack.com/t/anotherai-dev/shared_invite/zt-3av2prezr-Lz10~8o~rSRQE72m_PyIJA).
+
+</Accordion>
+<Accordion title="LLM-as-a-judge (automated)">
 
 Many agents don't have just one correct answer, though. When multiple outputs could be considered correct, you cannot evaluate deterministically with code. In these cases we recommend building an LLM-as-a-judge system to evaluate the results.
 
@@ -313,18 +409,97 @@ Types of agents that can usually be evaluated using LLM-as-a-judge:
 
 For example: If generating a product description, "This comfortable blue shirt is perfect for casual wear" and "A relaxed-fit blue shirt ideal for everyday occasions" are both correct despite being completely different text. You need LLM as a judge to evaluate if both capture the key product features correctly.
 
-### Handling Complex Evaluations with LLMs as a Judge
+</Accordion>
+</Accordions>
 
-LLM-as-a-judge is recommended when you cannot evaluate deterministically with code using equality checks. This style of evalution uses one AI model to evaluate the outputs of another, thus taking advantage of LLM's ability to reason and deduce correctness based on previous examples or criteria instead of a strict equality check.
+</Step>
+<Step>
+**Writing single-dimension LLM as a judge evaluations**
 
-### Key Benefits
+If you determine that at least one of your failure modes would benefit from an LLM-as-a-judge evaluation, the next task is to build a judge agent. This judge agent will evaluate completions from your original agent and outputs only whether the completion PASSES or FAILS meeting the single criteria of the given failure mode.
 
-- **Scalability**: Evaluate hundreds or thousands of outputs automatically
-- **Consistency**: Apply the same evaluation criteria uniformly using a single judge model
-- **Structured Feedback**: Get detailed scores and explanations for each criterion
-- **Continuous Monitoring**: Track quality over time as you iterate
+You can use your AI assistant to help you create your LLM-as-a-judge agent but similar to the initial annotation phase, it's important for you to be involved so you can ensure that the criteria is specific enough and contains clear description of pass/fail criteria.
 
-### Example: Email Summarizer Evaluation
+Here's an example of a prompt to build an LLM-as-a-judge agent to evaluate whether an agent tasked with providing feedback uses specific examples in its feedback (PASS) or does not (FAIL).
+
+```
+I need you to create an LLM-as-a-judge agent in AnotherAI that evaluates whether anotherai/agent/product-briefing-evaluator outputs contains concrete examples when critiquing product briefings.
+
+Requirements for the Judge Agent:
+
+1. Inputs:
+    - The original product briefing (full JSON)
+    - anotherai/agent/product-briefing-evaluator's complete output (full JSON)
+2. Output Schema:
+   -  "pass": boolean (pass: true = The evaluator provides concrete examples; pass: false = The evaluator is missing concrete examples)
+   -  "failures_identified": [a list of specific failures found in the output]
+
+WHAT CONSTITUTES CONCRETE EXAMPLES?
+1. Direct quotes from the briefing (e.g., "The phrase 'We are seeking a strategic provider' is clear")
+2. Specific section references (e.g., "The Key Requirements section lacks timeline information")
+3. Exact values or ranges (e.g., "The budget range of $3,000-$20,000 is too broad")
+4. Named elements (e.g., "The company name 'Coca-Cola' contradicts the shoe company description")
+5. Specific missing items (e.g., "Target audience demographics are not included")
+
+WHAT FAILS (Missing Concrete Examples)
+- "Some sentences could be simplified" (Which sentences specifically?)
+- "Certain aspects need improvement" (Which aspects?)
+- "More details needed" (About what specifically?)
+- "Could benefit from more structure" (What part lacks structure?)
+- "The essential elements are covered" (Which elements?)
+- "Complex sentences need work" (Which sentences are complex?)
+
+Please create this agent using AnotherAI's experiment tools, following the LLM-as-a-judge pattern from the documentation."
+```
+
+After creating your agent, you can use AnotherAI experiments to test the previous completions where issues matching that failure mode were detected to ensure that the agent fails them correctly.
+
+```
+Create an experiment with anotherai/agent/product-briefing-evaluator-examples-judge and use the following completions as inputs:
+  - 0199c4f1-75ed-73fb-56d1-6d861e026122
+  - 0199c4f1-75ed-7173-86ab-b5a53a4d192c
+  - 0199c4f1-75ed-7103-2330-aec28ad41e5f
+```
+It's also recommended you test with other runs as well to ensure that the prompt works in other cases.
+
+</Step>
+</Steps>
+
+
+### Multi-Dimension Evaluations
+
+In contrast to the Single-Dimension approach, if you would rather have a single, open-ended evaluation that evaluates the agent's outputs across multiple dimensions, you can follow the process below. You might want to pick this approach if you want an option that is less time consuming and provides a score for each dimension as opposed to a strict pass/fail. 
+
+As with the Single-Dimension approach, you can either write a deterministic evaluation script or an LLM-as-a-judge evaluation.
+
+<Accordions>
+<Accordion title="Deterministic evaluation (using code)">
+
+This approach is best when there is one correct, expected output for each input. In these cases you can write a simple script to compare the actual and expected outputs and run the script to evaluate the results.
+
+Types of agents that can usually be evaluated using deterministic evaluation:
+- Math problems: `2 + 2 = 4` (exact match)
+- Data extraction: Extracted JSON must match expected structure
+- Classification: Output must be one of specific categories
+
+Since deterministic evaluation scripts are a well-known concept we are not highlighting the creation process of this type of eval here. If you have questions or need a hand with writing these types of evaluations, please reach out to us at [team@workflowai.support](mailto:team@workflowai.support) or on [Slack](https://join.slack.com/t/anotherai-dev/shared_invite/zt-3av2prezr-Lz10~8o~rSRQE72m_PyIJA).
+
+</Accordion>
+<Accordion title="LLM-as-a-judge (automated)">
+
+Many agents don't have just one correct answer, though. When multiple outputs could be considered correct, you cannot evaluate deterministically with code. In these cases we recommend building an LLM-as-a-judge system to evaluate the results.
+
+Types of agents that can usually be evaluated using LLM-as-a-judge:
+- Text generation: Two different summaries can both be correct even with different wording
+- Creative writing: Many valid ways to write the same content
+- Analysis tasks: Different interpretations can be equally valid
+
+For example: If generating a product description, "This comfortable blue shirt is perfect for casual wear" and "A relaxed-fit blue shirt ideal for everyday occasions" are both correct despite being completely different text. You need LLM as a judge to evaluate if both capture the key product features correctly.
+
+</Accordion>
+</Accordions>
+
+#### Example: Creating a Multi-Dimension Evaluation
 
 Let's walk through evaluating an email summarization agent. In this example, our agent:
 - Takes an email as input
