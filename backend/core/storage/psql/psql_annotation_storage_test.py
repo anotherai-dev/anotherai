@@ -1,3 +1,5 @@
+# pyright: reportPrivateUsage=false
+
 import uuid
 from asyncio import gather
 
@@ -5,7 +7,8 @@ import pytest
 
 from core.domain.agent import Agent
 from core.domain.annotation import Annotation
-from core.domain.experiment import Experiment
+from core.domain.experiment import Experiment, ExperimentInput, ExperimentVersion
+from core.storage.experiment_storage import CompletionIDTuple
 from core.storage.psql.psql_agent_storage import PsqlAgentsStorage
 from core.storage.psql.psql_annotation_storage import PsqlAnnotationStorage
 from core.storage.psql.psql_experiment_storage import PsqlExperimentStorage
@@ -27,6 +30,20 @@ async def test_experiment(experiment_storage: PsqlExperimentStorage, test_agent:
         agent_id=test_agent.id,
     )
     await experiment_storage.create(experiment)
+    _input = ExperimentInput(variables={"a": "b"})
+    await experiment_storage.add_inputs(experiment.id, [_input])
+    _version = ExperimentVersion(model="gpt-4o")
+    await experiment_storage.add_versions(experiment.id, [_version])
+    await experiment_storage.add_completions(
+        experiment.id,
+        [
+            CompletionIDTuple(
+                completion_id=uuid7(ms=lambda: 0, rand=lambda: 7),
+                version_id=_version.id,
+                input_id=_input.id,
+            ),
+        ],
+    )
     return experiment
 
 
@@ -126,6 +143,12 @@ class TestList:
                 target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 2)),
                 context=None,
             ),
+            # Annotation linked to run in experiment but without experiment context
+            fake_annotation(
+                id="5",
+                target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 7)),
+                context=None,
+            ),
         ]
         _ = await gather(*[annotation_storage.create(a) for a in annotations])
         return annotations
@@ -147,8 +170,8 @@ class TestList:
         test_experiment: Experiment,
     ):
         retrieved = await annotation_storage.list(experiment_id=test_experiment.id)
-        assert len(retrieved) == 2
-        assert {a.id for a in retrieved} == {"2", "3"}
+        assert len(retrieved) == 3
+        assert {a.id for a in retrieved} == {"2", "3", "5"}
 
     async def test_filter_completion(
         self,
@@ -185,3 +208,61 @@ class TestList:
         )
         assert len(retrieved) == 1
         assert retrieved[0].id == "2"
+
+
+class TestAnnotationsQuery:
+    def test_completion_id(self, annotation_storage: PsqlAnnotationStorage):
+        query, arguments = annotation_storage._annotations_query(
+            experiment_id=None,
+            completion_id=uuid7(ms=lambda: 0, rand=lambda: 1),
+            agent_id=None,
+            since=None,
+            limit=10,
+        )
+        assert arguments == [uuid7(ms=lambda: 0, rand=lambda: 1), 10]
+        assert (
+            query.strip()
+            == """SELECT *
+FROM annotations
+WHERE deleted_at IS NULL AND target_completion_id = $1
+ORDER BY created_at DESC
+LIMIT $2"""
+        )
+
+    def test_agent_id(self, annotation_storage: PsqlAnnotationStorage):
+        query, arguments = annotation_storage._annotations_query(
+            experiment_id=None,
+            completion_id=None,
+            agent_id="test-agent",
+            since=None,
+            limit=10,
+        )
+        assert arguments == ["test-agent", 10]
+        assert (
+            query.strip()
+            == """WITH a AS (SELECT uid from agents where slug = $1)
+SELECT *
+FROM annotations, a
+WHERE deleted_at IS NULL AND context_agent_uid = a.uid
+ORDER BY created_at DESC
+LIMIT $2"""
+        )
+
+    def test_experiment_id(self, annotation_storage: PsqlAnnotationStorage):
+        query, arguments = annotation_storage._annotations_query(
+            experiment_id="test-experiment",
+            completion_id=None,
+            agent_id=None,
+            since=None,
+            limit=10,
+        )
+        assert arguments == ["test-experiment", 10]
+        assert (
+            query.strip()
+            == """WITH e AS (SELECT uid from experiments where slug = $1)
+SELECT *
+FROM annotations, e
+WHERE deleted_at IS NULL AND (target_experiment_uid = e.uid OR context_experiment_uid = e.uid OR target_completion_id IN (SELECT completion_id FROM experiment_outputs WHERE experiment_uid = e.uid))
+ORDER BY created_at DESC
+LIMIT $2"""
+        )

@@ -62,38 +62,55 @@ class PsqlAnnotationStorage(PsqlBaseStorage, AnnotationStorage):
 
             _ = await self._insert(connection, row)
 
-    async def _where_annotations(
-        self,
-        connection: PoolConnectionProxy,
+    @classmethod
+    def _annotations_query(
+        cls,
         experiment_id: str | None,
         completion_id: UUID | None,
         agent_id: str | None,
         since: datetime | None,
-    ) -> tuple[list[str], list[Any]]:
+        limit: int,
+    ) -> tuple[str, list[Any]]:
         where: list[str] = ["deleted_at IS NULL"]
         arguments: list[Any] = []
+        _with: list[str] = []
+        _from: list[str] = ["annotations"]
 
         if since is not None:
             where.append(f"created_at > ${len(arguments) + 1}")
             arguments.append(since)
 
         if experiment_id is not None:
-            experiment_uid_map = await self._experiment_uids(connection, {experiment_id})
+            _with.append(f"e AS (SELECT uid from experiments where slug = ${len(arguments) + 1})")  # noqa: S608
             where.append(
-                f"(target_experiment_uid = ${len(arguments) + 1} OR context_experiment_uid = ${len(arguments) + 1})",
+                "(target_experiment_uid = e.uid "
+                "OR context_experiment_uid = e.uid "
+                "OR target_completion_id IN ("
+                "SELECT completion_id FROM experiment_outputs WHERE experiment_uid = e.uid))",
             )
-            arguments.append(experiment_uid_map[experiment_id])
+            _from.append("e")
+            arguments.append(experiment_id)
 
         if completion_id is not None:
             where.append(f"target_completion_id = ${len(arguments) + 1}")
-            arguments.append(str(completion_id))
+            arguments.append(completion_id)
 
         if agent_id is not None:
-            agent_uids = await self._agent_uids(connection, {agent_id})
-            where.append(f"context_agent_uid = ${len(arguments) + 1}")
-            arguments.append(agent_uids[agent_id])
+            _with.append(f"a AS (SELECT uid from agents where slug = ${len(arguments) + 1})")  # noqa: S608
+            where.append("context_agent_uid = a.uid")
+            _from.append("a")
+            arguments.append(agent_id)
 
-        return where, arguments
+        query = f"""
+{"WITH " + ", ".join(_with) + "\n" if _with else ""}SELECT *
+FROM {", ".join(_from)}
+WHERE {" AND ".join(where)}
+ORDER BY created_at DESC
+LIMIT ${len(arguments) + 1}
+"""  # noqa: S608
+        arguments.append(limit)
+
+        return query, arguments
 
     @override
     async def list(
@@ -106,19 +123,11 @@ class PsqlAnnotationStorage(PsqlBaseStorage, AnnotationStorage):
     ) -> list[Annotation]:
         # Convert experiment IDs to UIDs for filtering
         async with self._connect() as connection:
-            where, arguments = await self._where_annotations(connection, experiment_id, completion_id, agent_id, since)
-            query = f"""
-            SELECT *
-            FROM annotations
-            WHERE {" AND ".join(where)}
-            ORDER BY created_at DESC
-            LIMIT ${len(arguments) + 1}
-            """  # noqa: S608 # OK here since where is defined above
+            query, arguments = self._annotations_query(experiment_id, completion_id, agent_id, since, limit)
 
             rows = await connection.fetch(
                 query,
                 *arguments,
-                limit,
             )
 
             validated_rows: list[_AnnotationRow] = []
@@ -163,7 +172,7 @@ class _AnnotationRow(PsqlBaseRow, WithUpdatedAtRow):
     slug: str = ""
 
     author_name: str = ""
-    target_completion_id: str | None = None
+    target_completion_id: UUID | None = None
     target_experiment_uid: int | None = None
     target_key_path: str | None = None
     context_experiment_uid: int | None = None
@@ -186,7 +195,7 @@ class _AnnotationRow(PsqlBaseRow, WithUpdatedAtRow):
         return cls(
             slug=ann.id,
             author_name=ann.author_name,
-            target_completion_id=str(ann.target.completion_id) if ann.target and ann.target.completion_id else None,
+            target_completion_id=ann.target.completion_id if ann.target and ann.target.completion_id else None,
             target_experiment_uid=target_experiment_uid,
             target_key_path=ann.target.key_path if ann.target else None,
             context_experiment_uid=context_experiment_uid,
@@ -218,7 +227,7 @@ class _AnnotationRow(PsqlBaseRow, WithUpdatedAtRow):
             return None
         target = Annotation.Target(
             experiment_id=experiment_ids.get(self.target_experiment_uid, "") if self.target_experiment_uid else None,
-            completion_id=UUID(self.target_completion_id) if self.target_completion_id else None,
+            completion_id=self.target_completion_id,
             key_path=self.target_key_path,
         )
         if not target.model_dump(exclude_none=True):

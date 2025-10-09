@@ -91,7 +91,7 @@ class ExperimentService:
                 completion_id=None,
                 agent_id=None,
                 since=None,
-                limit=100,
+                limit=200,
             )
 
         # getting annotations as needed
