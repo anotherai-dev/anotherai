@@ -139,6 +139,7 @@ class TestStoreAnnotation:
         """Test storing annotation with None metadata"""
         annotation = fake_annotation(
             target=Annotation.Target(completion_id=uuid7(ms=lambda: 0, rand=lambda: 8)),
+            context=None,
             metadata=None,
         )
 
