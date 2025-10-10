@@ -50,11 +50,6 @@ function CompletionTableVersionCell({ value }: CompletionTableVersionCellProps) 
         });
       }
 
-      // Check stream (default: false)
-      if (obj.stream !== undefined && obj.stream !== false) {
-        nonDefaultEntries.push({ key: "stream", value: String(obj.stream) });
-      }
-
       // Check include_usage (default: false)
       if (obj.include_usage !== undefined && obj.include_usage !== false) {
         nonDefaultEntries.push({

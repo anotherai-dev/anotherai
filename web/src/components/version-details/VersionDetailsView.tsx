@@ -33,7 +33,6 @@ export function VersionDetailsView({
       "tools",
       "use_cache",
       "max_tokens",
-      "stream",
       "include_usage",
       "presence_penalty",
       "frequency_penalty",
@@ -120,12 +119,6 @@ export function VersionDetailsView({
             <div className="flex justify-between items-center">
               <span className="text-xs text-gray-600">Max Tokens</span>
               <span className="text-xs text-gray-900 ">{extendedVersion.max_tokens}</span>
-            </div>
-
-            {/* Stream */}
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-gray-600">Stream</span>
-              <span className="text-xs text-gray-900 ">{extendedVersion.stream ? "true" : "false"}</span>
             </div>
 
             {/* Include Usage */}
