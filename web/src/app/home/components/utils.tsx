@@ -1,7 +1,7 @@
 import { compileMDX } from "next-mdx-remote/rsc";
+import Image from "next/image";
 import { ReactElement } from "react";
 import remarkGfm from "remark-gfm";
-import Image from "next/image";
 import { CopyButton } from "./CopyButton";
 import { bundledPreviewContent } from "./bundled-content";
 
@@ -25,9 +25,9 @@ export async function getPreviewContent(): Promise<PreviewContentData | null> {
           if (typeof children === "string" && children === "[screenshot]") {
             return (
               <div className="mb-6">
-                <Image 
+                <Image
                   src="https://workflowai.blob.core.windows.net/workflowai-public/anotherai/experiment.png"
-                  alt="AnotherAI experiment interface" 
+                  alt="AnotherAI experiment interface"
                   width={800}
                   height={600}
                   className="w-full h-auto rounded-[2px] border border-gray-200 shadow-sm"
@@ -128,9 +128,9 @@ export async function getPreviewContent(): Promise<PreviewContentData | null> {
           if (typeof children === "string" && children === "[screenshot]") {
             return (
               <div className="mb-6">
-                <Image 
+                <Image
                   src="https://workflowai.blob.core.windows.net/workflowai-public/anotherai/experiment.png"
-                  alt="AnotherAI experiment interface" 
+                  alt="AnotherAI experiment interface"
                   width={800}
                   height={600}
                   className="w-full h-auto rounded-[2px] border border-gray-200 shadow-sm"
