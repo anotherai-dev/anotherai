@@ -14,6 +14,7 @@ from core.providers._base.provider_error import (
     MaxTokensExceededError,
     ProviderBadRequestError,
     ProviderInternalError,
+    ProviderInvalidFileError,
     ServerOverloadedError,
     UnknownProviderError,
 )
@@ -47,6 +48,11 @@ class FileSource(BaseModel):
 class DocumentContent(BaseModel):
     type: Literal["document"]
     source: FileSource
+
+
+_content_mapping = {
+    "image/jpg": "image/jpeg",
+}
 
 
 class ImageContent(BaseModel):
@@ -103,7 +109,10 @@ class ErrorDetails(BaseModel):
                 capture = False
                 message = "Image does not match the provided media type"
                 error_cls = ProviderBadRequestError
-            case msg if "prompt is too long" in msg:
+            case msg if "input should be 'image/jpeg', 'image/png', 'image/gif' or 'image/webp'" in msg:
+                capture = False
+                error_cls = ProviderInvalidFileError
+            case msg if "prompt is too long" in msg or "exceed context limit" in msg:
                 error_cls = MaxTokensExceededError
                 capture = False
             case msg if "credit balance is too low" in msg:
@@ -139,6 +148,7 @@ class AnthropicMessage(BaseModel):
     def content_from_domain(cls, file: File):
         if file.data is None:
             raise InternalError("Data is always required for Anthropic", extras={"file": file.model_dump()})
+
         if file.is_pdf:
             return DocumentContent(
                 type="document",
@@ -151,9 +161,10 @@ class AnthropicMessage(BaseModel):
                     extras={"file": file.model_dump()},
                     capture=True,
                 )
+            content_type = _content_mapping.get(file.content_type, file.content_type)
             return ImageContent(
                 type="image",
-                source=FileSource(type="base64", media_type=file.content_type, data=file.data),
+                source=FileSource(type="base64", media_type=content_type, data=file.data),
             )
 
         raise ProviderBadRequestError(
