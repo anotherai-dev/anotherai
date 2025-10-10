@@ -5,6 +5,7 @@ from typing import Any, cast
 from unittest.mock import patch
 
 import pytest
+from httpx import Response
 from pytest_httpx import HTTPXMock, IteratorStream
 
 from core.domain.file import File
@@ -792,3 +793,22 @@ class TestComputePromptTokenCount:
 
             # This is a high-level smoke test that '_compute_prompt_token_count' does not raise and return a value
             assert result == expected_token_count
+
+
+class TestUnknownError:
+    def test_prompt_too_large_error_maps_to_max_tokens(self, mistral_provider: MistralAIProvider):
+        payload = {
+            "detail": [
+                {
+                    "type": "invalid_request_error",
+                    "msg": "Prompt contains 1006429 tokens and 0 draft tokens, too large for model with 40960 maximum context length",
+                },
+            ],
+        }
+
+        error = mistral_provider._unknown_error(  # pyright: ignore[reportPrivateUsage]
+            Response(status_code=400, text=json.dumps(payload)),
+        )
+
+        assert isinstance(error, MaxTokensExceededError)
+        assert str(error) == payload["detail"][0]["msg"]
