@@ -108,7 +108,6 @@ class Runner:
         completion_id: UUID,
         metadata: dict[str, Any] | None = None,
         conversation_id: str | None = None,
-        stream: bool = False,
     ) -> AgentCompletionBuilder:
         """Construct a task run builder for the given input and properties"""
 
@@ -123,7 +122,6 @@ class Runner:
             start_time=start_time,
             conversation_id=conversation_id,
             messages=messages,
-            stream=stream,
         )
 
     def _should_use_cache(self, cache: CacheUsage) -> bool:

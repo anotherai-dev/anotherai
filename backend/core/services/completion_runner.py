@@ -113,12 +113,15 @@ class CompletionRunner:
         conversation_id: str | None,
         stream: bool = False,
     ):
+        # Add stream information to metadata
+        metadata_with_stream = {**metadata, "stream": stream}
+
         runner = Runner(
             tenant_slug=self._tenant.slug,
             custom_configs=self._tenant.providers,
             agent=agent,
             version=version,
-            metadata=metadata,
+            metadata=metadata_with_stream,
             metric_tags={},
             provider_factory=self._provider_factory,
             timeout=timeout or 240,
@@ -128,9 +131,8 @@ class CompletionRunner:
             agent_input=input,
             start_time=start_time,
             completion_id=completion_id,
-            metadata=metadata,
+            metadata=metadata_with_stream,
             conversation_id=conversation_id,
-            stream=stream,
         )
         return runner, builder
 

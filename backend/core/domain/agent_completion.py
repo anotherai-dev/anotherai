@@ -39,8 +39,6 @@ class AgentCompletion(BaseModel):
 
     from_cache: bool = False
 
-    stream: bool = False
-
     source: Literal["web", "api", "mcp"] = "api"
 
     metadata: dict[str, Any] | None = None

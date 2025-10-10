@@ -473,7 +473,6 @@ def completion_from_domain(completion: DomainCompletion) -> Completion:
         messages=[message_from_domain(m) for m in completion.messages] if completion.messages else [],
         annotations=None,  # TODO:
         metadata=completion.metadata or None,
-        stream=completion.stream,
         cost_usd=completion.cost_usd or 0.0,
         duration_seconds=completion.duration_seconds or 0.0,
         traces=[trace_from_domain(t) for t in completion.traces] if completion.traces else None,
@@ -491,7 +490,6 @@ def completion_to_domain(completion: Completion) -> DomainCompletion:
         agent_output=output_to_domain(completion.output),
         messages=[message_to_domain(m) for m in completion.messages] if completion.messages else [],
         metadata=completion.metadata or None,
-        stream=completion.stream,
         cost_usd=completion.cost_usd or 0.0,
         duration_seconds=completion.duration_seconds or 0.0,
         traces=[trace_to_domain(t) for t in completion.traces] if completion.traces else [],

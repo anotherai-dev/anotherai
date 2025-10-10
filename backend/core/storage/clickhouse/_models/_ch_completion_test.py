@@ -94,7 +94,6 @@ class TestClickhouseCompletion:
             },
             "source": "api",
             "status": "success",
-            "stream": False,
             "traces": [
                 {
                     "cost_usd": 3.0,

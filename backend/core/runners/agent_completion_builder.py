@@ -26,8 +26,6 @@ class AgentCompletionBuilder(BaseModel):
 
     metadata: dict[str, Any]
 
-    stream: bool = False
-
     llm_completions: list[LLMCompletion] = Field(default_factory=list)
 
     file_download_seconds: float | None = None
@@ -64,7 +62,6 @@ class AgentCompletionBuilder(BaseModel):
             messages=self.messages,
             cost_usd=sum(trace.cost_usd for trace in traces),
             duration_seconds=sum(trace.duration_seconds for trace in traces),
-            stream=self.stream,
             metadata=self.metadata,
         )
         return self._built_completion

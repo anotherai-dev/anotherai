@@ -52,7 +52,6 @@ export function CompletionDetailsView(props: Props) {
 
           <VersionDetailsView
             version={completion.version}
-            completion={completion}
             showPrompt={true}
             showOutputSchema={true}
             showExamples={true}
