@@ -324,7 +324,10 @@ function ValueDisplay({ value, textSize, showSeeMore, keyName }: ValueDisplayPro
         onMouseLeave={() => setIsHovered(false)}
       >
         <div
-          className={cx("py-1 break-words hyphens-auto", shouldTruncateByHeight && !isExpanded ? "overflow-hidden" : "")}
+          className={cx(
+            "py-1 break-words hyphens-auto",
+            shouldTruncateByHeight && !isExpanded ? "overflow-hidden" : ""
+          )}
           style={shouldTruncateByHeight && !isExpanded ? { maxHeight: `${MAX_HEIGHT_PX - 30}px` } : {}}
         >
           {'"'}
