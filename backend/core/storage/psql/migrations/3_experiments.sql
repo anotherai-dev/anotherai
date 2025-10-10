@@ -10,7 +10,7 @@ CREATE TABLE experiments (
     title TEXT NOT NULL,
     description TEXT NOT NULL,
     result TEXT,
-    run_ids VARCHAR(64) [] NOT NULL,
+    run_ids VARCHAR(64) [],
     metadata JSONB NOT NULL,
     CONSTRAINT experiments_tenant_uid_slug_unique UNIQUE (tenant_uid, slug)
 );
