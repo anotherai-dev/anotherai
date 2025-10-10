@@ -180,3 +180,6 @@ install-state.gz
 .mcpregistry_github_token
 .mcpregistry_registry_token
 .mcp-publisher
+
+# Auto-generated bundled content
+web/src/app/home/components/bundled-content.ts

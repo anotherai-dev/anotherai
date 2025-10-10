@@ -17,6 +17,7 @@ from core.providers._base.provider_error import (
     InvalidGenerationError,
     MaxTokensExceededError,
     MissingModelError,
+    ProviderInvalidFileError,
     UnknownProviderError,
 )
 from core.providers._base.provider_options import ProviderOptions
@@ -240,6 +241,11 @@ class FireworksAIProvider(HTTPXProvider[FireworksConfig, CompletionResponse]):
                 msg=payload.error.message,
                 response=response,
             )
+        if any(m in lower_msg for m in _INVALID_FILE_ERROR_MESSAGES):
+            return ProviderInvalidFileError(
+                msg=payload.error.message,
+                response=response,
+            )
         return False
 
     @override
@@ -261,7 +267,7 @@ class FireworksAIProvider(HTTPXProvider[FireworksConfig, CompletionResponse]):
                 # We still bin with max tokens exceeded since it is related
                 error_cls = MaxTokensExceededError
 
-            case None:
+            case None | "invalid_request_error":
                 if err := self._invalid_request_error(payload, response):
                     return err
 
@@ -390,3 +396,10 @@ class FireworksAIProvider(HTTPXProvider[FireworksConfig, CompletionResponse]):
     @override
     def default_model(self) -> Model:
         return Model.LLAMA_4_SCOUT_BASIC
+
+
+_INVALID_FILE_ERROR_MESSAGES = [
+    "cannot decode or download image",
+    "incorrect padding",
+    "failed to decode image cannot identify image file",
+]

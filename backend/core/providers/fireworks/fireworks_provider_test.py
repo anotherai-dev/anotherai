@@ -21,6 +21,7 @@ from core.providers._base.provider_error import (
     MaxTokensExceededError,
     MissingModelError,
     ProviderInternalError,
+    ProviderInvalidFileError,
     UnknownProviderError,
 )
 from core.providers._base.provider_options import ProviderOptions
@@ -813,6 +814,15 @@ class TestUnknownError:
         assert isinstance(e, MaxTokensExceededError)
         assert str(e) == "Max token exceeded"
 
+    def test_invalid_request_with_code(self, fireworks_provider: FireworksAIProvider):
+        e = fireworks_provider._unknown_error(  # pyright: ignore[reportPrivateUsage]
+            Response(
+                status_code=400,
+                text="""{"error":{"code":"invalid_request_error","message":"The prompt is too long: 551475, model maximum context length: 163839","object":"error","type":"invalid_request_error"}}""",
+            ),
+        )
+        assert isinstance(e, MaxTokensExceededError)
+
     def test_invalid_request_error(self, fireworks_provider: FireworksAIProvider):
         e = fireworks_provider._unknown_error(
             Response(
@@ -822,6 +832,29 @@ class TestUnknownError:
         )
         assert isinstance(e, MaxTokensExceededError)
         assert str(e) == "Prompt is too long"
+
+    @pytest.mark.parametrize(
+        "message",
+        [
+            "Cannot decode or download image Incorrect padding",
+            "Failed to decode image cannot identify image file <_io.BytesIO object at 0x7fa71ede77e0>, supported images types are jpeg, png, ppm, gif, tiff and bmp",
+        ],
+    )
+    def test_invalid_file_error(self, fireworks_provider: FireworksAIProvider, message: str):
+        payload = {
+            "error": {
+                "message": message,
+                "type": "invalid_request_error",
+            },
+        }
+        error = fireworks_provider._unknown_error(  # pyright: ignore[reportPrivateUsage]
+            Response(
+                status_code=400,
+                text=json.dumps(payload),
+            ),
+        )
+        assert isinstance(error, ProviderInvalidFileError)
+        assert str(error) == message
 
     def test_prompt_too_long(self, fireworks_provider: FireworksAIProvider):
         payload = {
