@@ -432,6 +432,11 @@ class Completion(BaseModel):
         description="Metadata associated with the completion. Can be used to store additional information about the completion.",
     )
 
+    stream: bool = Field(
+        default=False,
+        description="Whether the completion was generated using streaming mode.",
+    )
+
     cost_usd: float = Field(description="The cost of the inference in USD.")
     duration_seconds: float | None = Field(
         default=None,

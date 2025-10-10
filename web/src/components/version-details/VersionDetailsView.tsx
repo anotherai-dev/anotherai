@@ -4,12 +4,13 @@ import { ModelIconWithName } from "@/components/ModelIcon";
 import { SchemaViewer } from "@/components/SchemaViewer";
 import { MessagesViewer } from "@/components/messages/MessagesViewer";
 import { getVersionWithDefaults } from "@/components/utils/utils";
-import { Version } from "@/types/models";
+import { Completion, Version } from "@/types/models";
 import { AvailableTools } from "./AvailableTools";
 import { VersionDetailsRow } from "./VersionDetailsRow";
 
 type VersionDetailsViewProps = {
   version: Version;
+  completion?: Completion;
   showPrompt?: boolean;
   showOutputSchema?: boolean;
   showExamples?: boolean;
@@ -17,6 +18,7 @@ type VersionDetailsViewProps = {
 
 export function VersionDetailsView({
   version,
+  completion,
   showPrompt = false,
   showOutputSchema = false,
   showExamples = false,
@@ -95,6 +97,16 @@ export function VersionDetailsView({
         </div>
       </div>
 
+      {/* Stream - only show when completion data is available */}
+      {completion && (
+        <div className="bg-white border border-gray-200 rounded-[2px] p-2">
+          <div className="flex justify-between items-center">
+            <span className="text-xs font-medium text-gray-700">Stream</span>
+            <span className="text-xs text-gray-900">{completion.stream ? "true" : "false"}</span>
+          </div>
+        </div>
+      )}
+
       {/* Advanced Settings */}
       <div className="bg-white border border-gray-200 rounded-[2px]">
         <button
@@ -120,12 +132,6 @@ export function VersionDetailsView({
             <div className="flex justify-between items-center">
               <span className="text-xs text-gray-600">Max Tokens</span>
               <span className="text-xs text-gray-900 ">{extendedVersion.max_tokens}</span>
-            </div>
-
-            {/* Stream */}
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-gray-600">Stream</span>
-              <span className="text-xs text-gray-900 ">{extendedVersion.stream ? "true" : "false"}</span>
             </div>
 
             {/* Include Usage */}

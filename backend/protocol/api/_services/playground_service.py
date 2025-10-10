@@ -217,6 +217,7 @@ class PlaygroundService:
                 use_fallback="never",
                 conversation_id=None,
                 completion_id=completion_id,
+                stream=False,
             )
             completion = await self._completion_runner.run(runner, builder)
 

@@ -212,6 +212,7 @@ export interface Completion {
   messages: Message[];
   annotations?: Annotation[];
   metadata: Record<string, unknown>;
+  stream: boolean;
   cost_usd: number;
   duration_seconds?: number;
   traces?: Trace[];

@@ -111,6 +111,7 @@ class CompletionRunner:
         use_fallback: FallbackOption,
         completion_id: UUID,
         conversation_id: str | None,
+        stream: bool = False,
     ):
         runner = Runner(
             tenant_slug=self._tenant.slug,
@@ -129,6 +130,7 @@ class CompletionRunner:
             completion_id=completion_id,
             metadata=metadata,
             conversation_id=conversation_id,
+            stream=stream,
         )
         return runner, builder
 

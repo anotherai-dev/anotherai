@@ -129,6 +129,9 @@ class ClickhouseCompletion(BaseModel):
     # Origin of the run
     source: Literal["web", "api", "mcp"] = "api"
 
+    # Whether the completion was streamed
+    stream: bool = False
+
     # Traces as array of strings
     traces: list[_Trace] = Field(default_factory=list)
 
@@ -174,6 +177,7 @@ class ClickhouseCompletion(BaseModel):
             cost_millionth_usd=_cost_millionth_usd(completion.cost_usd),
             metadata=_sanitize_metadata(completion.metadata),
             source=completion.source,
+            stream=completion.stream,
             # Traces
             traces=[_Trace.from_domain(trace) for trace in completion.traces],
         )
@@ -207,6 +211,7 @@ class ClickhouseCompletion(BaseModel):
             traces=[_Trace.to_domain(trace) for trace in self.traces],
             metadata=from_sanitized_metadata(self.metadata),
             source=self.source,
+            stream=self.stream,
             from_cache=False,
         )
 

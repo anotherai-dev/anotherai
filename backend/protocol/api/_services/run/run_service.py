@@ -248,6 +248,7 @@ class RunService:
             use_fallback=use_fallback,
             conversation_id=request.conversation_id,
             completion_id=completion_id,
+            stream=stream,
         )
         if stream:
             return await self._stream(runner, builder, request)
