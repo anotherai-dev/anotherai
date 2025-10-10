@@ -1,6 +1,7 @@
 import { compileMDX } from "next-mdx-remote/rsc";
 import { ReactElement } from "react";
 import remarkGfm from "remark-gfm";
+import Image from "next/image";
 import { CopyButton } from "./CopyButton";
 import { bundledPreviewContent } from "./bundled-content";
 
@@ -20,7 +21,25 @@ export async function getPreviewContent(): Promise<PreviewContentData | null> {
         },
       },
       components: {
-        p: ({ children }) => <p className="text-base text-gray-600 leading-relaxed mb-4">{children}</p>,
+        p: ({ children }) => {
+          if (typeof children === "string" && children === "[screenshot]") {
+            return (
+              <div className="mb-6">
+                <Image 
+                  src="https://workflowai.blob.core.windows.net/workflowai-public/anotherai/experiment.png"
+                  alt="AnotherAI experiment interface" 
+                  width={800}
+                  height={600}
+                  className="w-full h-auto rounded-[2px] border border-gray-200 shadow-sm"
+                />
+              </div>
+            );
+          }
+          if (typeof children === "string" && children === "[video]") {
+            return null;
+          }
+          return <p className="text-base text-gray-600 leading-relaxed mb-4">{children}</p>;
+        },
         h2: ({ children }) => {
           // Create an ID from the text content
           const text =
@@ -103,8 +122,21 @@ export async function getPreviewContent(): Promise<PreviewContentData | null> {
         },
         // Handle special content blocks like [video] and [screenshot]
         div: ({ children }) => {
-          if (typeof children === "string" && (children === "[video]" || children === "[screenshot]")) {
-            return <div className="bg-gray-900 text-white p-4 rounded text-center mb-6">{children}</div>;
+          if (typeof children === "string" && children === "[video]") {
+            return null;
+          }
+          if (typeof children === "string" && children === "[screenshot]") {
+            return (
+              <div className="mb-6">
+                <Image 
+                  src="https://workflowai.blob.core.windows.net/workflowai-public/anotherai/experiment.png"
+                  alt="AnotherAI experiment interface" 
+                  width={800}
+                  height={600}
+                  className="w-full h-auto rounded-[2px] border border-gray-200 shadow-sm"
+                />
+              </div>
+            );
           }
           return <div>{children}</div>;
         },
