@@ -122,7 +122,6 @@ export interface Version {
 export interface ExtendedVersion extends Version {
   use_cache?: string | boolean;
   max_tokens?: number | string;
-  stream?: boolean;
   include_usage?: boolean;
   presence_penalty?: number;
   frequency_penalty?: number;
@@ -212,7 +211,6 @@ export interface Completion {
   messages: Message[];
   annotations?: Annotation[];
   metadata: Record<string, unknown>;
-  stream: boolean;
   cost_usd: number;
   duration_seconds?: number;
   traces?: Trace[];

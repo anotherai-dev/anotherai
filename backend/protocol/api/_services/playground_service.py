@@ -191,12 +191,15 @@ class PlaygroundService:
         use_cache: CacheUsage | None,
     ) -> CompletionOutputTuple:
         _log.debug("Playground: Running single completion", version_id=version.id, input_id=input.id)
+        # Add stream metadata for playground completions (always False for playground)
+        metadata_with_stream = {**metadata, "stream": False}
+
         cached = await self._completion_runner.check_cache(
             completion_id=completion_id,
             agent=Agent(id=agent_id, uid=0),
             version=version,
             input=input,
-            metadata=metadata,
+            metadata=metadata_with_stream,
             use_cache=use_cache,
             timeout_seconds=0.5,  # Will run in background here so we have plenty of time
         )
@@ -212,7 +215,7 @@ class PlaygroundService:
                 version=version,
                 input=input,
                 start_time=time.time(),
-                metadata=metadata,
+                metadata=metadata_with_stream,
                 timeout=None,
                 use_fallback="never",
                 conversation_id=None,
