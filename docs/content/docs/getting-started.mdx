@@ -18,7 +18,7 @@ Need an extra hand with the setup? We're happy to help. Reach us at [team@workfl
 
 AnotherAI is available as an MCP server in the IDEs below.
 
-<Tabs items={['Cursor', 'Claude Code', 'ChatGPT','Windsurf', 'Cursor CLI']}>
+<Tabs items={['Cursor', 'Claude Code', 'ChatGPT','Windsurf', 'Cursor CLI', 'Codex']}>
 
 <Tab value="Cursor">
 
@@ -238,6 +238,32 @@ Setup steps:
 <Callout type="info">
 **Additional Configuration**: If you find that the CLI claims it can't find or use the AnotherAI MCP, you may need to give it the specific file path to use to look for the mcp.json file.
 </Callout>
+
+</Tab>
+
+<Tab value="Codex">
+Codex stores the MCP configuration in a user scoped file located at ~/.codex/config.toml.
+
+> Remote MCP support is currently experimental so `experimental_use_rmcp_client` must be set to `true` in the config.toml file. For now, the config file must be edited manually.
+
+Then to add the MCP:
+
+```sh
+# Add the MCP to the config file
+codex mcp add anotherai --url https://api.anotherai.dev/mcp
+# Authenticate the MCP using OAuth
+codex mcp login anotherai
+```
+
+The config file should look like:
+
+```toml
+experimental_use_rmcp_client = true
+
+[mcp_servers.anotherai]
+url = "https://api.anotherai.dev/mcp"
+```
+
 
 </Tab>
 

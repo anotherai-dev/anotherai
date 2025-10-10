@@ -895,11 +895,17 @@ export function createOutputSchemaFromJSON(parsedJSON: unknown, fallbackId: stri
 
 export function isDateValue(value: unknown): boolean {
   if (typeof value === "string") {
-    // Check for ISO date format or other common date formats
-    const date = new Date(value);
-    return (
-      !isNaN(date.getTime()) && (value.includes("T") || value.includes("-") || value.includes("/")) && value.length >= 8
-    ); // Minimum reasonable date string length
+    // Check for common date formats more strictly
+    // ISO date: YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss variants
+    // Common date formats: MM/DD/YYYY, DD-MM-YYYY, etc.
+    const isoDateRegex = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|[+-]\d{2}:\d{2})?)?$/;
+    const commonDateRegex = /^(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}|\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2})$/;
+
+    // Only check if it's a valid date if it matches expected date patterns
+    if (isoDateRegex.test(value) || commonDateRegex.test(value)) {
+      const date = new Date(value);
+      return !isNaN(date.getTime());
+    }
   }
   return false;
 }
