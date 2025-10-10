@@ -279,3 +279,22 @@ class TestCompletionChunkToParsedResponse:
         )
         parsed_response = chunk.to_parsed_response()
         assert parsed_response.reasoning is None
+
+
+class TestContentFromDomain:
+    def test_content_from_domain_image(self) -> None:
+        file = File(data="test_data", content_type="image/png")
+        content = AnthropicMessage.content_from_domain(file)
+        assert content.type == "image"
+        assert content.source.type == "base64"
+        assert content.source.media_type == "image/png"
+        assert content.source.data == "test_data"
+
+    def test_image_jpg(self) -> None:
+        # image/jpg should be converted to image/jpeg
+        file = File(data="test_data", content_type="image/jpg")
+        content = AnthropicMessage.content_from_domain(file)
+        assert content.type == "image"
+        assert content.source.type == "base64"
+        assert content.source.media_type == "image/jpeg"
+        assert content.source.data == "test_data"

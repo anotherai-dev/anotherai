@@ -221,8 +221,11 @@ class GroqProvider(HTTPXProvider[GroqConfig, CompletionResponse]):
                 case m if m.startswith('get "') and ("read: connection reset by peer" in m or "no such host" in m):
                     base_cls = ProviderInvalidFileError
                     capture = False
-                case m if "failed to retrieve media" in m:
+                case m if any(phrase in m for phrase in _INVALID_FILE_PHRASES):
                     base_cls = ProviderInvalidFileError
+                    capture = False
+                case m if "input length" in m and "context limit" in m:
+                    base_cls = MaxTokensExceededError
                     capture = False
                 case _:
                     pass
@@ -292,3 +295,15 @@ class GroqProvider(HTTPXProvider[GroqConfig, CompletionResponse]):
     @override
     def default_model(self) -> Model:
         return Model.LLAMA_4_SCOUT_FAST
+
+
+_INVALID_FILE_PHRASES = (
+    "failed to retrieve media",
+    "invalid image data",
+    "image too large",
+    "media file too large",
+    "too many images provided",
+    "failed to decode image",
+    "cannot identify image file",
+    "cannot decode or download image",
+)
