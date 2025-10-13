@@ -7,7 +7,12 @@ import { PageError } from "@/components/PageError";
 import { useToast } from "@/components/ToastProvider";
 import { AnnotationsView } from "@/components/annotations/AnnotationsView";
 import { MessagesViewer } from "@/components/messages/MessagesViewer";
-import { shouldIncludeCostMetric, shouldIncludeDurationMetric } from "@/components/utils/utils";
+import {
+  getReasoningTokenCount,
+  shouldIncludeCostMetric,
+  shouldIncludeDurationMetric,
+  shouldIncludeReasoningMetric,
+} from "@/components/utils/utils";
 import { Annotation, ExperimentCompletion } from "@/types/models";
 import { getMetricsForCompletion } from "../../../utils";
 
@@ -46,6 +51,14 @@ function CompletionCell(props: CompletionCellProps) {
     // Add duration metric if valid using centralized utility
     if (shouldIncludeDurationMetric(completion)) {
       metrics.push({ key: "duration", average: completion.duration_seconds });
+    }
+
+    // Add reasoning tokens metric if valid using centralized utility
+    if (shouldIncludeReasoningMetric(completion)) {
+      const reasoningTokens = getReasoningTokenCount(completion);
+      if (reasoningTokens !== undefined) {
+        metrics.push({ key: "reasoning", average: reasoningTokens });
+      }
     }
 
     // Add custom metrics from annotations

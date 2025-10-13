@@ -1,4 +1,4 @@
-import { Version } from "@/types/models";
+import { Completion, ExperimentCompletion, Version } from "@/types/models";
 import {
   calculateAverageMetrics,
   filterAnnotations,
@@ -9,6 +9,7 @@ import {
   getDifferingVersionKeys,
   getMetricBadgeColor,
   getMetricBadgeWithRelative,
+  getReasoningTokenCount,
   getSharedPartsOfPrompts,
   getValidCosts,
   getValidDurations,
@@ -19,6 +20,7 @@ import {
   resolveRef,
   shouldIncludeCostMetric,
   shouldIncludeDurationMetric,
+  shouldIncludeReasoningMetric,
   sortVersionKeys,
   stripMarkdown,
   transformCompletionsData,
@@ -306,8 +308,10 @@ describe("Calculation Functions", () => {
       expect(result).toEqual({
         avgCost: undefined,
         avgDuration: undefined,
+        avgReasoningTokens: undefined,
         costs: [],
         durations: [],
+        reasoningTokens: [],
       });
     });
 
@@ -318,8 +322,10 @@ describe("Calculation Functions", () => {
       expect(result).toEqual({
         avgCost: 2,
         avgDuration: 3,
+        avgReasoningTokens: undefined,
         costs: [1, 3],
         durations: [2, 4],
+        reasoningTokens: [],
       });
     });
 
@@ -332,6 +338,94 @@ describe("Calculation Functions", () => {
       const result = calculateAverageMetrics(completions);
       expect(result.avgCost).toBe(1); // (0 + 2) / 2
       expect(result.avgDuration).toBe(2); // (0 + 4) / 2
+    });
+
+    it("calculates reasoning tokens correctly", () => {
+      const completions = [
+        {
+          ...mockExperimentCompletion(1, 2),
+          reasoning_token_count: 100,
+        },
+        {
+          ...mockExperimentCompletion(2, 3),
+          reasoning_token_count: 200,
+        },
+      ];
+
+      const result = calculateAverageMetrics(completions);
+      expect(result.avgReasoningTokens).toBe(150); // (100 + 200) / 2
+      expect(result.reasoningTokens).toEqual([100, 200]);
+    });
+  });
+
+  describe("getReasoningTokenCount", () => {
+    it("returns reasoning tokens from ExperimentCompletion field", () => {
+      const completion: Partial<ExperimentCompletion> = {
+        reasoning_token_count: 150,
+      };
+      expect(getReasoningTokenCount(completion as ExperimentCompletion)).toBe(150);
+    });
+
+    it("returns 0 for explicitly 0 reasoning tokens", () => {
+      const completion: Partial<ExperimentCompletion> = {
+        reasoning_token_count: 0,
+      };
+      expect(getReasoningTokenCount(completion as ExperimentCompletion)).toBe(0);
+    });
+
+    it("returns undefined when reasoning tokens field not present", () => {
+      const completion: Partial<ExperimentCompletion> = {};
+      expect(getReasoningTokenCount(completion as ExperimentCompletion)).toBeUndefined();
+    });
+
+    it("falls back to traces for regular Completion type", () => {
+      const completion: Partial<Completion> = {
+        traces: [
+          {
+            kind: "llm",
+            duration_seconds: 1,
+            cost_usd: 0,
+            model: "test-model",
+            provider: "test-provider",
+            usage: {
+              prompt: { text_token_count: 50, cost_usd: 0 },
+              completion: { text_token_count: 100, reasoning_token_count: 100, cost_usd: 0 },
+            },
+          },
+        ],
+      };
+      expect(getReasoningTokenCount(completion as Completion)).toBe(100);
+    });
+  });
+
+  describe("shouldIncludeReasoningMetric", () => {
+    it("returns true for valid completion with reasoning tokens", () => {
+      const completion: Partial<ExperimentCompletion> = {
+        reasoning_token_count: 150,
+        output: { messages: [] },
+      };
+      expect(shouldIncludeReasoningMetric(completion as ExperimentCompletion)).toBe(true);
+    });
+
+    it("returns false for undefined completion", () => {
+      expect(shouldIncludeReasoningMetric(undefined)).toBe(false);
+    });
+
+    it("returns false when output has error", () => {
+      const completion: Partial<ExperimentCompletion> = {
+        reasoning_token_count: 150,
+        output: {
+          error: { error: "Something went wrong" },
+        },
+      };
+      expect(shouldIncludeReasoningMetric(completion as ExperimentCompletion)).toBe(false);
+    });
+
+    it("returns false when reasoning tokens are undefined", () => {
+      const completion: Partial<ExperimentCompletion> = {
+        output: { messages: [] },
+      };
+      expect(shouldIncludeReasoningMetric(completion as ExperimentCompletion)).toBe(false);
     });
   });
 });

@@ -10,6 +10,7 @@ import {
   getSharedPartsOfPrompts,
   getValidCosts,
   getValidDurations,
+  getValidReasoningTokens,
 } from "@/components/utils/utils";
 import { useColumnWidths } from "@/hooks/useColumnWidths";
 import { useVersionHiding } from "@/hooks/useVersionHiding";
@@ -115,6 +116,9 @@ export function MatrixSection(props: Props) {
     const allAvgDurations = priceAndLatencyPerVersion
       .map(({ metrics }) => metrics.avgDuration)
       .filter((duration): duration is number => duration !== undefined);
+    const allAvgReasoningTokens = priceAndLatencyPerVersion
+      .map(({ metrics }) => metrics.avgReasoningTokens)
+      .filter((tokens): tokens is number => tokens !== undefined);
 
     // Calculate raw metrics lookup for percentile data
     const rawMetricsPerVersionPerKey = getRawMetricsPerVersionPerKey(experiment, annotations);
@@ -140,6 +144,10 @@ export function MatrixSection(props: Props) {
         if (priceAndLatency.metrics.avgDuration !== undefined) {
           allMetrics.unshift({ key: "duration", average: priceAndLatency.metrics.avgDuration });
         }
+        // Only add reasoning tokens metric if it has a valid value
+        if (priceAndLatency.metrics.avgReasoningTokens !== undefined) {
+          allMetrics.unshift({ key: "reasoning", average: priceAndLatency.metrics.avgReasoningTokens });
+        }
       }
 
       // Combine allMetricsPerKey with price and latency data
@@ -151,6 +159,9 @@ export function MatrixSection(props: Props) {
         if (allAvgDurations.length > 0) {
           allMetricsPerKeyForVersion.duration = allAvgDurations;
         }
+        if (allAvgReasoningTokens.length > 0) {
+          allMetricsPerKeyForVersion.reasoning = allAvgReasoningTokens;
+        }
       }
 
       // Combine rawMetricsPerKey with price and latency data
@@ -158,6 +169,9 @@ export function MatrixSection(props: Props) {
       if (priceAndLatency?.metrics) {
         versionMetricsPerKeyForVersion.cost = priceAndLatency.metrics.costs;
         versionMetricsPerKeyForVersion.duration = priceAndLatency.metrics.durations;
+        if (priceAndLatency.metrics.reasoningTokens.length > 0) {
+          versionMetricsPerKeyForVersion.reasoning = priceAndLatency.metrics.reasoningTokens;
+        }
       }
 
       // Find the original index of this version in the sorted versions array
@@ -204,9 +218,10 @@ export function MatrixSection(props: Props) {
           .map((version) => findCompletionForInputAndVersion(experiment.completions || [], input.id, version.id))
           .filter(Boolean); // Remove undefined completions
 
-        // Calculate cost and duration arrays for this row using centralized utility functions
+        // Calculate cost, duration, and reasoning token arrays for this row using centralized utility functions
         const allCostsForRow = getValidCosts(completionsForInput);
         const allDurationsForRow = getValidDurations(completionsForInput);
+        const allReasoningTokensForRow = getValidReasoningTokens(completionsForInput);
 
         // Calculate metrics per key for this row (for row-based comparison coloring)
         const allMetricsPerKeyForRowData = getAllMetricsPerKeyForRow(experiment, annotations, input.id);
@@ -216,12 +231,15 @@ export function MatrixSection(props: Props) {
           ...allMetricsPerKeyForRowData,
         };
 
-        // Add cost and duration arrays if they have data
+        // Add cost, duration, and reasoning token arrays if they have data
         if (allCostsForRow.length > 0) {
           allMetricsPerKeyForRow.cost = allCostsForRow;
         }
         if (allDurationsForRow.length > 0) {
           allMetricsPerKeyForRow.duration = allDurationsForRow;
+        }
+        if (allReasoningTokensForRow.length > 0) {
+          allMetricsPerKeyForRow.reasoning = allReasoningTokensForRow;
         }
 
         return orderedVersions.map((version) => {

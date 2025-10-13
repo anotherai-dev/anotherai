@@ -145,10 +145,23 @@ export interface Output {
   error?: Error;
 }
 
+export interface TokenUsage {
+  text_token_count?: number;
+  audio_token_count?: number;
+  audio_count?: number;
+  image_token_count?: number;
+  image_count?: number;
+  cost_usd: number;
+}
+
+export interface CompletionUsage extends TokenUsage {
+  cached_token_count?: number;
+  reasoning_token_count?: number;
+}
+
 export interface InferenceUsage {
-  input_tokens: number;
-  output_tokens: number;
-  total_tokens: number;
+  prompt: TokenUsage;
+  completion: CompletionUsage;
 }
 
 export interface LLMTrace {
@@ -199,6 +212,7 @@ export interface ExperimentCompletion {
   output: Output;
   cost_usd: number;
   duration_seconds: number;
+  reasoning_token_count?: number;
 }
 
 export interface Completion {

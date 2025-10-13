@@ -1,11 +1,13 @@
 // Utility functions for experiment components
 import {
   Annotation,
+  Completion,
   ExperimentCompletion,
   ExperimentWithLookups,
   ExtendedVersion,
   Message,
   OutputSchema,
+  Trace,
   Version,
 } from "@/types/models";
 import { findCommonSubstrings } from "./stringMatchingUtils";
@@ -32,7 +34,7 @@ export function getMetricBadgeWithRelative(
   value: number,
   values: number[],
   isHigherBetter: boolean = false,
-  metricType?: "cost" | "duration"
+  metricType?: "cost" | "duration" | "reasoning"
 ) {
   if (!values || values.length === 0) {
     return {
@@ -70,6 +72,9 @@ export function getMetricBadgeWithRelative(
     if (metricType === "duration") {
       return isBetterValue ? "faster" : "slower";
     }
+    if (metricType === "reasoning") {
+      return isBetterValue ? "more efficient" : "less efficient";
+    }
     return ""; // Don't show any descriptor for unknown metric types
   };
 
@@ -79,14 +84,14 @@ export function getMetricBadgeWithRelative(
 
     if (isBest) {
       color =
-        metricType === "cost" || metricType === "duration"
+        metricType === "cost" || metricType === "duration" || metricType === "reasoning"
           ? "bg-green-200 border border-green-400 text-green-900"
           : "bg-transparent border border-gray-200 text-gray-700";
       const comparisonText = getComparisonText(true);
       relativeText = comparisonText ? `${(max / min).toFixed(1)}x ${comparisonText}` : `${(max / min).toFixed(1)}x`;
     } else if (isWorst) {
       color =
-        metricType === "cost" || metricType === "duration"
+        metricType === "cost" || metricType === "duration" || metricType === "reasoning"
           ? "bg-red-200 border border-red-300 text-red-900"
           : "bg-transparent border border-gray-200 text-gray-700";
       const comparisonText = getComparisonText(false);
@@ -97,7 +102,7 @@ export function getMetricBadgeWithRelative(
 
     // For non-best values, show how much worse they are
     if (!isBest && max > 0) {
-      if (metricType === "cost" || metricType === "duration") {
+      if (metricType === "cost" || metricType === "duration" || metricType === "reasoning") {
         relativeText = `${(max / value).toFixed(1)}x ${getComparisonText(false)}`;
       } else {
         relativeText = `${(max / value).toFixed(1)}x`;
@@ -109,14 +114,14 @@ export function getMetricBadgeWithRelative(
 
     if (isBest) {
       color =
-        metricType === "cost" || metricType === "duration"
+        metricType === "cost" || metricType === "duration" || metricType === "reasoning"
           ? "bg-green-200 border border-green-400 text-green-900"
           : "bg-transparent border border-gray-200 text-gray-700";
       const comparisonText = getComparisonText(true);
       relativeText = comparisonText ? `${(max / min).toFixed(1)}x ${comparisonText}` : `${(max / min).toFixed(1)}x`;
     } else if (isWorst) {
       color =
-        metricType === "cost" || metricType === "duration"
+        metricType === "cost" || metricType === "duration" || metricType === "reasoning"
           ? "bg-red-200 border border-red-300 text-red-900"
           : "bg-transparent border border-gray-200 text-gray-700";
       const comparisonText = getComparisonText(false);
@@ -127,7 +132,7 @@ export function getMetricBadgeWithRelative(
 
     // For non-best values, show how much worse they are
     if (!isBest && min > 0) {
-      if (metricType === "cost" || metricType === "duration") {
+      if (metricType === "cost" || metricType === "duration" || metricType === "reasoning") {
         relativeText = `${(value / min).toFixed(1)}x ${getComparisonText(false)}`;
       } else {
         relativeText = `${(value / min).toFixed(1)}x`;
@@ -256,6 +261,12 @@ export function shouldIncludeDurationMetric(
   );
 }
 
+export function shouldIncludeReasoningMetric(
+  completion: ExperimentCompletion | undefined
+): completion is ExperimentCompletion {
+  return completion != null && getReasoningTokenCount(completion) !== undefined && !completion.output?.error;
+}
+
 export function getValidCosts(completions: (ExperimentCompletion | undefined)[]): number[] {
   return completions
     .filter((completion): completion is ExperimentCompletion => shouldIncludeCostMetric(completion))
@@ -268,26 +279,47 @@ export function getValidDurations(completions: (ExperimentCompletion | undefined
     .map((completion) => completion.duration_seconds);
 }
 
+export function getValidReasoningTokens(completions: (ExperimentCompletion | undefined)[]): number[] {
+  return completions
+    .filter((completion): completion is ExperimentCompletion => shouldIncludeReasoningMetric(completion))
+    .map((completion) => getReasoningTokenCount(completion))
+    .filter((tokens): tokens is number => tokens !== undefined);
+}
+
 export function calculateAverageMetrics(completions: ExperimentCompletion[]): {
   avgCost: number | undefined;
   avgDuration: number | undefined;
+  avgReasoningTokens: number | undefined;
   costs: number[];
   durations: number[];
+  reasoningTokens: number[];
 } {
-  if (completions.length === 0) return { avgCost: undefined, avgDuration: undefined, costs: [], durations: [] };
+  if (completions.length === 0)
+    return {
+      avgCost: undefined,
+      avgDuration: undefined,
+      avgReasoningTokens: undefined,
+      costs: [],
+      durations: [],
+      reasoningTokens: [],
+    };
 
   // Use centralized filtering logic
   const costs = getValidCosts(completions);
   const durations = getValidDurations(completions);
+  const reasoningTokens = getValidReasoningTokens(completions);
 
   const totalCost = costs.reduce((sum, cost) => sum + cost, 0);
   const totalDuration = durations.reduce((sum, duration) => sum + duration, 0);
+  const totalReasoningTokens = reasoningTokens.reduce((sum, tokens) => sum + tokens, 0);
 
   return {
     avgCost: costs.length > 0 ? totalCost / costs.length : undefined,
     avgDuration: durations.length > 0 ? totalDuration / durations.length : undefined,
+    avgReasoningTokens: reasoningTokens.length > 0 ? totalReasoningTokens / reasoningTokens.length : undefined,
     costs,
     durations,
+    reasoningTokens,
   };
 }
 
@@ -325,7 +357,14 @@ export function getPriceAndLatencyPerVersion(
   }>
 ): Array<{
   versionId: string;
-  metrics: { avgCost: number | undefined; avgDuration: number | undefined; costs: number[]; durations: number[] };
+  metrics: {
+    avgCost: number | undefined;
+    avgDuration: number | undefined;
+    avgReasoningTokens: number | undefined;
+    costs: number[];
+    durations: number[];
+    reasoningTokens: number[];
+  };
 }> {
   return completionsPerVersion.map(({ versionId, completions }) => ({
     versionId,
@@ -1133,4 +1172,132 @@ export function stripMarkdown(markdown: string): string {
     .replace(/^\s*\d+\.\s/gm, "") // Remove numbered list markers
     .replace(/\n+/g, " ") // Replace newlines with spaces
     .trim();
+}
+
+/**
+ * Extracts the reasoning token count from a completion's traces.
+ * Looks through all LLM traces and returns the total reasoning tokens used.
+ *
+ * @param completion - The completion object containing traces
+ * @returns The total number of reasoning tokens used, or undefined if reasoning tokens are not present in the trace structure
+ */
+export function getReasoningTokenCount(completion: Completion | ExperimentCompletion): number | undefined {
+  // For ExperimentCompletion, use the direct reasoning_token_count field
+  if ("reasoning_token_count" in completion) {
+    return completion.reasoning_token_count;
+  }
+
+  // For regular Completion, fall back to parsing traces
+  const traces = "traces" in completion ? completion.traces : undefined;
+
+  if (!traces || !Array.isArray(traces)) {
+    return undefined;
+  }
+
+  let totalReasoningTokens = 0;
+  let hasReasoningField = false;
+
+  for (const trace of traces) {
+    // Only check LLM traces
+    if (trace.kind !== "llm") continue;
+
+    const llmTrace = trace as Extract<Trace, { kind: "llm" }>;
+
+    // Check if trace has usage data
+    if (!llmTrace.usage) continue;
+
+    // Handle both new detailed usage structure and old simple structure
+    if ("completion" in llmTrace.usage && llmTrace.usage.completion) {
+      const completionUsage = llmTrace.usage.completion;
+
+      // Check if reasoning_token_count field exists (even if it's 0)
+      if ("reasoning_token_count" in completionUsage && completionUsage.reasoning_token_count !== undefined) {
+        hasReasoningField = true;
+        totalReasoningTokens += completionUsage.reasoning_token_count || 0;
+      }
+    }
+  }
+
+  // Return undefined if no traces had reasoning_token_count field
+  // Return the total (including 0) if the field was present
+  return hasReasoningField ? totalReasoningTokens : undefined;
+}
+
+/**
+ * Checks if a completion used reasoning (has reasoning tokens > 0)
+ *
+ * @param completion - The completion object to check
+ * @returns True if the completion used reasoning, false if no reasoning or reasoning tokens not present
+ */
+export function hasReasoningTokens(completion: Completion | ExperimentCompletion): boolean {
+  const reasoningTokens = getReasoningTokenCount(completion);
+  return reasoningTokens !== undefined && reasoningTokens > 0;
+}
+
+/**
+ * Gets a summary of token usage from completion traces including reasoning tokens
+ *
+ * @param completion - The completion object containing traces
+ * @returns Object with token usage breakdown, reasoningTokens is undefined if not present in trace
+ */
+export function getTokenUsageSummary(completion: Completion | ExperimentCompletion): {
+  promptTokens: number;
+  completionTokens: number;
+  reasoningTokens: number | undefined;
+  cachedTokens: number;
+  totalTokens: number;
+} {
+  const traces = "traces" in completion ? completion.traces : undefined;
+
+  let promptTokens = 0;
+  let completionTokens = 0;
+  let reasoningTokens: number | undefined = undefined;
+  let cachedTokens = 0;
+  let hasReasoningField = false;
+
+  if (traces && Array.isArray(traces)) {
+    for (const trace of traces) {
+      if (trace.kind !== "llm") continue;
+
+      const llmTrace = trace as Extract<Trace, { kind: "llm" }>;
+
+      if (!llmTrace.usage) continue;
+
+      // Handle detailed usage structure
+      if ("prompt" in llmTrace.usage && "completion" in llmTrace.usage) {
+        const usage = llmTrace.usage as {
+          prompt: { text_token_count?: number };
+          completion: { text_token_count?: number; reasoning_token_count?: number; cached_token_count?: number };
+        };
+
+        if (usage.prompt.text_token_count) {
+          promptTokens += usage.prompt.text_token_count;
+        }
+
+        if (usage.completion.text_token_count) {
+          completionTokens += usage.completion.text_token_count;
+        }
+
+        if ("reasoning_token_count" in usage.completion && usage.completion.reasoning_token_count !== undefined) {
+          if (!hasReasoningField) {
+            hasReasoningField = true;
+            reasoningTokens = 0; // Initialize when we first find the field
+          }
+          reasoningTokens = (reasoningTokens || 0) + (usage.completion.reasoning_token_count || 0);
+        }
+
+        if (usage.completion.cached_token_count) {
+          cachedTokens += usage.completion.cached_token_count;
+        }
+      }
+    }
+  }
+
+  return {
+    promptTokens,
+    completionTokens,
+    reasoningTokens,
+    cachedTokens,
+    totalTokens: promptTokens + completionTokens + (reasoningTokens || 0),
+  };
 }
