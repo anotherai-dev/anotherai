@@ -127,8 +127,10 @@ class RunService:
         prepared_run: PreparedRun,
         deprecated_function: bool,
     ):
-        # Add stream metadata for cached completions
-        metadata_with_stream = {**prepared_run.metadata, "stream": stream}
+        # Add stream metadata for cached completions (only when True)
+        metadata_with_stream = {**prepared_run.metadata}
+        if stream:
+            metadata_with_stream["stream"] = True
 
         cached = await self._completion_runner.check_cache(
             completion_id=completion_id,

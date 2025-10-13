@@ -113,8 +113,10 @@ class CompletionRunner:
         conversation_id: str | None,
         stream: bool = False,
     ):
-        # Add stream information to metadata
-        metadata_with_stream = {**metadata, "stream": stream}
+        # Add stream information to metadata (only when True)
+        metadata_with_stream = {**metadata}
+        if stream:
+            metadata_with_stream["stream"] = True
 
         runner = Runner(
             tenant_slug=self._tenant.slug,
