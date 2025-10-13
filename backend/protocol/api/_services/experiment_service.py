@@ -87,9 +87,9 @@ class ExperimentService:
         # Fetch reasoning tokens for outputs if they exist
         if exp.outputs:
             completion_ids = [output.completion_id for output in exp.outputs]
-            # Get completions with traces from ClickHouse (only exclude agent_id to keep traces)
+            # Get completions with traces from ClickHouse (exclude large fields we don't need)
             completions_with_traces = await self.completion_storage.completions_by_ids(
-                completion_ids, exclude={"agent_id"},
+                completion_ids, exclude={"agent_id", "input_variables", "input_messages", "output_messages", "messages"},
             )
             # Create a map of completion_id -> reasoning_token_count
             reasoning_tokens_map = {}

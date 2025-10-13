@@ -6,7 +6,7 @@ from core.domain.annotation import Annotation
 from core.domain.experiment import Experiment
 from core.domain.version import Version
 
-type CompletionField = Literal["traces", "agent_id"]
+type CompletionField = Literal["traces", "agent_id", "input_variables", "input_messages", "output_messages", "messages"]
 
 
 class CompletionStorage(Protocol):
