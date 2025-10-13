@@ -71,6 +71,9 @@ export function MetricItem({
     if (metricKey.includes("duration") || metricKey.includes("latency")) {
       return "duration";
     }
+    if (metricKey.includes("reasoning")) {
+      return "reasoning";
+    }
     return undefined;
   }, [metricKey]);
 
@@ -108,17 +111,27 @@ export function MetricItem({
       return (value: number) => (usePer1kMultiplier ? formatCurrency(value, 1000) : `$${formatNumber(value)}`);
     } else if (metricType === "duration") {
       return formatDuration;
+    } else if (metricType === "reasoning") {
+      return (value: number) => `${Math.round(value).toLocaleString()} tokens`;
     } else {
       return (value: number) => value.toFixed(2);
     }
   }, [metricType, usePer1kMultiplier]);
 
   const displayLabel = showAvgPrefix
-    ? `Average ${metricKey === "cost" ? (usePer1kMultiplier ? "cost (per 1K)" : "cost") : metricKey.replace(/_/g, " ")}`
+    ? `Average ${
+        metricKey === "cost" 
+          ? (usePer1kMultiplier ? "cost (per 1K)" : "cost") 
+          : metricKey === "reasoning"
+          ? "reasoning"
+          : metricKey.replace(/_/g, " ")
+      }`
     : metricKey === "cost"
       ? usePer1kMultiplier
         ? "cost (per 1K)"
         : "cost"
+      : metricKey === "reasoning"
+      ? "reasoning"
       : metricKey.replace(/_/g, " ");
 
   if (percentiles && showAvgPrefix) {

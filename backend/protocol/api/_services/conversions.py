@@ -919,6 +919,7 @@ def experiment_completion_from_domain(completion: ExperimentOutput) -> Experimen
         output=output_from_domain(completion.output) if completion.output else Output(),
         cost_usd=completion.cost_usd or 0.0,
         duration_seconds=completion.duration_seconds or 0.0,
+        reasoning_token_count=completion.reasoning_token_count,
     )
 
 

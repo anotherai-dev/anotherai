@@ -24,6 +24,7 @@ class ExperimentOutput(BaseModel):
     output: AgentOutput | None
     cost_usd: float | None
     duration_seconds: float | None
+    reasoning_token_count: float | None = None
 
 
 class ExperimentVersion(Version):

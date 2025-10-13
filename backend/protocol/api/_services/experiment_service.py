@@ -84,6 +84,25 @@ class ExperimentService:
             input_ids=input_ids,
         )
 
+        # Fetch reasoning tokens for outputs if they exist
+        if exp.outputs:
+            completion_ids = [output.completion_id for output in exp.outputs]
+            # Get completions with traces from ClickHouse
+            completions_with_traces = await self.completion_storage.completions_by_ids(
+                completion_ids, exclude={"input_variables", "input_messages", "output_messages", "messages"},
+            )
+            # Create a map of completion_id -> reasoning_token_count
+            reasoning_tokens_map = {}
+            for comp in completions_with_traces:
+                reasoning_tokens = self._calculate_reasoning_tokens_from_traces(comp.traces)
+                if reasoning_tokens is not None:
+                    reasoning_tokens_map[comp.id] = reasoning_tokens
+
+            # Attach reasoning token counts to experiment outputs
+            for output in exp.outputs:
+                if output.completion_id in reasoning_tokens_map:
+                    output.reasoning_token_count = reasoning_tokens_map[output.completion_id]
+
         annotations: list[Annotation] = []
         if include is None or "annotations" in include:
             annotations = await self.annotation_storage.list(
@@ -96,6 +115,41 @@ class ExperimentService:
 
         # getting annotations as needed
         return experiment_from_domain(exp, annotations)
+
+    def _calculate_reasoning_tokens_from_traces(self, traces: list | None) -> float | None:
+        """Calculate total reasoning tokens from traces.
+
+        Args:
+            traces: List of trace objects
+
+        Returns:
+            Total reasoning tokens as float, or None if no reasoning tokens found
+        """
+        if not traces:
+            return None
+
+        total_reasoning_tokens = 0.0
+        has_reasoning_field = False
+
+        for trace in traces:
+            # Only check LLM traces
+            if not hasattr(trace, "kind") or trace.kind != "llm":
+                continue
+
+            # Check if trace has usage data
+            if not hasattr(trace, "usage") or not trace.usage:
+                continue
+
+            # Handle detailed usage structure
+            if hasattr(trace.usage, "completion") and trace.usage.completion:
+                completion_usage = trace.usage.completion
+
+                # Check if reasoning_token_count field exists
+                if hasattr(completion_usage, "reasoning_token_count") and completion_usage.reasoning_token_count is not None:
+                    has_reasoning_field = True
+                    total_reasoning_tokens += float(completion_usage.reasoning_token_count or 0)
+
+        return total_reasoning_tokens if has_reasoning_field else None
 
     async def list_experiments(self, agent_id: str | None = None, limit: int = 10, offset: int = 0) -> Page[Experiment]:
         if agent_id:
