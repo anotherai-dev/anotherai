@@ -7,7 +7,12 @@ import { PageError } from "@/components/PageError";
 import { useToast } from "@/components/ToastProvider";
 import { AnnotationsView } from "@/components/annotations/AnnotationsView";
 import { MessagesViewer } from "@/components/messages/MessagesViewer";
-import { shouldIncludeCostMetric, shouldIncludeDurationMetric, shouldIncludeReasoningMetric, getReasoningTokenCount } from "@/components/utils/utils";
+import {
+  getReasoningTokenCount,
+  shouldIncludeCostMetric,
+  shouldIncludeDurationMetric,
+  shouldIncludeReasoningMetric,
+} from "@/components/utils/utils";
 import { Annotation, ExperimentCompletion } from "@/types/models";
 import { getMetricsForCompletion } from "../../../utils";
 

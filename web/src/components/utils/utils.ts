@@ -264,11 +264,7 @@ export function shouldIncludeDurationMetric(
 export function shouldIncludeReasoningMetric(
   completion: ExperimentCompletion | undefined
 ): completion is ExperimentCompletion {
-  return (
-    completion != null &&
-    getReasoningTokenCount(completion) !== undefined &&
-    !completion.output?.error
-  );
+  return completion != null && getReasoningTokenCount(completion) !== undefined && !completion.output?.error;
 }
 
 export function getValidCosts(completions: (ExperimentCompletion | undefined)[]): number[] {
@@ -298,7 +294,15 @@ export function calculateAverageMetrics(completions: ExperimentCompletion[]): {
   durations: number[];
   reasoningTokens: number[];
 } {
-  if (completions.length === 0) return { avgCost: undefined, avgDuration: undefined, avgReasoningTokens: undefined, costs: [], durations: [], reasoningTokens: [] };
+  if (completions.length === 0)
+    return {
+      avgCost: undefined,
+      avgDuration: undefined,
+      avgReasoningTokens: undefined,
+      costs: [],
+      durations: [],
+      reasoningTokens: [],
+    };
 
   // Use centralized filtering logic
   const costs = getValidCosts(completions);
@@ -353,11 +357,11 @@ export function getPriceAndLatencyPerVersion(
   }>
 ): Array<{
   versionId: string;
-  metrics: { 
-    avgCost: number | undefined; 
-    avgDuration: number | undefined; 
+  metrics: {
+    avgCost: number | undefined;
+    avgDuration: number | undefined;
     avgReasoningTokens: number | undefined;
-    costs: number[]; 
+    costs: number[];
     durations: number[];
     reasoningTokens: number[];
   };
@@ -1173,19 +1177,19 @@ export function stripMarkdown(markdown: string): string {
 /**
  * Extracts the reasoning token count from a completion's traces.
  * Looks through all LLM traces and returns the total reasoning tokens used.
- * 
+ *
  * @param completion - The completion object containing traces
  * @returns The total number of reasoning tokens used, or undefined if reasoning tokens are not present in the trace structure
  */
 export function getReasoningTokenCount(completion: Completion | ExperimentCompletion): number | undefined {
   // For ExperimentCompletion, use the direct reasoning_token_count field
-  if ('reasoning_token_count' in completion) {
+  if ("reasoning_token_count" in completion) {
     return completion.reasoning_token_count;
   }
-  
+
   // For regular Completion, fall back to parsing traces
-  const traces = 'traces' in completion ? completion.traces : undefined;
-  
+  const traces = "traces" in completion ? completion.traces : undefined;
+
   if (!traces || !Array.isArray(traces)) {
     return undefined;
   }
@@ -1198,16 +1202,16 @@ export function getReasoningTokenCount(completion: Completion | ExperimentComple
     if (trace.kind !== "llm") continue;
 
     const llmTrace = trace as Extract<Trace, { kind: "llm" }>;
-    
+
     // Check if trace has usage data
     if (!llmTrace.usage) continue;
 
     // Handle both new detailed usage structure and old simple structure
     if ("completion" in llmTrace.usage && llmTrace.usage.completion) {
       const completionUsage = llmTrace.usage.completion;
-      
+
       // Check if reasoning_token_count field exists (even if it's 0)
-      if ('reasoning_token_count' in completionUsage && completionUsage.reasoning_token_count !== undefined) {
+      if ("reasoning_token_count" in completionUsage && completionUsage.reasoning_token_count !== undefined) {
         hasReasoningField = true;
         totalReasoningTokens += completionUsage.reasoning_token_count || 0;
       }
@@ -1221,7 +1225,7 @@ export function getReasoningTokenCount(completion: Completion | ExperimentComple
 
 /**
  * Checks if a completion used reasoning (has reasoning tokens > 0)
- * 
+ *
  * @param completion - The completion object to check
  * @returns True if the completion used reasoning, false if no reasoning or reasoning tokens not present
  */
@@ -1232,7 +1236,7 @@ export function hasReasoningTokens(completion: Completion | ExperimentCompletion
 
 /**
  * Gets a summary of token usage from completion traces including reasoning tokens
- * 
+ *
  * @param completion - The completion object containing traces
  * @returns Object with token usage breakdown, reasoningTokens is undefined if not present in trace
  */
@@ -1243,8 +1247,8 @@ export function getTokenUsageSummary(completion: Completion | ExperimentCompleti
   cachedTokens: number;
   totalTokens: number;
 } {
-  const traces = 'traces' in completion ? completion.traces : undefined;
-  
+  const traces = "traces" in completion ? completion.traces : undefined;
+
   let promptTokens = 0;
   let completionTokens = 0;
   let reasoningTokens: number | undefined = undefined;
@@ -1256,7 +1260,7 @@ export function getTokenUsageSummary(completion: Completion | ExperimentCompleti
       if (trace.kind !== "llm") continue;
 
       const llmTrace = trace as Extract<Trace, { kind: "llm" }>;
-      
+
       if (!llmTrace.usage) continue;
 
       // Handle detailed usage structure
@@ -1274,7 +1278,7 @@ export function getTokenUsageSummary(completion: Completion | ExperimentCompleti
           completionTokens += usage.completion.text_token_count;
         }
 
-        if ('reasoning_token_count' in usage.completion && usage.completion.reasoning_token_count !== undefined) {
+        if ("reasoning_token_count" in usage.completion && usage.completion.reasoning_token_count !== undefined) {
           if (!hasReasoningField) {
             hasReasoningField = true;
             reasoningTokens = 0; // Initialize when we first find the field

@@ -1,4 +1,4 @@
-import { Version, Completion, ExperimentCompletion } from "@/types/models";
+import { Completion, ExperimentCompletion, Version } from "@/types/models";
 import {
   calculateAverageMetrics,
   filterAnnotations,
@@ -344,12 +344,12 @@ describe("Calculation Functions", () => {
       const completions = [
         {
           ...mockExperimentCompletion(1, 2),
-          reasoning_token_count: 100
+          reasoning_token_count: 100,
         },
         {
           ...mockExperimentCompletion(2, 3),
-          reasoning_token_count: 200
-        }
+          reasoning_token_count: 200,
+        },
       ];
 
       const result = calculateAverageMetrics(completions);
@@ -361,14 +361,14 @@ describe("Calculation Functions", () => {
   describe("getReasoningTokenCount", () => {
     it("returns reasoning tokens from ExperimentCompletion field", () => {
       const completion: Partial<ExperimentCompletion> = {
-        reasoning_token_count: 150
+        reasoning_token_count: 150,
       };
       expect(getReasoningTokenCount(completion as ExperimentCompletion)).toBe(150);
     });
 
     it("returns 0 for explicitly 0 reasoning tokens", () => {
       const completion: Partial<ExperimentCompletion> = {
-        reasoning_token_count: 0
+        reasoning_token_count: 0,
       };
       expect(getReasoningTokenCount(completion as ExperimentCompletion)).toBe(0);
     });

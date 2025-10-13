@@ -120,19 +120,21 @@ export function MetricItem({
 
   const displayLabel = showAvgPrefix
     ? `Average ${
-        metricKey === "cost" 
-          ? (usePer1kMultiplier ? "cost (per 1K)" : "cost") 
+        metricKey === "cost"
+          ? usePer1kMultiplier
+            ? "cost (per 1K)"
+            : "cost"
           : metricKey === "reasoning"
-          ? "reasoning"
-          : metricKey.replace(/_/g, " ")
+            ? "reasoning"
+            : metricKey.replace(/_/g, " ")
       }`
     : metricKey === "cost"
       ? usePer1kMultiplier
         ? "cost (per 1K)"
         : "cost"
       : metricKey === "reasoning"
-      ? "reasoning"
-      : metricKey.replace(/_/g, " ");
+        ? "reasoning"
+        : metricKey.replace(/_/g, " ");
 
   if (percentiles && showAvgPrefix) {
     return (

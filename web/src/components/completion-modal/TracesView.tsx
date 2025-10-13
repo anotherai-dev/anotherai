@@ -19,7 +19,12 @@ function UsageInfo({ trace, traceIndex }: UsageInfoProps) {
   if ("prompt" in trace.usage && "completion" in trace.usage) {
     const detailedUsage = trace.usage as {
       prompt: { text_token_count?: number; cost_usd: number };
-      completion: { text_token_count?: number; reasoning_token_count?: number; cached_token_count?: number; cost_usd: number };
+      completion: {
+        text_token_count?: number;
+        reasoning_token_count?: number;
+        cached_token_count?: number;
+        cost_usd: number;
+      };
     };
 
     const items = [];
@@ -71,13 +76,7 @@ function UsageInfo({ trace, traceIndex }: UsageInfoProps) {
     // Total cost
     const totalCost = detailedUsage.prompt.cost_usd + detailedUsage.completion.cost_usd;
     if (totalCost > 0) {
-      items.push(
-        <InfoRow
-          key={`${traceIndex}-total-cost`}
-          title="Total Cost"
-          value={`$${formatNumber(totalCost)}`}
-        />
-      );
+      items.push(<InfoRow key={`${traceIndex}-total-cost`} title="Total Cost" value={`$${formatNumber(totalCost)}`} />);
     }
 
     return <>{items}</>;
@@ -141,7 +140,6 @@ export function TracesView({ traces }: Props) {
   if (llmTracesWithUsage.length === 0) {
     return null;
   }
-
 
   return (
     <div className="border-t border-gray-200 border-dashed pt-3 px-4 mt-3">
