@@ -191,6 +191,8 @@ class PlaygroundService:
         use_cache: CacheUsage | None,
     ) -> CompletionOutputTuple:
         _log.debug("Playground: Running single completion", version_id=version.id, input_id=input.id)
+        # Playground completions are never streamed, so no need to add stream metadata
+
         cached = await self._completion_runner.check_cache(
             completion_id=completion_id,
             agent=Agent(id=agent_id, uid=0),
@@ -217,6 +219,7 @@ class PlaygroundService:
                 use_fallback="never",
                 conversation_id=None,
                 completion_id=completion_id,
+                stream=False,
             )
             completion = await self._completion_runner.run(runner, builder)
 

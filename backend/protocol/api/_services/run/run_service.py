@@ -127,12 +127,17 @@ class RunService:
         prepared_run: PreparedRun,
         deprecated_function: bool,
     ):
+        # Add stream metadata for cached completions (only when True)
+        metadata_with_stream = {**prepared_run.metadata}
+        if stream:
+            metadata_with_stream["stream"] = True
+
         cached = await self._completion_runner.check_cache(
             completion_id=completion_id,
             agent=Agent(id=prepared_run.agent_id, uid=0),
             version=prepared_run.version,
             input=prepared_run.agent_input,
-            metadata=prepared_run.metadata,
+            metadata=metadata_with_stream,
             use_cache=use_cache,
         )
         if not cached:
@@ -248,6 +253,7 @@ class RunService:
             use_fallback=use_fallback,
             conversation_id=request.conversation_id,
             completion_id=completion_id,
+            stream=stream,
         )
         if stream:
             return await self._stream(runner, builder, request)

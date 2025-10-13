@@ -451,7 +451,6 @@ export function getVersionWithDefaults(version: Version): ExtendedVersion {
     tools: version.tools !== undefined ? version.tools : [],
     use_cache: extendedVersion.use_cache !== undefined ? extendedVersion.use_cache : "auto",
     max_tokens: extendedVersion.max_tokens !== undefined ? extendedVersion.max_tokens : "unlimited",
-    stream: extendedVersion.stream !== undefined ? extendedVersion.stream : false,
     include_usage: extendedVersion.include_usage !== undefined ? extendedVersion.include_usage : false,
     presence_penalty: extendedVersion.presence_penalty !== undefined ? extendedVersion.presence_penalty : 0,
     frequency_penalty: extendedVersion.frequency_penalty !== undefined ? extendedVersion.frequency_penalty : 0,

@@ -111,13 +111,19 @@ class CompletionRunner:
         use_fallback: FallbackOption,
         completion_id: UUID,
         conversation_id: str | None,
+        stream: bool = False,
     ):
+        # Add stream information to metadata (only when True)
+        metadata_with_stream = {**metadata}
+        if stream:
+            metadata_with_stream["stream"] = True
+
         runner = Runner(
             tenant_slug=self._tenant.slug,
             custom_configs=self._tenant.providers,
             agent=agent,
             version=version,
-            metadata=metadata,
+            metadata=metadata_with_stream,
             metric_tags={},
             provider_factory=self._provider_factory,
             timeout=timeout or 240,
@@ -127,7 +133,7 @@ class CompletionRunner:
             agent_input=input,
             start_time=start_time,
             completion_id=completion_id,
-            metadata=metadata,
+            metadata=metadata_with_stream,
             conversation_id=conversation_id,
         )
         return runner, builder

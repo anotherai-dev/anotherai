@@ -129,6 +129,7 @@ class ClickhouseCompletion(BaseModel):
     # Origin of the run
     source: Literal["web", "api", "mcp"] = "api"
 
+
     # Traces as array of strings
     traces: list[_Trace] = Field(default_factory=list)
 
