@@ -129,13 +129,36 @@ Review the user feedback annotations for agent/email-rewriter from the last week
 and suggest prompt improvements based on common complaints
 ```
 
-Your AI assistant will query the annotations, identify patterns, and propose specific changes to improve user satisfaction.
+Your AI assistant will query the annotations, identify patterns, and give you a report on proposed changes.
+
+![User feedback analysis](/images/user-feedback-analysis.png)
+
+If you agree with the proposed changes, you can ask your AI assistant to create an experiment to test the new version against the old version.
 
 ![Email Rewriter Experiment Comparison](/images/email-rewriter-experiment-comparison.png)
 
 <Callout type="info">
 Once you've validated improvements through experiments, you can deploy them instantly without code changes using [deployments](/use-cases/fundamentals/deployments). This allows your team to rapidly iterate on agent improvements based on user feedback - no engineering bottlenecks, no deployment delays.
 </Callout>
+
+</Step>
+
+<Step>
+### Optional: Add feedback cases to your evaluation dataset
+
+Especially if the completion that received user feedback is challenging or unique, you may want to add it to your evaluation dataset. This creates a feedback loop where real user experiences continuously improve your agent's reliability and ensures future versions of your agent continue to handle the given input correctly.
+
+```
+Get completion anotherai/completion/0199a698-56c2-72e7-4ad8-e6bb1699a0a8 and add
+it to email-rewriter-dataset.json as a new test case. Use the completion's
+input variables for the "input" field, the output as "expected_output".
+```
+
+**You can add completions with positive feedback to preserve what works well:**
+- The real-life completions become high quality test cases to ensure future changes don't break successful patterns
+- Future versions can be evaluated against these proven-good examples
+
+You can learn more about evaluation datasets [here](/use-cases/fundamentals/evaluating).
 </Step>
 </Steps>
 

@@ -96,12 +96,21 @@ This initial setup requires an AI coding agent with access to your codebase to m
 If the version of your agent you want to deploy is already in your IDE, you can also just request to have a deployment created directly, without opening the web app.
 
 1. Ensure your code is already using AnotherAI's base_url and API key.
-2. Tell your AI assistant to deploy your agent:
+2. Decide on a deployment_id for your deployment.
+<Callout type="info" title="What is a Deployment ID?">
+A `deployment_id` is a unique identifier for a given deployment. Some common naming patterns include:
+
+- `my-agent:v1`: Differentiating your deployments by incrementing the version number is an easy to understand way to keep track of your deployments
+- `my-agent:low-latency-version`: You can also you differentiate your deployments based on characteristics or purpose. This can be useful if you want to A/B test different versions and want to easily distinguish the differences in versions.
+
+If you're not sure what id to give your deployment, you can ask your AI assistant to pick a name for you.
+</Callout>
+3. Tell your AI assistant to deploy your agent:
 
 ```
-Deploy the version of anotherai/agent/travel-assistant in my code to production. 
-Create a deployment for this version and update to my code to match this version 
-and reference the deployment_id.
+Deploy this version of anotherai/agent/travel-assistant: anotherai/version/0c8ad37d1c9f5e9c06b8b643e87dfc8b. 
+Deployment ID: travel-assistant:v1. Update my code to use this deployment and reference
+this deployment_id.
 ```
 
 Your AI assistant will create a version ID for you and deploy it.
@@ -115,19 +124,27 @@ If you find the version you want to deploy is in a completion view on the web ap
 2. Copy the version ID (located on the right side of the modal)
 
 ![Completion Version Details](/images/completion-version-details.png)
+3. 2. Decide on a deployment_id for your deployment.
+<Callout type="info" title="What is a Deployment ID?">
+A `deployment_id` is a unique identifier for a given deployment. Some common naming patterns include:
 
-3. Paste the version ID into your preferred AI assistant and ask it to deploy:
+- `my-agent:v1`: Differentiating your deployments by incrementing the version number is an easy to understand way to keep track of your deployments
+- `my-agent:low-latency-version`: You can also you differentiate your deployments based on characteristics or purpose. This can be useful if you want to A/B test different versions and want to easily distinguish the differences in versions.
+
+If you're not sure what id to give your deployment, you can ask your AI assistant to pick a name for you.
+</Callout>
+4. Paste the version ID into your preferred AI assistant and ask it to deploy:
 
 ```
-Deploy anotherai/version/acf2635be31cbd89f9363bfd3b2c6abc to production. 
-Create a deployment for this version and update to my code to match this version 
-and reference the deployment_id.
+Deploy this version of anotherai/agent/travel-assistant: anotherai/version/0c8ad37d1c9f5e9c06b8b643e87dfc8b. 
+Deployment ID: travel-assistant:v1. Update my code to use this deployment and reference
+this deployment_id.
 ```
 
 </Tab>
 
 <Tab>
-If there is a version of the agent in an experimentyou want to deploy, you can get the version of your agent from the experiments web view.
+If there is a version of the agent in an experiment you want to deploy, you can get the version of your agent from the experiments web view.
 
 1. Locate the experiment that has the version of the agent you want to deploy.
 2. Hover over the version number to copy the version ID
@@ -135,12 +152,21 @@ If there is a version of the agent in an experimentyou want to deploy, you can g
 ![Deploy Version](/images/deploy-version-popup.png)
 
 3. Open your preferred AI assistant
-4. Request deployment to your preferred environment:
+4. Decide on a deployment_id for your deployment.
+<Callout type="info" title="What is a Deployment ID?">
+A `deployment_id` is a unique identifier for a given deployment. Some common naming patterns include:
+
+- `my-agent:v1`: Differentiating your deployments by incrementing the version number is an easy to understand way to keep track of your deployments
+- `my-agent:low-latency-version`: You can also you differentiate your deployments based on characteristics or purpose. This can be useful if you want to A/B test different versions and want to easily distinguish the differences in versions.
+
+If you're not sure what id to give your deployment, you can ask your AI assistant to pick a name for you.
+</Callout>
+5. Request deployment to your preferred environment:
 
 ```
-Deploy anotherai/version/acf2635be31cbd89f9363bfd3b2c6abc to production. 
-Create a deployment for this version and update to my code to match this version 
-and reference the deployment_id.
+Deploy this version of anotherai/agent/travel-assistant: anotherai/version/0c8ad37d1c9f5e9c06b8b643e87dfc8b. 
+Deployment ID: travel-assistant:v1. Update my code to use this deployment and reference
+this deployment_id.
 ```
 
 ![Deployment Individual View](/images/deployment-individual-view.png)
@@ -220,7 +246,7 @@ Always be helpful, accurate, and culturally sensitive."""
 ```js
 const completion = await openai.chat.completions.create({
   // Static components are now stored in the deployment
-  model: "anotherai/deployment/travel-assistant:production#1",
+  model: "anotherai/deployment/travel-assistant:v1",
   messages: [],
   input: {
     country: destination,
@@ -233,7 +259,7 @@ const completion = await openai.chat.completions.create({
 ```python
 completion = await openai.chat.completions.create(
     # Model, temperature, system message, and agent_id are now in the deployment
-    model="anotherai/deployment/travel-assistant:production#1",
+    model="anotherai/deployment/travel-assistant:v1",
     messages=[],
     extra_body={
         "input": {
@@ -250,6 +276,145 @@ completion = await openai.chat.completions.create(
 </Accordions>
 
 <Accordions>
+<Accordion title="Understanding Different Deployment Patterns">
+
+When a deployment is created, it captures the completion parameters from the existing code. Depending on what was in the code, the deployment will store different things, and the code updates needed to reference the deployment will differ.
+
+<Accordions>
+<Accordion title="Full Prompt Template with Input Variables (Most Common)">
+
+This is the pattern shown in the "Code Before and After Using Deployments" section above. When your deployment stores a templated prompt with input variables, your code passes empty messages and only provides the input variables.
+
+**When to use this pattern:**
+- You want maximum flexibility - both prompts and models managed outside your codebase
+- Non-technical team members need to iterate on prompts
+- You have a templated prompt with variable substitution
+
+</Accordion>
+
+<Accordion title="Model and Parameters Only (Generally for Non-Text Inputs)">
+
+If your deployment only stores the model, temperature, response_format, and other completion parameters **without a prompt template or input variables**, your code continues to pass messages normally. This pattern is generally used when working with images, PDFs, audio, or other non-text inputs that cannot be easily templated.
+
+**What the deployment stores:**
+- Model (e.g., `gpt-4o`, `claude-3-5-sonnet`)
+- Temperature, top_p, and other generation parameters
+- Response format (JSON schema)
+- Agent ID
+
+**What your code provides:**
+- All messages (system, user, assistant)
+- Any dynamic content
+
+**Example:**
+
+<Tabs items={["OpenAI SDK (Python)", "OpenAI SDK (JS)"]}>
+<Tab>
+```python
+# Deployment stores: model, temperature, response_format, agent_id
+# Code provides: all messages
+completion = await client.chat.completions.create(
+    model="anotherai/deployment/identity-verification:v1",
+    messages=[
+        {
+            "role": "system",
+            "content": "You are an expert in identity verification..."
+        },
+        {
+            "role": "user",
+            "content": [
+                {"type": "image_url", "image_url": {"url": profile_url}},
+                {"type": "image_url", "image_url": {"url": selfie_url}}
+            ]
+        }
+    ]
+)
+```
+</Tab>
+<Tab>
+```js
+// Deployment stores: model, temperature, response_format, agent_id
+// Code provides: all messages
+const completion = await client.chat.completions.create({
+    model: "anotherai/deployment/identity-verification:v1",
+    messages: [
+        {
+            role: "system",
+            content: "You are an expert in identity verification..."
+        },
+        {
+            role: "user",
+            content: [
+                {type: "image_url", image_url: {url: profileUrl}},
+                {type: "image_url", image_url: {url: selfieUrl}}
+            ]
+        }
+    ]
+});
+```
+</Tab>
+</Tabs>
+
+**When to use this pattern:**
+- You want to update models or parameters without code changes
+- You want to keep full control over prompts in your codebase
+- You're working with complex multi-turn conversations or multimodal inputs (images, PDFs, audio)
+
+</Accordion>
+
+<Accordion title="Determining which pattern applies">
+
+To determine which pattern applies to a deployment, list the deployment and examine its structure:
+
+```bash
+"List deployments for agent document-classifier"
+```
+
+Check the deployment response for:
+- **Has `prompt` field with templates (e.g., `{{ variable }}`)?** → Pattern 1 (input variables)
+- **Has `input_variables_schema` field?** → Pattern 1 (input variables)
+- **Only has `model`, `temperature`, `output_schema`?** → Pattern 2 (pass messages)
+
+**Example deployment using Pattern 1:**
+```json
+{
+  "id": "travel-assistant:v1",
+  "version": {
+    "model": "gpt-4o",
+    "temperature": 0.7,
+    "prompt": [
+      {
+        "role": "system",
+        "content": "You are an expert on {{ country }}..."
+      }
+    ],
+    "input_variables_schema": {
+      "type": "object",
+      "properties": {"country": {}}
+    }
+  }
+}
+```
+
+**Example deployment using Pattern 2:**
+```json
+{
+  "id": "identity-verification:v1",
+  "version": {
+    "model": "gpt-4o-latest",
+    "temperature": 1.0,
+    "output_schema": {...}
+  }
+}
+```
+
+</Accordion>
+</Accordions>
+
+</Accordion>
+</Accordions>
+
+<Accordions>
 <Accordion title="Reconciling Code and Deployments" id="reconciling-code-and-deployments">
 
 **Reconciling Code and Deployments**
@@ -260,7 +425,7 @@ The code allows targeting a deployment but still provide completion parameters. 
 <Tab>
 ```js
 const completion = await openai.chat.completions.create({
-    model: "anotherai/deployment/travel-assistant:production#1",
+    model: "anotherai/deployment/travel-assistant:v1",
     input: {
         country: "France"
     }
@@ -279,7 +444,7 @@ We believe that code should be the source of truth which means that in the above
 - any provided completion parameter can override the corresponding deployment parameter
 - if the override creates a version that is incompatible with the deployment an error is raised.
 
-Consider a deployment `travel-assistant/production#1` created with:
+Consider a deployment `travel-assistant/v1` created with:
 
 - model: "gpt-4o"
 - temperature: 0.5
@@ -290,7 +455,7 @@ Consider a deployment `travel-assistant/production#1` created with:
 ```js
 // Accepted since the version is compatible with the deployment
 const completion = await openai.chat.completions.create({
-    model: "anotherai/deployment/travel-assistant:production#1",
+    model: "anotherai/deployment/travel-assistant:v1",
     input: {
         country: "France"
     }
@@ -300,7 +465,7 @@ const completion = await openai.chat.completions.create({
 
 // Rejected since the version is incompatible with the deployment
 const completion = await openai.chat.completions.create({
-model: "anotherai/deployment/travel-assistant:production#1",
+model: "anotherai/deployment/travel-assistant:v1",
 input: {
 country: "France"
 }
@@ -355,11 +520,11 @@ Copy the new version ID you want to deploy from [AnotherAI](https://anotherai.de
 </Step>
 
 <Step>
-  Ask your preferred AI assistant to update the existing deployment: 
+  Ask your preferred AI assistant to update the existing deployment:
 
-  ``` 
-  Update deployment anotherai/deployment/question-answering-agent:production#1 to use
-  anotherai/version/a9f1fc5ab11299a9fee5604e51fe7b6e 
+  ```
+  Update deployment anotherai/deployment/travel-assistant:v1 to use
+  anotherai/version/a9f1fc5ab11299a9fee5604e51fe7b6e
   ```
 </Step>
 
@@ -405,7 +570,7 @@ When a new deployment is created, you will need to update your code to point to 
 ```js
 // Before - using old deployment
 const completion = await openai.chat.completions.create({
-    model: "anotherai/deployment/travel-assistant:production#1",
+    model: "anotherai/deployment/travel-assistant:v1",
     input: {
         country: "France"
     }
@@ -413,7 +578,7 @@ const completion = await openai.chat.completions.create({
 
 // After - using new deployment with breaking changes
 const completion = await openai.chat.completions.create({
-model: "anotherai/deployment/travel-assistant:production#2", // new deployment
+model: "anotherai/deployment/travel-assistant:v2", // new deployment
 input: {
 destination: "France", // variable renamed: country -> destination
 traveler_type: "business" // new required variable added
@@ -427,5 +592,5 @@ traveler_type: "business" // new required variable added
 </Accordions>
 
 <Callout type="success">
-Don't worry if you're unsure if an update version is a breaking change or not: if you ask your AI assistant to update an existing deployment and it cannot because the new version is incompatible, oyur AI assistant will automatically create a new deployment for you. You can create as many deployments as you need.
+Don't worry if you're unsure if an update version is a breaking change or not: if you ask your AI assistant to update an existing deployment and it cannot because the new version is incompatible, your AI assistant will automatically create a new deployment for you. You can create as many deployments as you need.
 </Callout>
