@@ -8,6 +8,7 @@ from uuid import UUID
 from pydantic import ValidationError
 from structlog import get_logger
 
+from core.consts import METADATA_KEY_EXPERIMENT_ID
 from core.domain.agent import Agent
 from core.domain.agent_input import AgentInput
 from core.domain.agent_output import AgentOutput
@@ -320,7 +321,7 @@ class PlaygroundService:
             version=version,
             input=input,
             completion_id=event.completion_id,
-            metadata={"anotherai/experiment_id": event.experiment_id},
+            metadata={METADATA_KEY_EXPERIMENT_ID: event.experiment_id},
             use_cache=experiment.use_cache,
         )
         assign_output_preview(output.output)

@@ -37,3 +37,11 @@ class PaymentUpdatedEvent(Event):
 
 class EventRouter(Protocol):
     def __call__(self, event: Event, delay: float | None = None) -> None: ...
+
+
+class AnnotationAddedEvent(Event):
+    annotation_id: str
+
+
+class AnnotationDeletedEvent(Event):
+    annotation_id: str

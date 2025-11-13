@@ -34,24 +34,31 @@ class PsqlAnnotationStorage(PsqlBaseStorage, AnnotationStorage):
             return _id
         return None
 
-    async def _resolve_agent_uid(
-        self,
-        connection: PoolConnectionProxy,
-        val: Annotation.Context | None,
-    ) -> int | None:
-        if val and val.agent_id:
-            return await self._agent_uid(connection, val.agent_id)
-        return None
-
     @override
-    async def create(self, annotation: Annotation) -> None:
-        if not annotation.id:
-            annotation.id = str(uuid7())
-        # TODO: replace on conflict
+    async def create(self, annotations: list[Annotation]) -> None:
+        experiment_ids: set[str] = set()
+        agent_ids: set[str] = set()
+        for annotation in annotations:
+            if not annotation.id:
+                annotation.id = str(uuid7())
+            if annotation.target and annotation.target.experiment_id:
+                experiment_ids.add(annotation.target.experiment_id)
+            if annotation.context:
+                if annotation.context.agent_id:
+                    agent_ids.add(annotation.context.agent_id)
+                if annotation.context.experiment_id:
+                    experiment_ids.add(annotation.context.experiment_id)
+
         async with self._connect() as connection:
-            agent_uid = await self._resolve_agent_uid(connection, annotation.context)
-            target_experiment_uid = await self._resolve_experiment_uid(connection, annotation.target)
-            context_experiment_uid = await self._resolve_experiment_uid(connection, annotation.context)
+            experiment_uids = await self._experiment_uids(connection, experiment_ids)
+            agent_uids = await self._agent_uids(connection, agent_ids)
+
+            values = await connection.fetchmany(
+                f"""INSERT INTO annotations ({", ".join(_ANNOTATION_INSERT_FIELDS)})
+                VALUES ({", ".join(f"${i + 1}" for i in range(len(_INPUT_INSERT_FIELDS)))})
+                RETURNING input_id""",  # noqa: S608 # OK here since fields is defined above
+                list(insert_iterator(_INPUT_INSERT_FIELDS, to_insert)),
+            )
 
             row = _AnnotationRow.from_domain(
                 annotation,
@@ -262,3 +269,6 @@ class _AnnotationRow(PsqlBaseRow, WithUpdatedAtRow):
             metric=self.domain_metric(),
             metadata=self.metadata or None,
         )
+
+
+_ANNOTATION_INSERT_FIELDS = _AnnotationRow.model_fields.keys() - {"updated_at", "uid", "created_at", "deleted_at"}

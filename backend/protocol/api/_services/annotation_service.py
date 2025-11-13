@@ -1,11 +1,14 @@
 from datetime import datetime
-from typing import final
+from typing import Any, final
+from uuid import UUID
 
+from core.consts import METADATA_KEY_EXPERIMENT_ID
 from core.domain.annotation import Annotation as DomainAnnotation
+from core.domain.events import AnnotationAddedEvent, AnnotationDeletedEvent, EventRouter
+from core.domain.exceptions import BadRequestError, InternalError, ObjectNotFoundError
 from core.storage.annotation_storage import AnnotationStorage
 from core.storage.completion_storage import CompletionStorage
 from core.storage.experiment_storage import ExperimentStorage
-from core.utils.background import add_background_task
 from protocol.api._api_models import Annotation, Page
 from protocol.api._services.conversions import annotation_from_domain, annotation_to_domain
 from protocol.api._services.ids_service import sanitized_completion_uuid
@@ -18,10 +21,12 @@ class AnnotationService:
         storage: AnnotationStorage,
         experiment_storage: ExperimentStorage,
         completion_storage: CompletionStorage,
+        event_router: EventRouter,
     ):
         self.annotation_storage = storage
         self.experiment_storage = experiment_storage
         self.completion_storage = completion_storage
+        self._event_router = event_router
 
     async def get_annotations(
         self,
@@ -49,49 +54,62 @@ class AnnotationService:
 
         return Page(items=api_annotations, total=len(api_annotations))
 
-    async def _assign_agent_id(self, annotation: DomainAnnotation) -> None:
-        if not annotation.target:
-            return
+    # Not sure how to break this function apart we would be returning tuples, etc.
+    # We could also split by "target" which might be clearer but would require more intermediary variables
+    # Let's leave as is for now
+    async def _sanitize_context(self, annotations: list[DomainAnnotation]) -> None:  # noqa: C901
+        completion_ids: list[UUID] = []
+        experiment_ids: list[str] = []
+        for annotation in annotations:
+            if not annotation.target:
+                raise BadRequestError("Annotation target is required")
+            if annotation.target.completion_id:
+                completion_ids.append(annotation.target.completion_id)
+            if annotation.target.experiment_id:
+                experiment_ids.append(annotation.target.experiment_id)
 
-        if annotation.target.completion_id:
-            run = await self.completion_storage.completions_by_id(
-                annotation.target.completion_id,
-                include={"agent_id"},
+        by_cid: dict[UUID, dict[str, Any]] = {}
+        if completion_ids:
+            raw_result = await self.completion_storage.raw_query(
+                f"SELECT id, agent_id, metadata['{METADATA_KEY_EXPERIMENT_ID}'] as experiment_id"
+                f"FROM completions WHERE id IN ({', '.join(str(c) for c in completion_ids)})",
             )
-            annotation.set_context_agent_id(run.agent.id)
-            return
+            by_cid = {r["id"]: r for r in raw_result}
 
-        if annotation.target.experiment_id:
-            experiment = await self.experiment_storage.get_experiment(
-                annotation.target.experiment_id,
-                include={"agent_id"},
-            )
-            annotation.set_context_agent_id(experiment.agent_id)
-            return
+        agent_id_by_eid: dict[str, str] = {}
+        if experiment_ids:
+            agent_id_by_eid = await self.experiment_storage.get_agents_ids(experiment_ids)
 
-    async def _insert_annotation(self, annotation: DomainAnnotation) -> None:
-        if not annotation.context or not annotation.context.agent_id:
-            await self._assign_agent_id(annotation)
-        await self.annotation_storage.create(annotation)
-
-        # TODO: insert all annotations at once
-        if annotation.target:
-            # TODO: use actual event
-            add_background_task(self.completion_storage.store_annotation(annotation))
+        for annotation in annotations:
+            if not annotation.target:
+                # Should have been caught by the previous check
+                raise InternalError("Annotation target is required")
+            if not annotation.context:
+                annotation.context = DomainAnnotation.Context()
+            if annotation.target.completion_id:
+                try:
+                    val = by_cid[annotation.target.completion_id]
+                except KeyError:
+                    raise ObjectNotFoundError(
+                        object_type="completion",
+                        msg=f"Completion not found: {annotation.target.completion_id}",
+                    ) from None
+                annotation.context.agent_id = val["agent_id"]
+                annotation.context.experiment_id = val["experiment_id"]
+            if annotation.target.experiment_id:
+                annotation.context.agent_id = agent_id_by_eid[annotation.target.experiment_id]
 
     async def add_annotations(self, annotations: list[Annotation]) -> None:
         if not annotations:
             return
 
-        # TODO: automatically add context if annotation targets a completion ?
-
         domain_annotations = [annotation_to_domain(annotation) for annotation in annotations]
-        # Create one annotation at a time, n+1 is ok because we rarely add more than 1 annotation at
-        # a time
-        # TODO: add better information about which one fails
+        await self._sanitize_context(domain_annotations)
+        await self.annotation_storage.create(domain_annotations)
         for annotation in domain_annotations:
-            await self._insert_annotation(annotation)
+            self._event_router(AnnotationAddedEvent(annotation_id=annotation.id))
 
     async def delete_annotation(self, annotation_id: str) -> None:
         await self.annotation_storage.delete(annotation_id)
-        # TODO: update clickhouse
+
+        self._event_router(AnnotationDeletedEvent(annotation_id=annotation_id))

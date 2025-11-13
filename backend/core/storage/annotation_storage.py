@@ -1,3 +1,4 @@
+from collections.abc import Collection
 from datetime import datetime
 from typing import Protocol
 from uuid import UUID
@@ -6,7 +7,7 @@ from core.domain.annotation import Annotation
 
 
 class AnnotationStorage(Protocol):
-    async def create(self, annotation: Annotation) -> None:
+    async def create(self, annotations: Collection[Annotation]) -> None:
         pass
 
     async def list(

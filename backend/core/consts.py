@@ -7,3 +7,5 @@ ANOTHERAI_API_URL = os.environ.get("ANOTHERAI_API_URL", "http://localhost:8000")
 AUTHORIZATION_SERVER = os.environ.get("AUTHORIZATION_SERVER", "http://localhost:3000")
 
 ENV_NAME = os.environ.get("ENV_NAME", "local")
+
+METADATA_KEY_EXPERIMENT_ID = "anotherai/experiment_id"

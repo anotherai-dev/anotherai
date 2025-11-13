@@ -104,3 +104,7 @@ class ExperimentStorage(Protocol):
         """Returns the completions of an experiment.
         Raises an error if the version_ids or input_ids are not found in the experiment."""
         ...
+
+    async def get_agents_ids(self, experiment_ids: Collection[str]) -> dict[str, str]:
+        """Returns a dictionary of experiment ids to agent ids"""
+        ...
