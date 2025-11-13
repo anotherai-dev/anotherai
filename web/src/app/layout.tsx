@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Suspense } from "react";
-import { AuthProvider, SignedIn, SignedOut } from "@/auth/components";
-import LayoutContent from "@/components/LayoutContent";
-import SignedOutLayout from "@/components/SignedOutLayout";
-import { ToastProvider } from "@/components/ToastProvider";
-import { ApiKeysModal } from "@/components/api-keys-modal/ApiKeysModal";
-import { CompletionModal } from "@/components/completion-modal/CompletionModal";
-import { DeploymentModal } from "@/components/deployment-modal/DeploymentModal";
-import { getServerSideCookie } from "@/lib/server-cookies";
+// import { Suspense } from "react";
+// import { AuthProvider, SignedIn, SignedOut } from "@/auth/components";
+// import LayoutContent from "@/components/LayoutContent";
+// import SignedOutLayout from "@/components/SignedOutLayout";
+// import { ToastProvider } from "@/components/ToastProvider";
+// import { ApiKeysModal } from "@/components/api-keys-modal/ApiKeysModal";
+// import { CompletionModal } from "@/components/completion-modal/CompletionModal";
+// import { DeploymentModal } from "@/components/deployment-modal/DeploymentModal";
+// import { getServerSideCookie } from "@/lib/server-cookies";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -35,27 +35,28 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout() {
   // Read sidebar state from cookies server-side
-  const initialSidebarExpanded = await getServerSideCookie("sidebar-expanded", true);
+  // const initialSidebarExpanded = await getServerSideCookie("sidebar-expanded", true);
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <ToastProvider>
-          <AuthProvider>
-            <SignedOut>
-              <SignedOutLayout>{children}</SignedOutLayout>
-            </SignedOut>
-            <SignedIn>
-              <LayoutContent initialSidebarExpanded={initialSidebarExpanded}>{children}</LayoutContent>
-              <Suspense fallback={null}>
-                <CompletionModal />
-                <DeploymentModal />
-                <ApiKeysModal />
-              </Suspense>
-            </SignedIn>
-          </AuthProvider>
-        </ToastProvider>
+        <div className="flex flex-col items-center justify-center h-screen">
+          <p>
+            <b>AnotherAI</b> is retired, thank you for your support.
+          </p>
+          <p>
+            You can check the code{" "}
+            <a
+              href="https://github.com/anotherai-dev/anotherai"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-500"
+            >
+              on Github
+            </a>
+          </p>
+        </div>
       </body>
     </html>
   );
